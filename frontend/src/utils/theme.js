@@ -1,0 +1,35 @@
+export const THEME = {
+  colors: {
+    background: '#F8FAFC',
+    surface: '#FFFFFF',
+    surfaceSoft: 'rgba(255, 255, 255, 0.88)',
+    frost: 'rgba(255, 255, 255, 0.78)',
+    text: '#111827',
+    textSecondary: '#475569',
+    textMuted: '#64748B',
+    border: 'rgba(148, 163, 184, 0.24)',
+    accent: '#2563EB',
+    accentSoft: '#DBEAFE',
+    success: '#16A34A',
+    error: '#DC2626',
+    warning: '#F59E0B',
+    info: '#2563EB',
+    surfaceAlt: '#F8FAFC',
+    surfaceBorder: '#E2E8F0',
+  },
+  radius: {
+    card: '24px',
+    input: '16px',
+    button: '16px',
+    modal: '28px',
+  },
+  shadow: {
+    soft: '0 16px 40px rgba(15, 23, 42, 0.08)',
+    card: '0 24px 60px rgba(15, 23, 42, 0.08)',
+    subtle: '0 8px 24px rgba(15, 23, 42, 0.06)',
+  },
+  toast: {
+    success: { background: '#F0FDF4', border: '1px solid #86EFAC', color: '#166534' },
+    error: { background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#991B1B' },
+  },
+};

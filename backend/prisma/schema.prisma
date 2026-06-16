@@ -1,0 +1,1640 @@
+
+
+
+
+
+
+
+
+
+
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DEV_TENANT_DATABASE_URL")
+  directUrl = env("DEV_TENANT_DIRECT_URL")
+}
+
+
+
+
+
+model companies {
+  id                    String    @id @default(uuid())
+  name                  String
+  legal_name            String?
+  gstin                 String?
+  pan                   String?
+  cin                   String?
+  logo_url              String?
+  address               String?
+  city                  String?
+  state                 String?
+  pincode               String?
+  country               String    @default("India")
+  phone                 String?
+  email                 String?
+  website               String?
+  epf_number            String?
+  esic_number           String?
+  pt_number             String?
+  lwf_number            String?
+  sitemap_url           String?
+  financial_year_start  Int       @default(4)
+  working_days_month    Int       @default(26)
+  overtime_threshold    Int       @default(8)
+  payslip_password_type String    @default("dob")
+  is_active             Boolean   @default(true)
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+  deleted_at            DateTime?
+
+  branches      branches[]
+  departments   departments[]
+  designations  designations[]
+  employees     employees[]
+  users         users[]
+  shifts        shifts[]
+  holidays      holidays[]
+}
+
+model branches {
+  id         String    @id @default(uuid())
+  company_id String
+  name       String
+  address    String?
+  city       String?
+  state      String?
+  pincode    String?
+  phone      String?
+  is_active  Boolean   @default(true)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+
+  company   companies  @relation(fields: [company_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  employees employees[]
+
+  @@index([company_id])
+}
+
+model departments {
+  id           String    @id @default(uuid())
+  company_id   String
+  parent_id    String?
+  name         String
+  code         String?
+  head_id      String?
+  is_active    Boolean   @default(true)
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  deleted_at   DateTime?
+
+  company    companies     @relation(fields: [company_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  parent     departments?  @relation("DeptHierarchy", fields: [parent_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  children   departments[] @relation("DeptHierarchy")
+  employees  employees[]
+
+  @@index([company_id])
+}
+
+model designations {
+  id         String    @id @default(uuid())
+  company_id String
+  name       String
+  level      Int?
+  is_active  Boolean   @default(true)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+
+  company   companies  @relation(fields: [company_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  employees employees[]
+
+  @@index([company_id])
+}
+
+
+
+
+
+model employees {
+  id                      String    @id @default(uuid())
+  company_id              String
+  branch_id               String?
+  department_id           String?
+  designation_id          String?
+  employee_code           String
+  first_name              String
+  last_name               String
+  middle_name             String?
+  father_name             String?
+  mother_name             String?
+  spouse_name             String?
+  disability_status       Boolean   @default(false)
+  date_of_birth           DateTime?
+  gender                  String?
+  marital_status          String?
+  blood_group             String?
+  personal_email          String?
+  work_email              String?
+  phone                   String?
+  emergency_contact_name  String?
+  emergency_contact_phone String?
+  emergency_contact_rel   String?
+  address                 String?
+  city                    String?
+  state                   String?
+  pincode                 String?
+  central_kyc_id          String?
+  date_of_joining         DateTime?
+  date_of_leaving         DateTime?
+  employment_type         String    @default("full_time")
+  status                  String    @default("active")
+  reporting_to            String?
+  probation_end_date      DateTime?
+  confirmation_date       DateTime?
+  aadhaar_number          String?   
+  pan_number              String?   
+  uan_number              String?
+  esi_ip_number           String?
+  photo_url               String?
+  is_user_created         Boolean   @default(false)
+  created_at              DateTime  @default(now())
+  updated_at              DateTime  @updatedAt
+  deleted_at              DateTime?
+
+  company     companies     @relation(fields: [company_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  branch      branches?     @relation(fields: [branch_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  department  departments?  @relation(fields: [department_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  designation designations? @relation(fields: [designation_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  manager        employees?  @relation("ReportingHierarchy", fields: [reporting_to], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  direct_reports employees[] @relation("ReportingHierarchy")
+
+  documents          employee_documents[]
+  bank_accounts      employee_bank_accounts[]
+  salaries           employee_salaries[]
+  attendance         attendance[]
+  leave_balances     leave_balances[]
+  leave_applications leave_applications[]
+  payslips           payslips[]
+  transfers          employee_transfers[]
+  exits              employee_exits[]
+  user               users?
+  addresses          employee_addresses[]
+  education          employee_education[]
+  family_members     employee_family[]
+  prev_employment    employee_prev_employment[]
+  onboarding_drafts  employee_onboarding_draft[]
+
+  @@unique([company_id, employee_code])
+  @@index([company_id])
+  @@index([status])
+}
+
+model employee_documents {
+  id             String    @id @default(uuid())
+  employee_id    String
+  document_type  String
+  document_name  String
+  document_number String
+  file_name      String
+  file_url       String
+  expiry_date    DateTime?
+  is_verified    Boolean   @default(false)
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+  deleted_at     DateTime?
+
+  employee employees @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([employee_id])
+}
+
+model employee_bank_accounts {
+  id             String    @id @default(uuid())
+  employee_id    String
+  bank_name      String
+  account_number String    
+  ifsc_code      String
+  account_type   String    @default("savings")
+  is_primary     Boolean   @default(true)
+  verified_at    DateTime?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+  deleted_at     DateTime?
+
+  employee employees @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([employee_id])
+}
+
+
+
+
+
+model users {
+  id             String    @id @default(uuid())
+  company_id     String
+  employee_id    String?   @unique
+  role_id        String
+  name    String?
+  email             String
+  phone             String?
+  password_hash     String
+  is_active         Boolean   @default(true)
+  is_first_login    Boolean   @default(true)
+  last_login_at     DateTime?
+  two_fa_enabled    Boolean   @default(false)
+  two_fa_secret  String?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+  deleted_at     DateTime?
+
+  company  companies  @relation(fields: [company_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  employee employees? @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  role     roles      @relation(fields: [role_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  password_resets password_resets[]
+  token_blacklist token_blacklist[]
+
+  @@unique([company_id, email])
+  @@index([company_id])
+  @@index([email])
+}
+
+model roles {
+  id          String    @id @default(uuid())
+  company_id  String?
+  name        String
+  description String?
+  permissions String    
+  is_system   Boolean   @default(false)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  deleted_at  DateTime?
+
+  users users[]
+
+  @@index([company_id])
+}
+
+model password_resets {
+  id         String    @id @default(uuid())
+  user_id    String
+  token_hash String
+  type       String    @default("reset")
+  expires_at DateTime
+  used       Boolean   @default(false)
+  created_at DateTime  @default(now())
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([user_id])
+  @@index([token_hash])
+}
+
+model token_blacklist {
+  id         String    @id @default(uuid())
+  token_hash String
+  user_id    String
+  expires_at DateTime
+  created_at DateTime  @default(now())
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([token_hash])
+}
+
+model otp_store {
+  id         String    @id @default(uuid())
+  identifier String
+  otp_hash   String
+  purpose    String
+  attempts   Int       @default(0)
+  expires_at DateTime
+  created_at DateTime  @default(now())
+
+  @@index([identifier])
+}
+
+model temp_auth_tokens {
+  id         String    @id @default(uuid())
+  user_id    String
+  token_hash String
+  purpose    String
+  expires_at DateTime
+  used       Boolean   @default(false)
+  created_at DateTime  @default(now())
+}
+
+
+
+
+
+model shifts {
+  id               String    @id @default(uuid())
+  company_id       String
+  name             String
+  start_time       String
+  end_time         String
+  late_grace_mins  Int       @default(15)
+  early_leave_mins Int       @default(15)
+  total_hours      Float     @default(9)
+  week_offs        String    @default("[0,6]")
+  is_active        Boolean   @default(true)
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+  deleted_at       DateTime?
+
+  company         companies        @relation(fields: [company_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  employee_shifts employee_shifts[]
+
+  @@index([company_id])
+}
+
+model employee_shifts {
+  id             String    @id @default(uuid())
+  employee_id    String
+  shift_id       String
+  effective_from DateTime
+  effective_to   DateTime?
+  created_at     DateTime  @default(now())
+
+  shift shifts @relation(fields: [shift_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([employee_id])
+}
+
+model holidays {
+  id                  String    @id @default(uuid())
+  company_id          String
+  name                String
+  date                DateTime
+  type                String
+  applicable_branches String    @default("[]")
+  recurring_yearly    Boolean   @default(false)
+  year                Int
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+  deleted_at          DateTime?
+
+  company companies @relation(fields: [company_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([company_id, year])
+}
+
+model attendance {
+  id              String    @id @default(uuid())
+  employee_id     String
+  date            DateTime
+  check_in        DateTime?
+  check_out       DateTime?
+  working_hours   Float?
+  overtime_hours  Float?
+  status          String    @default("absent")
+  late_arrival    Boolean   @default(false)
+  early_departure Boolean   @default(false)
+  regularized     Boolean   @default(false)
+  location_lat    Float?
+  location_lng    Float?
+  ip_address      String?
+  ot_status       String?
+  ot_type         String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  employee employees @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([employee_id, date])
+  @@index([employee_id])
+  @@index([date])
+}
+
+model regularization_requests {
+  id                 String    @id @default(uuid())
+  employee_id        String
+  date               DateTime
+  requested_checkin  DateTime?
+  requested_checkout DateTime?
+  reason             String
+  document_url       String?
+  status             String    @default("pending")
+  approved_by        String?
+  approved_at        DateTime?
+  rejection_reason   String?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  @@index([employee_id])
+}
+
+model compoff_records {
+  id          String    @id @default(uuid())
+  employee_id String
+  worked_date DateTime
+  earned_days Float
+  expiry_date DateTime
+  status      String    @default("active")
+  granted_by  String?
+  created_at  DateTime  @default(now())
+
+  @@index([employee_id])
+}
+
+
+
+
+
+model leave_types {
+  id                    String    @id @default(uuid())
+  company_id            String
+  name                  String
+  code                  String
+  is_paid               Boolean   @default(true)
+  accrual_type          String    @default("monthly")
+  accrual_days          Float     @default(1)
+  accrual_from          String    @default("joining")
+  prorate_first_month   Boolean   @default(true)
+  max_balance           Float?
+  carry_forward         Boolean   @default(false)
+  max_carry_forward     Float?
+  encashable            Boolean   @default(false)
+  min_days_per_app      Float     @default(0.5)
+  max_days_per_app      Float?
+  advance_notice_days   Int       @default(0)
+  allow_past_date       Boolean   @default(false)
+  gap_between_apps_days Int       @default(0)
+  half_day_allowed      Boolean   @default(true)
+  document_required     String    @default("never")
+  document_after_days   Int?
+  gender_specific       String    @default("all")
+  min_service_months    Int       @default(0)
+  is_active             Boolean   @default(true)
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+  deleted_at            DateTime?
+
+  leave_balances     leave_balances[]
+  leave_applications leave_applications[]
+
+  @@index([company_id])
+}
+
+model leave_balances {
+  id            String    @id @default(uuid())
+  employee_id   String
+  leave_type_id String
+  year          Int
+  opening       Float     @default(0)
+  accrued       Float     @default(0)
+  used          Float     @default(0)
+  pending       Float     @default(0)
+  lapsed        Float     @default(0)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  employee   employees   @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  leave_type leave_types @relation(fields: [leave_type_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([employee_id, leave_type_id, year])
+  @@index([employee_id])
+}
+
+model leave_applications {
+  id               String    @id @default(uuid())
+  employee_id      String
+  leave_type_id    String
+  from_date        DateTime
+  to_date          DateTime
+  days             Float
+  half_day         Boolean   @default(false)
+  half_day_session String?
+  reason           String?
+  document_url     String?
+  status           String    @default("pending")
+  approved_by      String?
+  approved_at      DateTime?
+  rejection_reason String?
+  cancelled_at     DateTime?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  employee   employees   @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  leave_type leave_types @relation(fields: [leave_type_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([employee_id])
+  @@index([status])
+}
+
+model leave_encashments {
+  id            String    @id @default(uuid())
+  employee_id   String
+  leave_type_id String
+  days          Float
+  per_day_value Int
+  total_amount  Int
+  status        String    @default("pending")
+  add_to_payroll Boolean  @default(true)
+  payslip_id    String?
+  approved_by   String?
+  approved_at   DateTime?
+  created_at    DateTime  @default(now())
+}
+
+
+
+
+
+model salary_structures {
+  id         String    @id @default(uuid())
+  company_id String
+  name       String
+  components String
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+
+  employee_salaries employee_salaries[]
+
+  @@index([company_id])
+}
+
+model employee_salaries {
+  id                  String    @id @default(uuid())
+  employee_id         String
+  salary_structure_id String
+  ctc_annual          Int
+  basic               Int
+  hra                 Int
+  da                  Int?
+  ta                  Int?
+  special_allowance   Int?
+  other_earnings      String?
+  gross_monthly       Int
+  pf_employee         Int?
+  pf_employer         Int?
+  esi_employee        Int?
+  esi_employer        Int?
+  pt_monthly          Int?
+  tds_monthly         Int?
+  net_monthly         Int
+  effective_from      DateTime
+  effective_to        DateTime?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  employee         employees         @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  salary_structure salary_structures @relation(fields: [salary_structure_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([employee_id])
+}
+
+model payroll_runs {
+  id               String    @id @default(uuid())
+  company_id       String
+  month            Int
+  year             Int
+  total_employees  Int       @default(0)
+  total_gross      Int       @default(0)
+  total_deductions Int       @default(0)
+  total_net        Int       @default(0)
+  status           String    @default("draft")
+  processed_at     DateTime?
+  locked_at        DateTime?
+  processed_by     String?
+  locked_by        String?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  payslips payslips[]
+
+  @@unique([company_id, month, year])
+  @@index([company_id])
+}
+
+model payslips {
+  id                String    @id @default(uuid())
+  payroll_run_id    String
+  employee_id       String
+  month             Int
+  year              Int
+  working_days      Int
+  present_days      Float
+  lop_days          Float     @default(0)
+  paid_days         Float
+  gross             Int
+  basic             Int
+  hra               Int
+  da                Int       @default(0)
+  ta                Int       @default(0)
+  special_allowance Int       @default(0)
+  other_earnings    Int       @default(0)
+  pf_employee       Int       @default(0)
+  pf_employer       Int       @default(0)
+  esi_employee      Int       @default(0)
+  esi_employer      Int       @default(0)
+  pt                Int       @default(0)
+  tds               Int       @default(0)
+  lwf_employee      Int       @default(0)
+  lwf_employer      Int       @default(0)
+  other_deductions  Int       @default(0)
+  total_deductions  Int
+  net_salary        Int
+  pdf_url           String?
+  is_published      Boolean   @default(false)
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  payroll_run payroll_runs @relation(fields: [payroll_run_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  employee    employees    @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([payroll_run_id, employee_id])
+  @@index([employee_id])
+}
+
+model payroll_bonuses {
+  id             String    @id @default(uuid())
+  payroll_run_id String
+  employee_id    String
+  bonus_type     String
+  amount         Int
+  taxable        Boolean   @default(true)
+  notes          String?
+  created_by     String?
+  created_at     DateTime  @default(now())
+}
+
+model employee_transfers {
+  id               String    @id @default(uuid())
+  employee_id      String
+  type             String
+  from_department  String?
+  to_department    String?
+  from_branch      String?
+  to_branch        String?
+  from_designation String?
+  to_designation   String?
+  from_manager     String?
+  to_manager       String?
+  effective_date   DateTime
+  reason           String?
+  letter_url       String?
+  created_by       String?
+  created_at       DateTime  @default(now())
+
+  employee employees @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([employee_id])
+}
+
+model employee_exits {
+  id                  String    @id @default(uuid())
+  employee_id         String
+  separation_type     String
+  last_working_date   DateTime?
+  notice_period_days  Int?
+  notice_served       String?
+  reason              String?
+  exit_interview_date DateTime?
+  status              String    @default("initiated")
+  fnf_processed       Boolean   @default(false)
+  created_by          String?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  employee        employees             @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  checklist_items exit_checklist_items[]
+
+  @@index([employee_id])
+}
+
+model exit_checklist_items {
+  id           String    @id @default(uuid())
+  exit_id      String
+  item_name    String
+  completed    Boolean   @default(false)
+  completed_by String?
+  completed_at DateTime?
+  notes        String?
+
+  exit employee_exits @relation(fields: [exit_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+model fnf_settlements {
+  id               String    @id @default(uuid())
+  employee_id      String
+  exit_id          String
+  salary_days      Int       @default(0)
+  salary_amount    Int       @default(0)
+  leave_encashment Int       @default(0)
+  gratuity         Int       @default(0)
+  reimbursements   Int       @default(0)
+  notice_recovery  Int       @default(0)
+  loan_recovery    Int       @default(0)
+  total_payable    Int
+  payslip_id       String?
+  processed_by     String?
+  processed_at     DateTime?
+  created_at       DateTime  @default(now())
+}
+
+
+
+
+
+model tds_declarations {
+  id                String    @id @default(uuid())
+  employee_id       String
+  financial_year    String
+  regime            String    @default("new")
+  hra_rent          Int       @default(0)
+  landlord_pan      String?
+  section_80c       Int       @default(0)
+  section_80d       Int       @default(0)
+  section_80g       Int       @default(0)
+  home_loan_interest Int      @default(0)
+  lta               Int       @default(0)
+  other_deductions  String?
+  estimated_tax     Int       @default(0)
+  monthly_tds       Int       @default(0)
+  submitted_at      DateTime?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  @@index([employee_id])
+}
+
+model compliance_filings {
+  id             String    @id @default(uuid())
+  company_id     String
+  filing_type    String
+  period_month   Int?
+  period_year    Int
+  due_date       DateTime?
+  status         String    @default("pending")
+  ack_number     String?
+  challan_number String?
+  filed_at       DateTime?
+  filed_by       String?
+  file_url       String?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  @@index([company_id])
+}
+
+model compliance_files {
+  id           String    @id @default(uuid())
+  company_id   String
+  filing_id    String?
+  file_type    String
+  file_url     String
+  file_name    String
+  period_month Int?
+  period_year  Int?
+  created_at   DateTime  @default(now())
+}
+
+model pt_slabs {
+  id                String    @id @default(uuid())
+  state             String
+  min_salary        Int
+  max_salary        Int?
+  pt_amount         Int
+  applicable_months String?
+  created_at        DateTime  @default(now())
+}
+
+model lwf_rules {
+  id                    String    @id @default(uuid())
+  state                 String    @unique
+  employee_contribution Int
+  employer_contribution Int
+  frequency             String    @default("half_yearly")
+  deduction_months      String    @default("[6,12]")
+  created_at            DateTime  @default(now())
+}
+
+
+
+
+
+model job_requisitions {
+  id              String    @id @default(uuid())
+  company_id      String
+  job_title       String
+  department_id   String?
+  designation_id  String?
+  positions       Int       @default(1)
+  employment_type String?
+  experience_min  Int?
+  experience_max  Int?
+  salary_min      Int?
+  salary_max      Int?
+  job_description String?
+  skills_required String    @default("[]")
+  branch_id       String?
+  target_date     DateTime?
+  priority        String    @default("medium")
+  status          String    @default("pending_approval")
+  filled_count    Int       @default(0)
+  approved_by     String?
+  created_by      String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  deleted_at      DateTime?
+
+  job_postings job_postings[]
+
+  @@index([company_id])
+}
+
+model job_postings {
+  id               String    @id @default(uuid())
+  requisition_id   String
+  company_id       String
+  post_internal    Boolean   @default(false)
+  post_career_page Boolean   @default(false)
+  post_naukri      Boolean   @default(false)
+  post_linkedin    Boolean   @default(false)
+  post_indeed      Boolean   @default(false)
+  deadline         DateTime?
+  status           String    @default("active")
+  external_ids     String?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  requisition job_requisitions @relation(fields: [requisition_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  candidates  candidates[]
+
+  @@index([company_id])
+}
+
+model candidates {
+  id               String    @id @default(uuid())
+  company_id       String
+  job_id           String
+  first_name       String
+  last_name        String?
+  email            String?
+  phone            String?
+  resume_url       String?
+  experience_years Float?
+  current_ctc      Int?
+  expected_ctc     Int?
+  notice_period    Int?
+  source           String    @default("other")
+  source_detail    String?
+  stage            String    @default("applied")
+  is_duplicate     Boolean   @default(false)
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+  deleted_at       DateTime?
+
+  job           job_postings            @relation(fields: [job_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  stage_history candidate_stage_history[]
+  interviews    interviews[]
+  offers        offers[]
+
+  @@index([company_id])
+}
+
+model candidate_stage_history {
+  id           String    @id @default(uuid())
+  candidate_id String
+  from_stage   String?
+  to_stage     String
+  changed_by   String?
+  notes        String?
+  changed_at   DateTime  @default(now())
+
+  candidate candidates @relation(fields: [candidate_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+model interviews {
+  id              String    @id @default(uuid())
+  candidate_id    String
+  round_number    Int       @default(1)
+  interview_type  String    @default("in_person")
+  scheduled_at    DateTime
+  duration_mins   Int       @default(60)
+  interviewer_ids String    @default("[]")
+  venue           String?
+  meeting_link    String?
+  status          String    @default("scheduled")
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  candidate candidates         @relation(fields: [candidate_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  feedback  interview_feedback[]
+}
+
+model interview_feedback {
+  id             String    @id @default(uuid())
+  interview_id   String
+  interviewer_id String
+  skill_ratings  String?
+  overall_rating Int?
+  recommendation String?
+  comments       String?
+  submitted_at   DateTime  @default(now())
+
+  interview interviews @relation(fields: [interview_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+model offers {
+  id           String    @id @default(uuid())
+  candidate_id String
+  offered_ctc  Int?
+  joining_date DateTime?
+  letter_url   String?
+  status       String    @default("generated")
+  accepted_at  DateTime?
+  created_by   String?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  candidate candidates @relation(fields: [candidate_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+
+
+
+
+model appraisal_cycles {
+  id                   String    @id @default(uuid())
+  company_id           String
+  name                 String
+  period_start         DateTime
+  period_end           DateTime
+  goal_setting_end     DateTime?
+  self_appraisal_start DateTime?
+  self_appraisal_end   DateTime?
+  manager_review_end   DateTime?
+  status               String    @default("upcoming")
+  rating_scale         Int       @default(5)
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  goals      performance_goals[]
+  appraisals appraisals[]
+}
+
+model performance_goals {
+  id          String    @id @default(uuid())
+  employee_id String
+  cycle_id    String
+  title       String
+  description String?
+  category    String    @default("kra")
+  target      String?
+  weightage   Float
+  target_date DateTime?
+  achievement Float?
+  status      String    @default("draft")
+  approved_by String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  cycle appraisal_cycles @relation(fields: [cycle_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+model appraisals {
+  id                    String    @id @default(uuid())
+  employee_id           String
+  cycle_id              String
+  type                  String
+  goal_ratings          String?
+  overall_rating        Float?
+  comments              String?
+  promotion_recommended Boolean   @default(false)
+  increment_recommended Int?
+  status                String    @default("draft")
+  submitted_at          DateTime?
+  submitted_by          String?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  cycle appraisal_cycles @relation(fields: [cycle_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+
+
+
+
+model trainings {
+  id                  String    @id @default(uuid())
+  company_id          String
+  name                String
+  type                String    @default("internal")
+  trainer_name        String?
+  trainer_type        String    @default("external")
+  trainer_employee_id String?
+  start_date          DateTime
+  end_date            DateTime?
+  duration_hours      Float?
+  venue               String?
+  platform            String?
+  max_participants    Int?
+  target_dept_id      String?
+  status              String    @default("upcoming")
+  cost                Int?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+  deleted_at          DateTime?
+
+  nominations  training_nominations[]
+  attendance   training_attendance[]
+  feedback     training_feedback[]
+  certificates training_certificates[]
+}
+
+model training_nominations {
+  id           String    @id @default(uuid())
+  training_id  String
+  employee_id  String
+  nominated_by String?
+  status       String    @default("nominated")
+  created_at   DateTime  @default(now())
+
+  training trainings @relation(fields: [training_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+model training_attendance {
+  id             String    @id @default(uuid())
+  training_id    String
+  employee_id    String
+  attended       Boolean   @default(false)
+  hours_attended Float?
+  marked_by      String?
+  marked_at      DateTime?
+
+  training trainings @relation(fields: [training_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+model training_feedback {
+  id             String    @id @default(uuid())
+  training_id    String
+  employee_id    String
+  content_rating Int?
+  trainer_rating Int?
+  venue_rating   Int?
+  overall_rating Int?
+  comments       String?
+  submitted_at   DateTime  @default(now())
+
+  training trainings @relation(fields: [training_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+model training_certificates {
+  id              String    @id @default(uuid())
+  training_id     String
+  employee_id     String
+  issued_date     DateTime  @default(now())
+  certificate_url String?
+  created_at      DateTime  @default(now())
+
+  training trainings @relation(fields: [training_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+
+
+
+
+model assets {
+  id              String    @id @default(uuid())
+  company_id      String
+  name            String
+  category        String
+  brand           String?
+  model           String?
+  serial_number   String?
+  purchase_date   DateTime?
+  purchase_price  Int?
+  vendor_name     String?
+  warranty_expiry DateTime?
+  amc_expiry      DateTime?
+  branch_id       String?
+  status          String    @default("available")
+  condition       String    @default("good")
+  photo_url       String?
+  notes           String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  deleted_at      DateTime?
+
+  allocations asset_allocations[]
+}
+
+model asset_allocations {
+  id                    String    @id @default(uuid())
+  asset_id              String
+  employee_id           String
+  allocated_date        DateTime
+  condition_at_alloc    String?
+  allocation_letter_url String?
+  returned_at           DateTime?
+  condition_at_return   String?
+  damage_notes          String?
+  deduct_from_fnf       Boolean   @default(false)
+  deduction_amount      Int?
+  allocated_by          String?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  asset assets @relation(fields: [asset_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+
+
+
+
+model expense_claims {
+  id                   String    @id @default(uuid())
+  employee_id          String
+  claim_date           DateTime  @default(now())
+  total_amount         Int
+  approved_amount      Int?
+  status               String    @default("pending")
+  approved_by          String?
+  approved_at          DateTime?
+  reimburse_in_payroll Boolean   @default(true)
+  payslip_id           String?
+  reimbursed_at        DateTime?
+  notes                String?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  items expense_items[]
+}
+
+model expense_items {
+  id               String    @id @default(uuid())
+  claim_id         String
+  category         String
+  description      String?
+  expense_date     DateTime
+  amount           Int
+  approved_amount  Int?
+  receipt_url      String?
+  is_approved      Boolean?
+  rejection_reason String?
+  created_at       DateTime  @default(now())
+
+  claim expense_claims @relation(fields: [claim_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+model expense_policies {
+  id                     String    @id @default(uuid())
+  company_id             String
+  category               String
+  max_amount             Int?
+  receipt_required_above Int?
+  applicable_grades      String    @default("[]")
+  is_active              Boolean   @default(true)
+  created_at             DateTime  @default(now())
+}
+
+
+
+
+
+model automation_tasks {
+  id            String    @id @default(uuid())
+  company_id    String
+  task_type     String
+  status        String    @default("running")
+  started_at    DateTime  @default(now())
+  completed_at  DateTime?
+  triggered_by  String?
+  input_data    String?
+  result_data   String?
+  error_message String?
+  captcha_image String?
+  retry_count   Int       @default(0)
+  created_at    DateTime  @default(now())
+
+  logs        automation_logs[]
+  screenshots automation_screenshots[]
+
+  @@index([company_id])
+}
+
+model automation_logs {
+  id               String    @id @default(uuid())
+  task_id          String
+  step_number      Int
+  step_description String
+  status           String    @default("success")
+  timestamp        DateTime  @default(now())
+  error            String?
+
+  task automation_tasks @relation(fields: [task_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+model automation_screenshots {
+  id             String    @id @default(uuid())
+  task_id        String
+  screenshot_url String
+  captured_at    DateTime  @default(now())
+  purpose        String    @default("progress")
+
+  task automation_tasks @relation(fields: [task_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+model automation_credentials {
+  id                 String    @id @default(uuid())
+  company_id         String
+  portal             String
+  username           String
+  password_encrypted String
+  iv                 String
+  additional_data    String?
+  last_verified_at   DateTime?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  @@unique([company_id, portal])
+}
+
+model automation_schedules {
+  id         String    @id @default(uuid())
+  company_id String
+  task_type  String
+  frequency  String    @default("manual")
+  run_on_day Int?
+  is_active  Boolean   @default(false)
+  created_at DateTime  @default(now())
+}
+
+model portal_urls {
+  id         String    @id @default(uuid())
+  portal     String
+  state      String?
+  url        String
+  is_active  Boolean   @default(true)
+  updated_at DateTime  @updatedAt
+
+  @@unique([portal, state])
+}
+
+
+
+
+
+model notification_config {
+  id              String    @id @default(uuid())
+  company_id      String    @unique
+  email_provider  String    @default("smtp")
+  email_host      String?
+  email_port      Int?
+  email_user      String?
+  email_pass_enc  String?
+  email_from      String?
+  email_ssl       Boolean   @default(false)
+  email_verified  Boolean   @default(false)
+  sms_provider    String    @default("none")
+  sms_api_key_enc String?
+  sms_sender_id   String?
+  wa_provider     String    @default("none")
+  wa_api_key_enc  String?
+  wa_phone_id     String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+}
+
+model accounting_integrations {
+  id               String    @id @default(uuid())
+  company_id       String    @unique
+  software         String    @default("generic")
+  account_mappings String    @default("{}")
+  auto_export      Boolean   @default(false)
+  export_day       Int?
+  credentials_enc  String?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+}
+
+
+
+
+
+model backup_config {
+  id                       String    @id @default(uuid())
+  company_id               String    @unique
+  enabled                  Boolean   @default(false)
+  provider                 String    @default("none")
+  schedule                 String    @default("daily")
+  schedule_time            String    @default("02:00")  
+  retention_days           Int       @default(30)
+  include_files            Boolean   @default(false)    
+  
+  gdrive_client_id_enc     String?
+  gdrive_client_secret_enc String?
+  gdrive_refresh_token_enc String?
+  gdrive_folder_id         String?
+  gdrive_folder_name       String?
+  
+  onedrive_client_id_enc   String?
+  onedrive_tenant_id       String?
+  onedrive_client_secret_enc String?
+  onedrive_folder_path     String?
+  
+  last_backup_at           DateTime?
+  last_backup_status       String?   
+  last_backup_size_bytes   BigInt?
+  last_backup_file_url     String?
+  last_error               String?
+  created_at               DateTime  @default(now())
+  updated_at               DateTime  @updatedAt
+}
+
+model tenant_db_config {
+  id                String    @id @default(uuid())
+  company_id        String    @unique
+  db_mode           String    @default("cloud")       
+  local_db_type     String?                           
+  local_db_host     String?                           
+  local_db_port     Int?
+  local_db_name     String?
+  local_db_user     String?
+  local_db_pass     String?                           
+  cloud_db_url      String?                           
+  sync_interval_min Int       @default(5)
+  sync_last_at      DateTime?
+  sync_status       String?                           
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+}
+
+model tenant_branding {
+  id                String    @id @default(uuid())
+  company_id        String    @unique
+  logo_url          String?
+  primary_color     String    @default("#1E40AF")
+  secondary_color   String    @default("#7C3AED")
+  login_bg_url      String?
+  login_welcome_msg String?
+  app_title         String?
+  favicon_url       String?
+  footer_text       String?
+  email_header_logo String?
+  show_powered_by   Boolean   @default(true)
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+}
+
+model audit_logs {
+  id          String    @id @default(uuid())
+  company_id  String?
+  user_id     String?
+  module      String
+  action      String
+  record_id   String?
+  record_type String?
+  old_values  String?
+  new_values  String?
+  ip_address  String?
+  created_at  DateTime  @default(now())
+
+  @@index([company_id])
+  @@index([created_at])
+}
+
+model sync_conflict_logs {
+  id              String    @id @default(uuid())
+  table_name      String
+  record_id       String
+  primary_value   String
+  secondary_value String
+  resolved_at     DateTime  @default(now())
+  created_at      DateTime  @default(now())
+}
+
+model system_logs {
+  id          String    @id @default(uuid())
+  event_type  String
+  description String?
+  metadata    String?
+  created_at  DateTime  @default(now())
+}
+
+model temp_exports {
+  id         String    @id @default(uuid())
+  company_id String
+  file_url   String
+  file_name  String
+  format     String
+  expires_at DateTime
+  created_by String?
+  created_at DateTime  @default(now())
+}
+
+
+
+
+
+model announcements {
+  id              String    @id @default(uuid())
+  company_id      String
+  title           String
+  body            String
+  attachment_url  String?
+  audience_type   String    @default("all")
+  audience_ids    String    @default("[]")
+  priority        String    @default("normal")
+  is_pinned       Boolean   @default(false)
+  type            String    @default("manual")
+  expiry_date     DateTime?
+  notify_email    Boolean   @default(false)
+  notify_whatsapp Boolean   @default(false)
+  notify_inapp    Boolean   @default(true)
+  created_by      String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  deleted_at      DateTime?
+
+  reads announcement_reads[]
+}
+
+model announcement_reads {
+  id              String    @id @default(uuid())
+  announcement_id String
+  user_id         String
+  read_at         DateTime  @default(now())
+
+  announcement announcements @relation(fields: [announcement_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([announcement_id, user_id])
+}
+
+model surveys {
+  id            String    @id @default(uuid())
+  company_id    String
+  title         String
+  description   String?
+  is_anonymous  Boolean   @default(false)
+  audience_type String    @default("all")
+  audience_ids  String    @default("[]")
+  deadline      DateTime?
+  status        String    @default("draft")
+  created_by    String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  questions survey_questions[]
+  responses survey_responses[]
+}
+
+model survey_questions {
+  id            String    @id @default(uuid())
+  survey_id     String
+  question_text String
+  question_type String    @default("text")
+  options       String?
+  is_required   Boolean   @default(true)
+  sort_order    Int       @default(0)
+  created_at    DateTime  @default(now())
+
+  survey surveys @relation(fields: [survey_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+model survey_responses {
+  id           String    @id @default(uuid())
+  survey_id    String
+  employee_id  String?
+  answers      String
+  submitted_at DateTime  @default(now())
+
+  survey surveys @relation(fields: [survey_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+
+
+
+
+model employee_addresses {
+  id           String    @id @default(uuid())
+  employee_id  String
+  address_type String    @default("local")
+  house_no     String?
+  street       String?
+  village_city String?
+  district     String?
+  state        String?
+  country      String    @default("India")
+  pincode      String?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  deleted_at   DateTime?
+
+  employee employees @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([employee_id])
+}
+
+model employee_education {
+  id               String    @id @default(uuid())
+  employee_id      String
+  edu_level        String
+  course_type      String?
+  stream_subject   String?
+  course_name      String?
+  institution_name String?
+  board_university String?
+  passing_year     Int?
+  percentage       Float?
+  grade            String?
+  roll_number      String?
+  certificate_url  String?
+  is_current       Boolean   @default(false)
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+  deleted_at       DateTime?
+
+  employee employees @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([employee_id])
+}
+
+model employee_family {
+  id                 String    @id @default(uuid())
+  employee_id        String
+  aadhaar_number     String?
+  name               String
+  date_of_birth      DateTime?
+  age                Int?
+  relationship       String
+  gender             String?
+  is_dependent       Boolean   @default(false)
+  is_nominee         Boolean   @default(false)
+  nominee_percentage Float     @default(0)
+  nominee_for        String?
+  is_minor           Boolean   @default(false)
+  guardian_name      String?
+  guardian_relation  String?
+  disability_status  Boolean   @default(false)
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+  deleted_at         DateTime?
+
+  employee employees @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([employee_id])
+}
+
+model employee_prev_employment {
+  id                    String    @id @default(uuid())
+  employee_id           String
+  is_fresher            Boolean   @default(false)
+  organization_name     String?
+  designation           String?
+  department            String?
+  joining_date          DateTime?
+  leaving_date          DateTime?
+  last_ctc              BigInt?
+  reason_for_leaving    String?
+  reference_name        String?
+  reference_phone       String?
+  experience_letter_url String?
+  relieving_letter_url  String?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+  deleted_at            DateTime?
+
+  employee employees @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([employee_id])
+}
+
+model employee_onboarding_draft {
+  id              String    @id @default(uuid())
+  company_id      String
+  created_by      String
+  aadhaar_hash    String?
+  employee_id     String?
+  current_step    Int       @default(1)
+  completed_steps String    @default("[]")
+  step1_data      String?
+  step2_data      String?
+  step3_data      String?
+  step4_data      String?
+  step5_data      String?
+  step6_data      String?
+  step7_data      String?
+  step8_data      String?
+  is_complete     Boolean   @default(false)
+  last_saved_at   DateTime  @default(now())
+  expires_at      DateTime
+  created_at      DateTime  @default(now())
+
+  employee employees? @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([company_id])
+  @@index([aadhaar_hash])
+}

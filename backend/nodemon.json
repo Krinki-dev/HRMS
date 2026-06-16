@@ -1,0 +1,21 @@
+{
+  "watch": [
+    "server.js",
+    "modules",
+    "shared",
+    "prisma"
+  ],
+  "ignore": [
+    "node_modules",
+    "uploads",
+    "upload",
+    "logs",
+    "shared/generated",
+    "shared/generated/**",
+    "*.log",
+    "prisma/migrations",
+    "*.sqlite"
+  ],
+  "delay": "250",
+  "ext": "js,json"
+}

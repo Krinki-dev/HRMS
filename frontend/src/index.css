@@ -1,0 +1,64 @@
+:root {
+  --bg-primary: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-surface-soft: rgba(255, 255, 255, 0.88);
+  --bg-frost: rgba(255, 255, 255, 0.78);
+  --text-primary: #111827;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --border: rgba(148, 163, 184, 0.24);
+  --border-strong: #E2E8F0;
+  --accent: #2563EB;
+  --accent-soft: #DBEAFE;
+  --success: #16A34A;
+  --error: #DC2626;
+  --warning: #F59E0B;
+  --shadow-soft: 0 16px 40px rgba(15, 23, 42, 0.08);
+  --radius-card: 24px;
+  --radius-input: 16px;
+  --radius-button: 16px;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-soft);
+  border-color: var(--accent) !important;
+}

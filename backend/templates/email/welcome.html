@@ -1,0 +1,18 @@
+﻿<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="font-family: Arial, sans-serif; background: #F9FAFB; padding: 20px;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; padding: 30px;">
+    <h2 style="color: #1E40AF;">Welcome to Syntern HRMS!</h2>
+    <p>Hi {{name}},</p>
+    <p>Your account has been created. Use the credentials below to log in for the first time.</p>
+    <div style="background: #EFF6FF; padding: 15px; border-radius: 6px; margin: 20px 0;">
+      <p><strong>Email:</strong> {{adminEmail}}</p>
+      <p><strong>Temporary Password:</strong> <code style="font-size: 18px;">{{tempPassword}}</code></p>
+    </div>
+    <p>You'll be asked to set a new password on first login.</p>
+    <a href="{{loginUrl}}" style="display: inline-block; background: #1E40AF; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none;">Login now</a>
+  </div>
+</body>
+</html>
+
