@@ -343,7 +343,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "D:\\HRMS_GIT\\backend\\shared\\generated\\central-client",
+      "value": "/workspaces/HRMS/backend/shared/generated/central-client",
       "fromEnvVar": null
     },
     "config": {
@@ -352,16 +352,16 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "windows",
+        "value": "debian-openssl-1.1.x",
         "native": true
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "D:\\HRMS_GIT\\backend\\prisma\\central.prisma",
+    "sourceFilePath": "/workspaces/HRMS/backend/prisma/central.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": "../../../.env",
+    "rootEnvPath": null,
     "schemaEnvPath": "../../../.env"
   },
   "relativePath": "../../../prisma",
@@ -420,8 +420,8 @@ exports.PrismaClient = PrismaClient
 Object.assign(exports, Prisma)
 
 // file annotations for bundling tools to include these files
-path.join(__dirname, "query_engine-windows.dll.node");
-path.join(process.cwd(), "shared/generated/central-client/query_engine-windows.dll.node")
+path.join(__dirname, "libquery_engine-debian-openssl-1.1.x.so.node");
+path.join(process.cwd(), "shared/generated/central-client/libquery_engine-debian-openssl-1.1.x.so.node")
 // file annotations for bundling tools to include these files
 path.join(__dirname, "schema.prisma");
 path.join(process.cwd(), "shared/generated/central-client/schema.prisma")

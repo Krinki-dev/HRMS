@@ -337,6 +337,7 @@ export namespace Prisma {
    * Utility Types
    */
 
+
   export import Bytes = runtime.Bytes
   export import JsonObject = runtime.JsonObject
   export import JsonArray = runtime.JsonArray
@@ -436,6 +437,7 @@ export namespace Prisma {
       [P in K]: T[P];
   };
 
+
   export type Enumerable<T> = T | Array<T>;
 
   export type RequiredKeys<T> = {
@@ -491,6 +493,7 @@ export namespace Prisma {
       (Without<T, U> & U) | (Without<U, T> & T)
     : U : T
 
+
   /**
    * Is T a Record?
    */
@@ -505,6 +508,7 @@ export namespace Prisma {
   : T extends object
   ? True
   : False
+
 
   /**
    * If it's T[], return T
@@ -646,6 +650,8 @@ export namespace Prisma {
 
   export const type: unique symbol;
 
+
+
   /**
    * Used by group by
    */
@@ -693,6 +699,7 @@ export namespace Prisma {
    * Exclude all keys with underscores
    */
   type ExcludeUnderscoreKeys<T extends string> = T extends `_${string}` ? never : T
+
 
   export type FieldRef<Model, FieldType> = runtime.FieldRef<Model, FieldType>
 
@@ -1536,6 +1543,7 @@ export namespace Prisma {
   }
   /* End Types for Logging */
 
+
   export type PrismaAction =
     | 'findUnique'
     | 'findUniqueOrThrow'
@@ -2035,6 +2043,7 @@ export namespace Prisma {
         : GetScalarType<T[P], AggregateTenants[P]>
       : GetScalarType<T[P], AggregateTenants[P]>
   }
+
 
 
 
@@ -3547,6 +3556,7 @@ export namespace Prisma {
 
 
 
+
   export type tenant_modulesGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: tenant_modulesWhereInput
     orderBy?: tenant_modulesOrderByWithAggregationInput | tenant_modulesOrderByWithAggregationInput[]
@@ -4643,6 +4653,7 @@ export namespace Prisma {
         : GetScalarType<T[P], AggregateCentral_user_index[P]>
       : GetScalarType<T[P], AggregateCentral_user_index[P]>
   }
+
 
 
 
@@ -5782,6 +5793,7 @@ export namespace Prisma {
         : GetScalarType<T[P], AggregateTenant_branch_links[P]>
       : GetScalarType<T[P], AggregateTenant_branch_links[P]>
   }
+
 
 
 
@@ -7010,6 +7022,7 @@ export namespace Prisma {
         : GetScalarType<T[P], AggregateCentral_kyc_records[P]>
       : GetScalarType<T[P], AggregateCentral_kyc_records[P]>
   }
+
 
 
 
@@ -8271,6 +8284,7 @@ export namespace Prisma {
 
 
 
+
   export type central_gst_recordsGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: central_gst_recordsWhereInput
     orderBy?: central_gst_recordsOrderByWithAggregationInput | central_gst_recordsOrderByWithAggregationInput[]
@@ -9424,6 +9438,7 @@ export namespace Prisma {
 
 
 
+
   export type platform_settingsGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: platform_settingsWhereInput
     orderBy?: platform_settingsOrderByWithAggregationInput | platform_settingsOrderByWithAggregationInput[]
@@ -10535,6 +10550,7 @@ export namespace Prisma {
         : GetScalarType<T[P], AggregateTenant_pricing_configs[P]>
       : GetScalarType<T[P], AggregateTenant_pricing_configs[P]>
   }
+
 
 
 
@@ -11816,6 +11832,7 @@ export namespace Prisma {
         : GetScalarType<T[P], AggregateInvoices[P]>
       : GetScalarType<T[P], AggregateInvoices[P]>
   }
+
 
 
 

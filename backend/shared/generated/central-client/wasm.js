@@ -342,7 +342,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "D:\\HRMS_GIT\\backend\\shared\\generated\\central-client",
+      "value": "/workspaces/HRMS/backend/shared/generated/central-client",
       "fromEnvVar": null
     },
     "config": {
@@ -351,16 +351,16 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "windows",
+        "value": "debian-openssl-1.1.x",
         "native": true
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "D:\\HRMS_GIT\\backend\\prisma\\central.prisma",
+    "sourceFilePath": "/workspaces/HRMS/backend/prisma/central.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": "../../../.env",
+    "rootEnvPath": null,
     "schemaEnvPath": "../../../.env"
   },
   "relativePath": "../../../prisma",
