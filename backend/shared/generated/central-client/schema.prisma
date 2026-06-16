@@ -1,0 +1,240 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../shared/generated/central-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("CENTRAL_DATABASE_URL")
+}
+
+model tenants {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  legal_name        String?
+  subdomain         String    @unique
+  custom_domain     String?   @unique
+  logo_url          String?
+  primary_color     String?   @default("#2563eb")
+  background_color  String?   @default("#f8fafc")
+  background_url    String?
+  sitemap_url       String?
+  plan              String    @default("free")
+  plan_expires_at   DateTime? @db.Timestamptz
+  max_employees     Int       @default(50)
+  db_mode           String    @default("cloud")
+  db_url            String?
+  schema_name       String?
+  local_db_type     String?
+  local_db_host     String?
+  local_db_port     Int?      @default(5432)
+  local_db_name     String?
+  local_db_user     String?
+  local_db_pass     String?
+  sync_interval_min Int?      @default(60)
+  gstin             String?
+  pan               String?
+  city              String?
+  state             String?
+  address           String?
+  pincode           String?
+  gst_status        String?
+  gst_reg_date      String?
+  taxpayer_type     String?
+  constitution      String?
+  e_invoice_enabled Boolean?  @default(false)
+  business_nature   Json?     @default("[]")
+  admin_name        String?
+  admin_email       String?
+  admin_phone       String?
+  is_active         Boolean   @default(true)
+  is_setup_complete Boolean   @default(false)
+  suspended_at      DateTime? @db.Timestamptz
+  suspension_reason String?
+  payout_config_enc String?
+  created_at        DateTime  @default(now()) @db.Timestamptz
+  updated_at        DateTime  @default(now()) @db.Timestamptz
+  deleted_at        DateTime? @db.Timestamptz
+
+  tenant_modules         tenant_modules[]
+  central_user_index     central_user_index[]
+  tenant_branch_links    tenant_branch_links[]
+  tenant_pricing_configs tenant_pricing_configs?
+  invoices               invoices[]
+}
+
+model tenant_modules {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id          String    @db.Uuid
+  module_name        String
+  is_active          Boolean   @default(true)
+  custom_price_paise Int?
+  enabled_at         DateTime? @default(now()) @db.Timestamptz
+  disabled_at        DateTime? @db.Timestamptz
+
+  tenant tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+
+  @@unique([tenant_id, module_name], name: "uq_tenant_module")
+  @@index([tenant_id])
+}
+
+model central_user_index {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email             String
+  subdomain         String
+  company_id        String   @db.Uuid
+  user_id           String?  @db.Uuid
+  is_platform_admin Boolean  @default(false)
+  is_active         Boolean  @default(true)
+  created_at        DateTime @default(now()) @db.Timestamptz
+  updated_at        DateTime @default(now()) @db.Timestamptz
+
+  tenant tenants @relation(fields: [company_id], references: [id], onDelete: Cascade)
+
+  @@unique([email, company_id], name: "uq_email_company")
+  @@index([email])
+  @@index([company_id])
+  @@index([subdomain])
+}
+
+model tenant_branch_links {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id    String    @db.Uuid
+  gstin        String    @unique
+  pan          String
+  branch_name  String?
+  branch_no    String?
+  address      String?
+  city         String?
+  state        String?
+  pincode      String?
+  status       String    @default("pending")
+  requested_at DateTime  @default(now()) @db.Timestamptz
+  approved_at  DateTime? @db.Timestamptz
+  note         String?
+
+  tenant tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+
+  @@index([tenant_id])
+}
+
+model central_kyc_records {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aadhaar_hash     String    @unique
+  method           String
+  kyc_timestamp    DateTime? @db.Timestamptz
+  name             String?
+  dob              String?
+  gender           String?
+  careof           String?
+  mobile_encrypted String?
+  email_encrypted  String?
+  house            String?
+  street           String?
+  loc              String?
+  vtc              String?
+  po               String?
+  subdist          String?
+  dist             String?
+  state            String?
+  country          String?   @default("India")
+  pc               String?
+  pht              String?
+  task_id          String?
+  created_at       DateTime  @default(now()) @db.Timestamptz
+
+  @@index([aadhaar_hash])
+}
+
+model central_gst_records {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gstin               String   @unique
+  pan                 String?
+  company_name        String?
+  legal_name          String?
+  trade_name          String?
+  state               String?
+  state_code          String?
+  gst_status          String?
+  gst_reg_date        String?
+  taxpayer_type       String?
+  constitution        String?
+  business_nature     Json?    @default("[]")
+  dealing_in          Json?    @default("[]")
+  address             String?
+  city                String?
+  pincode             String?
+  location            String?
+  district            String?
+  branch_no           String?
+  branch_name         String?
+  flat_no             String?
+  street              String?
+  centre_jurisdiction String?
+  centre_code         String?
+  state_jurisdiction  String?
+  cancellation_date   String?
+  data_source         String?
+  raw                 Json?
+  created_at          DateTime @default(now()) @db.Timestamptz
+
+  @@index([gstin])
+}
+
+model platform_settings {
+  id         String   @id
+  values     Json     @default("{}")
+  updated_at DateTime @default(now()) @db.Timestamptz
+}
+
+model tenant_pricing_configs {
+  id                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id                 String    @unique @db.Uuid
+  base_price_paise          Int       @default(149900)
+  employee_cap              Int?      @default(25)
+  per_employee_excess_paise Int?      @default(5000)
+  discount_base_pct         Decimal?  @default(0.00) @db.Decimal(5, 2)
+  discount_module_pct       Json?     @default("{}")
+  discount_bundle_pct       Decimal?  @default(0.00) @db.Decimal(5, 2)
+  bundle_trigger_count      Int?      @default(3)
+  discount_tenure_pct       Decimal?  @default(0.00) @db.Decimal(5, 2)
+  tenure_months             Int?      @default(1)
+  offer_flat_paise          Int?      @default(0)
+  offer_expiry_date         DateTime? @db.Timestamptz
+  is_stackable              Boolean?  @default(false)
+  final_override_paise      Int?
+  billing_cycle             String?   @default("monthly")
+  updated_at                DateTime? @default(now()) @db.Timestamptz
+
+  tenant tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+
+  @@index([tenant_id])
+}
+
+model invoices {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id             String   @db.Uuid
+  invoice_no            String   @unique
+  period_start          DateTime @db.Date
+  period_end            DateTime @db.Date
+  issue_date            DateTime @default(now()) @db.Timestamptz
+  due_date              DateTime @db.Timestamptz
+  base_amount_paise     Int
+  module_amount_paise   Int
+  excess_amount_paise   Int
+  discount_amount_paise Int
+  tax_amount_paise      Int      @default(0)
+  total_paise           Int
+  currency              String   @default("INR")
+  status                String   @default("unpaid")
+  breakdown             Json?
+  pdf_url               String?
+  payment_id            String?
+  created_at            DateTime @default(now()) @db.Timestamptz
+  updated_at            DateTime @default(now()) @db.Timestamptz
+
+  tenant tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+
+  @@index([tenant_id])
+  @@index([status])
+}

@@ -17,4 +17,5 @@ npm-debug.log*
 
 # OS files
 .DS_Store
-Thumbs.db
+Thumbs.dbbackend/shared/generated/
+backend/shared/.prisma/
