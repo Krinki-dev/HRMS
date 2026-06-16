@@ -14,7 +14,6 @@
     "seed": "node prisma/seed.js"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.3",
     "adm-zip": "^0.5.16",
     "axios": "^1.13.6",
     "bcryptjs": "^2.4.3",
@@ -53,6 +52,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@prisma/client": "^6.19.3",
     "nodemon": "^3.0.3",
     "prisma": "^6.19.3"
   }
