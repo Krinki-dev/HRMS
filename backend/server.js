@@ -208,7 +208,7 @@ async function startServer() {
     logger.warn(`${THEME.ICONS.WARNING} MinIO bucket init failed (dev mode)`);
   }
 
-  httpServer.listen(PORT, '127.0.0.1', () => {
+  httpServer.listen(PORT, '0.0.0.0', () => {
     logger.info(`${THEME.ICONS.SUCCESS} HRMS Server running on localhost:${PORT}`);
     logger.info(`${THEME.ICONS.INFO} Health: http://localhost:${PORT}/health`);
     logger.info(`${THEME.ICONS.INFO} WebSocket: ws://localhost:${PORT}/ws?token=JWT`);
