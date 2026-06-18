@@ -5,8 +5,8 @@ import "../admin/AdminLayout.css";
 const NAV_ITEMS = [
   { path: "/admin/dashboard",  icon: "▦", label: "Dashboard"  },
   { path: "/admin/clients",    icon: "◑", label: "Clients"     },
-  { path: "/admin/plans",      icon: "◈", label: "Plans"       },
-  { path: '/admin/pricing',    icon: "🏷️",label: "Plan & Pricing" },
+  { path: "/admin/plans",      icon: "📊", label: "Plans (Analytics)"  },
+  { path: '/admin/pricing',    icon: "⚙️", label: "Pricing & Plans" },
   { path: "/admin/domains",    icon: "⊕", label: "Domains"     },
   { path: "/admin/analytics",  icon: "↗", label: "Analytics"   },
   { path: "/admin/marketing",  icon: "✦", label: "Marketing"   },
@@ -14,13 +14,14 @@ const NAV_ITEMS = [
 ];
 
 const PAGE_META = {
-  "/admin/dashboard":  { title: "Dashboard",  sub: "Platform overview"          },
-  "/admin/clients":    { title: "Clients",    sub: "All client accounts"        },
-  "/admin/plans":      { title: "Plans",      sub: "Subscription management"    },
-  "/admin/domains":    { title: "Domains",    sub: "Custom domain mappings"     },
-  "/admin/analytics":  { title: "Analytics",  sub: "Platform-wide metrics"      },
-  "/admin/marketing":  { title: "Marketing",  sub: "syntern.in public pages"    },
-  "/admin/settings":   { title: "Settings",   sub: "Global platform settings"   },
+  "/admin/dashboard":  { title: "Dashboard",  sub: "Platform overview"                    },
+  "/admin/clients":    { title: "Clients",    sub: "All client accounts"                  },
+  "/admin/plans":      { title: "Plans",      sub: "Revenue KPIs & subscription analytics" },
+  "/admin/pricing":    { title: "Pricing & Plans", sub: "Manage plan catalog & pricing"   },
+  "/admin/domains":    { title: "Domains",    sub: "Custom domain mappings"               },
+  "/admin/analytics":  { title: "Analytics",  sub: "Platform-wide metrics"                },
+  "/admin/marketing":  { title: "Marketing",  sub: "syntern.in public pages"              },
+  "/admin/settings":   { title: "Settings",   sub: "Global platform settings"             },
 };
 
 export default function AdminLayout() {
