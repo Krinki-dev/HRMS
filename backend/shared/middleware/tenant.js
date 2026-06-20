@@ -152,7 +152,7 @@ const tenantMiddleware = async (req, res, next) => {
     const host = req.hostname?.toLowerCase().trim();
     const subdomain = extractTenantSubdomain(req);
     const isAuthRoute = req.path?.startsWith('/auth') || req.originalUrl?.startsWith('/api/v1/auth');
-    const isRailwayHost = host?.endsWith('.up.railway.app') || host?.endsWith('.railway.app');'
+    const isRailwayHost = host?.endsWith('.up.railway.app') || host?.endsWith('.railway.app');
 const isPlatformRootHost = PLATFORM_ROOTS.has(host) || isRailwayHost;
 
     if (isPlatformRootHost && isAuthRoute) {
