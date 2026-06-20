@@ -1,3 +1,4 @@
+import LogoUploadStep from './.LogoUploadStep';
 ﻿﻿/**
  * @file OnboardingWizard.jsx
  * @description Multi-step wizard to guide new tenants through initial configuration.
@@ -57,6 +58,7 @@ const DEFAULT_COMPONENTS = [
 const STEPS = [
   { key: 'plan',        label: 'Choose plan',     icon: '🚀' },
   { key: 'org',         label: 'Organisation',    icon: '🏢' },
+  { key: 'branding', label: 'Branding',        icon: 'U0001F3A8' },
   { key: 'work',        label: 'Work settings',   icon: '⏰' },
   { key: 'payroll',     label: 'Payroll',         icon: '₹' },
   { key: 'email',       label: 'Email',           icon: '✉' },
@@ -393,6 +395,7 @@ export default function OnboardingWizard({ onComplete }) {
             </div>
           )}
 
+              {currentStep.key === 'branding' && (\n                <LogoUploadStep\n                  onNext={() => setStep((s) => s + 1)}\n                  onSkip={() => setStep((s) => s + 1)}\n                />\n              )}
           {currentStep.key === 'work' && (
             <div>
               <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Work settings</div>

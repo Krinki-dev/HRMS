@@ -100,4 +100,34 @@ router.get('/brand', async (req, res) => {
   }
 });
 
+
+const auth = require('../../shared/middleware/auth');
+
+/**
+ * POST /onboarding/save-step
+ * Saves onboarding step data for the authenticated tenant.
+ * Handles all steps including 'branding' (saves logo_url to tenants table).
+ */
+router.post('/onboarding/save-step', auth, async (req, res) => {
+  try {
+    const { step, data = {} } = req.body;
+    const tenantId = req.user?.tenantId || req.user?.company_id;
+    if (!tenantId) return res.status(400).json({ message: 'Tenant ID required' });
+
+    if (step === 'branding' && data.logoUrl) {
+      await centralPrisma.$executeRawUnsafe(
+        `UPDATE tenants SET logo_url = $1, updated_at = NOW() WHERE id = $2::uuid`,
+        data.logoUrl,
+        tenantId
+      );
+      return res.json({ success: true, message: 'Logo saved successfully' });
+    }
+
+    // For other steps, just acknowledge (handled by other endpoints or no DB action needed)
+    return res.json({ success: true, step, message: `Step ${step} acknowledged` });
+  } catch (err) {
+    logger.error('[onboarding/save-step]', err);
+    return res.status(500).json({ message: 'Failed to save step', error: err.message });
+  }
+});
 module.exports = router;

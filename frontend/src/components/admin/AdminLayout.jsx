@@ -1,4 +1,5 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom";
+import CompanyBrand from '../layout/CompanyBrand';
 import { useAuthStore } from "../../store/authStore";
 import "../admin/AdminLayout.css";
 
@@ -41,7 +42,7 @@ export default function AdminLayout() {
           </div>
         </div>
 
-        <nav className="sidebar-nav">
+        <><CompanyBrand sidebarOpen={sidebarOpen} /><nav className="sidebar-nav">
           {NAV_ITEMS.slice(0, 5).map((item) => (
             <NavLink key={item.path} to={item.path} className={({ isActive }) => `nav-btn${isActive ? " active" : ""}`}>
               <span className="nav-icon">{item.icon}</span>
@@ -65,7 +66,7 @@ export default function AdminLayout() {
               </NavLink>
             </>
           )}
-        </nav>
+        </nav></>
 
         <div className="sidebar-user">
           <div className="user-avatar">SA</div>

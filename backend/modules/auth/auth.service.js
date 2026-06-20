@@ -43,7 +43,7 @@ const authService = {
     if (!tenantId) return {};
     try {
       const rows = await centralPrisma.$queryRaw`
-        SELECT id, plan, plan_expires_at, is_setup_complete, name
+        SELECT id, plan, plan_expires_at, is_setup_complete, name, logo_url
         FROM tenants 
         WHERE id = ${tenantId}::uuid AND deleted_at IS NULL 
         LIMIT 1
@@ -55,6 +55,7 @@ const authService = {
         planExpiresAt: rows[0].plan_expires_at,
         isSetupComplete: rows[0].is_setup_complete,
         companyName: rows[0].name,
+          logoUrl: rows[0].logo_url || null,
       };
     } catch { return {}; }
   },
@@ -84,6 +85,7 @@ const authService = {
       planExpiresAt: tenantInfo.planExpiresAt || null,
       tenantId: tenantInfo.tenantId || null,
       companyName: tenantInfo.companyName || null,
+          companyLogoUrl: tenantInfo.logoUrl || null,
     };
   },
 
@@ -102,7 +104,7 @@ const authService = {
     `;
 
     if (rows && rows.length > 0) {
-      return { found: true, ...rows[0] };
+          const r = rows[0]; return { found: true, subdomain: r.subdomain, is_platform_admin: r.is_platform_admin, companyName: r.company_name, logoUrl: r.logo_url, is_active: r.is_active, plan: r.plan };
     }
 
     // 2. Tenant Admin Check
@@ -125,8 +127,8 @@ const authService = {
       return { 
         found: true, 
         subdomain: t.subdomain, 
-        company_name: t.name, 
-        logo_url: t.logo_url, 
+        companyName: t.name, 
+        logoUrl: t.logo_url, 
         is_active: t.is_active,
         plan: t.plan 
       };

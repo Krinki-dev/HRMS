@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useRef } from 'react';
+import CompanyBrand from '../layout/CompanyBrand';
 import { Outlet, NavLink, useLocation, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -301,7 +302,7 @@ export default function HRLayout() {
           </button>
         </div>
 
-        <nav className="hr-nav">
+        <><CompanyBrand sidebarOpen={sidebarOpen} /><nav className="hr-nav">
           {navItems.map(item => (
             <NavLink
               key={item.path}
@@ -327,7 +328,7 @@ export default function HRLayout() {
               {!collapsed && <span>{item.label}</span>}
             </NavLink>
           ))}
-        </nav>
+        </nav></>
 
         <div className="hr-sidebar-footer">
           <div className="hr-user-dot" />

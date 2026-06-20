@@ -366,7 +366,7 @@ export default function SmartLoginPage() {
     },
 
     onSuccess: async (payload) => {
-      login(payload);
+      login({ ...payload, companyLogoUrl: company?.logoUrl || payload?.logoUrl || null, companyName: company?.companyName || payload?.companyName || null });
 
       const firstName = payload.user?.name?.split(' ')[0] || '';
       toast.success(`Welcome back${firstName ? `, ${firstName}` : ''}!`);

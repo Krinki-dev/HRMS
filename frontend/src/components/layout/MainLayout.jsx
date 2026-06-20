@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
+import CompanyBrand from './CompanyBrand';
 import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import api from '../../services/api';
@@ -314,7 +315,8 @@ export default function MainLayout() {
         transition: 'width 0.2s ease',
         overflow: 'hidden',
       }}>
-        {sidebarContent}
+        <CompanyBrand sidebarOpen={sidebarOpen} />
+      {sidebarContent}
       </aside>
 
       {}

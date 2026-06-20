@@ -5,74 +5,104 @@ export const useAuthStore = create(
   persist(
     (set, _get) => ({
 
-      isLoggedIn:  false,
-      accessToken: null,
-      user:        null,
+      isLoggedIn:      false,
+      accessToken:     null,
+      user:            null,
+      companyLogoUrl:  null,
+      companyName:     null,
 
       login: (data) => {
-        const { accessToken, user } = data;
-        localStorage.setItem('accessToken', accessToken);
-        set({
-          isLoggedIn:  true,
+        const {
           accessToken,
+          user,
+          companyLogoUrl,
+          companyName,
+        } = data;
+
+        localStorage.setItem('accessToken', accessToken);
+
+        set({
+          isLoggedIn:     true,
+          accessToken,
+          companyLogoUrl: companyLogoUrl || user?.companyLogoUrl || null,
+          companyName:    companyName    || user?.companyName    || null,
           user: {
-            id:              user.id,
-            name:            user.name || user.email,
-            email:           user.email,
-            role:            user.role,
-            permissions:     user.permissions     || {},
-            employeeId:      user.employeeId      || user.employee?.id || null,
-            employee:        user.employee        || null,
-            isFirstLogin:    user.isFirstLogin    ?? false,
-            is_platform_admin: user.is_platform_admin || false,
-            
-            plan:            user.plan            || 'free',
-            isSetupComplete: user.isSetupComplete ?? true,
-            planExpiresAt:   user.planExpiresAt   || null,
-            tenantId:        user.tenantId        || null,
-            subdomain:       user.subdomain       || null,
-            companyName:     user.companyName     || null,
+            id:              user?.id              || null,
+            name:            user?.name            || null,
+            email:           user?.email           || null,
+            role:            user?.role            || null,
+            is_platform_admin: user?.is_platform_admin || false,
+            plan:            user?.plan            || 'free',
+            isSetupComplete: user?.isSetupComplete  ?? true,
+            isFirstLogin:    user?.isFirstLogin     ?? false,
+            planExpiresAt:   user?.planExpiresAt    || null,
+            tenantId:        user?.tenantId         || null,
+            subdomain:       user?.subdomain        || null,
+            companyName:     user?.companyName      || null,
+            companyLogoUrl:  user?.companyLogoUrl   || companyLogoUrl || null,
           },
         });
       },
 
+      logout: () => {
+        localStorage.removeItem('accessToken');
+        set({
+          isLoggedIn:     false,
+          accessToken:    null,
+          user:           null,
+          companyLogoUrl: null,
+          companyName:    null,
+        });
+      },
+
       clearFirstLogin: () => {
-        set(state => ({
-          user: state.user ? { ...state.user, isFirstLogin: false } : null,
+        set((state) => ({
+          user: {
+            ...state.user,
+            isFirstLogin: false,
+          },
         }));
       },
 
       setSetupComplete: () => {
-        set(state => ({
-          user: state.user ? { ...state.user, isSetupComplete: true } : null,
+        set((state) => ({
+          user: {
+            ...state.user,
+            isSetupComplete: true,
+          },
         }));
       },
 
-      setPlan: (plan, planExpiresAt) => {
-        set(state => ({
-          user: state.user
-            ? { ...state.user, plan, planExpiresAt }
-            : null,
+      setPlan: (plan, expiresAt) => {
+        set((state) => ({
+          user: {
+            ...state.user,
+            plan,
+            planExpiresAt: expiresAt,
+          },
         }));
       },
 
-      updateToken: (accessToken) => {
-        localStorage.setItem('accessToken', accessToken);
-        set({ accessToken });
-      },
-
-      logout: () => {
-        localStorage.removeItem('accessToken');
-        set({ isLoggedIn: false, accessToken: null, user: null });
+      updateCompanyBrand: (logoUrl, name) => {
+        set((state) => ({
+          companyLogoUrl: logoUrl || state.companyLogoUrl,
+          companyName:    name    || state.companyName,
+          user: {
+            ...state.user,
+            companyLogoUrl: logoUrl || state.user?.companyLogoUrl,
+            companyName:    name    || state.user?.companyName,
+          },
+        }));
       },
     }),
-
     {
       name: 'hrms-auth',
       partialize: (state) => ({
-        isLoggedIn:  state.isLoggedIn,
-        accessToken: state.accessToken,
-        user:        state.user,
+        isLoggedIn:     state.isLoggedIn,
+        accessToken:    state.accessToken,
+        user:           state.user,
+        companyLogoUrl: state.companyLogoUrl,
+        companyName:    state.companyName,
       }),
       onRehydrateStorage: () => (state) => {
         if (state?.accessToken) {
@@ -82,4 +112,3 @@ export const useAuthStore = create(
     }
   )
 );
-
