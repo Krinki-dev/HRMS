@@ -395,7 +395,12 @@ export default function OnboardingWizard({ onComplete }) {
             </div>
           )}
 
-              {currentStep.key === 'branding' && (\n                <LogoUploadStep\n                  onNext={() => setStep((s) => s + 1)}\n                  onSkip={() => setStep((s) => s + 1)}\n                />\n              )}
+              {currentStep.key === 'branding' && (
+                <LogoUploadStep
+                  onNext={() => setStep((s) => s + 1)}
+                  onSkip={() => setStep((s) => s + 1)}
+                />
+              )}
           {currentStep.key === 'work' && (
             <div>
               <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Work settings</div>

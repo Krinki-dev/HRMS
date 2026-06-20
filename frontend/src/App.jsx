@@ -204,6 +204,7 @@ export default function App() {
               <Route index              element={<AdminDashboard />} />
               <Route path="dashboard"   element={<AdminDashboard />} />
               <Route path="clients"     element={<AdminClients />} />
+              <Route path="clients/new" element={<CompanyRegisterPage />} />
               <Route path="clients/:id" element={<AdminClientDetail />} />
               <Route path="plans"       element={<AdminPlans />} />
               <Route path="pricing"     element={<PricingManager />} /> 

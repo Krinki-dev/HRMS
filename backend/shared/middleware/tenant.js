@@ -291,7 +291,7 @@ const isPlatformRootHost = PLATFORM_ROOTS.has(host) || isRailwayHost;
 
     if (headerSubdomain) {
       lookupSubdomain = headerSubdomain;
-    } else if (PLATFORM_ROOTS.has(host)) {
+    } else if (isPlatformRootHost) {  // FIX: was PLATFORM_ROOTS.has(host), now includes isRailwayHost
       // If the host is a platform root, it means no tenant context is provided.
       return sendError(res, ERROR_CODES.NOT_FOUND,
         'No company context. Please log in via your company URL.', 400);
