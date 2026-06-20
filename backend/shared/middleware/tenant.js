@@ -291,11 +291,12 @@ const isPlatformRootHost = PLATFORM_ROOTS.has(host) || isRailwayHost;
 
     if (headerSubdomain) {
       lookupSubdomain = headerSubdomain;
-    } else if (isPlatformRootHost) {  // FIX: was PLATFORM_ROOTS.has(host), now includes isRailwayHost
-      // If the host is a platform root, it means no tenant context is provided.
-      return sendError(res, ERROR_CODES.NOT_FOUND,
-        'No company context. Please log in via your company URL.', 400);
-    } else {
+      } else if (isPlatformRootHost) {  // FIX: platform root/Railway — no tenant needed for admin routes
+        // Platform root host (syntern.in, hrms-production-*.railway.app) — allow /platform/admin/* routes
+        req.tenant = null;
+        req.db = null;
+        return next();
+      } else {
       lookupSubdomain = host.split('.')[0];
       // Extract subdomain from the hostname (e.g., 'pcepl' from 'pcepl.syntern.in').
     }
