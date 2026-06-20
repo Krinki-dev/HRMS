@@ -152,7 +152,8 @@ const tenantMiddleware = async (req, res, next) => {
     const host = req.hostname?.toLowerCase().trim();
     const subdomain = extractTenantSubdomain(req);
     const isAuthRoute = req.path?.startsWith('/auth') || req.originalUrl?.startsWith('/api/v1/auth');
-    const isPlatformRootHost = PLATFORM_ROOTS.has(host);
+    const isRailwayHost = host?.endsWith('.up.railway.app') || host?.endsWith('.railway.app');'
+const isPlatformRootHost = PLATFORM_ROOTS.has(host) || isRailwayHost;
 
     if (isPlatformRootHost && isAuthRoute) {
       // Allow auth routes on platform root hosts to resolve tenant by email
