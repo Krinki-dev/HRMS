@@ -2,7 +2,6 @@ import React from 'react';
 import { useAuthStore } from '../../store/authStore';
 
 // Fallback Syntern platform logo (shown when no tenant logo is set)
-const SYNTERN_LOGO_URL = 'https://syntern.in/syntern-logo.png';
 
 export default function CompanyBrand({ sidebarOpen = true }) {
   const { companyLogoUrl, companyName } = useAuthStore();
