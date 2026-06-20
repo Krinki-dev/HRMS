@@ -208,6 +208,94 @@ const normalizedEmail = email.toLowerCase().trim();
 router.post('/lookup', handleAuthLookup);
 lookupRouter.post('/', handleAuthLookup);
 
+// ════════════════════════════════════════════════════════════════════════════════
+// POST /auth/lookup-phone — Lookup user by mobile phone number
+// ════════════════════════════════════════════════════════════════════════════════
+router.post('/lookup-phone', async (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone || !phone.trim()) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Phone number is required', 400);
+    }
+
+    const result = await authService.lookupPhone(phone);
+    if (!result.found) {
+      return sendSuccess(res, { found: false });
+    }
+
+    return sendSuccess(res, {
+      found: true,
+      subdomain: result.subdomain,
+      is_platform_admin: result.is_platform_admin,
+      companyName: result.companyName,
+      logoUrl: result.logoUrl,
+      plan: result.plan,
+    });
+  } catch (err) {
+    logger.error('[Auth/LookupPhone] Failure:', err);
+    return sendError(res, ERROR_CODES.SERVER, 'Phone lookup failed. Please try again.', 500);
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════════════════
+// POST /auth/lookup-employeeid — Lookup user by employee ID
+// ════════════════════════════════════════════════════════════════════════════════
+router.post('/lookup-employeeid', async (req, res) => {
+  try {
+    const { employee_id } = req.body;
+    if (!employee_id || !employee_id.trim()) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Employee ID is required', 400);
+    }
+
+    const result = await authService.lookupEmployeeId(employee_id);
+    if (!result.found) {
+      return sendSuccess(res, { found: false });
+    }
+
+    return sendSuccess(res, {
+      found: true,
+      subdomain: result.subdomain,
+      is_platform_admin: result.is_platform_admin,
+      companyName: result.companyName,
+      logoUrl: result.logoUrl,
+      plan: result.plan,
+      email: result.email,
+    });
+  } catch (err) {
+    logger.error('[Auth/LookupEmployeeId] Failure:', err);
+    return sendError(res, ERROR_CODES.SERVER, 'Employee ID lookup failed. Please try again.', 500);
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════════════════
+// POST /auth/lookup-phone-email — Dual lookup by phone AND email (optional)
+// ════════════════════════════════════════════════════════════════════════════════
+router.post('/lookup-phone-email', async (req, res) => {
+  try {
+    const { email, phone } = req.body;
+    if (!email || !email.trim()) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Email is required', 400);
+    }
+
+    const result = await authService.lookupEmailAndPhone(email, phone);
+    if (!result.found) {
+      return sendSuccess(res, { found: false });
+    }
+
+    return sendSuccess(res, {
+      found: true,
+      subdomain: result.subdomain,
+      is_platform_admin: result.is_platform_admin,
+      companyName: result.companyName,
+      logoUrl: result.logoUrl,
+      plan: result.plan,
+    });
+  } catch (err) {
+    logger.error('[Auth/LookupPhoneEmail] Failure:', err);
+    return sendError(res, ERROR_CODES.SERVER, 'Lookup failed. Please try again.', 500);
+  }
+});
+
 const otpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,

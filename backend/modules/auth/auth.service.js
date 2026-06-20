@@ -302,6 +302,148 @@ const authService = {
       `;
       return rows.length > 0 ? rows[0].is_platform_admin : false;
     } catch { return false; }
+  },
+
+  // ─── Alternative Lookup Methods (Phone, User ID) ────────────────────
+
+  /**
+   * Look up user by mobile phone number across all tenants
+   * @param {string} phone - E.164 format: +919876543210
+   * @returns {Promise<{found: boolean, subdomain?: string, ...}>}
+   */
+  async lookupPhone(phone) {
+    if (!phone || phone.trim().length === 0) {
+      return { found: false, error: 'Phone required' };
+    }
+
+    try {
+      // Normalize to E.164 format (remove non-digits, add +91 if needed)
+      let normalizedPhone = phone.replace(/\D/g, '');
+      if (!normalizedPhone.startsWith('91') && normalizedPhone.length === 10) {
+        normalizedPhone = '91' + normalizedPhone; // India default
+      }
+
+      // Search in central index first (if indexed by phone)
+      const rows = await centralPrisma.$queryRaw`
+        SELECT DISTINCT ui.subdomain, ui.is_platform_admin, t.name, t.logo_url, t.is_active, t.plan
+        FROM central_user_index ui
+        LEFT JOIN tenants t ON t.id = ui.company_id
+        WHERE ui.phone = ${normalizedPhone} AND ui.is_active = true AND t.deleted_at IS NULL
+        LIMIT 1
+      `;
+
+      if (rows && rows.length > 0) {
+        const r = rows[0];
+        return {
+          found: true,
+          subdomain: r.subdomain,
+          is_platform_admin: r.is_platform_admin,
+          companyName: r.name,
+          logoUrl: r.logo_url,
+          is_active: r.is_active,
+          plan: r.plan
+        };
+      }
+
+      return { found: false };
+    } catch (err) {
+      logger.error('[AuthService/lookupPhone] Error:', err);
+      return { found: false, error: err.message };
+    }
+  },
+
+  /**
+   * Look up user by employee ID across all tenants
+   * @param {string} employeeId - Employee ID (format: EMP-XXXX or similar)
+   * @returns {Promise<{found: boolean, subdomain?: string, ...}>}
+   */
+  async lookupEmployeeId(employeeId) {
+    if (!employeeId || employeeId.trim().length === 0) {
+      return { found: false, error: 'Employee ID required' };
+    }
+
+    try {
+      const normalizedId = employeeId.toUpperCase().trim();
+
+      // Search across all tenants
+      const rows = await centralPrisma.$queryRaw`
+        SELECT DISTINCT ui.subdomain, ui.is_platform_admin, t.name, t.logo_url, 
+                        t.is_active, t.plan, ui.email
+        FROM central_user_index ui
+        LEFT JOIN tenants t ON t.id = ui.company_id
+        WHERE ui.employee_id = ${normalizedId} AND ui.is_active = true AND t.deleted_at IS NULL
+        LIMIT 1
+      `;
+
+      if (rows && rows.length > 0) {
+        const r = rows[0];
+        return {
+          found: true,
+          subdomain: r.subdomain,
+          is_platform_admin: r.is_platform_admin,
+          companyName: r.name,
+          logoUrl: r.logo_url,
+          is_active: r.is_active,
+          plan: r.plan,
+          email: r.email
+        };
+      }
+
+      return { found: false };
+    } catch (err) {
+      logger.error('[AuthService/lookupEmployeeId] Error:', err);
+      return { found: false, error: err.message };
+    }
+  },
+
+  /**
+   * Look up user by email + optional phone (multi-identifier lookup)
+   * Used for enhanced security verification
+   * @param {string} email 
+   * @param {string} phone - Optional
+   * @returns {Promise<{found: boolean, ...}>}
+   */
+  async lookupEmailAndPhone(email, phone) {
+    if (!email) return this.lookupEmail('');
+    if (!phone) return this.lookupEmail(email);
+
+    try {
+      const normalizedEmail = email.toLowerCase().trim();
+      let normalizedPhone = phone.replace(/\D/g, '');
+      if (!normalizedPhone.startsWith('91') && normalizedPhone.length === 10) {
+        normalizedPhone = '91' + normalizedPhone;
+      }
+
+      const rows = await centralPrisma.$queryRaw`
+        SELECT DISTINCT ui.subdomain, ui.is_platform_admin, t.name, t.logo_url, t.is_active, t.plan
+        FROM central_user_index ui
+        LEFT JOIN tenants t ON t.id = ui.company_id
+        WHERE ui.email = ${normalizedEmail}
+          AND ui.phone = ${normalizedPhone}
+          AND ui.is_active = true
+          AND t.deleted_at IS NULL
+        LIMIT 1
+      `;
+
+      if (rows && rows.length > 0) {
+        const r = rows[0];
+        return {
+          found: true,
+          subdomain: r.subdomain,
+          is_platform_admin: r.is_platform_admin,
+          companyName: r.name,
+          logoUrl: r.logo_url,
+          is_active: r.is_active,
+          plan: r.plan
+        };
+      }
+
+      // Fallback to email only
+      return this.lookupEmail(email);
+    } catch (err) {
+      logger.error('[AuthService/lookupEmailAndPhone] Error:', err);
+      return this.lookupEmail(email);
+    }
   }
 };
 
