@@ -1,4 +1,4 @@
-import LogoUploadStep from './.LogoUploadStep';
+import LogoUploadStep from './LogoUploadStep';
 ﻿﻿/**
  * @file OnboardingWizard.jsx
  * @description Multi-step wizard to guide new tenants through initial configuration.
