@@ -1,4 +1,4 @@
-# Node modules
+﻿# Node modules
 node_modules/
 
 # Environment variables
@@ -6,6 +6,14 @@ node_modules/
 .env.local
 .env.development
 .env.production
+frontend/env.local
+
+# Local certificates and private keys
+frontend/certs/*.key
+frontend/certs/*.crt
+frontend/certs/*.pem
+*.key
+*.pem
 
 # Build output
 dist/
@@ -17,5 +25,8 @@ npm-debug.log*
 
 # OS files
 .DS_Store
-Thumbs.dbbackend/shared/generated/
+Thumbs.db
+
+# Generated Prisma artifacts
+backend/shared/generated/
 backend/shared/.prisma/
