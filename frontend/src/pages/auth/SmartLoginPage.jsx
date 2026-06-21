@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file SmartLoginPage.jsx
  * @description Adaptive login page that handles multi-tenant domain detection and OTT exchange.
  */
@@ -137,7 +137,7 @@ const S = {
   formInner:    { width: '100%', maxWidth: 400 },
   label: {
     display: 'block', fontSize: 12, fontWeight: 600,
-    color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6,
+    color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6,
   },
   input: (primaryColor = '#2563EB') => ({
     width: '100%', padding: '11px 14px',
@@ -468,7 +468,7 @@ export default function SmartLoginPage() {
           Company portal not found
         </h1>
 
-        <p style={{ fontSize: 15, color: '#64748B', maxWidth: 420, lineHeight: 1.7, margin: '0 0 8px' }}>
+        <p style={{ fontSize: 15, color: '#94A3B8', maxWidth: 420, lineHeight: 1.7, margin: '0 0 8px' }}>
           <span style={{
             fontFamily: 'monospace', fontSize: 14,
             background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
@@ -478,7 +478,7 @@ export default function SmartLoginPage() {
           </span>
         </p>
 
-        <p style={{ fontSize: 14, color: '#4B5563', maxWidth: 420, lineHeight: 1.7, margin: '8px 0 36px' }}>
+        <p style={{ fontSize: 14, color: '#94A3B8', maxWidth: 420, lineHeight: 1.7, margin: '8px 0 36px' }}>
           This address is not registered with Syntern HRMS. Check the URL with
           your HR administrator, or register your company below.
         </p>
@@ -505,8 +505,8 @@ export default function SmartLoginPage() {
           </a>
         </div>
 
-        <p style={{ marginTop: 48, fontSize: 12, color: '#1E293B' }}>
-          <a href="https://syntern.in" style={{ color: '#1E293B', textDecoration: 'none' }}>
+        <p style={{ marginTop: 48, fontSize: 12, color: '#64748B' }}>
+          <a href="https://syntern.in" style={{ color: '#64748B', textDecoration: 'none' }}>
             syntern.in
           </a>{' '}· Made for India
         </p>
@@ -592,7 +592,7 @@ export default function SmartLoginPage() {
             {heroTitle}
           </h1>
 
-          <p style={{ fontSize: 15, color: '#64748B', lineHeight: 1.65, margin: '0 0 40px', maxWidth: 340 }}>
+          <p style={{ fontSize: 15, color: '#94A3B8', lineHeight: 1.65, margin: '0 0 40px', maxWidth: 340 }}>
             {heroSub}
           </p>
 
@@ -623,7 +623,7 @@ export default function SmartLoginPage() {
             borderTop: '1px solid rgba(99,120,255,0.08)',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
-            <p style={{ fontSize: 13, color: '#374151', margin: 0 }}>Don't have an account?</p>
+            <p style={{ fontSize: 13, color: '#CBD5E1', margin: 0 }}>Don't have an account?</p>
             <Link to="/register" style={{
               fontSize: 13, fontWeight: 600, color: primaryColor, textDecoration: 'none',
               padding: '6px 14px', borderRadius: 6, border: `1px solid ${primaryColor}50`,
@@ -677,7 +677,7 @@ export default function SmartLoginPage() {
               <h2 style={{ fontSize: 24, fontWeight: 700, color: '#fff', margin: '0 0 4px', letterSpacing: '-0.3px' }}>
                 Welcome back
               </h2>
-              <p style={{ fontSize: 14, color: '#64748B', margin: '0 0 28px' }}>
+              <p style={{ fontSize: 14, color: '#94A3B8', margin: '0 0 28px' }}>
                 Enter your work email to continue
               </p>
 
@@ -714,11 +714,11 @@ export default function SmartLoginPage() {
                 <>
                   <div style={S.dividerRow}>
                     <div style={S.dividerLine} />
-                    <span style={{ fontSize: 12, color: '#1E293B' }}>or</span>
+                    <span style={{ fontSize: 12, color: '#64748B' }}>or</span>
                     <div style={S.dividerLine} />
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <span style={{ fontSize: 14, color: '#374151' }}>New to Syntern? </span>
+                    <span style={{ fontSize: 14, color: '#CBD5E1' }}>New to Syntern? </span>
                     <Link to="/register" style={{ fontSize: 14, color: primaryColor, textDecoration: 'none', fontWeight: 500 }}>
                       Register your company
                     </Link>
@@ -749,13 +749,13 @@ export default function SmartLoginPage() {
                     <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', lineHeight: 1.3 }}>
                       {company.companyName}
                     </div>
-                    <div style={{ fontSize: 12, color: '#64748B' }}>{email}</div>
+                    <div style={{ fontSize: 12, color: '#94A3B8' }}>{email}</div>
                   </div>
                   <button
                     type="button"
                     onClick={handleBack}
                     style={{
-                      background: 'none', border: 'none', color: '#64748B',
+                      background: 'none', border: 'none', color: '#94A3B8',
                       fontSize: 12, cursor: 'pointer', marginLeft: 'auto', fontFamily: 'inherit',
                     }}
                   >
@@ -767,7 +767,7 @@ export default function SmartLoginPage() {
               <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 4px', letterSpacing: '-0.3px' }}>
                 Enter your password
               </h2>
-              <p style={{ fontSize: 14, color: '#64748B', margin: '0 0 24px' }}>
+              <p style={{ fontSize: 14, color: '#94A3B8', margin: '0 0 24px' }}>
                 Welcome back — enter your password to continue.
               </p>
 
@@ -793,7 +793,7 @@ export default function SmartLoginPage() {
                     onClick={() => setShowPass(p => !p)}
                     style={{
                       position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                      background: 'none', border: 'none', color: '#4B5563',
+                      background: 'none', border: 'none', color: '#94A3B8',
                       cursor: 'pointer', fontSize: 12, padding: 4, fontFamily: 'inherit',
                     }}
                   >
@@ -815,7 +815,7 @@ export default function SmartLoginPage() {
               <div style={{ textAlign: 'center', marginTop: 20 }}>
                 <Link
                   to="/forgot-password"
-                  style={{ fontSize: 13, color: '#374151', textDecoration: 'none' }}
+                  style={{ fontSize: 13, color: '#CBD5E1', textDecoration: 'none' }}
                   onMouseEnter={e => (e.target.style.color = '#94A3CE')}
                   onMouseLeave={e => (e.target.style.color = '#374151')}
                 >
@@ -825,10 +825,10 @@ export default function SmartLoginPage() {
             </form>
           )}
 
-          <p style={{ textAlign: 'center', marginTop: 40, fontSize: 12, color: '#1E293B' }}>
+          <p style={{ textAlign: 'center', marginTop: 40, fontSize: 12, color: '#64748B' }}>
             {domain.isPlatformRoot
-              ? <><a href="/" style={{ color: '#1E293B', textDecoration: 'none' }}>syntern.in</a> · Made for India</>
-              : <>Powered by <a href="https://syntern.in" target="_blank" rel="noreferrer" style={{ color: '#374151', textDecoration: 'none' }}>Syntern HRMS</a></>
+              ? <><a href="/" style={{ color: '#64748B', textDecoration: 'none' }}>syntern.in</a> · Made for India</>
+              : <>Powered by <a href="https://syntern.in" target="_blank" rel="noreferrer" style={{ color: '#CBD5E1', textDecoration: 'none' }}>Syntern HRMS</a></>
             }
           </p>
         </div>

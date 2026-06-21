@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --sidebar-w: 200px;
   --topbar-h: 52px;
   --color-brand: #16a34a;
@@ -292,3 +292,69 @@
   .form-input:focus { box-shadow: 0 0 0 2px #14532d; }
 }
 
+
+/* HRMS theme token overrides: keep old admin classes but route colors through one Mac-style theme. */
+.admin-shell {
+  background: var(--app-bg);
+  color: var(--app-text);
+  font-family: var(--app-font);
+}
+.admin-sidebar,
+.admin-topbar,
+.stat-card,
+.card {
+  background: var(--app-surface-solid);
+  border-color: var(--app-border);
+}
+.admin-sidebar { background: var(--app-sidebar); }
+.sidebar-brand,
+.sidebar-user,
+.admin-topbar,
+.card-header { border-color: var(--app-border); }
+.brand-name,
+.user-name,
+.topbar-title,
+.card-title,
+.stat-value { color: var(--app-text); }
+.brand-role,
+.user-domain,
+.topbar-sub,
+.topbar-domain,
+.card-sub,
+.stat-label,
+.stat-hint,
+.form-label,
+.data-table th { color: var(--app-text-muted); }
+.nav-btn { color: var(--app-text-muted); }
+.nav-btn:hover { background: var(--app-bg-soft); color: var(--app-text); }
+.nav-btn.active { background: var(--app-accent-soft); color: var(--app-accent); }
+.nav-divider { background: var(--app-border); }
+.btn-primary { background: var(--app-accent); }
+.btn-primary:hover { background: var(--app-accent-hover); opacity: 1; }
+.btn-sm {
+  color: var(--app-text-secondary);
+  border-color: var(--app-border-strong);
+  background: transparent;
+}
+.btn-sm:hover { background: var(--app-bg-soft); }
+.data-table thead tr { background: var(--app-bg-soft); }
+.data-table td {
+  color: var(--app-text-secondary);
+  border-bottom-color: var(--app-border);
+}
+.data-table tbody tr:hover { background: var(--app-bg-soft); }
+.form-input {
+  background: var(--app-surface-solid);
+  color: var(--app-text);
+  border-color: var(--app-border-strong);
+}
+.form-input:focus { box-shadow: 0 0 0 2px var(--app-accent-soft); border-color: var(--app-accent); }
+:root[data-theme="dark"] .admin-sidebar,
+:root[data-theme="dark"] .admin-topbar,
+:root[data-theme="dark"] .stat-card,
+:root[data-theme="dark"] .card {
+  background: var(--app-surface-solid);
+  border-color: var(--app-border);
+}
+:root[data-theme="dark"] .data-table thead tr { background: var(--app-bg-soft); }
+:root[data-theme="dark"] .data-table td { color: var(--app-text-secondary); }

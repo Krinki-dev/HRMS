@@ -4,7 +4,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import App from './App.jsx';
 import './index.css';
+import './styles/theme.css';
 import { THEME } from './utils/theme';
+const savedUiTheme = (() => {
+  try { return localStorage.getItem('hrms-theme'); } catch (error) { return null; }
+})();
+const systemUiTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+document.documentElement.dataset.theme = savedUiTheme || systemUiTheme;
 
 // Dev-only: allow automatic dev auth when VITE_DEV_BYPASS=true
 if (import.meta.env.VITE_DEV_BYPASS === 'true') {

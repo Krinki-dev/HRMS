@@ -1,4 +1,4 @@
-﻿import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate, Link }     from 'react-router-dom';
 import { useMutation }           from '@tanstack/react-query';
 import toast                     from 'react-hot-toast';
@@ -7,7 +7,7 @@ import api                       from '../../services/api';
 const C = {
   bg:'#06101E', surface:'#0A1628', panel:'#0F1E35',
   border:'#1E3355', borderHi:'#2563EB',
-  text:'#E2E8F8', label:'#90A4C8', muted:'#5A7090', faint:'#2A3F58',
+  text:'#E2E8F8', label:'#90A4C8', muted:'#8EA3C0', faint:'#5F7898',
   blue:'#2563EB', blueHi:'#1D4ED8',
   green:'#22C55E', amber:'#F59E0B', red:'#EF4444',
   cyan:'#06B6D4', sky:'#38BDF8', white:'#FFFFFF',
@@ -592,7 +592,7 @@ export default function CompanyRegisterPage() {
           <div style={{position:'relative',flex:1,display:'flex',flexDirection:'column'}}>
             <div style={{width:52,height:52,borderRadius:14,background:'rgba(37,99,235,0.14)',border:'1px solid rgba(37,99,235,0.25)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,marginBottom:20}}>{heroContent.icon}</div>
             <h2 style={{fontSize:20,fontWeight:800,color:C.white,letterSpacing:'-0.5px',margin:'0 0 10px',lineHeight:1.2}}>{heroContent.title}</h2>
-            <p style={{fontSize:13,color:'#4B5563',lineHeight:1.6,margin:'0 0 32px'}}>{heroContent.sub}</p>
+            <p style={{fontSize:13,color:'#8EA3C0',lineHeight:1.6,margin:'0 0 32px'}}>{heroContent.sub}</p>
             <div style={{display:'flex',flexDirection:'column',gap:8}}>
               {STEPS.map((label,i) => {
                 const n=i+1,active=step===n,done=step>n;
@@ -796,7 +796,7 @@ export default function CompanyRegisterPage() {
                     <div style={{position:'relative'}}>
                       <input type={showPass?'text':'password'} value={admin.password} onChange={e=>setAdmin(a=>({...a,password:e.target.value}))} placeholder="Min 8 chars"
                         style={{...S.input,paddingRight:48}} onFocus={e=>e.target.style.borderColor=C.borderHi} onBlur={e=>e.target.style.borderColor=C.border}/>
-                      <button type="button" onClick={()=>setShowPass(p=>!p)} style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'#4B5563',cursor:'pointer',fontSize:11,fontFamily:'inherit'}}>
+                      <button type="button" onClick={()=>setShowPass(p=>!p)} style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'#8EA3C0',cursor:'pointer',fontSize:11,fontFamily:'inherit'}}>
                         {showPass?'Hide':'Show'}
                       </button>
                     </div>
@@ -825,7 +825,7 @@ export default function CompanyRegisterPage() {
                     <div style={{display:'flex',alignItems:'center'}}>
                       <input value={subdomain} onChange={e=>setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,'').slice(0,20))} placeholder="yourcompany"
                         style={{...S.input,borderRadius:'8px 0 0 8px',flex:1}} onFocus={e=>e.target.style.borderColor=C.borderHi} onBlur={e=>e.target.style.borderColor=C.border}/>
-                      <div style={{padding:'10px 13px',background:C.bg,border:`1px solid ${C.border}`,borderLeft:'none',borderRadius:'0 8px 8px 0',color:'#4B5563',fontSize:13,whiteSpace:'nowrap'}}>.syntern.in</div>
+                      <div style={{padding:'10px 13px',background:C.bg,border:`1px solid ${C.border}`,borderLeft:'none',borderRadius:'0 8px 8px 0',color:'#8EA3C0',fontSize:13,whiteSpace:'nowrap'}}>.syntern.in</div>
                     </div>
                     {subdomain && <div style={{fontSize:11,color:C.green,marginTop:3}}>Internal portal slug: https://{subdomain}.syntern.in</div>}
                   </Field>

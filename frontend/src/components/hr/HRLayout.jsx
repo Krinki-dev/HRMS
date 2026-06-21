@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import CompanyBrand from '../layout/CompanyBrand';
 import { Outlet, NavLink, useLocation, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -268,7 +268,6 @@ export default function HRLayout() {
   const location = useLocation();
   const { user } = useAuthStore();
   const [collapsed, setCollapsed] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const role  = user?.role || 'employee';
   const meta  = PAGE_META[location.pathname] || PAGE_META[Object.keys(PAGE_META).find(k => location.pathname.startsWith(k) && k !== '/') || ''] || { title: 'HR Admin', sub: '' };
@@ -303,7 +302,7 @@ export default function HRLayout() {
           </button>
         </div>
 
-        <><CompanyBrand sidebarOpen={sidebarOpen} /><nav className="hr-nav">
+        <><CompanyBrand sidebarOpen={!collapsed} /><nav className="hr-nav">
           {navItems.map(item => (
             <NavLink
               key={item.path}
