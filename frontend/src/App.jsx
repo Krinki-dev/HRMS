@@ -121,20 +121,20 @@ function PlanBanner() {
 
 function RequireAuth({ children }) {
   const { isLoggedIn } = useAuthStore();
-  if (!isLoggedIn) return <Navigate to="/login" replace />;
+    if (!isLoggedIn) { window.location.replace('/login'); return null; }
   return children;
 }
 
 function RequirePlatformAdmin({ children }) {
   const { isLoggedIn, user } = useAuthStore();
-  if (!isLoggedIn) return <Navigate to="/login" replace />;
+    if (!isLoggedIn) { window.location.replace('/login'); return null; }
   // Use is_platform_admin field, not role
-  if (!user?.is_platform_admin) return <Navigate to="/dashboard" replace />;
+    if (!user?.is_platform_admin) { window.location.replace('/login'); return null; }
   return children;
 }
 
 function RequirePlatformRoot({ children }) {
-  if (!IS_PLATFORM_ROOT) return <Navigate to="/login" replace />;
+    if (!IS_PLATFORM_ROOT) { window.location.replace('/login'); return null; }
   return children;
 }
 

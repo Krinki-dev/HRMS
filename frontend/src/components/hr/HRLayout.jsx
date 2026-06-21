@@ -268,6 +268,7 @@ export default function HRLayout() {
   const location = useLocation();
   const { user } = useAuthStore();
   const [collapsed, setCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const role  = user?.role || 'employee';
   const meta  = PAGE_META[location.pathname] || PAGE_META[Object.keys(PAGE_META).find(k => location.pathname.startsWith(k) && k !== '/') || ''] || { title: 'HR Admin', sub: '' };

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Outlet, NavLink, useLocation } from "react-router-dom";
 import CompanyBrand from '../layout/CompanyBrand';
 import { useAuthStore } from "../../store/authStore";
@@ -27,6 +28,7 @@ const PAGE_META = {
 
 export default function AdminLayout() {
   const location = useLocation();
+    const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useAuthStore();
   const meta = PAGE_META[location.pathname] || { title: "Admin", sub: "" };
 
