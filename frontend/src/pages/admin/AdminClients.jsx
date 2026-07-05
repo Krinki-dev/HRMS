@@ -248,10 +248,10 @@ export default function AdminClients() {
       {deleteModal && (
         <div className="admin-modal-backdrop" style={{ zIndex: 60 }}>
           <div className="admin-modal-card" style={{ width: 420 }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#991b1b', marginBottom: 8 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--admin-danger)', marginBottom: 8 }}>
               ⚠ Permanently delete {deleteModal.name}?
             </div>
-            <div style={{ fontSize: 12, color: '#64748b', marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: 'var(--admin-text-soft)', marginBottom: 16 }}>
               This will delete all employee data, payroll history, and documents. <br/>
               <strong>This action cannot be undone.</strong> 
               {deleteBackup && ' A backup will be saved before deletion.'}
@@ -268,7 +268,7 @@ export default function AdminClients() {
               />
             </div>
             {deleteModal?.dbMode === 'cloud' && (
-              <div style={{ marginBottom: 12, fontSize: 12, color: '#1e293b' }}>
+              <div style={{ marginBottom: 12, fontSize: 12, color: 'var(--admin-text)' }}>
                 This tenant is hosted on our managed cloud database. A backup is required and will be applied before deletion.
               </div>
             )}
@@ -295,7 +295,7 @@ export default function AdminClients() {
               <button className="btn-sm" onClick={() => setDeleteModal(null)}>Cancel</button>
               <button
                 className="btn-sm"
-                style={{ background: '#fee2e2', color: '#b91c1c', borderColor: '#fecaca' }}
+                style={{ background: 'var(--admin-danger-soft)', color: 'var(--admin-danger)', borderColor: 'rgba(220,38,38,0.24)' }}
                 disabled={
                   !deletePassword ||
                   deleteM.isPending ||

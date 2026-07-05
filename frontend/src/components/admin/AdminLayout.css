@@ -542,6 +542,25 @@
   color: var(--admin-accent);
 }
 
+.admin-surface-alt {
+  background: var(--admin-surface-alt);
+}
+
+.admin-success-soft {
+  background: var(--admin-success-soft);
+  color: var(--admin-success);
+}
+
+.admin-warning-soft {
+  background: var(--admin-warning-soft);
+  color: var(--admin-warning);
+}
+
+.admin-danger-soft {
+  background: var(--admin-danger-soft);
+  color: var(--admin-danger);
+}
+
 .admin-pill--warning {
   background: rgba(217, 119, 6, 0.14);
   color: var(--admin-warning);

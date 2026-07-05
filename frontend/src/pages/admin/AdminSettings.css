@@ -14,20 +14,14 @@
   text-align: left;
   padding: 9px 14px;
   border: none;
-  border-bottom: 0.5px solid rgba(0,0,0,0.06);
+  border-bottom: 0.5px solid var(--admin-border);
   font-size: 11px;
   background: transparent;
-  color: #334155;
+  color: var(--admin-text);
   cursor: pointer;
   transition: background 0.12s;
 }
 .settings-nav-btn:last-child { border-bottom: none; }
-.settings-nav-btn:hover { background: #f1f5f9; }
-.settings-nav-btn.active { background: #dcfce7; color: #15803d; font-weight: 500; }
-
-@media (prefers-color-scheme: dark) {
-  .settings-nav-btn { color: #cbd5e1; border-bottom-color: rgba(255,255,255,0.06); }
-  .settings-nav-btn:hover { background: #334155; }
-  .settings-nav-btn.active { background: #14532d; color: #86efac; }
-}
+.settings-nav-btn:hover { background: var(--admin-surface-muted); }
+.settings-nav-btn.active { background: var(--admin-accent-soft); color: var(--admin-accent); font-weight: 500; }
 

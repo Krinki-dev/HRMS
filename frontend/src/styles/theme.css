@@ -29,6 +29,7 @@
   --admin-surface: var(--app-surface-solid);
   --admin-surface-elevated: var(--app-surface-elevated);
   --admin-surface-muted: rgba(148, 163, 184, 0.16);
+  --admin-surface-alt: rgba(248, 250, 252, 0.92);
   --admin-border: var(--app-border);
   --admin-border-strong: var(--app-border-strong);
   --admin-text: var(--app-text);
@@ -39,8 +40,11 @@
   --admin-accent-hover: var(--app-accent-hover);
   --admin-accent-soft: var(--app-accent-soft);
   --admin-success: var(--app-success);
+  --admin-success-soft: rgba(22, 163, 74, 0.12);
   --admin-warning: var(--app-warning);
+  --admin-warning-soft: rgba(217, 119, 6, 0.12);
   --admin-danger: var(--app-danger);
+  --admin-danger-soft: rgba(220, 38, 38, 0.12);
   --admin-shadow-soft: var(--app-shadow-soft);
 }
 
@@ -71,6 +75,7 @@
   --admin-surface: var(--app-surface-solid);
   --admin-surface-elevated: var(--app-surface-elevated);
   --admin-surface-muted: rgba(122, 162, 255, 0.12);
+  --admin-surface-alt: rgba(31, 35, 41, 0.24);
   --admin-border: var(--app-border);
   --admin-border-strong: var(--app-border-strong);
   --admin-text: var(--app-text);
@@ -81,8 +86,11 @@
   --admin-accent-hover: var(--app-accent-hover);
   --admin-accent-soft: var(--app-accent-soft);
   --admin-success: var(--app-success);
+  --admin-success-soft: rgba(91, 214, 127, 0.12);
   --admin-warning: var(--app-warning);
+  --admin-warning-soft: rgba(245, 184, 73, 0.12);
   --admin-danger: var(--app-danger);
+  --admin-danger-soft: rgba(255, 122, 122, 0.12);
   --admin-shadow-soft: var(--app-shadow-soft);
 }
 

@@ -8,11 +8,11 @@ import './AdminPlans.css';
 
 
 const PLAN_COLORS = {
-  free:       '#94a3b8',
-  trial:      '#22c55e',
-  starter:    '#3b82f6',
+  free:       'var(--admin-text-soft)',
+  trial:      'var(--admin-success)',
+  starter:    'var(--admin-accent)',
   pro:        '#8b5cf6',
-  enterprise: '#f59e0b',
+  enterprise: 'var(--admin-warning)',
 };
 
 export default function AdminPlans() {
@@ -63,33 +63,33 @@ export default function AdminPlans() {
 
         {/* ARR */}
         <div className="stat-card">
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#16a34a', letterSpacing: '-0.02em' }}>{fmt(ARR)}</div>
-          <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4, fontWeight: 500 }}>Annualised revenue</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--admin-success)', letterSpacing: '-0.02em' }}>{fmt(ARR)}</div>
+          <div style={{ fontSize: 10, color: 'var(--admin-text-soft)', marginTop: 4, fontWeight: 500 }}>Annualised revenue</div>
         </div>
 
         {/* MRR */}
         <div className="stat-card">
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#2563eb', letterSpacing: '-0.02em' }}>{fmt(totalMRR)}</div>
-          <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4, fontWeight: 500 }}>Monthly recurring revenue</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--admin-accent)', letterSpacing: '-0.02em' }}>{fmt(totalMRR)}</div>
+          <div style={{ fontSize: 10, color: 'var(--admin-text-soft)', marginTop: 4, fontWeight: 500 }}>Monthly recurring revenue</div>
         </div>
 
         {/* Paid clients */}
         <div className="stat-card">
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#7c3aed', letterSpacing: '-0.02em' }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--admin-accent)', letterSpacing: '-0.02em' }}>
             {(bp.starter || 0) + (bp.pro || 0) + (bp.enterprise || 0)}
           </div>
-          <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4, fontWeight: 500 }}>Paid clients</div>
+          <div style={{ fontSize: 10, color: 'var(--admin-text-soft)', marginTop: 4, fontWeight: 500 }}>Paid clients</div>
         </div>
 
         {/* ARPU */}
         <div className="stat-card">
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#0891b2', letterSpacing: '-0.02em' }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--admin-accent)', letterSpacing: '-0.02em' }}>
             {(() => {
               const paid = (bp.starter || 0) + (bp.pro || 0) + (bp.enterprise || 0);
               return paid > 0 ? fmt(Math.round(totalMRR / paid)) : '—';
             })()}
           </div>
-          <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4, fontWeight: 500 }}>Avg. revenue / client</div>
+          <div style={{ fontSize: 10, color: 'var(--admin-text-soft)', marginTop: 4, fontWeight: 500 }}>Avg. revenue / client</div>
         </div>
 
       </div>
@@ -132,7 +132,7 @@ export default function AdminPlans() {
             { key: 'pro',        label: 'Pro' },
             { key: 'enterprise', label: 'Enterprise' },
           ].map(({ key, label }) => (
-            <div key={key} style={{ flex: 1, textAlign: 'center', fontSize: 9, color: '#94a3b8' }}>{label}</div>
+            <div key={key} style={{ flex: 1, textAlign: 'center', fontSize: 9, color: 'var(--admin-text-soft)' }}>{label}</div>
           ))}
         </div>
       </div>
@@ -143,7 +143,7 @@ export default function AdminPlans() {
         {catalogPlans.filter(p => p.id !== 'trial').map(plan => {
           const count = bp[plan.id] || 0;
           const rev   = MRR[plan.id] || 0;
-          const color = PLAN_COLORS[plan.id] || '#94a3b8';
+          const color = PLAN_COLORS[plan.id] || 'var(--admin-text-soft)';
           const isEdit = editPlan === plan.id;
 
           return (
@@ -160,25 +160,25 @@ export default function AdminPlans() {
 
               <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>
                 {plan.price ? `₹${plan.price.toLocaleString('en-IN')}` : 'Custom'}
-                {plan.period && <span style={{ fontSize: 11, fontWeight: 400, color: '#94a3b8' }}>/{plan.period}</span>}
+                {plan.period && <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--admin-text-soft)' }}>/{plan.period}</span>}
               </div>
 
               {rev > 0 && (
-                <div style={{ fontSize: 11, color: '#16a34a', marginBottom: 10, fontWeight: 600 }}>
+                <div style={{ fontSize: 11, color: 'var(--admin-success)', marginBottom: 10, fontWeight: 600 }}>
                   MRR: {fmt(rev)}
                 </div>
               )}
 
               <div style={{ borderTop: '0.5px solid rgba(0,0,0,0.07)', paddingTop: 10, marginBottom: 10 }}>
                 {(plan.features || []).map((f, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 5, fontSize: 11, color: '#475569', padding: '2px 0' }}>
-                    <span style={{ color: '#16a34a' }}>✓</span> {f}
+                  <div key={i} style={{ display: 'flex', gap: 5, fontSize: 11, color: 'var(--admin-text-secondary)', padding: '2px 0' }}>
+                    <span style={{ color: 'var(--admin-success)' }}>✓</span> {f}
                   </div>
                 ))}
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 10, color: '#94a3b8' }}>
+                <span style={{ fontSize: 10, color: 'var(--admin-text-soft)' }}>
                   {plan.maxEmployees ? `Up to ${plan.maxEmployees} employees` : 'Unlimited employees'}
                 </span>
                 <button className="btn-sm"
@@ -189,9 +189,9 @@ export default function AdminPlans() {
 
               {/* Edit plan inline panel */}
               {isEdit && (
-                <div style={{ marginTop: 12, padding: '12px 14px', background: '#eff6ff', borderRadius: 8, border: '0.5px solid #bfdbfe' }}>
-                  <div style={{ fontSize: 11, color: '#1d4ed8', fontWeight: 600, marginBottom: 8 }}>Edit plan config</div>
-                  <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.7 }}>
+                <div style={{ marginTop: 12, padding: '12px 14px', background: 'var(--admin-accent-soft)', borderRadius: 8, border: '0.5px solid rgba(37,99,235,0.24)' }}>
+                  <div style={{ fontSize: 11, color: 'var(--admin-accent)', fontWeight: 600, marginBottom: 8 }}>Edit plan config</div>
+                  <div style={{ fontSize: 11, color: 'var(--admin-text-soft)', lineHeight: 1.7 }}>
                     Global plan pricing and features are now managed dynamically. 
                     To modify the standard catalog, go to <strong>Platform Settings → Subscription Plans</strong>.
                     <br /><br />
@@ -208,10 +208,10 @@ export default function AdminPlans() {
       {/* ── Trial notice ── */}
       {(bp.trial || 0) > 0 && (
         <div className="card" style={{ padding: '12px 16px', marginTop: 14 }}>
-          <div style={{ fontSize: 12, color: '#64748b' }}>
+          <div style={{ fontSize: 12, color: 'var(--admin-text-soft)' }}>
             <strong>{bp.trial} client{bp.trial !== 1 ? 's' : ''}</strong> currently on 14-day trial.
             These are potential conversions — reach out before their trial expires.
-            <a href="/admin/clients?plan=trial" style={{ color: '#2563eb', marginLeft: 8 }}>View trial clients →</a>
+            <a href="/admin/clients?plan=trial" style={{ color: 'var(--admin-accent)', marginLeft: 8 }}>View trial clients →</a>
           </div>
         </div>
       )}

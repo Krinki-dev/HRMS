@@ -6,7 +6,7 @@ import { adminApi } from '../../services/adminApi';
 import BillingConfigTab from '../platform/BillingConfigTab';
 import '../admin/AdminLayout.css';
 
-const PLAN_COLOR = { free: '#94a3b8', starter: '#3b82f6', pro: '#8b5cf6', enterprise: '#f59e0b' };
+const PLAN_COLOR = { free: 'var(--admin-text-soft)', starter: 'var(--admin-accent)', pro: '#8b5cf6', enterprise: 'var(--admin-warning)' };
 const PLAN_OPTS  = ['free', 'starter', 'pro', 'enterprise'];
 
 const MODULE_LABELS = {
@@ -32,7 +32,7 @@ const MODULE_ALWAYS_ON = ['employees', 'settings', 'notifications'];
 function Row({ label, value }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '0.5px solid rgba(0,0,0,0.05)', fontSize: 12 }}>
-      <span style={{ color: '#64748b' }}>{label}</span>
+      <span style={{ color: 'var(--admin-text-soft)' }}>{label}</span>
       <span style={{ fontWeight: 500, textAlign: 'right', maxWidth: '60%', wordBreak: 'break-all' }}>{value || '—'}</span>
     </div>
   );
@@ -130,27 +130,27 @@ export default function AdminClientDetail() {
     { key: 'email',    label: 'Email config' },
   ];
 
-  if (isLoading) return <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8', fontSize: 12 }}>Loading…</div>;
-  if (!t) return <div style={{ padding: 40, textAlign: 'center', color: '#dc2626', fontSize: 12 }}>Client not found. <Link to="/admin/clients">← Back</Link></div>;
+  if (isLoading) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--admin-text-soft)', fontSize: 12 }}>Loading…</div>;
+  if (!t) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--admin-danger)', fontSize: 12 }}>Client not found. <Link to="/admin/clients">← Back</Link></div>;
 
   return (
     <div>
 
       {}
       <div style={{ marginBottom: 12 }}>
-        <Link to="/admin/clients" style={{ fontSize: 11, color: '#64748b', textDecoration: 'none' }}>← All clients</Link>
+        <Link to="/admin/clients" style={{ fontSize: 11, color: 'var(--admin-text-soft)', textDecoration: 'none' }}>← All clients</Link>
       </div>
 
       {}
       <div className="card" style={{ padding: '14px 18px', marginBottom: 14 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 600, color: '#1d4ed8' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--admin-accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 600, color: 'var(--admin-accent)' }}>
               {(t.name || '?')[0].toUpperCase()}
             </div>
             <div>
               <div style={{ fontSize: 15, fontWeight: 600 }}>{t.name}</div>
-              <div style={{ fontSize: 11, color: '#64748b', fontFamily: 'monospace' }}>{t.subdomain}.syntern.in</div>
+              <div style={{ fontSize: 11, color: 'var(--admin-text-soft)', fontFamily: 'monospace' }}>{t.subdomain}.syntern.in</div>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -166,7 +166,7 @@ export default function AdminClientDetail() {
                 >
                   {PLAN_OPTS.map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
                 </select>
-                <button className="btn-sm" style={{ color: '#15803d', borderColor: '#86efac' }}
+                <button className="btn-sm" style={{ color: 'var(--admin-success)', borderColor: 'rgba(22,163,74,0.24)' }}
                   onClick={() => updateM.mutate({ plan: planVal || t.plan })}
                   disabled={updateM.isPending}>
                   {updateM.isPending ? '…' : 'Save'}
@@ -175,7 +175,7 @@ export default function AdminClientDetail() {
               </div>
             ) : (
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <span style={{ background: `${PLAN_COLOR[t.plan] || '#94a3b8'}22`, color: PLAN_COLOR[t.plan] || '#94a3b8', fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 4 }}>
+                <span style={{ background: `${PLAN_COLOR[t.plan] || 'var(--admin-text-soft)'}22`, color: PLAN_COLOR[t.plan] || 'var(--admin-text-soft)', fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 4 }}>
                   {(t.plan || 'free').toUpperCase()}
                 </span>
                 <button className="btn-sm" onClick={() => { setPlanEdit(true); setPlanVal(t.plan); }}>Change plan</button>
@@ -187,13 +187,13 @@ export default function AdminClientDetail() {
             </span>
 
             {t.isActive ? (
-              <button className="btn-sm" style={{ color: '#b91c1c', borderColor: '#fecaca' }}
+              <button className="btn-sm" style={{ color: 'var(--admin-danger)', borderColor: 'rgba(220,38,38,0.24)' }}
                 onClick={() => { if (window.confirm('Suspend this account?')) suspendM.mutate(); }}
                 disabled={suspendM.isPending}>
                 {suspendM.isPending ? '…' : 'Suspend'}
               </button>
             ) : (
-              <button className="btn-sm" style={{ color: '#15803d', borderColor: '#86efac' }}
+              <button className="btn-sm" style={{ color: 'var(--admin-success)', borderColor: 'rgba(22,163,74,0.24)' }}
                 onClick={() => activateM.mutate()}
                 disabled={activateM.isPending}>
                 {activateM.isPending ? '…' : 'Activate'}
@@ -212,8 +212,8 @@ export default function AdminClientDetail() {
             style={{
               fontSize: 12, fontWeight: tab === tb.key ? 600 : 400,
               padding: '7px 14px', border: 'none', background: 'none', cursor: 'pointer',
-              color: tab === tb.key ? '#1d4ed8' : '#64748b',
-              borderBottom: tab === tb.key ? '2px solid #3b82f6' : '2px solid transparent',
+              color: tab === tb.key ? 'var(--admin-accent)' : 'var(--admin-text-soft)',
+              borderBottom: tab === tb.key ? '2px solid var(--admin-accent)' : '2px solid transparent',
               marginBottom: -1,
             }}
           >
@@ -268,7 +268,7 @@ export default function AdminClientDetail() {
               <div className="card-title">Module access</div>
               <div className="card-sub">Toggle which modules this company can access</div>
             </div>
-            {modM.isPending && <span style={{ fontSize: 11, color: '#94a3b8' }}>Saving…</span>}
+            {modM.isPending && <span style={{ fontSize: 11, color: 'var(--admin-text-soft)' }}>Saving…</span>}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
             {modules.map(m => {
@@ -289,7 +289,7 @@ export default function AdminClientDetail() {
                 >
                   <div style={{
                     width: 16, height: 16, borderRadius: 4, flexShrink: 0,
-                    background: checked ? '#16a34a' : '#e2e8f0',
+                    background: checked ? 'var(--admin-success)' : 'var(--admin-surface-muted)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 10, color: '#fff', fontWeight: 700,
                   }}>
@@ -297,9 +297,9 @@ export default function AdminClientDetail() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 12, fontWeight: checked ? 500 : 400 }}>{MODULE_LABELS[m.name] || m.name}</div>
-                    {locked && <div style={{ fontSize: 10, color: '#94a3b8' }}>Always enabled</div>}
+                    {locked && <div style={{ fontSize: 10, color: 'var(--admin-text-soft)' }}>Always enabled</div>}
                     {!locked && m.isActive && m.enabledAt && (
-                      <div style={{ fontSize: 10, color: '#94a3b8' }}>
+                      <div style={{ fontSize: 10, color: 'var(--admin-text-soft)' }}>
                         Enabled {new Date(m.enabledAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short' })}
                       </div>
                     )}
@@ -308,7 +308,7 @@ export default function AdminClientDetail() {
               );
             })}
             {modules.length === 0 && (
-              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: 24, color: '#94a3b8', fontSize: 12 }}>
+              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: 24, color: 'var(--admin-text-soft)', fontSize: 12 }}>
                 Loading modules…
               </div>
             )}
@@ -362,7 +362,7 @@ export default function AdminClientDetail() {
           <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
             <button
               className="btn-sm"
-              style={{ padding: '7px 16px', background: smtpChanged ? '#16a34a' : undefined, color: smtpChanged ? '#fff' : undefined, borderColor: smtpChanged ? '#16a34a' : undefined }}
+              style={{ padding: '7px 16px', background: smtpChanged ? 'var(--admin-success)' : undefined, color: smtpChanged ? '#fff' : undefined, borderColor: smtpChanged ? 'var(--admin-success)' : undefined }}
               onClick={saveSmtp}
               disabled={notifM.isPending}
             >
@@ -378,12 +378,12 @@ export default function AdminClientDetail() {
           </div>
 
           {notifCfg.emailVerified && (
-            <div style={{ marginTop: 12, padding: '8px 12px', background: '#f0fdf4', borderRadius: 6, fontSize: 11, color: '#15803d' }}>
+            <div style={{ marginTop: 12, padding: '8px 12px', background: 'var(--admin-success-soft)', borderRadius: 6, fontSize: 11, color: 'var(--admin-success)' }}>
               ✓ SMTP verified — emails are working
             </div>
           )}
           {notifCfg.emailHost && !notifCfg.emailVerified && (
-            <div style={{ marginTop: 12, padding: '8px 12px', background: '#fffbeb', borderRadius: 6, fontSize: 11, color: '#92400e' }}>
+            <div style={{ marginTop: 12, padding: '8px 12px', background: 'var(--admin-warning-soft)', borderRadius: 6, fontSize: 11, color: 'var(--admin-warning)' }}>
               ⚠ SMTP saved but not yet verified. Click &quot;Send test email&quot; to verify.
             </div>
           )}

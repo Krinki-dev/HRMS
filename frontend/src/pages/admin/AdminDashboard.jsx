@@ -6,10 +6,10 @@ import { THEME } from '../../utils/uiConstants';
 import '../admin/AdminLayout.css';
 
 const PLAN_COLOR = {
-  free: '#94a3b8',
-  starter: '#3b82f6',
+  free: 'var(--admin-text-soft)',
+  starter: 'var(--admin-accent)',
   pro: '#8b5cf6',
-  enterprise: '#f59e0b',
+  enterprise: 'var(--admin-warning)',
 };
 
 const BADGE = {
@@ -105,9 +105,9 @@ export default function AdminDashboard() {
     <div>
       <div className="stats-grid-4">
         <StatCard label="Total companies" value={stats.totalTenants} sub="registered" icon="🏢" />
-        <StatCard label="Active now" value={stats.activeSubs} color="#16a34a" sub="subscriptions" icon="✅" />
-        <StatCard label="New this week" value={stats.newThisWeek} color="#3b82f6" icon="✨" />
-        <StatCard label="Expiring soon" value={stats.expiringSoon} color={stats.expiringSoon > 0 ? '#f59e0b' : undefined} sub="within 7 days" icon="⏳" />
+        <StatCard label="Active now" value={stats.activeSubs} color="var(--admin-success)" sub="subscriptions" icon="✅" />
+        <StatCard label="New this week" value={stats.newThisWeek} color="var(--admin-accent)" icon="✨" />
+        <StatCard label="Expiring soon" value={stats.expiringSoon} color={stats.expiringSoon > 0 ? 'var(--admin-warning)' : undefined} sub="within 7 days" icon="⏳" />
       </div>
 
       <div className="admin-page-grid-2">

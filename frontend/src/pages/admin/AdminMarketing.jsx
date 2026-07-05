@@ -77,7 +77,7 @@ export default function AdminMarketing() {
 
       {}
       <div className="card" style={{ padding: 0, overflow: 'hidden', alignSelf: 'start' }}>
-        <div style={{ padding: '12px 14px', borderBottom: '0.5px solid rgba(0,0,0,0.08)', fontSize: 12, fontWeight: 600, color: '#0f172a' }}>
+        <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--admin-border)', fontSize: 12, fontWeight: 600, color: 'var(--admin-text)' }}>
           Landing page
         </div>
         {SECTIONS.map(s => (
@@ -113,12 +113,12 @@ export default function AdminMarketing() {
             ))}
 
             {}
-            <div style={{ background: '#040c1a', borderRadius: 10, padding: '24px 28px', marginBottom: 14 }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', marginBottom: 8, lineHeight: 1.3 }}>{hero.heading}</div>
-              <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 20 }}>{hero.subhead}</div>
+            <div style={{ background: 'var(--admin-surface)', border: '1px solid var(--admin-border)', borderRadius: 10, padding: '24px 28px', marginBottom: 14 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--admin-text)', marginBottom: 8, lineHeight: 1.3 }}>{hero.heading}</div>
+              <div style={{ fontSize: 13, color: 'var(--admin-text-soft)', marginBottom: 20 }}>{hero.subhead}</div>
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <div style={{ padding: '10px 24px', background: '#2563eb', color: '#fff', borderRadius: 8, fontSize: 13, fontWeight: 600 }}>{hero.ctaText}</div>
-                <div style={{ fontSize: 11, color: '#64748b' }}>{hero.ctaSub}</div>
+                <div style={{ padding: '10px 24px', background: 'var(--admin-accent)', color: '#fff', borderRadius: 8, fontSize: 13, fontWeight: 600 }}>{hero.ctaText}</div>
+                <div style={{ fontSize: 11, color: 'var(--admin-text-muted)' }}>{hero.ctaSub}</div>
               </div>
             </div>
 
@@ -134,21 +134,21 @@ export default function AdminMarketing() {
         {active === 'Features' && (
           <div className="card" style={{ padding: '16px 20px' }}>
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Feature cards</div>
-            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 14 }}>These 6 cards appear in the &quot;Why Syntern?&quot; section on the landing page.</div>
+            <div style={{ fontSize: 11, color: 'var(--admin-text-soft)', marginBottom: 14 }}>These 6 cards appear in the &quot;Why Syntern?&quot; section on the landing page.</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               {FEATURE_DEFAULTS.map((f, i) => (
-                <div key={i} style={{ background: '#f8fafc', border: '0.5px solid #e2e8f0', borderRadius: 8, padding: '12px 14px' }}>
+                <div key={i} style={{ background: 'var(--admin-surface-alt)', border: '1px solid var(--admin-border)', borderRadius: 8, padding: '12px 14px' }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                     <span style={{ fontSize: 20 }}>{f.icon}</span>
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 3 }}>{f.title}</div>
-                      <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5 }}>{f.desc}</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 3, color: 'var(--admin-text)' }}>{f.title}</div>
+                      <div style={{ fontSize: 11, color: 'var(--admin-text-soft)', lineHeight: 1.5 }}>{f.desc}</div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: 14, padding: '10px 12px', background: '#fffbeb', borderRadius: 6, fontSize: 11, color: '#92400e' }}>
+            <div style={{ marginTop: 14, padding: '10px 12px', background: 'rgba(217,119,6,0.12)', borderRadius: 6, fontSize: 11, color: 'var(--admin-warning)' }}>
               To edit feature text: modify <code>FEATURE_DEFAULTS</code> in this file and redeploy.
             </div>
           </div>
@@ -157,31 +157,31 @@ export default function AdminMarketing() {
         {active === 'Pricing' && (
           <div className="card" style={{ padding: '16px 20px' }}>
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Pricing display</div>
-            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 14 }}>
+            <div style={{ fontSize: 11, color: 'var(--admin-text-soft)', marginBottom: 14 }}>
               Dynamic pricing (₹1,499 Base Plan) synced with platform catalog.
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
               {catalogPlans.map(p => {
                 const color = p.id === 'pro' ? '#8b5cf6' : p.id === 'enterprise' ? '#f59e0b' : '#3b82f6';
                 return (
-                <div key={p.id} style={{ background: p.highlight ? '#faf5ff' : '#f8fafc', border: `1.5px solid ${p.highlight ? '#c4b5fd' : '#e2e8f0'}`, borderRadius: 10, padding: '14px 14px', textAlign: 'center' }}>
+                <div key={p.id} style={{ background: p.highlight ? 'rgba(236, 232, 255, 0.5)' : 'var(--admin-surface-alt)', border: `1.5px solid ${p.highlight ? 'rgba(196,181,253,0.8)' : 'var(--admin-border)'}`, borderRadius: 10, padding: '14px 14px', textAlign: 'center' }}>
                   <div style={{ display: 'flex', justifyContent: 'center', gap: 4, alignItems: 'center', marginBottom: 6 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: color, textTransform: 'uppercase' }}>{p.name}</div>
-                    {p.originalPrice && <div style={{ fontSize: 9, color: '#94a3b8', textDecoration: 'line-through' }}>₹{p.originalPrice}</div>}
+                    {p.originalPrice && <div style={{ fontSize: 9, color: 'var(--admin-text-soft)', textDecoration: 'line-through' }}>₹{p.originalPrice}</div>}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 800 }}>
                     {p.price ? `₹${p.price.toLocaleString('en-IN')}` : 'Custom'}
-                    <span style={{ fontSize: 11, fontWeight: 400, color: '#94a3b8' }}>{p.period ? `/${p.period}` : ''}</span>
+                    <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--admin-text-soft)' }}>{p.period ? `/${p.period}` : ''}</span>
                   </div>
-                  <div style={{ fontSize: 10, color: '#64748b', marginTop: 4 }}>
+                  <div style={{ fontSize: 10, color: 'var(--admin-text-soft)', marginTop: 4 }}>
                     {p.id === 'enterprise' ? 'Own Server Mode' : `First ${p.baseEmployees} Employees`}
                   </div>
-                  <div style={{ fontSize: 9, color: '#94a3b8' }}>+18% GST Extra</div>
+                  <div style={{ fontSize: 9, color: 'var(--admin-text-soft)' }}>+18% GST Extra</div>
                 </div>
                 );
               })}
             </div>
-            <div style={{ marginTop: 14, fontSize: 11, color: '#64748b', lineHeight: 1.7 }}>
+            <div style={{ marginTop: 14, fontSize: 11, color: 'var(--admin-text-soft)', lineHeight: 1.7 }}>
               <strong>To change a price:</strong> Open <code>backend/modules/platform/subscription.routes.js</code> → find the <code>PLANS</code> array → change the <code>price</code> value → commit + deploy.
             </div>
           </div>
@@ -190,11 +190,11 @@ export default function AdminMarketing() {
         {active === 'Testimonials' && (
           <div className="card" style={{ padding: '16px 20px' }}>
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Testimonials</div>
-            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 14 }}>Add testimonials from real clients once you have them. These appear on the landing page.</div>
-            <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8', fontSize: 12 }}>
+            <div style={{ fontSize: 11, color: 'var(--admin-text-soft)', marginBottom: 14 }}>Add testimonials from real clients once you have them. These appear on the landing page.</div>
+            <div style={{ textAlign: 'center', padding: 40, color: 'var(--admin-text-soft)', fontSize: 12 }}>
               No testimonials yet. Once you onboard real clients and collect feedback, add them here.
             </div>
-            <div style={{ padding: '10px 12px', background: '#eff6ff', borderRadius: 6, fontSize: 11, color: '#1d4ed8' }}>
+            <div style={{ padding: '10px 12px', background: 'var(--admin-accent-soft)', borderRadius: 6, fontSize: 11, color: 'var(--admin-accent)' }}>
               💡 After PCEPL goes live: ask them for a 1-2 sentence quote about using Syntern. Add it here to improve landing page conversion.
             </div>
           </div>
@@ -216,7 +216,7 @@ export default function AdminMarketing() {
                   <tr key={i}>
                     <td style={{ fontSize: 12 }}>{r.section}</td>
                     <td style={{ fontSize: 11, fontWeight: 500 }}>{r.text}</td>
-                    <td style={{ fontFamily: 'monospace', fontSize: 10, color: '#2563eb' }}>{r.url}</td>
+                    <td style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--admin-accent)' }}>{r.url}</td>
                     <td><span className="badge badge-active" style={{ fontSize: 9 }}>Active</span></td>
                   </tr>
                 ))}

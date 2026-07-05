@@ -33,7 +33,7 @@ export default function AdminAnalytics() {
       growChart?.destroy();
 
       const gc = 'rgba(0,0,0,0.06)';
-      const tc = '#64748b';
+      const tc = 'var(--admin-text-soft)';
 
       growChart = new Chart(growRef.current, {
         type: 'bar',
@@ -42,7 +42,7 @@ export default function AdminAnalytics() {
           datasets: [{
             label: 'Clients',
             data:  [bp.trial || 0, bp.starter || 0, bp.pro || 0, bp.enterprise || 0],
-            backgroundColor: ['#22c55e', '#3b82f6', '#8b5cf6', '#f59e0b'],
+            backgroundColor: ['var(--admin-success)', 'var(--admin-accent)', '#8b5cf6', 'var(--admin-warning)'],
             borderRadius: 5,
           }],
         },
@@ -78,7 +78,7 @@ export default function AdminAnalytics() {
           labels: ['Free', 'Trial', 'Paid'],
           datasets: [{
             data:  [bp.free || 0, bp.trial || 0, paid],
-            backgroundColor: ['#f1f5f9', '#22c55e', '#2563eb'],
+            backgroundColor: ['var(--admin-surface-muted)', 'var(--admin-success)', 'var(--admin-accent)'],
             borderWidth: 0,
             hoverOffset: 4,
           }],
@@ -86,7 +86,7 @@ export default function AdminAnalytics() {
         options: {
           responsive: true, maintainAspectRatio: false,
           cutout: '65%',
-          plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, color: '#64748b', padding: 14 } } },
+          plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, color: 'var(--admin-text-soft)', padding: 14 } } },
         },
       });
     }
