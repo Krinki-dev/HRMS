@@ -114,38 +114,37 @@ export default function AdminAnalytics() {
 
   return (
     <div>
-      <div className="stats-grid-4" style={{ marginBottom: 16 }}>
+      <div className="stats-grid-4">
         <div className="stat-card"><div className="stat-label">Total clients</div><div className="stat-value">{total}</div></div>
-        <div className="stat-card"><div className="stat-label">Paid conversion</div><div className="stat-value" style={{ color: convPct > 50 ? '#16a34a' : '#f59e0b' }}>{convPct}%</div><div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{paid} of {total} clients</div></div>
-        <div className="stat-card"><div className="stat-label">MRR</div><div className="stat-value" style={{ color: '#16a34a' }}>{fmt(MRR)}</div></div>
-        <div className="stat-card"><div className="stat-label">New this week</div><div className="stat-value" style={{ color: '#2563eb' }}>{stats.newThisWeek || 0}</div></div>
+        <div className="stat-card"><div className="stat-label">Paid conversion</div><div className="stat-value" style={{ color: convPct > 50 ? 'var(--admin-success)' : 'var(--admin-warning)' }}>{convPct}%</div><div className="stat-hint">{paid} of {total} clients</div></div>
+        <div className="stat-card"><div className="stat-label">MRR</div><div className="stat-value" style={{ color: 'var(--admin-success)' }}>{fmt(MRR)}</div></div>
+        <div className="stat-card"><div className="stat-label">New this week</div><div className="stat-value" style={{ color: 'var(--admin-accent)' }}>{stats.newThisWeek || 0}</div></div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 14 }}>
-        <div className="card" style={{ padding: '14px 16px' }}>
-          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 14 }}>Clients by plan</div>
+      <div className="admin-page-grid-2">
+        <div className="card admin-panel-body">
+          <div className="card-title" style={{ marginBottom: 14 }}>Clients by plan</div>
           <div style={{ height: 200 }}><canvas ref={growRef} /></div>
         </div>
-        <div className="card" style={{ padding: '14px 16px' }}>
-          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 14 }}>Free vs Trial vs Paid</div>
+        <div className="card admin-panel-body">
+          <div className="card-title" style={{ marginBottom: 14 }}>Free vs Trial vs Paid</div>
           <div style={{ height: 200 }}><canvas ref={planRef} /></div>
         </div>
       </div>
 
-      {}
-      <div className="card" style={{ padding: '16px 20px', marginTop: 14 }}>
+      <div className="card admin-panel-body" style={{ marginTop: 14 }}>
         <div className="card-title" style={{ marginBottom: 14 }}>Conversion funnel</div>
         {[
-          { label: 'Registered',      count: total,            color: '#94a3b8', pct: 100 },
-          { label: 'Started trial',   count: bp.trial  || 0,  color: '#22c55e', pct: total > 0 ? Math.round(((bp.trial||0)/total)*100) : 0 },
-          { label: 'Converted to paid', count: paid,           color: '#2563eb', pct: total > 0 ? Math.round((paid/total)*100) : 0 },
+          { label: 'Registered', count: total, color: 'var(--admin-text-soft)', pct: 100 },
+          { label: 'Started trial', count: bp.trial || 0, color: 'var(--admin-success)', pct: total > 0 ? Math.round(((bp.trial || 0) / total) * 100) : 0 },
+          { label: 'Converted to paid', count: paid, color: 'var(--admin-accent)', pct: total > 0 ? Math.round((paid / total) * 100) : 0 },
         ].map((s, i) => (
           <div key={i} style={{ marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-              <span style={{ fontWeight: 500 }}>{s.label}</span>
-              <span style={{ color: '#64748b' }}>{s.count} ({s.pct}%)</span>
+              <span style={{ fontWeight: 600, color: 'var(--admin-text)' }}>{s.label}</span>
+              <span style={{ color: 'var(--admin-text-muted)' }}>{s.count} ({s.pct}%)</span>
             </div>
-            <div style={{ height: 8, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
+            <div style={{ height: 8, background: 'var(--admin-surface-muted)', borderRadius: 4, overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${s.pct}%`, background: s.color, borderRadius: 4, transition: 'width 0.4s' }} />
             </div>
           </div>

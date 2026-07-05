@@ -90,8 +90,6 @@ export default function AdminSettings() {
 
   return (
     <div className="hr-settings-layout">
-
-      {}
       <div className="card" style={{ padding: 0, overflow: 'hidden', alignSelf: 'start' }}>
         <div className="card-header">
           <div className="card-title">Platform settings</div>
@@ -107,12 +105,11 @@ export default function AdminSettings() {
         ))}
       </div>
 
-      {}
-      <div className="card" style={{ padding: '16px 20px' }}>
+      <div className="card admin-panel-body">
         <form onSubmit={handleSave}>
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>{active}</div>
-            <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--admin-text)' }}>{active}</div>
+            <div style={{ fontSize: 11, color: 'var(--admin-text-muted)', marginTop: 2 }}>
               {active === 'Platform' && 'Global platform identity and branding settings.'}
               {active === 'Email / SMTP' && 'Platform-level SMTP for system emails (new company welcome, billing). Tenant-specific SMTP is set per client.'}
               {active === 'SMS gateway' && 'Platform fallback SMS provider. Individual clients configure their own in their settings.'}
@@ -126,7 +123,7 @@ export default function AdminSettings() {
               <div key={f.key} className="form-group" style={{ gridColumn: f.type === 'password' && f.key === 'smtpPass' ? '1/-1' : undefined, margin: 0 }}>
                 <label className="form-label">
                   {f.label}
-                  <span style={{ fontSize: 9, color: '#94a3b8', marginLeft: 6 }}>env: {f.envKey}</span>
+                  <span style={{ fontSize: 9, color: 'var(--admin-text-soft)', marginLeft: 6 }}>env: {f.envKey}</span>
                 </label>
                 {f.type === 'select' ? (
                   <select
@@ -149,9 +146,8 @@ export default function AdminSettings() {
             ))}
           </div>
 
-          {}
           {active === 'Email / SMTP' && (
-            <div style={{ marginTop: 14, padding: '12px 14px', background: '#f8fafc', borderRadius: 6, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+            <div style={{ marginTop: 14, padding: '12px 14px', background: 'var(--admin-surface-muted)', borderRadius: 6, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
               <div style={{ flex: 1 }}>
                 <label className="form-label">Send a test email to</label>
                 <input
@@ -178,16 +174,15 @@ export default function AdminSettings() {
             <button
               type="submit"
               className="btn-sm"
-              style={{ padding: '8px 20px', background: '#16a34a', color: '#fff', borderColor: '#16a34a' }}
+              style={{ padding: '8px 20px', background: 'var(--admin-success)', color: '#fff', borderColor: 'var(--admin-success)' }}
               disabled={saveM.isPending}
             >
               {saveM.isPending ? 'Saving…' : 'Save settings'}
             </button>
-            {saveM.isSuccess && <span style={{ fontSize: 11, color: '#16a34a' }}>✓ Saved</span>}
+            {saveM.isSuccess && <span style={{ fontSize: 11, color: 'var(--admin-success)' }}>✓ Saved</span>}
           </div>
 
-          {}
-          <div style={{ marginTop: 14, padding: '10px 12px', background: '#fffbeb', borderRadius: 6, fontSize: 11, color: '#92400e' }}>
+          <div className="admin-alert admin-alert--warning" style={{ marginTop: 14 }}>
             <strong>Note:</strong> Platform settings that map to .env variables (JWT secret, SMTP credentials) require a server restart to take effect after saving. Settings are stored in the central DB and applied on next startup.
           </div>
         </form>

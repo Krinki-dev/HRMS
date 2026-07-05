@@ -6,9 +6,9 @@ import '../admin/AdminLayout.css';
 import { adminApi } from '../../services/adminApi';
 
 const PLAN_COLOR = {
-  free:       '#94a3b8',
-  starter:    '#3b82f6',
-  pro:        '#8b5cf6',
+  free: '#94a3b8',
+  starter: '#3b82f6',
+  pro: '#8b5cf6',
   enterprise: '#f59e0b',
 };
 
@@ -16,12 +16,12 @@ export default function AdminClients() {
   const qc = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [search,  setSearch]  = useState(searchParams.get('search') || '');
-  const [planF,   setPlanF]   = useState(searchParams.get('plan')   || '');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [planF, setPlanF] = useState(searchParams.get('plan') || '');
   const [statusF, setStatusF] = useState(searchParams.get('status') || 'active');
-  const [cursor,  setCursor]  = useState(null);
+  const [cursor, setCursor] = useState(null);
   const [history, setHistory] = useState([null]);
-  const [suspendModal, setSuspendModal] = useState(null); 
+  const [suspendModal, setSuspendModal] = useState(null);
   const [suspendReason, setSuspendReason] = useState('');
   const [deleteModal, setDeleteModal] = useState(null);
   const [deletePassword, setDeletePassword] = useState('');
@@ -31,14 +31,14 @@ export default function AdminClients() {
   const reset = useCallback(() => { setCursor(null); setHistory([null]); }, []);
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey:        ['admin-tenants', { search, planF, statusF, cursor }],
-    queryFn:         () => adminApi.listTenants({ search, plan: planF, status: statusF, cursor, limit: 20 }),
+    queryKey: ['admin-tenants', { search, planF, statusF, cursor }],
+    queryFn: () => adminApi.listTenants({ search, plan: planF, status: statusF, cursor, limit: 20 }),
     placeholderData: (prev) => prev,
-    staleTime:       30_000,
+    staleTime: 30_000,
   });
 
-  const tenants  = data?.tenants  || [];
-  const hasMore  = data?.hasMore  || false;
+  const tenants = data?.tenants || [];
+  const hasMore = data?.hasMore || false;
   const nextCursor = data?.cursor || null;
 
   const suspendM = useMutation({
@@ -96,14 +96,12 @@ export default function AdminClients() {
 
   return (
     <div>
-      {}
-      <form onSubmit={handleSearch} style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+      <form onSubmit={handleSearch} className="admin-toolbar">
         <input
           className="form-input"
           placeholder="Search company, email, GSTIN…"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          style={{ flex: 1, minWidth: 180 }}
         />
         <select className="form-input" style={{ width: 140 }} value={planF} onChange={e => { setPlanF(e.target.value); reset(); }}>
           <option value="">All plans</option>
@@ -117,12 +115,11 @@ export default function AdminClients() {
           <option value="active">Active</option>
           <option value="suspended">Suspended</option>
         </select>
-        <button type="submit" className="btn-sm" style={{ padding: '7px 14px' }}>Search</button>
+        <button type="submit" className="btn-sm">Search</button>
       </form>
 
-      {}
       <div className="card">
-        <div style={{ overflowX: 'auto' }}>
+        <div className="admin-table-scroll">
           <table className="data-table">
             <thead>
               <tr>
@@ -138,28 +135,23 @@ export default function AdminClients() {
             </thead>
             <tbody>
               {isLoading && (
-                <tr><td colSpan={8} style={{ textAlign: 'center', padding: 30, color: '#94a3b8' }}>Loading…</td></tr>
+                <tr><td colSpan={8} className="admin-empty-state">Loading…</td></tr>
               )}
               {!isLoading && tenants.length === 0 && (
-                <tr><td colSpan={8} style={{ textAlign: 'center', padding: 30, color: '#94a3b8' }}>No companies found</td></tr>
+                <tr><td colSpan={8} className="admin-empty-state">No companies found</td></tr>
               )}
               {tenants.map(t => (
                 <tr key={t.id} style={{ opacity: isFetching ? 0.6 : 1 }}>
                   <td>
-                    <div style={{ fontWeight: 500, color: '#0f172a' }}>{t.name}</div>
-                    {t.gstin && <div style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace' }}>{t.gstin}</div>}
+                    <div style={{ fontWeight: 600, color: 'var(--admin-text)' }}>{t.name}</div>
+                    {t.gstin && <div style={{ fontSize: 10, color: 'var(--admin-text-soft)', fontFamily: 'monospace' }}>{t.gstin}</div>}
                   </td>
-                  <td style={{ fontSize: 11, fontFamily: 'monospace', color: '#475569' }}>
+                  <td style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--admin-text-secondary)' }}>
                     {t.subdomain}.syntern.in
-                    {t.customDomain && <div style={{ color: '#3b82f6' }}>{t.customDomain}</div>}
+                    {t.customDomain && <div style={{ color: 'var(--admin-accent)' }}>{t.customDomain}</div>}
                   </td>
                   <td>
-                    <span style={{
-                      background: `${PLAN_COLOR[t.plan] || '#94a3b8'}22`,
-                      color: PLAN_COLOR[t.plan] || '#94a3b8',
-                      fontSize: 10, fontWeight: 600,
-                      padding: '2px 7px', borderRadius: 4,
-                    }}>
+                    <span className="admin-pill admin-pill--accent" style={{ background: `${PLAN_COLOR[t.plan] || '#94a3b8'}22`, color: PLAN_COLOR[t.plan] || '#94a3b8' }}>
                       {(t.plan || 'free').toUpperCase()}
                     </span>
                   </td>
@@ -170,19 +162,19 @@ export default function AdminClients() {
                   </td>
                   <td>
                     <div style={{ fontSize: 11 }}>{t.adminName || '—'}</div>
-                    <div style={{ fontSize: 10, color: '#94a3b8' }}>{t.adminEmail}</div>
+                    <div style={{ fontSize: 10, color: 'var(--admin-text-soft)' }}>{t.adminEmail}</div>
                   </td>
-                  <td style={{ fontSize: 11, color: '#64748b' }}>{t.state || '—'}</td>
-                  <td style={{ fontSize: 10, color: '#94a3b8', whiteSpace: 'nowrap' }}>
+                  <td style={{ fontSize: 11, color: 'var(--admin-text-secondary)' }}>{t.state || '—'}</td>
+                  <td style={{ fontSize: 10, color: 'var(--admin-text-soft)', whiteSpace: 'nowrap' }}>
                     {t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' }) : '—'}
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
-                      <Link to={`/admin/clients/${t.id}`} className="btn-sm" style={{ padding: '4px 10px' }}>Open</Link>
+                      <Link to={`/admin/clients/${t.id}`} className="btn-sm">Open</Link>
                       {t.isActive ? (
                         <button
                           className="btn-sm"
-                          style={{ color: '#b91c1c', borderColor: '#fecaca', padding: '4px 10px' }}
+                          style={{ color: 'var(--admin-danger)', borderColor: 'rgba(220,38,38,0.24)' }}
                           onClick={() => { setSuspendModal(t); setSuspendReason(''); }}
                         >
                           Suspend
@@ -190,7 +182,7 @@ export default function AdminClients() {
                       ) : (
                         <button
                           className="btn-sm"
-                          style={{ color: '#15803d', borderColor: '#86efac', padding: '4px 10px' }}
+                          style={{ color: 'var(--admin-success)', borderColor: 'rgba(22,163,74,0.24)' }}
                           onClick={() => activateM.mutate(t.id)}
                           disabled={activateM.isPending}
                         >
@@ -199,7 +191,7 @@ export default function AdminClients() {
                       )}
                       <button
                         className="btn-sm"
-                        style={{ color: '#991b1b', borderColor: '#fecaca', marginLeft: 4, padding: '4px 10px' }}
+                        style={{ color: 'var(--admin-danger)', borderColor: 'rgba(220,38,38,0.24)', marginLeft: 4 }}
                         onClick={() => { setDeleteModal(t); setDeletePassword(''); setDeleteBackup(true); setDeleteConfirmExternal(false); }}
                       >
                         🗑 Delete
@@ -212,8 +204,7 @@ export default function AdminClients() {
           </table>
         </div>
 
-        {}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderTop: '0.5px solid rgba(0,0,0,0.06)', fontSize: 11, color: '#64748b' }}>
+        <div className="admin-table-footer">
           <span>{tenants.length} shown</span>
           <div style={{ display: 'flex', gap: 6 }}>
             <button className="btn-sm" onClick={goBack} disabled={history.length <= 1 || isLoading}>← Prev</button>
@@ -222,12 +213,11 @@ export default function AdminClients() {
         </div>
       </div>
 
-      {}
       {suspendModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-          <div className="card" style={{ width: 360, padding: 20 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Suspend account</div>
-            <div style={{ fontSize: 12, color: '#64748b', marginBottom: 14 }}>
+        <div className="admin-modal-backdrop">
+          <div className="admin-modal-card">
+            <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Suspend account</div>
+            <div style={{ fontSize: 12, color: 'var(--admin-text-muted)', marginBottom: 14 }}>
               This will immediately block all logins for <strong>{suspendModal.name}</strong>.
             </div>
             <div className="form-group">
@@ -244,7 +234,7 @@ export default function AdminClients() {
               <button className="btn-sm" onClick={() => setSuspendModal(null)}>Cancel</button>
               <button
                 className="btn-sm"
-                style={{ background: '#fee2e2', color: '#b91c1c', borderColor: '#fecaca' }}
+                style={{ background: 'rgba(220,38,38,0.12)', color: 'var(--admin-danger)', borderColor: 'rgba(220,38,38,0.24)' }}
                 onClick={() => suspendM.mutate({ id: suspendModal.id, reason: suspendReason })}
                 disabled={suspendM.isPending}
               >
@@ -256,8 +246,8 @@ export default function AdminClients() {
       )}
 
       {deleteModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}>
-          <div className="card" style={{ width: 420, padding: 24 }}>
+        <div className="admin-modal-backdrop" style={{ zIndex: 60 }}>
+          <div className="admin-modal-card" style={{ width: 420 }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: '#991b1b', marginBottom: 8 }}>
               ⚠ Permanently delete {deleteModal.name}?
             </div>

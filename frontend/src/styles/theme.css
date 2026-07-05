@@ -23,6 +23,25 @@
   --app-radius-md: 12px;
   --app-radius-lg: 18px;
   --app-shadow-soft: 0 18px 50px rgba(15, 23, 42, 0.08);
+  --admin-shell-bg: var(--app-bg);
+  --admin-shell-bg-alt: var(--app-bg-soft);
+  --admin-sidebar-bg: var(--app-sidebar);
+  --admin-surface: var(--app-surface-solid);
+  --admin-surface-elevated: var(--app-surface-elevated);
+  --admin-surface-muted: rgba(148, 163, 184, 0.16);
+  --admin-border: var(--app-border);
+  --admin-border-strong: var(--app-border-strong);
+  --admin-text: var(--app-text);
+  --admin-text-secondary: var(--app-text-secondary);
+  --admin-text-muted: var(--app-text-muted);
+  --admin-text-soft: var(--app-text-soft);
+  --admin-accent: var(--app-accent);
+  --admin-accent-hover: var(--app-accent-hover);
+  --admin-accent-soft: var(--app-accent-soft);
+  --admin-success: var(--app-success);
+  --admin-warning: var(--app-warning);
+  --admin-danger: var(--app-danger);
+  --admin-shadow-soft: var(--app-shadow-soft);
 }
 
 :root[data-theme="dark"] {
@@ -46,6 +65,25 @@
   --app-warning: #f5b849;
   --app-danger: #ff7a7a;
   --app-shadow-soft: 0 22px 60px rgba(0, 0, 0, 0.38);
+  --admin-shell-bg: var(--app-bg);
+  --admin-shell-bg-alt: var(--app-bg-soft);
+  --admin-sidebar-bg: var(--app-sidebar);
+  --admin-surface: var(--app-surface-solid);
+  --admin-surface-elevated: var(--app-surface-elevated);
+  --admin-surface-muted: rgba(122, 162, 255, 0.12);
+  --admin-border: var(--app-border);
+  --admin-border-strong: var(--app-border-strong);
+  --admin-text: var(--app-text);
+  --admin-text-secondary: var(--app-text-secondary);
+  --admin-text-muted: var(--app-text-muted);
+  --admin-text-soft: var(--app-text-soft);
+  --admin-accent: var(--app-accent);
+  --admin-accent-hover: var(--app-accent-hover);
+  --admin-accent-soft: var(--app-accent-soft);
+  --admin-success: var(--app-success);
+  --admin-warning: var(--app-warning);
+  --admin-danger: var(--app-danger);
+  --admin-shadow-soft: var(--app-shadow-soft);
 }
 
 html, body, #root { min-height: 100%; }

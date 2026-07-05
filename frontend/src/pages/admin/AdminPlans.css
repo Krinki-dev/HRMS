@@ -5,80 +5,87 @@
   margin-bottom: 16px;
 }
 
+@media (max-width: 1100px) {
+  .plans-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .plans-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .plan-card {
-  background: #fff;
-  border: 0.5px solid rgba(0,0,0,0.09);
-  border-radius: 12px;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-lg);
   padding: 18px;
   display: flex;
   flex-direction: column;
-}
-@media (prefers-color-scheme: dark) {
-  .plan-card { background: #1e293b; border-color: rgba(255,255,255,0.09); }
+  box-shadow: var(--admin-shadow-soft);
 }
 
 .plan-card.featured {
-  border: 2px solid #3b82f6;
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.16);
 }
 
 .plan-tier {
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.5px;
-  color: #64748b;
+  color: var(--admin-text-muted);
   margin-bottom: 8px;
+  text-transform: uppercase;
 }
 
 .plan-price {
   font-size: 26px;
-  font-weight: 600;
-  color: #0f172a;
+  font-weight: 700;
+  color: var(--admin-text);
   margin-bottom: 3px;
 }
-@media (prefers-color-scheme: dark) { .plan-price { color: #f1f5f9; } }
 
 .plan-cycle {
   font-size: 12px;
   font-weight: 400;
-  color: #64748b;
+  color: var(--admin-text-muted);
 }
 
 .plan-limit {
   font-size: 11px;
-  color: #64748b;
+  color: var(--admin-text-muted);
   margin-bottom: 14px;
 }
 
 .plan-features {
-  border-top: 0.5px solid rgba(0,0,0,0.07);
+  border-top: 1px solid var(--admin-border);
   padding-top: 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
   flex: 1;
 }
-@media (prefers-color-scheme: dark) { .plan-features { border-top-color: rgba(255,255,255,0.07); } }
 
 .plan-feature {
   font-size: 11px;
-  color: #0f172a;
+  color: var(--admin-text-secondary);
   display: flex;
   align-items: flex-start;
   gap: 6px;
 }
-.plan-feature.off { color: #94a3b8; }
-@media (prefers-color-scheme: dark) {
-  .plan-feature { color: #e2e8f0; }
-  .plan-feature.off { color: #475569; }
+
+.plan-feature.off {
+  color: var(--admin-text-soft);
 }
 
 .plan-footer {
-  border-top: 0.5px solid rgba(0,0,0,0.07);
+  border-top: 1px solid var(--admin-border);
   margin-top: 14px;
   padding-top: 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-@media (prefers-color-scheme: dark) { .plan-footer { border-top-color: rgba(255,255,255,0.07); } }
-
