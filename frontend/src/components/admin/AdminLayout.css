@@ -213,6 +213,7 @@
   border-radius: var(--admin-radius-md);
   padding: 14px 16px;
   box-shadow: var(--admin-shadow-soft);
+  color: var(--admin-text);
 }
 
 .stat-card__top {
@@ -255,6 +256,7 @@
   border-radius: var(--admin-radius-lg);
   overflow: hidden;
   box-shadow: var(--admin-shadow-soft);
+  color: var(--admin-text);
 }
 
 .card-header {
@@ -404,6 +406,8 @@
 
 .admin-panel-body {
   padding: 14px 16px;
+  background: var(--admin-surface);
+  color: var(--admin-text);
 }
 
 .admin-table-scroll {
@@ -417,6 +421,8 @@
 .admin-chart-shell {
   position: relative;
   height: 180px;
+  background: var(--admin-surface);
+  color: var(--admin-text);
 }
 
 .admin-chart-center {
@@ -595,4 +601,9 @@
     gap: 6px;
     flex-wrap: wrap;
   }
+}
+
+/* Canvas rendering fix for light theme */
+canvas {
+  background: var(--admin-surface);
 }

@@ -124,11 +124,11 @@ export default function AdminAnalytics() {
       <div className="admin-page-grid-2">
         <div className="card admin-panel-body">
           <div className="card-title" style={{ marginBottom: 14 }}>Clients by plan</div>
-          <div style={{ height: 200 }}><canvas ref={growRef} /></div>
+          <div style={{ height: 200, background: 'var(--admin-surface)', borderRadius: 8 }}><canvas ref={growRef} /></div>
         </div>
         <div className="card admin-panel-body">
           <div className="card-title" style={{ marginBottom: 14 }}>Free vs Trial vs Paid</div>
-          <div style={{ height: 200 }}><canvas ref={planRef} /></div>
+          <div style={{ height: 200, background: 'var(--admin-surface)', borderRadius: 8 }}><canvas ref={planRef} /></div>
         </div>
       </div>
 
