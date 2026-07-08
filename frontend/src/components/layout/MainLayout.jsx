@@ -3,6 +3,7 @@ import CompanyBrand from './CompanyBrand';
 import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import api from '../../services/api';
+import ThemeToggle from "../ui/ThemeToggle";
 
 const NAV_SECTIONS = [
   {
@@ -481,7 +482,8 @@ export default function MainLayout() {
             )}
           </div>
         </div>
-        </header>
+          <ThemeToggle />
+          </header>
 
         {}
         <main style={{ flex: 1, overflowY: 'auto', padding: '14px 20px', display: 'flex', flexDirection: 'column' }}>

@@ -4,6 +4,7 @@ const express      = require('express');
 const http         = require('http');
 const cors         = require('cors');
 const helmet       = require('helmet');
+const rateLimit    = require("express-rate-limit");
 const cookieParser = require('cookie-parser');
 const { WebSocketServer } = require('ws');
 const url          = require('url');
@@ -21,6 +22,7 @@ const app  = express();
 const PORT = process.env.PORT || 5001;
 
 app.use(helmet());
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100, message: "Too many requests, please try again later." }));
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
