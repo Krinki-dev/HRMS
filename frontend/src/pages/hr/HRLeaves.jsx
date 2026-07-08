@@ -44,7 +44,7 @@ export default function HRLeaves(){
  <td>{l.days||1}</td>
  <td style={{maxWidth:150,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{l.reason||""}</td>
  <td><span className={`badge ${statusBadge(l.status)}`}>{l.status}</span></td>
- <td><div style={{display:"flex",gap:4"}}>{l.status==="pending"&&<><button className="btn btn-sm btn-success" onClick={()=>approve.mutate(l._id)}>✔</button><button className="btn btn-sm btn-danger" onClick={()=>reject.mutate(l._id)}>✖</button></>}</div></td>
+ <td><div style={{display:"flex",gap:4}}>{l.status==="pending"&&<><button className="btn btn-sm btn-success" onClick={()=>approve.mutate(l._id)}>✔</button><button className="btn btn-sm btn-danger" onClick={()=>reject.mutate(l._id)}>✖</button></>}</div></td>
  </tr>
  ))}
  </tbody>

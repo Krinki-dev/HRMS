@@ -42,7 +42,7 @@ export default function HRSettings(){
  <div>
  <h3 style={{marginBottom:16,color:"var(--text-primary)"}}>Departments</h3>
  <div style={{display:"flex",gap:8,marginBottom:16}}><input className="form-control" value={dept} onChange={e=>setDept(e.target.value)} placeholder="Department name" style={{maxWidth:300}}/><button className="btn btn-primary" onClick={()=>dept&&addDept.mutate()} disabled={addDept.isPending}>➕ Add</button></div>
- {depts.isError?<p style={{color:"var(--text-secondary)"}}>Connect backend to manage departments.</p>:<div style={{display:"flex",flexWrap:"wrap",gap:8"}}>{(depts.data||[]).map(d=><span key={d._id} className="badge badge-blue" style={{fontSize:13,padding:"6px 12px"}}>{d.name}</span>)}</div>}
+ {depts.isError?<p style={{color:"var(--text-secondary)"}}>Connect backend to manage departments.</p>:<div style={{display:"flex",flexWrap:"wrap",gap:8}}>{(depts.data||[]).map(d=><span key={d._id} className="badge badge-blue" style={{fontSize:13,padding:"6px 12px"}}>{d.name}</span>)}</div>}
  </div>
  )}
  {tab==="designations"&&(
