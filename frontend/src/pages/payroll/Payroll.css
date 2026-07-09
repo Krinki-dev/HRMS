@@ -1,0 +1,3 @@
+@import "../../../styles/theme.css";
+
+.payroll-page{padding:var(--space-lg);background:var(--bg-app);min-height:100vh;color:var(--text-primary)}.payroll-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-xl)}.payroll-header h1{font-size:var(--font-size-xl);font-weight:var(--font-weight-bold);color:var(--text-heading)}.payroll-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-md);margin-bottom:var(--space-xl)}.payroll-summary-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:var(--space-lg)}.payroll-table-wrap{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-lg);overflow:hidden}

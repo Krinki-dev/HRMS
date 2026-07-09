@@ -40,7 +40,7 @@ export default function AdminLayout() {
         <div className="sidebar-brand">
           <div className="brand-icon">S</div>
           <div>
-            <div className="brand-name">Syntern HRMS</div>
+            <div className="brand-company">Syntern HRMS</div>
             <div className="brand-role">Super Admin</div>
           </div>
         </div>
@@ -64,7 +64,7 @@ export default function AdminLayout() {
             <>
               <div className="nav-divider" />
               <NavLink to="/dashboard" className="nav-btn">
-                <span className="nav-icon">ðŸ¢</span>
+                <span className="nav-icon">🏢</span>
                 My Company HR
               </NavLink>
             </>
@@ -74,7 +74,7 @@ export default function AdminLayout() {
         <div className="sidebar-user">
           <div className="user-avatar">SA</div>
           <div>
-            <div className="user-name">Super Admin</div>
+            <div className="user-role">Super Admin</div>
             <div className="user-domain">syntern.in</div>
           </div>
         </div>
