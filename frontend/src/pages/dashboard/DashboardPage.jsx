@@ -5,17 +5,17 @@ import dashboardApi from '../../services/dashboardApi';
 import './Dashboard.css';
 
 const STAT_CARDS = [
-  { label: 'Total Employees', key: 'totalEmployees',  icon: '\uD83D\uDC65', color: 'blue'   },
-  { label: 'Present Today',   key: 'presentToday',    icon: '\u2705',       color: 'green'  },
-  { label: 'On Leave',        key: 'onLeaveToday',    icon: '\uD83C\uDFD6', color: 'amber'  },
-  { label: 'Pending Leaves',  key: 'pendingLeaves',   icon: '\u23F3',       color: 'violet' },
+  { label: 'Total Employees', key: 'totalEmployees',  icon: '👥', color: 'blue'   },
+  { label: 'Present Today',   key: 'presentToday',    icon: '✅',       color: 'green'  },
+  { label: 'On Leave',        key: 'onLeaveToday',    icon: '🏖', color: 'amber'  },
+  { label: 'Pending Leaves',  key: 'pendingLeaves',   icon: '⏳',       color: 'violet' },
 ];
 
 const ACTIONS = [
-  { label: 'Add Employee',    icon: '\u2795',     to: '/employees/add'    },
-  { label: 'Approve Leave',   icon: '\u2714',     to: '/leave/approvals'  },
-  { label: 'Run Payroll',     icon: '\uD83D\uDCB0', to: '/payroll/run'    },
-  { label: 'View Reports',    icon: '\uD83D\uDCCA', to: '/reports'        },
+  { label: 'Add Employee',    icon: '➕',     to: '/employees/add'    },
+  { label: 'Approve Leave',   icon: '✔',     to: '/leave/approvals'  },
+  { label: 'Run Payroll',     icon: '💰', to: '/payroll/run'    },
+  { label: 'View Reports',    icon: '📊', to: '/reports'        },
 ];
 
 function greet() {
@@ -53,7 +53,7 @@ export default function DashboardPage() {
   return (
     <div className="dashboard-page">
       <div className="dashboard-header">
-        <h1>{greeting}, {firstName}! \uD83D\uDC4B</h1>
+        <h1>{greeting}, {firstName}! 👋</h1>
         <p>Here&#39;s what&#39;s happening with your workforce today.</p>
       </div>
 
@@ -106,7 +106,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="dash-section">
-          <h2 className="section-title">Upcoming Birthdays \uD83C\uDF82</h2>
+          <h2 className="section-title">Upcoming Birthdays 🎂</h2>
           {!birthdays?.length
             ? <p className="empty-state">No upcoming birthdays</p>
             : <ul className="birthday-list">
