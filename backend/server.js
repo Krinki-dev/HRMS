@@ -75,8 +75,21 @@ app.use(cors({
 
 app.use((req, res, next) => {
   if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next();
-  const publicPaths = ['/api/csrf-token', '/api/v1/auth/lookup', '/api/v1/auth/login', '/api/v1/auth/refresh'];
+  const publicPaths = [
+    '/api/csrf-token',
+    '/api/v1/auth/lookup',
+    '/api/v1/auth/login',
+    '/api/v1/auth/refresh',
+  ];
+  // Also exempt paths by prefix for public GST endpoints
+  const publicPrefixes = [
+    '/api/v1/gst/central/',
+    '/api/v1/gst/automation/trigger/',
+    '/api/v1/gst/automation/status/',
+    '/api/v1/gst/lookup/',
+  ];
   if (publicPaths.includes(req.path)) return next();
+  if (publicPrefixes.some(prefix => req.path.startsWith(prefix))) return next();
   const isXhr = req.headers['x-requested-with'] === 'XMLHttpRequest';
   const csrfToken = req.headers['x-csrf-token'];
   const sessionToken = req.cookies['_csrf'];

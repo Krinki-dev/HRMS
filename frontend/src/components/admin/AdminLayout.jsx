@@ -66,10 +66,19 @@ export default function AdminLayout() {
 
           <div className="nav-divider" />
 
-          <NavLink to="/platform" className="nav-btn">
+          <a
+            href={user?.subdomain
+              ? `https://${user.subdomain}.syntern.in/dashboard`
+              : '#'
+            }
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`nav-btn${!user?.subdomain ? ' disabled' : ''}`}
+            title={user?.subdomain ? `Open HR portal for ${user.subdomain}` : 'No company linked'}
+          >
             <Building2 size={18} className="nav-icon" />
             <span>My Company HR</span>
-          </NavLink>
+          </a>
         </nav>
 
         <div className="sidebar-user">
