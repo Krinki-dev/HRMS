@@ -128,3 +128,75 @@
   --shadow-lg:          0 8px 24px rgba(0,0,0,0.12);
   --shadow-card:        0 2px 8px rgba(0,0,0,0.06);
 }
+
+/* ============================================================
+   ADMIN PAGE VARIABLE BRIDGES (--app-* and --admin-* aliases)
+   Maps old admin CSS variable names to master theme tokens
+   ============================================================ */
+:root {
+  /* --app-* aliases */
+  --app-bg:                var(--bg-app);
+  --app-surface:           var(--bg-card);
+  --app-surface-hover:     var(--bg-hover);
+  --app-border:            var(--border-color);
+  --app-border-strong:     var(--border-strong);
+  --app-text:              var(--text-primary);
+  --app-text-muted:        var(--text-muted);
+  --app-text-secondary:    var(--text-secondary);
+  --app-primary:           var(--primary);
+  --app-primary-hover:     var(--primary-hover);
+  --app-primary-light:     var(--primary-light);
+  --app-success:           var(--success);
+  --app-success-light:     var(--success-light);
+  --app-danger:            var(--danger);
+  --app-danger-light:      var(--danger-light);
+  --app-warning:           var(--warning);
+  --app-warning-light:     var(--warning-light);
+  --app-info:              var(--info);
+  --app-info-light:        var(--info-light);
+  --app-radius:            var(--radius-md);
+  --app-radius-sm:         var(--radius-sm);
+  --app-radius-lg:         var(--radius-lg);
+  --app-shadow:            var(--shadow-card);
+  --app-shadow-md:         var(--shadow-md);
+  --app-shadow-lg:         var(--shadow-lg);
+  --app-transition:        var(--transition-base);
+  --app-font-xs:           var(--font-size-xs);
+  --app-font-sm:           var(--font-size-sm);
+  --app-font-base:         var(--font-size-base);
+  --app-font-md:           var(--font-size-md);
+  --app-font-lg:           var(--font-size-lg);
+  --app-font-xl:           var(--font-size-xl);
+
+  /* --admin-* aliases */
+  --admin-bg:              var(--bg-app);
+  --admin-sidebar-bg:      var(--bg-sidebar);
+  --admin-topbar-bg:       var(--bg-header);
+  --admin-card-bg:         var(--bg-card);
+  --admin-border:          var(--border-color);
+  --admin-text:            var(--text-primary);
+  --admin-text-soft:       var(--text-secondary);
+  --admin-text-muted:      var(--text-muted);
+  --admin-accent:          var(--primary);
+  --admin-accent-hover:    var(--primary-hover);
+  --admin-accent-light:    var(--primary-light);
+  --admin-success:         var(--success);
+  --admin-warning:         var(--warning);
+  --admin-danger:          var(--danger);
+  --admin-hover:           var(--bg-hover);
+  --admin-active:          var(--bg-active);
+  --admin-radius:          var(--radius-md);
+  --admin-shadow:          var(--shadow-card);
+  --admin-sidebar-width:   var(--sidebar-width);
+  --admin-topbar-h:        var(--header-height);
+}
+
+/* index.css compatibility aliases */
+:root {
+  --bg-primary:      var(--bg-app);
+  --bg-secondary:    var(--bg-card);
+  --color-primary:   var(--primary);
+  --text-color:      var(--text-primary);
+  --border-radius:   var(--radius-md);
+  --font-family:     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
