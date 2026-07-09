@@ -6,14 +6,14 @@ import { useAuthStore } from "../../store/authStore";
 import "../admin/AdminLayout.css";
 
 const NAV_ITEMS = [
-  { path: "/admin/dashboard",  icon: "â–¦", label: "Dashboard"  },
-  { path: "/admin/clients",    icon: "â—‘", label: "Clients"     },
-  { path: "/admin/plans",      icon: "ðŸ“Š", label: "Plans (Analytics)"  },
-  { path: '/admin/pricing',    icon: "âš™ï¸", label: "Pricing & Plans" },
-  { path: "/admin/domains",    icon: "âŠ•", label: "Domains"     },
-  { path: "/admin/analytics",  icon: "â†—", label: "Analytics"   },
-  { path: "/admin/marketing",  icon: "âœ¦", label: "Marketing"   },
-  { path: "/admin/settings",   icon: "âŠž", label: "Settings"    },
+  { path: "/admin/dashboard",  icon: "🏠", label: "Dashboard"  },
+  { path: "/admin/clients",    icon: "👥", label: "Clients"     },
+  { path: "/admin/plans",      icon: "📊", label: "Plans (Analytics)"  },
+  { path: '/admin/pricing',    icon: "💰", label: "Pricing & Plans" },
+  { path: "/admin/domains",    icon: "🌐", label: "Domains"     },
+  { path: "/admin/analytics",  icon: "📈", label: "Analytics"   },
+  { path: "/admin/marketing",  icon: "📣", label: "Marketing"   },
+  { path: "/admin/settings",   icon: "⚙️", label: "Settings"    },
 ];
 
 const PAGE_META = {

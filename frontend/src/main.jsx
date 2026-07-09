@@ -1,4 +1,6 @@
 import './styles/hr-layout.css';
+import './styles/theme.css';
+import './styles/global.css';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

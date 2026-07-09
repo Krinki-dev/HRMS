@@ -147,3 +147,68 @@
     --shadow-card:        0 2px 8px rgba(0,0,0,0.35);
   }
 }
+
+
+/* ============================================
+   ADMIN PANEL CSS VARIABLES
+   ============================================ */
+
+/* Admin Dark Theme (default) */
+:root, [data-theme="dark"] {
+  --admin-shell-bg:         #0f1117;
+  --admin-shell-bg-alt:     #13161e;
+  --admin-sidebar-bg:       #13161e;
+  --admin-surface:          #1a1f2e;
+  --admin-surface-alt:      #1f2535;
+  --admin-surface-muted:    #242a3a;
+  --admin-border:           rgba(255,255,255,0.08);
+  --admin-border-strong:    rgba(255,255,255,0.15);
+  --admin-text:             #e2e8f0;
+  --admin-text-secondary:   #94a3b8;
+  --admin-text-muted:       #64748b;
+  --admin-text-soft:        #475569;
+  --admin-accent:           #6366f1;
+  --admin-accent-hover:     #4f46e5;
+  --admin-accent-soft:      rgba(99,102,241,0.15);
+  --admin-success:          #22c55e;
+  --admin-success-soft:     rgba(34,197,94,0.12);
+  --admin-danger:           #ef4444;
+  --admin-danger-soft:      rgba(239,68,68,0.12);
+  --admin-warning:          #f59e0b;
+  --admin-warning-soft:     rgba(245,158,11,0.12);
+  --admin-shadow-soft:      0 2px 8px rgba(0,0,0,0.4);
+  --admin-radius-sm:        6px;
+  --admin-radius-md:        10px;
+  --admin-radius-lg:        14px;
+  --sidebar-w:              240px;
+}
+
+/* Admin Light Theme */
+[data-theme="light"] {
+  --admin-shell-bg:         #f1f5f9;
+  --admin-shell-bg-alt:     #e8eef6;
+  --admin-sidebar-bg:       #1e293b;
+  --admin-surface:          #ffffff;
+  --admin-surface-alt:      #f8fafc;
+  --admin-surface-muted:    #f1f5f9;
+  --admin-border:           rgba(0,0,0,0.08);
+  --admin-border-strong:    rgba(0,0,0,0.15);
+  --admin-text:             #1e293b;
+  --admin-text-secondary:   #475569;
+  --admin-text-muted:       #64748b;
+  --admin-text-soft:        #94a3b8;
+  --admin-accent:           #6366f1;
+  --admin-accent-hover:     #4f46e5;
+  --admin-accent-soft:      rgba(99,102,241,0.12);
+  --admin-success:          #16a34a;
+  --admin-success-soft:     rgba(22,163,74,0.1);
+  --admin-danger:           #dc2626;
+  --admin-danger-soft:      rgba(220,38,38,0.1);
+  --admin-warning:          #d97706;
+  --admin-warning-soft:     rgba(217,119,6,0.1);
+  --admin-shadow-soft:      0 2px 8px rgba(0,0,0,0.1);
+  --admin-radius-sm:        6px;
+  --admin-radius-md:        10px;
+  --admin-radius-lg:        14px;
+  --sidebar-w:              240px;
+}
