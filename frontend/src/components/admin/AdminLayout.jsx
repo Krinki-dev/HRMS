@@ -1,99 +1,82 @@
-import { useState } from 'react';
-import { Outlet, NavLink, useLocation } from "react-router-dom";
-import CompanyBrand from '../layout/CompanyBrand';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../store/authStore';
 import ThemeToggle from '../ui/ThemeToggle';
-import { useAuthStore } from "../../store/authStore";
-import "../admin/AdminLayout.css";
+import './AdminLayout.css';
 
 const NAV_ITEMS = [
-  { path: "/admin/dashboard",  icon: "🏠", label: "Dashboard"  },
-  { path: "/admin/clients",    icon: "👥", label: "Clients"     },
-  { path: "/admin/plans",      icon: "📊", label: "Plans (Analytics)"  },
-  { path: '/admin/pricing',    icon: "💰", label: "Pricing & Plans" },
-  { path: "/admin/domains",    icon: "🌐", label: "Domains"     },
-  { path: "/admin/analytics",  icon: "📈", label: "Analytics"   },
-  { path: "/admin/marketing",  icon: "📣", label: "Marketing"   },
-  { path: "/admin/settings",   icon: "⚙️", label: "Settings"    },
+  { path: '/admin/dashboard', icon: '\uD83C\uDFE2', label: 'Dashboard'        },
+  { path: '/admin/clients',   icon: '\uD83D\uDC65', label: 'Clients'          },
+  { path: '/admin/plans',     icon: '\uD83D\uDCCA', label: 'Plans (Analytics)'},
+  { path: '/admin/pricing',   icon: '\uD83C\uDFF7', label: 'Pricing & Plans'  },
+  { path: '/admin/domains',   icon: '\uD83C\uDF10', label: 'Domains'          },
+  { path: '/admin/analytics', icon: '\uD83D\uDCC8', label: 'Analytics'        },
+  { path: '/admin/marketing', icon: '\uD83D\uDCE3', label: 'Marketing'        },
+  { path: '/admin/settings',  icon: '\u2699\uFE0F',  label: 'Settings'        },
 ];
 
-const PAGE_META = {
-  "/admin/dashboard":  { title: "Dashboard",  sub: "Platform overview"                    },
-  "/admin/clients":    { title: "Clients",    sub: "All client accounts"                  },
-  "/admin/plans":      { title: "Plans",      sub: "Revenue KPIs & subscription analytics" },
-  "/admin/pricing":    { title: "Pricing & Plans", sub: "Manage plan catalog & pricing"   },
-  "/admin/domains":    { title: "Domains",    sub: "Custom domain mappings"               },
-  "/admin/analytics":  { title: "Analytics",  sub: "Platform-wide metrics"                },
-  "/admin/marketing":  { title: "Marketing",  sub: "syntern.in public pages"              },
-  "/admin/settings":   { title: "Settings",   sub: "Global platform settings"             },
-};
-
 export default function AdminLayout() {
-  const location = useLocation();
-  const [sidebarOpen] = useState(true);
-  const { user } = useAuthStore();
-  const meta = PAGE_META[location.pathname] || { title: "Admin", sub: "" };
+  const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/admin/login');
+  };
+
+  const displayName = user?.name ?? user?.email ?? 'Super Admin';
+  const displayDomain = user?.domain ?? 'syntern.in';
+  const initials = displayName.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
 
   return (
-    <div className="admin-shell">
-      {}
+    <div className="admin-layout">
       <aside className="admin-sidebar">
-        <div className="sidebar-brand">
+        <div style={{ display:'flex', alignItems:'center', gap:'10px', padding:'16px', borderBottom:'1px solid var(--border-color)' }}>
           <div className="brand-icon">S</div>
           <div>
             <div className="brand-company">Syntern HRMS</div>
             <div className="brand-role">Super Admin</div>
           </div>
         </div>
-
-        <><CompanyBrand sidebarOpen={sidebarOpen} /><nav className="sidebar-nav">
-          {NAV_ITEMS.slice(0, 5).map((item) => (
-            <NavLink key={item.path} to={item.path} className={({ isActive }) => `nav-btn${isActive ? " active" : ""}`}>
+        <nav className="sidebar-nav">
+          {NAV_ITEMS.map(item => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) => `nav-btn${isActive ? ' active' : ''}`}
+            >
               <span className="nav-icon">{item.icon}</span>
-              {item.label}
+              <span>{item.label}</span>
             </NavLink>
           ))}
           <div className="nav-divider" />
-          {NAV_ITEMS.slice(5).map((item) => (
-            <NavLink key={item.path} to={item.path} className={({ isActive }) => `nav-btn${isActive ? " active" : ""}`}>
-              <span className="nav-icon">{item.icon}</span>
-              {item.label}
-            </NavLink>
-          ))}
-
-          {user?.is_platform_admin && (
-            <>
-              <div className="nav-divider" />
-              <NavLink to="/dashboard" className="nav-btn">
-                <span className="nav-icon">🏢</span>
-                My Company HR
-              </NavLink>
-            </>
-          )}
-        </nav></>
-
+          <NavLink to="/platform" className="nav-btn">
+            <span className="nav-icon">\uD83C\uDFE2</span>
+            <span>My Company HR</span>
+          </NavLink>
+        </nav>
         <div className="sidebar-user">
-          <div className="user-avatar">SA</div>
+          <div className="user-avatar">{initials}</div>
           <div>
-            <div className="user-role">Super Admin</div>
-            <div className="user-domain">syntern.in</div>
+            <div className="user-role">{displayName}</div>
+            <div className="user-domain">{displayDomain}</div>
           </div>
         </div>
       </aside>
-
-      {}
       <div className="admin-main">
         <header className="admin-topbar">
           <div>
-            <span className="topbar-title">{meta.title}</span>
-            <span className="topbar-sub">{meta.sub}</span>
+            <div className="topbar-title">Admin Dashboard</div>
+            <div className="topbar-sub">Platform overview</div>
           </div>
           <div className="topbar-actions">
-            <ThemeToggle />
+            <span className="topbar-domain">{displayDomain}</span>
             <NavLink to="/admin/clients/new" className="btn-primary">+ New client</NavLink>
-            <span className="topbar-domain">syntern.in/admin</span>
+            <ThemeToggle />
+            <button className="nav-btn" style={{ width:'auto' }} onClick={handleLogout}>
+              \uD83D\uDEAA Logout
+            </button>
           </div>
         </header>
-
         <main className="admin-content">
           <Outlet />
         </main>
