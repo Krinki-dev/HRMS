@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../shared/generated/central-client"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  output        = "../shared/generated/central-client"
 }
 
 datasource db {
@@ -61,6 +62,7 @@ model tenants {
   tenant_branch_links    tenant_branch_links[]
   tenant_pricing_configs tenant_pricing_configs?
   invoices               invoices[]
+  billing_events         billing_events[]
 }
 
 model tenant_modules {
@@ -237,4 +239,25 @@ model invoices {
 
   @@index([tenant_id])
   @@index([status])
+}
+
+model billing_events {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id    String?  @db.Uuid
+  gateway      String
+  event_type   String
+  status       String   @default("info")
+  reference_id String?
+  amount_paise Int?
+  message      String?
+  metadata     Json?
+  ip_address   String?
+  created_at   DateTime @default(now()) @db.Timestamptz
+
+  tenant tenants? @relation(fields: [tenant_id], references: [id], onDelete: SetNull)
+
+  @@index([tenant_id])
+  @@index([event_type])
+  @@index([status])
+  @@index([created_at])
 }

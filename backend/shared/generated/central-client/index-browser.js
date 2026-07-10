@@ -317,6 +317,20 @@ exports.Prisma.InvoicesScalarFieldEnum = {
   updated_at: 'updated_at'
 };
 
+exports.Prisma.Billing_eventsScalarFieldEnum = {
+  id: 'id',
+  tenant_id: 'tenant_id',
+  gateway: 'gateway',
+  event_type: 'event_type',
+  status: 'status',
+  reference_id: 'reference_id',
+  amount_paise: 'amount_paise',
+  message: 'message',
+  metadata: 'metadata',
+  ip_address: 'ip_address',
+  created_at: 'created_at'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -357,7 +371,8 @@ exports.Prisma.ModelName = {
   central_gst_records: 'central_gst_records',
   platform_settings: 'platform_settings',
   tenant_pricing_configs: 'tenant_pricing_configs',
-  invoices: 'invoices'
+  invoices: 'invoices',
+  billing_events: 'billing_events'
 };
 
 /**

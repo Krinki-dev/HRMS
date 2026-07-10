@@ -1,7 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-3.0.x"]
-  output   = "../shared/generated/central-client"
+  output        = "../shared/generated/central-client"
 }
 
 datasource db {
@@ -10,58 +10,59 @@ datasource db {
 }
 
 model tenants {
-  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name                  String
-  legal_name            String?
-  subdomain             String    @unique
-  custom_domain         String?   @unique
-  logo_url              String?
-  primary_color         String?   @default("#2563eb")
-  background_color      String?   @default("#f8fafc")
-  background_url        String?
-  sitemap_url           String?
-  plan                  String    @default("free")
-  plan_expires_at       DateTime? @db.Timestamptz
-  max_employees         Int       @default(50)
-  db_mode               String    @default("cloud")
-  db_url                String?
-  schema_name           String?
-  local_db_type         String?
-  local_db_host         String?
-  local_db_port         Int?      @default(5432)
-  local_db_name         String?
-  local_db_user         String?
-  local_db_pass         String?
-  sync_interval_min     Int?      @default(60)
-  gstin                 String?
-  pan                   String?
-  city                  String?
-  state                 String?
-  address               String?
-  pincode               String?
-  gst_status            String?
-  gst_reg_date          String?
-  taxpayer_type         String?
-  constitution          String?
-  e_invoice_enabled     Boolean?  @default(false)
-  business_nature       Json?     @default("[]")
-  admin_name            String?
-  admin_email           String?
-  admin_phone           String?
-  is_active             Boolean   @default(true)
-  is_setup_complete     Boolean   @default(false)
-  suspended_at          DateTime? @db.Timestamptz
-  suspension_reason     String?
-  payout_config_enc     String?
-  created_at            DateTime  @default(now()) @db.Timestamptz
-  updated_at            DateTime  @default(now()) @db.Timestamptz
-  deleted_at            DateTime? @db.Timestamptz
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  legal_name        String?
+  subdomain         String    @unique
+  custom_domain     String?   @unique
+  logo_url          String?
+  primary_color     String?   @default("#2563eb")
+  background_color  String?   @default("#f8fafc")
+  background_url    String?
+  sitemap_url       String?
+  plan              String    @default("free")
+  plan_expires_at   DateTime? @db.Timestamptz
+  max_employees     Int       @default(50)
+  db_mode           String    @default("cloud")
+  db_url            String?
+  schema_name       String?
+  local_db_type     String?
+  local_db_host     String?
+  local_db_port     Int?      @default(5432)
+  local_db_name     String?
+  local_db_user     String?
+  local_db_pass     String?
+  sync_interval_min Int?      @default(60)
+  gstin             String?
+  pan               String?
+  city              String?
+  state             String?
+  address           String?
+  pincode           String?
+  gst_status        String?
+  gst_reg_date      String?
+  taxpayer_type     String?
+  constitution      String?
+  e_invoice_enabled Boolean?  @default(false)
+  business_nature   Json?     @default("[]")
+  admin_name        String?
+  admin_email       String?
+  admin_phone       String?
+  is_active         Boolean   @default(true)
+  is_setup_complete Boolean   @default(false)
+  suspended_at      DateTime? @db.Timestamptz
+  suspension_reason String?
+  payout_config_enc String?
+  created_at        DateTime  @default(now()) @db.Timestamptz
+  updated_at        DateTime  @default(now()) @db.Timestamptz
+  deleted_at        DateTime? @db.Timestamptz
 
   tenant_modules         tenant_modules[]
   central_user_index     central_user_index[]
   tenant_branch_links    tenant_branch_links[]
   tenant_pricing_configs tenant_pricing_configs?
   invoices               invoices[]
+  billing_events         billing_events[]
 }
 
 model tenant_modules {
@@ -238,4 +239,25 @@ model invoices {
 
   @@index([tenant_id])
   @@index([status])
+}
+
+model billing_events {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id    String?  @db.Uuid
+  gateway      String
+  event_type   String
+  status       String   @default("info")
+  reference_id String?
+  amount_paise Int?
+  message      String?
+  metadata     Json?
+  ip_address   String?
+  created_at   DateTime @default(now()) @db.Timestamptz
+
+  tenant tenants? @relation(fields: [tenant_id], references: [id], onDelete: SetNull)
+
+  @@index([tenant_id])
+  @@index([event_type])
+  @@index([status])
+  @@index([created_at])
 }
