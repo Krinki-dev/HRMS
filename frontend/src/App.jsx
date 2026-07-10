@@ -186,9 +186,7 @@ function HRAppLayout() {
 }
 
 export default function App() {
-  if (window.location.hostname === 'searchgst.syntern.in') {
-    return <GstPublicPage />;
-  }
+
 
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -220,6 +218,7 @@ export default function App() {
         )}
 
         {}
+        <Route path="/gst"          element={<GstPublicPage />} />
         <Route path="/login"           element={<SmartLoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password"  element={<ForgotPasswordPage />} />
