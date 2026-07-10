@@ -9,6 +9,7 @@ const { decrypt } = require('../../shared/utils/encryption');
 const { Parser } = require('json2csv');
 const billingEmailer = require('../../shared/utils/billingEmailer');
 const plansService = require('./plans.service');
+const billingLogger = require('../../shared/services/billingLogger');
 
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
   // Only warn if not in test/dev mode or if we expect payments to work
@@ -272,6 +273,7 @@ exports.handlePhonePeWebhook = async (req, res) => {
 
     if (xVerify !== expectedXVerify) {
       logger.warn(`${THEME.ICONS.LOCK} [PhonePe Webhook] Invalid signature received`);
+      await billingLogger.logInvalidSignature({ gateway: 'phonepe', req });
       return res.status(400).send('Invalid signature');
     }
 
@@ -288,6 +290,14 @@ exports.handlePhonePeWebhook = async (req, res) => {
           data: { status: 'paid', payment_id: transactionId, updated_at: new Date() }
         });
         logger.info(`${THEME.ICONS.SUCCESS} [PhonePe Webhook] Invoice ${invoiceId} marked as PAID via webhook`);
+        await billingLogger.log({
+          gateway: 'phonepe',
+          eventType: 'invoice_marked_paid',
+          status: 'success',
+          referenceId: invoiceId,
+          message: 'Invoice marked paid via PhonePe webhook',
+          req,
+        });
       }
     }
 
@@ -369,6 +379,7 @@ exports.handleJioPayWebhook = async (req, res) => {
     const expectedSignature = crypto.createHash('sha256').update(expectedSignString).digest('hex');
 
     if (signature !== expectedSignature) {
+      await billingLogger.logInvalidSignature({ gateway: 'jiopay', req });
       return res.status(400).send('Invalid Signature');
     }
 
@@ -389,6 +400,15 @@ exports.handleJioPayWebhook = async (req, res) => {
           }
         });
         logger.info(`${THEME.ICONS.SUCCESS} [JioPay Webhook] Invoice ${invoice.id} PAID`);
+        await billingLogger.log({
+          gateway: 'jiopay',
+          eventType: 'invoice_marked_paid',
+          status: 'success',
+          referenceId: invoice.id,
+          amountPaise: amount,
+          message: 'Invoice marked paid via JioPay webhook',
+          req,
+        });
       }
     }
 
@@ -581,6 +601,7 @@ exports.handleWebhook = async (req, res) => {
 
     if (signature !== expectedSignature) {
       logger.warn(`${THEME.ICONS.LOCK} [Webhook] Invalid signature received`);
+      await billingLogger.logInvalidSignature({ gateway: 'razorpay', req });
       return res.status(400).send('Invalid signature');
     }
 
@@ -611,6 +632,16 @@ exports.handleWebhook = async (req, res) => {
           logger.error(`${THEME.ICONS.ERROR} Failed to send payment receipt to ${updated.tenant.admin_email}:`, emailErr);
         }
         logger.info(`${THEME.ICONS.SUCCESS} [Webhook] Invoice ${invoiceId} marked as PAID via webhook`);
+        await billingLogger.log({
+          tenantId: updated.tenant_id,
+          gateway: 'razorpay',
+          eventType: 'invoice_marked_paid',
+          status: 'success',
+          referenceId: invoiceId,
+          amountPaise: payload.amount,
+          message: 'Invoice marked paid via Razorpay webhook',
+          req,
+        });
       }
     }
 

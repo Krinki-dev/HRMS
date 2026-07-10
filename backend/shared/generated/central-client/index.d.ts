@@ -58,6 +58,11 @@ export type tenant_pricing_configs = $Result.DefaultSelection<Prisma.$tenant_pri
  * 
  */
 export type invoices = $Result.DefaultSelection<Prisma.$invoicesPayload>
+/**
+ * Model billing_events
+ * 
+ */
+export type billing_events = $Result.DefaultSelection<Prisma.$billing_eventsPayload>
 
 /**
  * ##  Prisma Client ʲˢ
@@ -266,6 +271,16 @@ export class PrismaClient<
     * ```
     */
   get invoices(): Prisma.invoicesDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.billing_events`: Exposes CRUD operations for the **billing_events** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Billing_events
+    * const billing_events = await prisma.billing_events.findMany()
+    * ```
+    */
+  get billing_events(): Prisma.billing_eventsDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -715,7 +730,8 @@ export namespace Prisma {
     central_gst_records: 'central_gst_records',
     platform_settings: 'platform_settings',
     tenant_pricing_configs: 'tenant_pricing_configs',
-    invoices: 'invoices'
+    invoices: 'invoices',
+    billing_events: 'billing_events'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -734,7 +750,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "tenants" | "tenant_modules" | "central_user_index" | "tenant_branch_links" | "central_kyc_records" | "central_gst_records" | "platform_settings" | "tenant_pricing_configs" | "invoices"
+      modelProps: "tenants" | "tenant_modules" | "central_user_index" | "tenant_branch_links" | "central_kyc_records" | "central_gst_records" | "platform_settings" | "tenant_pricing_configs" | "invoices" | "billing_events"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1404,6 +1420,80 @@ export namespace Prisma {
           }
         }
       }
+      billing_events: {
+        payload: Prisma.$billing_eventsPayload<ExtArgs>
+        fields: Prisma.billing_eventsFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.billing_eventsFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$billing_eventsPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.billing_eventsFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$billing_eventsPayload>
+          }
+          findFirst: {
+            args: Prisma.billing_eventsFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$billing_eventsPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.billing_eventsFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$billing_eventsPayload>
+          }
+          findMany: {
+            args: Prisma.billing_eventsFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$billing_eventsPayload>[]
+          }
+          create: {
+            args: Prisma.billing_eventsCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$billing_eventsPayload>
+          }
+          createMany: {
+            args: Prisma.billing_eventsCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.billing_eventsCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$billing_eventsPayload>[]
+          }
+          delete: {
+            args: Prisma.billing_eventsDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$billing_eventsPayload>
+          }
+          update: {
+            args: Prisma.billing_eventsUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$billing_eventsPayload>
+          }
+          deleteMany: {
+            args: Prisma.billing_eventsDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.billing_eventsUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.billing_eventsUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$billing_eventsPayload>[]
+          }
+          upsert: {
+            args: Prisma.billing_eventsUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$billing_eventsPayload>
+          }
+          aggregate: {
+            args: Prisma.Billing_eventsAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateBilling_events>
+          }
+          groupBy: {
+            args: Prisma.billing_eventsGroupByArgs<ExtArgs>
+            result: $Utils.Optional<Billing_eventsGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.billing_eventsCountArgs<ExtArgs>
+            result: $Utils.Optional<Billing_eventsCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1509,6 +1599,7 @@ export namespace Prisma {
     platform_settings?: platform_settingsOmit
     tenant_pricing_configs?: tenant_pricing_configsOmit
     invoices?: invoicesOmit
+    billing_events?: billing_eventsOmit
   }
 
   /* Types for Logging */
@@ -1593,6 +1684,7 @@ export namespace Prisma {
     central_user_index: number
     tenant_branch_links: number
     invoices: number
+    billing_events: number
   }
 
   export type TenantsCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -1600,6 +1692,7 @@ export namespace Prisma {
     central_user_index?: boolean | TenantsCountOutputTypeCountCentral_user_indexArgs
     tenant_branch_links?: boolean | TenantsCountOutputTypeCountTenant_branch_linksArgs
     invoices?: boolean | TenantsCountOutputTypeCountInvoicesArgs
+    billing_events?: boolean | TenantsCountOutputTypeCountBilling_eventsArgs
   }
 
   // Custom InputTypes
@@ -1639,6 +1732,13 @@ export namespace Prisma {
    */
   export type TenantsCountOutputTypeCountInvoicesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: invoicesWhereInput
+  }
+
+  /**
+   * TenantsCountOutputType without action
+   */
+  export type TenantsCountOutputTypeCountBilling_eventsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: billing_eventsWhereInput
   }
 
 
@@ -2181,6 +2281,7 @@ export namespace Prisma {
     tenant_branch_links?: boolean | tenants$tenant_branch_linksArgs<ExtArgs>
     tenant_pricing_configs?: boolean | tenants$tenant_pricing_configsArgs<ExtArgs>
     invoices?: boolean | tenants$invoicesArgs<ExtArgs>
+    billing_events?: boolean | tenants$billing_eventsArgs<ExtArgs>
     _count?: boolean | TenantsCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["tenants"]>
 
@@ -2338,6 +2439,7 @@ export namespace Prisma {
     tenant_branch_links?: boolean | tenants$tenant_branch_linksArgs<ExtArgs>
     tenant_pricing_configs?: boolean | tenants$tenant_pricing_configsArgs<ExtArgs>
     invoices?: boolean | tenants$invoicesArgs<ExtArgs>
+    billing_events?: boolean | tenants$billing_eventsArgs<ExtArgs>
     _count?: boolean | TenantsCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type tenantsIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -2351,6 +2453,7 @@ export namespace Prisma {
       tenant_branch_links: Prisma.$tenant_branch_linksPayload<ExtArgs>[]
       tenant_pricing_configs: Prisma.$tenant_pricing_configsPayload<ExtArgs> | null
       invoices: Prisma.$invoicesPayload<ExtArgs>[]
+      billing_events: Prisma.$billing_eventsPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -2798,6 +2901,7 @@ export namespace Prisma {
     tenant_branch_links<T extends tenants$tenant_branch_linksArgs<ExtArgs> = {}>(args?: Subset<T, tenants$tenant_branch_linksArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$tenant_branch_linksPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     tenant_pricing_configs<T extends tenants$tenant_pricing_configsArgs<ExtArgs> = {}>(args?: Subset<T, tenants$tenant_pricing_configsArgs<ExtArgs>>): Prisma__tenant_pricing_configsClient<$Result.GetResult<Prisma.$tenant_pricing_configsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     invoices<T extends tenants$invoicesArgs<ExtArgs> = {}>(args?: Subset<T, tenants$invoicesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$invoicesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    billing_events<T extends tenants$billing_eventsArgs<ExtArgs> = {}>(args?: Subset<T, tenants$billing_eventsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$billing_eventsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3373,6 +3477,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: InvoicesScalarFieldEnum | InvoicesScalarFieldEnum[]
+  }
+
+  /**
+   * tenants.billing_events
+   */
+  export type tenants$billing_eventsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the billing_events
+     */
+    select?: billing_eventsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the billing_events
+     */
+    omit?: billing_eventsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: billing_eventsInclude<ExtArgs> | null
+    where?: billing_eventsWhereInput
+    orderBy?: billing_eventsOrderByWithRelationInput | billing_eventsOrderByWithRelationInput[]
+    cursor?: billing_eventsWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: Billing_eventsScalarFieldEnum | Billing_eventsScalarFieldEnum[]
   }
 
   /**
@@ -12883,6 +13011,1191 @@ export namespace Prisma {
 
 
   /**
+   * Model billing_events
+   */
+
+  export type AggregateBilling_events = {
+    _count: Billing_eventsCountAggregateOutputType | null
+    _avg: Billing_eventsAvgAggregateOutputType | null
+    _sum: Billing_eventsSumAggregateOutputType | null
+    _min: Billing_eventsMinAggregateOutputType | null
+    _max: Billing_eventsMaxAggregateOutputType | null
+  }
+
+  export type Billing_eventsAvgAggregateOutputType = {
+    amount_paise: number | null
+  }
+
+  export type Billing_eventsSumAggregateOutputType = {
+    amount_paise: number | null
+  }
+
+  export type Billing_eventsMinAggregateOutputType = {
+    id: string | null
+    tenant_id: string | null
+    gateway: string | null
+    event_type: string | null
+    status: string | null
+    reference_id: string | null
+    amount_paise: number | null
+    message: string | null
+    ip_address: string | null
+    created_at: Date | null
+  }
+
+  export type Billing_eventsMaxAggregateOutputType = {
+    id: string | null
+    tenant_id: string | null
+    gateway: string | null
+    event_type: string | null
+    status: string | null
+    reference_id: string | null
+    amount_paise: number | null
+    message: string | null
+    ip_address: string | null
+    created_at: Date | null
+  }
+
+  export type Billing_eventsCountAggregateOutputType = {
+    id: number
+    tenant_id: number
+    gateway: number
+    event_type: number
+    status: number
+    reference_id: number
+    amount_paise: number
+    message: number
+    metadata: number
+    ip_address: number
+    created_at: number
+    _all: number
+  }
+
+
+  export type Billing_eventsAvgAggregateInputType = {
+    amount_paise?: true
+  }
+
+  export type Billing_eventsSumAggregateInputType = {
+    amount_paise?: true
+  }
+
+  export type Billing_eventsMinAggregateInputType = {
+    id?: true
+    tenant_id?: true
+    gateway?: true
+    event_type?: true
+    status?: true
+    reference_id?: true
+    amount_paise?: true
+    message?: true
+    ip_address?: true
+    created_at?: true
+  }
+
+  export type Billing_eventsMaxAggregateInputType = {
+    id?: true
+    tenant_id?: true
+    gateway?: true
+    event_type?: true
+    status?: true
+    reference_id?: true
+    amount_paise?: true
+    message?: true
+    ip_address?: true
+    created_at?: true
+  }
+
+  export type Billing_eventsCountAggregateInputType = {
+    id?: true
+    tenant_id?: true
+    gateway?: true
+    event_type?: true
+    status?: true
+    reference_id?: true
+    amount_paise?: true
+    message?: true
+    metadata?: true
+    ip_address?: true
+    created_at?: true
+    _all?: true
+  }
+
+  export type Billing_eventsAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which billing_events to aggregate.
+     */
+    where?: billing_eventsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of billing_events to fetch.
+     */
+    orderBy?: billing_eventsOrderByWithRelationInput | billing_eventsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: billing_eventsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` billing_events from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` billing_events.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned billing_events
+    **/
+    _count?: true | Billing_eventsCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: Billing_eventsAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: Billing_eventsSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: Billing_eventsMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: Billing_eventsMaxAggregateInputType
+  }
+
+  export type GetBilling_eventsAggregateType<T extends Billing_eventsAggregateArgs> = {
+        [P in keyof T & keyof AggregateBilling_events]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateBilling_events[P]>
+      : GetScalarType<T[P], AggregateBilling_events[P]>
+  }
+
+
+
+
+  export type billing_eventsGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: billing_eventsWhereInput
+    orderBy?: billing_eventsOrderByWithAggregationInput | billing_eventsOrderByWithAggregationInput[]
+    by: Billing_eventsScalarFieldEnum[] | Billing_eventsScalarFieldEnum
+    having?: billing_eventsScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: Billing_eventsCountAggregateInputType | true
+    _avg?: Billing_eventsAvgAggregateInputType
+    _sum?: Billing_eventsSumAggregateInputType
+    _min?: Billing_eventsMinAggregateInputType
+    _max?: Billing_eventsMaxAggregateInputType
+  }
+
+  export type Billing_eventsGroupByOutputType = {
+    id: string
+    tenant_id: string | null
+    gateway: string
+    event_type: string
+    status: string
+    reference_id: string | null
+    amount_paise: number | null
+    message: string | null
+    metadata: JsonValue | null
+    ip_address: string | null
+    created_at: Date
+    _count: Billing_eventsCountAggregateOutputType | null
+    _avg: Billing_eventsAvgAggregateOutputType | null
+    _sum: Billing_eventsSumAggregateOutputType | null
+    _min: Billing_eventsMinAggregateOutputType | null
+    _max: Billing_eventsMaxAggregateOutputType | null
+  }
+
+  type GetBilling_eventsGroupByPayload<T extends billing_eventsGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<Billing_eventsGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof Billing_eventsGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], Billing_eventsGroupByOutputType[P]>
+            : GetScalarType<T[P], Billing_eventsGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type billing_eventsSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    tenant_id?: boolean
+    gateway?: boolean
+    event_type?: boolean
+    status?: boolean
+    reference_id?: boolean
+    amount_paise?: boolean
+    message?: boolean
+    metadata?: boolean
+    ip_address?: boolean
+    created_at?: boolean
+    tenant?: boolean | billing_events$tenantArgs<ExtArgs>
+  }, ExtArgs["result"]["billing_events"]>
+
+  export type billing_eventsSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    tenant_id?: boolean
+    gateway?: boolean
+    event_type?: boolean
+    status?: boolean
+    reference_id?: boolean
+    amount_paise?: boolean
+    message?: boolean
+    metadata?: boolean
+    ip_address?: boolean
+    created_at?: boolean
+    tenant?: boolean | billing_events$tenantArgs<ExtArgs>
+  }, ExtArgs["result"]["billing_events"]>
+
+  export type billing_eventsSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    tenant_id?: boolean
+    gateway?: boolean
+    event_type?: boolean
+    status?: boolean
+    reference_id?: boolean
+    amount_paise?: boolean
+    message?: boolean
+    metadata?: boolean
+    ip_address?: boolean
+    created_at?: boolean
+    tenant?: boolean | billing_events$tenantArgs<ExtArgs>
+  }, ExtArgs["result"]["billing_events"]>
+
+  export type billing_eventsSelectScalar = {
+    id?: boolean
+    tenant_id?: boolean
+    gateway?: boolean
+    event_type?: boolean
+    status?: boolean
+    reference_id?: boolean
+    amount_paise?: boolean
+    message?: boolean
+    metadata?: boolean
+    ip_address?: boolean
+    created_at?: boolean
+  }
+
+  export type billing_eventsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "tenant_id" | "gateway" | "event_type" | "status" | "reference_id" | "amount_paise" | "message" | "metadata" | "ip_address" | "created_at", ExtArgs["result"]["billing_events"]>
+  export type billing_eventsInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    tenant?: boolean | billing_events$tenantArgs<ExtArgs>
+  }
+  export type billing_eventsIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    tenant?: boolean | billing_events$tenantArgs<ExtArgs>
+  }
+  export type billing_eventsIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    tenant?: boolean | billing_events$tenantArgs<ExtArgs>
+  }
+
+  export type $billing_eventsPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "billing_events"
+    objects: {
+      tenant: Prisma.$tenantsPayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      tenant_id: string | null
+      gateway: string
+      event_type: string
+      status: string
+      reference_id: string | null
+      amount_paise: number | null
+      message: string | null
+      metadata: Prisma.JsonValue | null
+      ip_address: string | null
+      created_at: Date
+    }, ExtArgs["result"]["billing_events"]>
+    composites: {}
+  }
+
+  type billing_eventsGetPayload<S extends boolean | null | undefined | billing_eventsDefaultArgs> = $Result.GetResult<Prisma.$billing_eventsPayload, S>
+
+  type billing_eventsCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<billing_eventsFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: Billing_eventsCountAggregateInputType | true
+    }
+
+  export interface billing_eventsDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['billing_events'], meta: { name: 'billing_events' } }
+    /**
+     * Find zero or one Billing_events that matches the filter.
+     * @param {billing_eventsFindUniqueArgs} args - Arguments to find a Billing_events
+     * @example
+     * // Get one Billing_events
+     * const billing_events = await prisma.billing_events.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends billing_eventsFindUniqueArgs>(args: SelectSubset<T, billing_eventsFindUniqueArgs<ExtArgs>>): Prisma__billing_eventsClient<$Result.GetResult<Prisma.$billing_eventsPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Billing_events that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {billing_eventsFindUniqueOrThrowArgs} args - Arguments to find a Billing_events
+     * @example
+     * // Get one Billing_events
+     * const billing_events = await prisma.billing_events.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends billing_eventsFindUniqueOrThrowArgs>(args: SelectSubset<T, billing_eventsFindUniqueOrThrowArgs<ExtArgs>>): Prisma__billing_eventsClient<$Result.GetResult<Prisma.$billing_eventsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Billing_events that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {billing_eventsFindFirstArgs} args - Arguments to find a Billing_events
+     * @example
+     * // Get one Billing_events
+     * const billing_events = await prisma.billing_events.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends billing_eventsFindFirstArgs>(args?: SelectSubset<T, billing_eventsFindFirstArgs<ExtArgs>>): Prisma__billing_eventsClient<$Result.GetResult<Prisma.$billing_eventsPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Billing_events that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {billing_eventsFindFirstOrThrowArgs} args - Arguments to find a Billing_events
+     * @example
+     * // Get one Billing_events
+     * const billing_events = await prisma.billing_events.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends billing_eventsFindFirstOrThrowArgs>(args?: SelectSubset<T, billing_eventsFindFirstOrThrowArgs<ExtArgs>>): Prisma__billing_eventsClient<$Result.GetResult<Prisma.$billing_eventsPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Billing_events that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {billing_eventsFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Billing_events
+     * const billing_events = await prisma.billing_events.findMany()
+     * 
+     * // Get first 10 Billing_events
+     * const billing_events = await prisma.billing_events.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const billing_eventsWithIdOnly = await prisma.billing_events.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends billing_eventsFindManyArgs>(args?: SelectSubset<T, billing_eventsFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$billing_eventsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Billing_events.
+     * @param {billing_eventsCreateArgs} args - Arguments to create a Billing_events.
+     * @example
+     * // Create one Billing_events
+     * const Billing_events = await prisma.billing_events.create({
+     *   data: {
+     *     // ... data to create a Billing_events
+     *   }
+     * })
+     * 
+     */
+    create<T extends billing_eventsCreateArgs>(args: SelectSubset<T, billing_eventsCreateArgs<ExtArgs>>): Prisma__billing_eventsClient<$Result.GetResult<Prisma.$billing_eventsPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Billing_events.
+     * @param {billing_eventsCreateManyArgs} args - Arguments to create many Billing_events.
+     * @example
+     * // Create many Billing_events
+     * const billing_events = await prisma.billing_events.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends billing_eventsCreateManyArgs>(args?: SelectSubset<T, billing_eventsCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Billing_events and returns the data saved in the database.
+     * @param {billing_eventsCreateManyAndReturnArgs} args - Arguments to create many Billing_events.
+     * @example
+     * // Create many Billing_events
+     * const billing_events = await prisma.billing_events.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Billing_events and only return the `id`
+     * const billing_eventsWithIdOnly = await prisma.billing_events.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends billing_eventsCreateManyAndReturnArgs>(args?: SelectSubset<T, billing_eventsCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$billing_eventsPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Billing_events.
+     * @param {billing_eventsDeleteArgs} args - Arguments to delete one Billing_events.
+     * @example
+     * // Delete one Billing_events
+     * const Billing_events = await prisma.billing_events.delete({
+     *   where: {
+     *     // ... filter to delete one Billing_events
+     *   }
+     * })
+     * 
+     */
+    delete<T extends billing_eventsDeleteArgs>(args: SelectSubset<T, billing_eventsDeleteArgs<ExtArgs>>): Prisma__billing_eventsClient<$Result.GetResult<Prisma.$billing_eventsPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Billing_events.
+     * @param {billing_eventsUpdateArgs} args - Arguments to update one Billing_events.
+     * @example
+     * // Update one Billing_events
+     * const billing_events = await prisma.billing_events.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends billing_eventsUpdateArgs>(args: SelectSubset<T, billing_eventsUpdateArgs<ExtArgs>>): Prisma__billing_eventsClient<$Result.GetResult<Prisma.$billing_eventsPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Billing_events.
+     * @param {billing_eventsDeleteManyArgs} args - Arguments to filter Billing_events to delete.
+     * @example
+     * // Delete a few Billing_events
+     * const { count } = await prisma.billing_events.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends billing_eventsDeleteManyArgs>(args?: SelectSubset<T, billing_eventsDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Billing_events.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {billing_eventsUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Billing_events
+     * const billing_events = await prisma.billing_events.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends billing_eventsUpdateManyArgs>(args: SelectSubset<T, billing_eventsUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Billing_events and returns the data updated in the database.
+     * @param {billing_eventsUpdateManyAndReturnArgs} args - Arguments to update many Billing_events.
+     * @example
+     * // Update many Billing_events
+     * const billing_events = await prisma.billing_events.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Billing_events and only return the `id`
+     * const billing_eventsWithIdOnly = await prisma.billing_events.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends billing_eventsUpdateManyAndReturnArgs>(args: SelectSubset<T, billing_eventsUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$billing_eventsPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Billing_events.
+     * @param {billing_eventsUpsertArgs} args - Arguments to update or create a Billing_events.
+     * @example
+     * // Update or create a Billing_events
+     * const billing_events = await prisma.billing_events.upsert({
+     *   create: {
+     *     // ... data to create a Billing_events
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Billing_events we want to update
+     *   }
+     * })
+     */
+    upsert<T extends billing_eventsUpsertArgs>(args: SelectSubset<T, billing_eventsUpsertArgs<ExtArgs>>): Prisma__billing_eventsClient<$Result.GetResult<Prisma.$billing_eventsPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Billing_events.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {billing_eventsCountArgs} args - Arguments to filter Billing_events to count.
+     * @example
+     * // Count the number of Billing_events
+     * const count = await prisma.billing_events.count({
+     *   where: {
+     *     // ... the filter for the Billing_events we want to count
+     *   }
+     * })
+    **/
+    count<T extends billing_eventsCountArgs>(
+      args?: Subset<T, billing_eventsCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], Billing_eventsCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Billing_events.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {Billing_eventsAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends Billing_eventsAggregateArgs>(args: Subset<T, Billing_eventsAggregateArgs>): Prisma.PrismaPromise<GetBilling_eventsAggregateType<T>>
+
+    /**
+     * Group by Billing_events.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {billing_eventsGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends billing_eventsGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: billing_eventsGroupByArgs['orderBy'] }
+        : { orderBy?: billing_eventsGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, billing_eventsGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetBilling_eventsGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the billing_events model
+   */
+  readonly fields: billing_eventsFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for billing_events.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__billing_eventsClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    tenant<T extends billing_events$tenantArgs<ExtArgs> = {}>(args?: Subset<T, billing_events$tenantArgs<ExtArgs>>): Prisma__tenantsClient<$Result.GetResult<Prisma.$tenantsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the billing_events model
+   */
+  interface billing_eventsFieldRefs {
+    readonly id: FieldRef<"billing_events", 'String'>
+    readonly tenant_id: FieldRef<"billing_events", 'String'>
+    readonly gateway: FieldRef<"billing_events", 'String'>
+    readonly event_type: FieldRef<"billing_events", 'String'>
+    readonly status: FieldRef<"billing_events", 'String'>
+    readonly reference_id: FieldRef<"billing_events", 'String'>
+    readonly amount_paise: FieldRef<"billing_events", 'Int'>
+    readonly message: FieldRef<"billing_events", 'String'>
+    readonly metadata: FieldRef<"billing_events", 'Json'>
+    readonly ip_address: FieldRef<"billing_events", 'String'>
+    readonly created_at: FieldRef<"billing_events", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * billing_events findUnique
+   */
+  export type billing_eventsFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the billing_events
+     */
+    select?: billing_eventsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the billing_events
+     */
+    omit?: billing_eventsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: billing_eventsInclude<ExtArgs> | null
+    /**
+     * Filter, which billing_events to fetch.
+     */
+    where: billing_eventsWhereUniqueInput
+  }
+
+  /**
+   * billing_events findUniqueOrThrow
+   */
+  export type billing_eventsFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the billing_events
+     */
+    select?: billing_eventsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the billing_events
+     */
+    omit?: billing_eventsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: billing_eventsInclude<ExtArgs> | null
+    /**
+     * Filter, which billing_events to fetch.
+     */
+    where: billing_eventsWhereUniqueInput
+  }
+
+  /**
+   * billing_events findFirst
+   */
+  export type billing_eventsFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the billing_events
+     */
+    select?: billing_eventsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the billing_events
+     */
+    omit?: billing_eventsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: billing_eventsInclude<ExtArgs> | null
+    /**
+     * Filter, which billing_events to fetch.
+     */
+    where?: billing_eventsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of billing_events to fetch.
+     */
+    orderBy?: billing_eventsOrderByWithRelationInput | billing_eventsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for billing_events.
+     */
+    cursor?: billing_eventsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` billing_events from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` billing_events.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of billing_events.
+     */
+    distinct?: Billing_eventsScalarFieldEnum | Billing_eventsScalarFieldEnum[]
+  }
+
+  /**
+   * billing_events findFirstOrThrow
+   */
+  export type billing_eventsFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the billing_events
+     */
+    select?: billing_eventsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the billing_events
+     */
+    omit?: billing_eventsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: billing_eventsInclude<ExtArgs> | null
+    /**
+     * Filter, which billing_events to fetch.
+     */
+    where?: billing_eventsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of billing_events to fetch.
+     */
+    orderBy?: billing_eventsOrderByWithRelationInput | billing_eventsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for billing_events.
+     */
+    cursor?: billing_eventsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` billing_events from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` billing_events.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of billing_events.
+     */
+    distinct?: Billing_eventsScalarFieldEnum | Billing_eventsScalarFieldEnum[]
+  }
+
+  /**
+   * billing_events findMany
+   */
+  export type billing_eventsFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the billing_events
+     */
+    select?: billing_eventsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the billing_events
+     */
+    omit?: billing_eventsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: billing_eventsInclude<ExtArgs> | null
+    /**
+     * Filter, which billing_events to fetch.
+     */
+    where?: billing_eventsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of billing_events to fetch.
+     */
+    orderBy?: billing_eventsOrderByWithRelationInput | billing_eventsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing billing_events.
+     */
+    cursor?: billing_eventsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` billing_events from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` billing_events.
+     */
+    skip?: number
+    distinct?: Billing_eventsScalarFieldEnum | Billing_eventsScalarFieldEnum[]
+  }
+
+  /**
+   * billing_events create
+   */
+  export type billing_eventsCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the billing_events
+     */
+    select?: billing_eventsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the billing_events
+     */
+    omit?: billing_eventsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: billing_eventsInclude<ExtArgs> | null
+    /**
+     * The data needed to create a billing_events.
+     */
+    data: XOR<billing_eventsCreateInput, billing_eventsUncheckedCreateInput>
+  }
+
+  /**
+   * billing_events createMany
+   */
+  export type billing_eventsCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many billing_events.
+     */
+    data: billing_eventsCreateManyInput | billing_eventsCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * billing_events createManyAndReturn
+   */
+  export type billing_eventsCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the billing_events
+     */
+    select?: billing_eventsSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the billing_events
+     */
+    omit?: billing_eventsOmit<ExtArgs> | null
+    /**
+     * The data used to create many billing_events.
+     */
+    data: billing_eventsCreateManyInput | billing_eventsCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: billing_eventsIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * billing_events update
+   */
+  export type billing_eventsUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the billing_events
+     */
+    select?: billing_eventsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the billing_events
+     */
+    omit?: billing_eventsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: billing_eventsInclude<ExtArgs> | null
+    /**
+     * The data needed to update a billing_events.
+     */
+    data: XOR<billing_eventsUpdateInput, billing_eventsUncheckedUpdateInput>
+    /**
+     * Choose, which billing_events to update.
+     */
+    where: billing_eventsWhereUniqueInput
+  }
+
+  /**
+   * billing_events updateMany
+   */
+  export type billing_eventsUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update billing_events.
+     */
+    data: XOR<billing_eventsUpdateManyMutationInput, billing_eventsUncheckedUpdateManyInput>
+    /**
+     * Filter which billing_events to update
+     */
+    where?: billing_eventsWhereInput
+    /**
+     * Limit how many billing_events to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * billing_events updateManyAndReturn
+   */
+  export type billing_eventsUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the billing_events
+     */
+    select?: billing_eventsSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the billing_events
+     */
+    omit?: billing_eventsOmit<ExtArgs> | null
+    /**
+     * The data used to update billing_events.
+     */
+    data: XOR<billing_eventsUpdateManyMutationInput, billing_eventsUncheckedUpdateManyInput>
+    /**
+     * Filter which billing_events to update
+     */
+    where?: billing_eventsWhereInput
+    /**
+     * Limit how many billing_events to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: billing_eventsIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * billing_events upsert
+   */
+  export type billing_eventsUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the billing_events
+     */
+    select?: billing_eventsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the billing_events
+     */
+    omit?: billing_eventsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: billing_eventsInclude<ExtArgs> | null
+    /**
+     * The filter to search for the billing_events to update in case it exists.
+     */
+    where: billing_eventsWhereUniqueInput
+    /**
+     * In case the billing_events found by the `where` argument doesn't exist, create a new billing_events with this data.
+     */
+    create: XOR<billing_eventsCreateInput, billing_eventsUncheckedCreateInput>
+    /**
+     * In case the billing_events was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<billing_eventsUpdateInput, billing_eventsUncheckedUpdateInput>
+  }
+
+  /**
+   * billing_events delete
+   */
+  export type billing_eventsDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the billing_events
+     */
+    select?: billing_eventsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the billing_events
+     */
+    omit?: billing_eventsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: billing_eventsInclude<ExtArgs> | null
+    /**
+     * Filter which billing_events to delete.
+     */
+    where: billing_eventsWhereUniqueInput
+  }
+
+  /**
+   * billing_events deleteMany
+   */
+  export type billing_eventsDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which billing_events to delete
+     */
+    where?: billing_eventsWhereInput
+    /**
+     * Limit how many billing_events to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * billing_events.tenant
+   */
+  export type billing_events$tenantArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tenants
+     */
+    select?: tenantsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tenants
+     */
+    omit?: tenantsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tenantsInclude<ExtArgs> | null
+    where?: tenantsWhereInput
+  }
+
+  /**
+   * billing_events without action
+   */
+  export type billing_eventsDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the billing_events
+     */
+    select?: billing_eventsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the billing_events
+     */
+    omit?: billing_eventsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: billing_eventsInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -13119,6 +14432,23 @@ export namespace Prisma {
   export type InvoicesScalarFieldEnum = (typeof InvoicesScalarFieldEnum)[keyof typeof InvoicesScalarFieldEnum]
 
 
+  export const Billing_eventsScalarFieldEnum: {
+    id: 'id',
+    tenant_id: 'tenant_id',
+    gateway: 'gateway',
+    event_type: 'event_type',
+    status: 'status',
+    reference_id: 'reference_id',
+    amount_paise: 'amount_paise',
+    message: 'message',
+    metadata: 'metadata',
+    ip_address: 'ip_address',
+    created_at: 'created_at'
+  };
+
+  export type Billing_eventsScalarFieldEnum = (typeof Billing_eventsScalarFieldEnum)[keyof typeof Billing_eventsScalarFieldEnum]
+
+
   export const SortOrder: {
     asc: 'asc',
     desc: 'desc'
@@ -13321,6 +14651,7 @@ export namespace Prisma {
     tenant_branch_links?: Tenant_branch_linksListRelationFilter
     tenant_pricing_configs?: XOR<Tenant_pricing_configsNullableScalarRelationFilter, tenant_pricing_configsWhereInput> | null
     invoices?: InvoicesListRelationFilter
+    billing_events?: Billing_eventsListRelationFilter
   }
 
   export type tenantsOrderByWithRelationInput = {
@@ -13375,6 +14706,7 @@ export namespace Prisma {
     tenant_branch_links?: tenant_branch_linksOrderByRelationAggregateInput
     tenant_pricing_configs?: tenant_pricing_configsOrderByWithRelationInput
     invoices?: invoicesOrderByRelationAggregateInput
+    billing_events?: billing_eventsOrderByRelationAggregateInput
   }
 
   export type tenantsWhereUniqueInput = Prisma.AtLeast<{
@@ -13432,6 +14764,7 @@ export namespace Prisma {
     tenant_branch_links?: Tenant_branch_linksListRelationFilter
     tenant_pricing_configs?: XOR<Tenant_pricing_configsNullableScalarRelationFilter, tenant_pricing_configsWhereInput> | null
     invoices?: InvoicesListRelationFilter
+    billing_events?: Billing_eventsListRelationFilter
   }, "id" | "subdomain" | "custom_domain">
 
   export type tenantsOrderByWithAggregationInput = {
@@ -14394,6 +15727,93 @@ export namespace Prisma {
     updated_at?: DateTimeWithAggregatesFilter<"invoices"> | Date | string
   }
 
+  export type billing_eventsWhereInput = {
+    AND?: billing_eventsWhereInput | billing_eventsWhereInput[]
+    OR?: billing_eventsWhereInput[]
+    NOT?: billing_eventsWhereInput | billing_eventsWhereInput[]
+    id?: UuidFilter<"billing_events"> | string
+    tenant_id?: UuidNullableFilter<"billing_events"> | string | null
+    gateway?: StringFilter<"billing_events"> | string
+    event_type?: StringFilter<"billing_events"> | string
+    status?: StringFilter<"billing_events"> | string
+    reference_id?: StringNullableFilter<"billing_events"> | string | null
+    amount_paise?: IntNullableFilter<"billing_events"> | number | null
+    message?: StringNullableFilter<"billing_events"> | string | null
+    metadata?: JsonNullableFilter<"billing_events">
+    ip_address?: StringNullableFilter<"billing_events"> | string | null
+    created_at?: DateTimeFilter<"billing_events"> | Date | string
+    tenant?: XOR<TenantsNullableScalarRelationFilter, tenantsWhereInput> | null
+  }
+
+  export type billing_eventsOrderByWithRelationInput = {
+    id?: SortOrder
+    tenant_id?: SortOrderInput | SortOrder
+    gateway?: SortOrder
+    event_type?: SortOrder
+    status?: SortOrder
+    reference_id?: SortOrderInput | SortOrder
+    amount_paise?: SortOrderInput | SortOrder
+    message?: SortOrderInput | SortOrder
+    metadata?: SortOrderInput | SortOrder
+    ip_address?: SortOrderInput | SortOrder
+    created_at?: SortOrder
+    tenant?: tenantsOrderByWithRelationInput
+  }
+
+  export type billing_eventsWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: billing_eventsWhereInput | billing_eventsWhereInput[]
+    OR?: billing_eventsWhereInput[]
+    NOT?: billing_eventsWhereInput | billing_eventsWhereInput[]
+    tenant_id?: UuidNullableFilter<"billing_events"> | string | null
+    gateway?: StringFilter<"billing_events"> | string
+    event_type?: StringFilter<"billing_events"> | string
+    status?: StringFilter<"billing_events"> | string
+    reference_id?: StringNullableFilter<"billing_events"> | string | null
+    amount_paise?: IntNullableFilter<"billing_events"> | number | null
+    message?: StringNullableFilter<"billing_events"> | string | null
+    metadata?: JsonNullableFilter<"billing_events">
+    ip_address?: StringNullableFilter<"billing_events"> | string | null
+    created_at?: DateTimeFilter<"billing_events"> | Date | string
+    tenant?: XOR<TenantsNullableScalarRelationFilter, tenantsWhereInput> | null
+  }, "id">
+
+  export type billing_eventsOrderByWithAggregationInput = {
+    id?: SortOrder
+    tenant_id?: SortOrderInput | SortOrder
+    gateway?: SortOrder
+    event_type?: SortOrder
+    status?: SortOrder
+    reference_id?: SortOrderInput | SortOrder
+    amount_paise?: SortOrderInput | SortOrder
+    message?: SortOrderInput | SortOrder
+    metadata?: SortOrderInput | SortOrder
+    ip_address?: SortOrderInput | SortOrder
+    created_at?: SortOrder
+    _count?: billing_eventsCountOrderByAggregateInput
+    _avg?: billing_eventsAvgOrderByAggregateInput
+    _max?: billing_eventsMaxOrderByAggregateInput
+    _min?: billing_eventsMinOrderByAggregateInput
+    _sum?: billing_eventsSumOrderByAggregateInput
+  }
+
+  export type billing_eventsScalarWhereWithAggregatesInput = {
+    AND?: billing_eventsScalarWhereWithAggregatesInput | billing_eventsScalarWhereWithAggregatesInput[]
+    OR?: billing_eventsScalarWhereWithAggregatesInput[]
+    NOT?: billing_eventsScalarWhereWithAggregatesInput | billing_eventsScalarWhereWithAggregatesInput[]
+    id?: UuidWithAggregatesFilter<"billing_events"> | string
+    tenant_id?: UuidNullableWithAggregatesFilter<"billing_events"> | string | null
+    gateway?: StringWithAggregatesFilter<"billing_events"> | string
+    event_type?: StringWithAggregatesFilter<"billing_events"> | string
+    status?: StringWithAggregatesFilter<"billing_events"> | string
+    reference_id?: StringNullableWithAggregatesFilter<"billing_events"> | string | null
+    amount_paise?: IntNullableWithAggregatesFilter<"billing_events"> | number | null
+    message?: StringNullableWithAggregatesFilter<"billing_events"> | string | null
+    metadata?: JsonNullableWithAggregatesFilter<"billing_events">
+    ip_address?: StringNullableWithAggregatesFilter<"billing_events"> | string | null
+    created_at?: DateTimeWithAggregatesFilter<"billing_events"> | Date | string
+  }
+
   export type tenantsCreateInput = {
     id?: string
     name: string
@@ -14446,6 +15866,7 @@ export namespace Prisma {
     tenant_branch_links?: tenant_branch_linksCreateNestedManyWithoutTenantInput
     tenant_pricing_configs?: tenant_pricing_configsCreateNestedOneWithoutTenantInput
     invoices?: invoicesCreateNestedManyWithoutTenantInput
+    billing_events?: billing_eventsCreateNestedManyWithoutTenantInput
   }
 
   export type tenantsUncheckedCreateInput = {
@@ -14500,6 +15921,7 @@ export namespace Prisma {
     tenant_branch_links?: tenant_branch_linksUncheckedCreateNestedManyWithoutTenantInput
     tenant_pricing_configs?: tenant_pricing_configsUncheckedCreateNestedOneWithoutTenantInput
     invoices?: invoicesUncheckedCreateNestedManyWithoutTenantInput
+    billing_events?: billing_eventsUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type tenantsUpdateInput = {
@@ -14554,6 +15976,7 @@ export namespace Prisma {
     tenant_branch_links?: tenant_branch_linksUpdateManyWithoutTenantNestedInput
     tenant_pricing_configs?: tenant_pricing_configsUpdateOneWithoutTenantNestedInput
     invoices?: invoicesUpdateManyWithoutTenantNestedInput
+    billing_events?: billing_eventsUpdateManyWithoutTenantNestedInput
   }
 
   export type tenantsUncheckedUpdateInput = {
@@ -14608,6 +16031,7 @@ export namespace Prisma {
     tenant_branch_links?: tenant_branch_linksUncheckedUpdateManyWithoutTenantNestedInput
     tenant_pricing_configs?: tenant_pricing_configsUncheckedUpdateOneWithoutTenantNestedInput
     invoices?: invoicesUncheckedUpdateManyWithoutTenantNestedInput
+    billing_events?: billing_eventsUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type tenantsCreateManyInput = {
@@ -15781,6 +17205,103 @@ export namespace Prisma {
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type billing_eventsCreateInput = {
+    id?: string
+    gateway: string
+    event_type: string
+    status?: string
+    reference_id?: string | null
+    amount_paise?: number | null
+    message?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip_address?: string | null
+    created_at?: Date | string
+    tenant?: tenantsCreateNestedOneWithoutBilling_eventsInput
+  }
+
+  export type billing_eventsUncheckedCreateInput = {
+    id?: string
+    tenant_id?: string | null
+    gateway: string
+    event_type: string
+    status?: string
+    reference_id?: string | null
+    amount_paise?: number | null
+    message?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip_address?: string | null
+    created_at?: Date | string
+  }
+
+  export type billing_eventsUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    gateway?: StringFieldUpdateOperationsInput | string
+    event_type?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    reference_id?: NullableStringFieldUpdateOperationsInput | string | null
+    amount_paise?: NullableIntFieldUpdateOperationsInput | number | null
+    message?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip_address?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    tenant?: tenantsUpdateOneWithoutBilling_eventsNestedInput
+  }
+
+  export type billing_eventsUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    tenant_id?: NullableStringFieldUpdateOperationsInput | string | null
+    gateway?: StringFieldUpdateOperationsInput | string
+    event_type?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    reference_id?: NullableStringFieldUpdateOperationsInput | string | null
+    amount_paise?: NullableIntFieldUpdateOperationsInput | number | null
+    message?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip_address?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type billing_eventsCreateManyInput = {
+    id?: string
+    tenant_id?: string | null
+    gateway: string
+    event_type: string
+    status?: string
+    reference_id?: string | null
+    amount_paise?: number | null
+    message?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip_address?: string | null
+    created_at?: Date | string
+  }
+
+  export type billing_eventsUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    gateway?: StringFieldUpdateOperationsInput | string
+    event_type?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    reference_id?: NullableStringFieldUpdateOperationsInput | string | null
+    amount_paise?: NullableIntFieldUpdateOperationsInput | number | null
+    message?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip_address?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type billing_eventsUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    tenant_id?: NullableStringFieldUpdateOperationsInput | string | null
+    gateway?: StringFieldUpdateOperationsInput | string
+    event_type?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    reference_id?: NullableStringFieldUpdateOperationsInput | string | null
+    amount_paise?: NullableIntFieldUpdateOperationsInput | number | null
+    message?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip_address?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type UuidFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -15929,6 +17450,12 @@ export namespace Prisma {
     none?: invoicesWhereInput
   }
 
+  export type Billing_eventsListRelationFilter = {
+    every?: billing_eventsWhereInput
+    some?: billing_eventsWhereInput
+    none?: billing_eventsWhereInput
+  }
+
   export type SortOrderInput = {
     sort: SortOrder
     nulls?: NullsOrder
@@ -15947,6 +17474,10 @@ export namespace Prisma {
   }
 
   export type invoicesOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type billing_eventsOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -16859,6 +18390,59 @@ export namespace Prisma {
     total_paise?: SortOrder
   }
 
+  export type TenantsNullableScalarRelationFilter = {
+    is?: tenantsWhereInput | null
+    isNot?: tenantsWhereInput | null
+  }
+
+  export type billing_eventsCountOrderByAggregateInput = {
+    id?: SortOrder
+    tenant_id?: SortOrder
+    gateway?: SortOrder
+    event_type?: SortOrder
+    status?: SortOrder
+    reference_id?: SortOrder
+    amount_paise?: SortOrder
+    message?: SortOrder
+    metadata?: SortOrder
+    ip_address?: SortOrder
+    created_at?: SortOrder
+  }
+
+  export type billing_eventsAvgOrderByAggregateInput = {
+    amount_paise?: SortOrder
+  }
+
+  export type billing_eventsMaxOrderByAggregateInput = {
+    id?: SortOrder
+    tenant_id?: SortOrder
+    gateway?: SortOrder
+    event_type?: SortOrder
+    status?: SortOrder
+    reference_id?: SortOrder
+    amount_paise?: SortOrder
+    message?: SortOrder
+    ip_address?: SortOrder
+    created_at?: SortOrder
+  }
+
+  export type billing_eventsMinOrderByAggregateInput = {
+    id?: SortOrder
+    tenant_id?: SortOrder
+    gateway?: SortOrder
+    event_type?: SortOrder
+    status?: SortOrder
+    reference_id?: SortOrder
+    amount_paise?: SortOrder
+    message?: SortOrder
+    ip_address?: SortOrder
+    created_at?: SortOrder
+  }
+
+  export type billing_eventsSumOrderByAggregateInput = {
+    amount_paise?: SortOrder
+  }
+
   export type tenant_modulesCreateNestedManyWithoutTenantInput = {
     create?: XOR<tenant_modulesCreateWithoutTenantInput, tenant_modulesUncheckedCreateWithoutTenantInput> | tenant_modulesCreateWithoutTenantInput[] | tenant_modulesUncheckedCreateWithoutTenantInput[]
     connectOrCreate?: tenant_modulesCreateOrConnectWithoutTenantInput | tenant_modulesCreateOrConnectWithoutTenantInput[]
@@ -16893,6 +18477,13 @@ export namespace Prisma {
     connect?: invoicesWhereUniqueInput | invoicesWhereUniqueInput[]
   }
 
+  export type billing_eventsCreateNestedManyWithoutTenantInput = {
+    create?: XOR<billing_eventsCreateWithoutTenantInput, billing_eventsUncheckedCreateWithoutTenantInput> | billing_eventsCreateWithoutTenantInput[] | billing_eventsUncheckedCreateWithoutTenantInput[]
+    connectOrCreate?: billing_eventsCreateOrConnectWithoutTenantInput | billing_eventsCreateOrConnectWithoutTenantInput[]
+    createMany?: billing_eventsCreateManyTenantInputEnvelope
+    connect?: billing_eventsWhereUniqueInput | billing_eventsWhereUniqueInput[]
+  }
+
   export type tenant_modulesUncheckedCreateNestedManyWithoutTenantInput = {
     create?: XOR<tenant_modulesCreateWithoutTenantInput, tenant_modulesUncheckedCreateWithoutTenantInput> | tenant_modulesCreateWithoutTenantInput[] | tenant_modulesUncheckedCreateWithoutTenantInput[]
     connectOrCreate?: tenant_modulesCreateOrConnectWithoutTenantInput | tenant_modulesCreateOrConnectWithoutTenantInput[]
@@ -16925,6 +18516,13 @@ export namespace Prisma {
     connectOrCreate?: invoicesCreateOrConnectWithoutTenantInput | invoicesCreateOrConnectWithoutTenantInput[]
     createMany?: invoicesCreateManyTenantInputEnvelope
     connect?: invoicesWhereUniqueInput | invoicesWhereUniqueInput[]
+  }
+
+  export type billing_eventsUncheckedCreateNestedManyWithoutTenantInput = {
+    create?: XOR<billing_eventsCreateWithoutTenantInput, billing_eventsUncheckedCreateWithoutTenantInput> | billing_eventsCreateWithoutTenantInput[] | billing_eventsUncheckedCreateWithoutTenantInput[]
+    connectOrCreate?: billing_eventsCreateOrConnectWithoutTenantInput | billing_eventsCreateOrConnectWithoutTenantInput[]
+    createMany?: billing_eventsCreateManyTenantInputEnvelope
+    connect?: billing_eventsWhereUniqueInput | billing_eventsWhereUniqueInput[]
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -17033,6 +18631,20 @@ export namespace Prisma {
     deleteMany?: invoicesScalarWhereInput | invoicesScalarWhereInput[]
   }
 
+  export type billing_eventsUpdateManyWithoutTenantNestedInput = {
+    create?: XOR<billing_eventsCreateWithoutTenantInput, billing_eventsUncheckedCreateWithoutTenantInput> | billing_eventsCreateWithoutTenantInput[] | billing_eventsUncheckedCreateWithoutTenantInput[]
+    connectOrCreate?: billing_eventsCreateOrConnectWithoutTenantInput | billing_eventsCreateOrConnectWithoutTenantInput[]
+    upsert?: billing_eventsUpsertWithWhereUniqueWithoutTenantInput | billing_eventsUpsertWithWhereUniqueWithoutTenantInput[]
+    createMany?: billing_eventsCreateManyTenantInputEnvelope
+    set?: billing_eventsWhereUniqueInput | billing_eventsWhereUniqueInput[]
+    disconnect?: billing_eventsWhereUniqueInput | billing_eventsWhereUniqueInput[]
+    delete?: billing_eventsWhereUniqueInput | billing_eventsWhereUniqueInput[]
+    connect?: billing_eventsWhereUniqueInput | billing_eventsWhereUniqueInput[]
+    update?: billing_eventsUpdateWithWhereUniqueWithoutTenantInput | billing_eventsUpdateWithWhereUniqueWithoutTenantInput[]
+    updateMany?: billing_eventsUpdateManyWithWhereWithoutTenantInput | billing_eventsUpdateManyWithWhereWithoutTenantInput[]
+    deleteMany?: billing_eventsScalarWhereInput | billing_eventsScalarWhereInput[]
+  }
+
   export type tenant_modulesUncheckedUpdateManyWithoutTenantNestedInput = {
     create?: XOR<tenant_modulesCreateWithoutTenantInput, tenant_modulesUncheckedCreateWithoutTenantInput> | tenant_modulesCreateWithoutTenantInput[] | tenant_modulesUncheckedCreateWithoutTenantInput[]
     connectOrCreate?: tenant_modulesCreateOrConnectWithoutTenantInput | tenant_modulesCreateOrConnectWithoutTenantInput[]
@@ -17097,6 +18709,20 @@ export namespace Prisma {
     update?: invoicesUpdateWithWhereUniqueWithoutTenantInput | invoicesUpdateWithWhereUniqueWithoutTenantInput[]
     updateMany?: invoicesUpdateManyWithWhereWithoutTenantInput | invoicesUpdateManyWithWhereWithoutTenantInput[]
     deleteMany?: invoicesScalarWhereInput | invoicesScalarWhereInput[]
+  }
+
+  export type billing_eventsUncheckedUpdateManyWithoutTenantNestedInput = {
+    create?: XOR<billing_eventsCreateWithoutTenantInput, billing_eventsUncheckedCreateWithoutTenantInput> | billing_eventsCreateWithoutTenantInput[] | billing_eventsUncheckedCreateWithoutTenantInput[]
+    connectOrCreate?: billing_eventsCreateOrConnectWithoutTenantInput | billing_eventsCreateOrConnectWithoutTenantInput[]
+    upsert?: billing_eventsUpsertWithWhereUniqueWithoutTenantInput | billing_eventsUpsertWithWhereUniqueWithoutTenantInput[]
+    createMany?: billing_eventsCreateManyTenantInputEnvelope
+    set?: billing_eventsWhereUniqueInput | billing_eventsWhereUniqueInput[]
+    disconnect?: billing_eventsWhereUniqueInput | billing_eventsWhereUniqueInput[]
+    delete?: billing_eventsWhereUniqueInput | billing_eventsWhereUniqueInput[]
+    connect?: billing_eventsWhereUniqueInput | billing_eventsWhereUniqueInput[]
+    update?: billing_eventsUpdateWithWhereUniqueWithoutTenantInput | billing_eventsUpdateWithWhereUniqueWithoutTenantInput[]
+    updateMany?: billing_eventsUpdateManyWithWhereWithoutTenantInput | billing_eventsUpdateManyWithWhereWithoutTenantInput[]
+    deleteMany?: billing_eventsScalarWhereInput | billing_eventsScalarWhereInput[]
   }
 
   export type tenantsCreateNestedOneWithoutTenant_modulesInput = {
@@ -17175,6 +18801,22 @@ export namespace Prisma {
     upsert?: tenantsUpsertWithoutInvoicesInput
     connect?: tenantsWhereUniqueInput
     update?: XOR<XOR<tenantsUpdateToOneWithWhereWithoutInvoicesInput, tenantsUpdateWithoutInvoicesInput>, tenantsUncheckedUpdateWithoutInvoicesInput>
+  }
+
+  export type tenantsCreateNestedOneWithoutBilling_eventsInput = {
+    create?: XOR<tenantsCreateWithoutBilling_eventsInput, tenantsUncheckedCreateWithoutBilling_eventsInput>
+    connectOrCreate?: tenantsCreateOrConnectWithoutBilling_eventsInput
+    connect?: tenantsWhereUniqueInput
+  }
+
+  export type tenantsUpdateOneWithoutBilling_eventsNestedInput = {
+    create?: XOR<tenantsCreateWithoutBilling_eventsInput, tenantsUncheckedCreateWithoutBilling_eventsInput>
+    connectOrCreate?: tenantsCreateOrConnectWithoutBilling_eventsInput
+    upsert?: tenantsUpsertWithoutBilling_eventsInput
+    disconnect?: tenantsWhereInput | boolean
+    delete?: tenantsWhereInput | boolean
+    connect?: tenantsWhereUniqueInput
+    update?: XOR<XOR<tenantsUpdateToOneWithWhereWithoutBilling_eventsInput, tenantsUpdateWithoutBilling_eventsInput>, tenantsUncheckedUpdateWithoutBilling_eventsInput>
   }
 
   export type NestedUuidFilter<$PrismaModel = never> = {
@@ -17713,6 +19355,42 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type billing_eventsCreateWithoutTenantInput = {
+    id?: string
+    gateway: string
+    event_type: string
+    status?: string
+    reference_id?: string | null
+    amount_paise?: number | null
+    message?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip_address?: string | null
+    created_at?: Date | string
+  }
+
+  export type billing_eventsUncheckedCreateWithoutTenantInput = {
+    id?: string
+    gateway: string
+    event_type: string
+    status?: string
+    reference_id?: string | null
+    amount_paise?: number | null
+    message?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip_address?: string | null
+    created_at?: Date | string
+  }
+
+  export type billing_eventsCreateOrConnectWithoutTenantInput = {
+    where: billing_eventsWhereUniqueInput
+    create: XOR<billing_eventsCreateWithoutTenantInput, billing_eventsUncheckedCreateWithoutTenantInput>
+  }
+
+  export type billing_eventsCreateManyTenantInputEnvelope = {
+    data: billing_eventsCreateManyTenantInput | billing_eventsCreateManyTenantInput[]
+    skipDuplicates?: boolean
+  }
+
   export type tenant_modulesUpsertWithWhereUniqueWithoutTenantInput = {
     where: tenant_modulesWhereUniqueInput
     update: XOR<tenant_modulesUpdateWithoutTenantInput, tenant_modulesUncheckedUpdateWithoutTenantInput>
@@ -17900,6 +19578,39 @@ export namespace Prisma {
     updated_at?: DateTimeFilter<"invoices"> | Date | string
   }
 
+  export type billing_eventsUpsertWithWhereUniqueWithoutTenantInput = {
+    where: billing_eventsWhereUniqueInput
+    update: XOR<billing_eventsUpdateWithoutTenantInput, billing_eventsUncheckedUpdateWithoutTenantInput>
+    create: XOR<billing_eventsCreateWithoutTenantInput, billing_eventsUncheckedCreateWithoutTenantInput>
+  }
+
+  export type billing_eventsUpdateWithWhereUniqueWithoutTenantInput = {
+    where: billing_eventsWhereUniqueInput
+    data: XOR<billing_eventsUpdateWithoutTenantInput, billing_eventsUncheckedUpdateWithoutTenantInput>
+  }
+
+  export type billing_eventsUpdateManyWithWhereWithoutTenantInput = {
+    where: billing_eventsScalarWhereInput
+    data: XOR<billing_eventsUpdateManyMutationInput, billing_eventsUncheckedUpdateManyWithoutTenantInput>
+  }
+
+  export type billing_eventsScalarWhereInput = {
+    AND?: billing_eventsScalarWhereInput | billing_eventsScalarWhereInput[]
+    OR?: billing_eventsScalarWhereInput[]
+    NOT?: billing_eventsScalarWhereInput | billing_eventsScalarWhereInput[]
+    id?: UuidFilter<"billing_events"> | string
+    tenant_id?: UuidNullableFilter<"billing_events"> | string | null
+    gateway?: StringFilter<"billing_events"> | string
+    event_type?: StringFilter<"billing_events"> | string
+    status?: StringFilter<"billing_events"> | string
+    reference_id?: StringNullableFilter<"billing_events"> | string | null
+    amount_paise?: IntNullableFilter<"billing_events"> | number | null
+    message?: StringNullableFilter<"billing_events"> | string | null
+    metadata?: JsonNullableFilter<"billing_events">
+    ip_address?: StringNullableFilter<"billing_events"> | string | null
+    created_at?: DateTimeFilter<"billing_events"> | Date | string
+  }
+
   export type tenantsCreateWithoutTenant_modulesInput = {
     id?: string
     name: string
@@ -17951,6 +19662,7 @@ export namespace Prisma {
     tenant_branch_links?: tenant_branch_linksCreateNestedManyWithoutTenantInput
     tenant_pricing_configs?: tenant_pricing_configsCreateNestedOneWithoutTenantInput
     invoices?: invoicesCreateNestedManyWithoutTenantInput
+    billing_events?: billing_eventsCreateNestedManyWithoutTenantInput
   }
 
   export type tenantsUncheckedCreateWithoutTenant_modulesInput = {
@@ -18004,6 +19716,7 @@ export namespace Prisma {
     tenant_branch_links?: tenant_branch_linksUncheckedCreateNestedManyWithoutTenantInput
     tenant_pricing_configs?: tenant_pricing_configsUncheckedCreateNestedOneWithoutTenantInput
     invoices?: invoicesUncheckedCreateNestedManyWithoutTenantInput
+    billing_events?: billing_eventsUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type tenantsCreateOrConnectWithoutTenant_modulesInput = {
@@ -18073,6 +19786,7 @@ export namespace Prisma {
     tenant_branch_links?: tenant_branch_linksUpdateManyWithoutTenantNestedInput
     tenant_pricing_configs?: tenant_pricing_configsUpdateOneWithoutTenantNestedInput
     invoices?: invoicesUpdateManyWithoutTenantNestedInput
+    billing_events?: billing_eventsUpdateManyWithoutTenantNestedInput
   }
 
   export type tenantsUncheckedUpdateWithoutTenant_modulesInput = {
@@ -18126,6 +19840,7 @@ export namespace Prisma {
     tenant_branch_links?: tenant_branch_linksUncheckedUpdateManyWithoutTenantNestedInput
     tenant_pricing_configs?: tenant_pricing_configsUncheckedUpdateOneWithoutTenantNestedInput
     invoices?: invoicesUncheckedUpdateManyWithoutTenantNestedInput
+    billing_events?: billing_eventsUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type tenantsCreateWithoutCentral_user_indexInput = {
@@ -18179,6 +19894,7 @@ export namespace Prisma {
     tenant_branch_links?: tenant_branch_linksCreateNestedManyWithoutTenantInput
     tenant_pricing_configs?: tenant_pricing_configsCreateNestedOneWithoutTenantInput
     invoices?: invoicesCreateNestedManyWithoutTenantInput
+    billing_events?: billing_eventsCreateNestedManyWithoutTenantInput
   }
 
   export type tenantsUncheckedCreateWithoutCentral_user_indexInput = {
@@ -18232,6 +19948,7 @@ export namespace Prisma {
     tenant_branch_links?: tenant_branch_linksUncheckedCreateNestedManyWithoutTenantInput
     tenant_pricing_configs?: tenant_pricing_configsUncheckedCreateNestedOneWithoutTenantInput
     invoices?: invoicesUncheckedCreateNestedManyWithoutTenantInput
+    billing_events?: billing_eventsUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type tenantsCreateOrConnectWithoutCentral_user_indexInput = {
@@ -18301,6 +20018,7 @@ export namespace Prisma {
     tenant_branch_links?: tenant_branch_linksUpdateManyWithoutTenantNestedInput
     tenant_pricing_configs?: tenant_pricing_configsUpdateOneWithoutTenantNestedInput
     invoices?: invoicesUpdateManyWithoutTenantNestedInput
+    billing_events?: billing_eventsUpdateManyWithoutTenantNestedInput
   }
 
   export type tenantsUncheckedUpdateWithoutCentral_user_indexInput = {
@@ -18354,6 +20072,7 @@ export namespace Prisma {
     tenant_branch_links?: tenant_branch_linksUncheckedUpdateManyWithoutTenantNestedInput
     tenant_pricing_configs?: tenant_pricing_configsUncheckedUpdateOneWithoutTenantNestedInput
     invoices?: invoicesUncheckedUpdateManyWithoutTenantNestedInput
+    billing_events?: billing_eventsUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type tenantsCreateWithoutTenant_branch_linksInput = {
@@ -18407,6 +20126,7 @@ export namespace Prisma {
     central_user_index?: central_user_indexCreateNestedManyWithoutTenantInput
     tenant_pricing_configs?: tenant_pricing_configsCreateNestedOneWithoutTenantInput
     invoices?: invoicesCreateNestedManyWithoutTenantInput
+    billing_events?: billing_eventsCreateNestedManyWithoutTenantInput
   }
 
   export type tenantsUncheckedCreateWithoutTenant_branch_linksInput = {
@@ -18460,6 +20180,7 @@ export namespace Prisma {
     central_user_index?: central_user_indexUncheckedCreateNestedManyWithoutTenantInput
     tenant_pricing_configs?: tenant_pricing_configsUncheckedCreateNestedOneWithoutTenantInput
     invoices?: invoicesUncheckedCreateNestedManyWithoutTenantInput
+    billing_events?: billing_eventsUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type tenantsCreateOrConnectWithoutTenant_branch_linksInput = {
@@ -18529,6 +20250,7 @@ export namespace Prisma {
     central_user_index?: central_user_indexUpdateManyWithoutTenantNestedInput
     tenant_pricing_configs?: tenant_pricing_configsUpdateOneWithoutTenantNestedInput
     invoices?: invoicesUpdateManyWithoutTenantNestedInput
+    billing_events?: billing_eventsUpdateManyWithoutTenantNestedInput
   }
 
   export type tenantsUncheckedUpdateWithoutTenant_branch_linksInput = {
@@ -18582,6 +20304,7 @@ export namespace Prisma {
     central_user_index?: central_user_indexUncheckedUpdateManyWithoutTenantNestedInput
     tenant_pricing_configs?: tenant_pricing_configsUncheckedUpdateOneWithoutTenantNestedInput
     invoices?: invoicesUncheckedUpdateManyWithoutTenantNestedInput
+    billing_events?: billing_eventsUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type tenantsCreateWithoutTenant_pricing_configsInput = {
@@ -18635,6 +20358,7 @@ export namespace Prisma {
     central_user_index?: central_user_indexCreateNestedManyWithoutTenantInput
     tenant_branch_links?: tenant_branch_linksCreateNestedManyWithoutTenantInput
     invoices?: invoicesCreateNestedManyWithoutTenantInput
+    billing_events?: billing_eventsCreateNestedManyWithoutTenantInput
   }
 
   export type tenantsUncheckedCreateWithoutTenant_pricing_configsInput = {
@@ -18688,6 +20412,7 @@ export namespace Prisma {
     central_user_index?: central_user_indexUncheckedCreateNestedManyWithoutTenantInput
     tenant_branch_links?: tenant_branch_linksUncheckedCreateNestedManyWithoutTenantInput
     invoices?: invoicesUncheckedCreateNestedManyWithoutTenantInput
+    billing_events?: billing_eventsUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type tenantsCreateOrConnectWithoutTenant_pricing_configsInput = {
@@ -18757,6 +20482,7 @@ export namespace Prisma {
     central_user_index?: central_user_indexUpdateManyWithoutTenantNestedInput
     tenant_branch_links?: tenant_branch_linksUpdateManyWithoutTenantNestedInput
     invoices?: invoicesUpdateManyWithoutTenantNestedInput
+    billing_events?: billing_eventsUpdateManyWithoutTenantNestedInput
   }
 
   export type tenantsUncheckedUpdateWithoutTenant_pricing_configsInput = {
@@ -18810,6 +20536,7 @@ export namespace Prisma {
     central_user_index?: central_user_indexUncheckedUpdateManyWithoutTenantNestedInput
     tenant_branch_links?: tenant_branch_linksUncheckedUpdateManyWithoutTenantNestedInput
     invoices?: invoicesUncheckedUpdateManyWithoutTenantNestedInput
+    billing_events?: billing_eventsUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type tenantsCreateWithoutInvoicesInput = {
@@ -18863,6 +20590,7 @@ export namespace Prisma {
     central_user_index?: central_user_indexCreateNestedManyWithoutTenantInput
     tenant_branch_links?: tenant_branch_linksCreateNestedManyWithoutTenantInput
     tenant_pricing_configs?: tenant_pricing_configsCreateNestedOneWithoutTenantInput
+    billing_events?: billing_eventsCreateNestedManyWithoutTenantInput
   }
 
   export type tenantsUncheckedCreateWithoutInvoicesInput = {
@@ -18916,6 +20644,7 @@ export namespace Prisma {
     central_user_index?: central_user_indexUncheckedCreateNestedManyWithoutTenantInput
     tenant_branch_links?: tenant_branch_linksUncheckedCreateNestedManyWithoutTenantInput
     tenant_pricing_configs?: tenant_pricing_configsUncheckedCreateNestedOneWithoutTenantInput
+    billing_events?: billing_eventsUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type tenantsCreateOrConnectWithoutInvoicesInput = {
@@ -18985,6 +20714,7 @@ export namespace Prisma {
     central_user_index?: central_user_indexUpdateManyWithoutTenantNestedInput
     tenant_branch_links?: tenant_branch_linksUpdateManyWithoutTenantNestedInput
     tenant_pricing_configs?: tenant_pricing_configsUpdateOneWithoutTenantNestedInput
+    billing_events?: billing_eventsUpdateManyWithoutTenantNestedInput
   }
 
   export type tenantsUncheckedUpdateWithoutInvoicesInput = {
@@ -19038,6 +20768,239 @@ export namespace Prisma {
     central_user_index?: central_user_indexUncheckedUpdateManyWithoutTenantNestedInput
     tenant_branch_links?: tenant_branch_linksUncheckedUpdateManyWithoutTenantNestedInput
     tenant_pricing_configs?: tenant_pricing_configsUncheckedUpdateOneWithoutTenantNestedInput
+    billing_events?: billing_eventsUncheckedUpdateManyWithoutTenantNestedInput
+  }
+
+  export type tenantsCreateWithoutBilling_eventsInput = {
+    id?: string
+    name: string
+    legal_name?: string | null
+    subdomain: string
+    custom_domain?: string | null
+    logo_url?: string | null
+    primary_color?: string | null
+    background_color?: string | null
+    background_url?: string | null
+    sitemap_url?: string | null
+    plan?: string
+    plan_expires_at?: Date | string | null
+    max_employees?: number
+    db_mode?: string
+    db_url?: string | null
+    schema_name?: string | null
+    local_db_type?: string | null
+    local_db_host?: string | null
+    local_db_port?: number | null
+    local_db_name?: string | null
+    local_db_user?: string | null
+    local_db_pass?: string | null
+    sync_interval_min?: number | null
+    gstin?: string | null
+    pan?: string | null
+    city?: string | null
+    state?: string | null
+    address?: string | null
+    pincode?: string | null
+    gst_status?: string | null
+    gst_reg_date?: string | null
+    taxpayer_type?: string | null
+    constitution?: string | null
+    e_invoice_enabled?: boolean | null
+    business_nature?: NullableJsonNullValueInput | InputJsonValue
+    admin_name?: string | null
+    admin_email?: string | null
+    admin_phone?: string | null
+    is_active?: boolean
+    is_setup_complete?: boolean
+    suspended_at?: Date | string | null
+    suspension_reason?: string | null
+    payout_config_enc?: string | null
+    created_at?: Date | string
+    updated_at?: Date | string
+    deleted_at?: Date | string | null
+    tenant_modules?: tenant_modulesCreateNestedManyWithoutTenantInput
+    central_user_index?: central_user_indexCreateNestedManyWithoutTenantInput
+    tenant_branch_links?: tenant_branch_linksCreateNestedManyWithoutTenantInput
+    tenant_pricing_configs?: tenant_pricing_configsCreateNestedOneWithoutTenantInput
+    invoices?: invoicesCreateNestedManyWithoutTenantInput
+  }
+
+  export type tenantsUncheckedCreateWithoutBilling_eventsInput = {
+    id?: string
+    name: string
+    legal_name?: string | null
+    subdomain: string
+    custom_domain?: string | null
+    logo_url?: string | null
+    primary_color?: string | null
+    background_color?: string | null
+    background_url?: string | null
+    sitemap_url?: string | null
+    plan?: string
+    plan_expires_at?: Date | string | null
+    max_employees?: number
+    db_mode?: string
+    db_url?: string | null
+    schema_name?: string | null
+    local_db_type?: string | null
+    local_db_host?: string | null
+    local_db_port?: number | null
+    local_db_name?: string | null
+    local_db_user?: string | null
+    local_db_pass?: string | null
+    sync_interval_min?: number | null
+    gstin?: string | null
+    pan?: string | null
+    city?: string | null
+    state?: string | null
+    address?: string | null
+    pincode?: string | null
+    gst_status?: string | null
+    gst_reg_date?: string | null
+    taxpayer_type?: string | null
+    constitution?: string | null
+    e_invoice_enabled?: boolean | null
+    business_nature?: NullableJsonNullValueInput | InputJsonValue
+    admin_name?: string | null
+    admin_email?: string | null
+    admin_phone?: string | null
+    is_active?: boolean
+    is_setup_complete?: boolean
+    suspended_at?: Date | string | null
+    suspension_reason?: string | null
+    payout_config_enc?: string | null
+    created_at?: Date | string
+    updated_at?: Date | string
+    deleted_at?: Date | string | null
+    tenant_modules?: tenant_modulesUncheckedCreateNestedManyWithoutTenantInput
+    central_user_index?: central_user_indexUncheckedCreateNestedManyWithoutTenantInput
+    tenant_branch_links?: tenant_branch_linksUncheckedCreateNestedManyWithoutTenantInput
+    tenant_pricing_configs?: tenant_pricing_configsUncheckedCreateNestedOneWithoutTenantInput
+    invoices?: invoicesUncheckedCreateNestedManyWithoutTenantInput
+  }
+
+  export type tenantsCreateOrConnectWithoutBilling_eventsInput = {
+    where: tenantsWhereUniqueInput
+    create: XOR<tenantsCreateWithoutBilling_eventsInput, tenantsUncheckedCreateWithoutBilling_eventsInput>
+  }
+
+  export type tenantsUpsertWithoutBilling_eventsInput = {
+    update: XOR<tenantsUpdateWithoutBilling_eventsInput, tenantsUncheckedUpdateWithoutBilling_eventsInput>
+    create: XOR<tenantsCreateWithoutBilling_eventsInput, tenantsUncheckedCreateWithoutBilling_eventsInput>
+    where?: tenantsWhereInput
+  }
+
+  export type tenantsUpdateToOneWithWhereWithoutBilling_eventsInput = {
+    where?: tenantsWhereInput
+    data: XOR<tenantsUpdateWithoutBilling_eventsInput, tenantsUncheckedUpdateWithoutBilling_eventsInput>
+  }
+
+  export type tenantsUpdateWithoutBilling_eventsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    legal_name?: NullableStringFieldUpdateOperationsInput | string | null
+    subdomain?: StringFieldUpdateOperationsInput | string
+    custom_domain?: NullableStringFieldUpdateOperationsInput | string | null
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    primary_color?: NullableStringFieldUpdateOperationsInput | string | null
+    background_color?: NullableStringFieldUpdateOperationsInput | string | null
+    background_url?: NullableStringFieldUpdateOperationsInput | string | null
+    sitemap_url?: NullableStringFieldUpdateOperationsInput | string | null
+    plan?: StringFieldUpdateOperationsInput | string
+    plan_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    max_employees?: IntFieldUpdateOperationsInput | number
+    db_mode?: StringFieldUpdateOperationsInput | string
+    db_url?: NullableStringFieldUpdateOperationsInput | string | null
+    schema_name?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_type?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_host?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_port?: NullableIntFieldUpdateOperationsInput | number | null
+    local_db_name?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_user?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_pass?: NullableStringFieldUpdateOperationsInput | string | null
+    sync_interval_min?: NullableIntFieldUpdateOperationsInput | number | null
+    gstin?: NullableStringFieldUpdateOperationsInput | string | null
+    pan?: NullableStringFieldUpdateOperationsInput | string | null
+    city?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: NullableStringFieldUpdateOperationsInput | string | null
+    pincode?: NullableStringFieldUpdateOperationsInput | string | null
+    gst_status?: NullableStringFieldUpdateOperationsInput | string | null
+    gst_reg_date?: NullableStringFieldUpdateOperationsInput | string | null
+    taxpayer_type?: NullableStringFieldUpdateOperationsInput | string | null
+    constitution?: NullableStringFieldUpdateOperationsInput | string | null
+    e_invoice_enabled?: NullableBoolFieldUpdateOperationsInput | boolean | null
+    business_nature?: NullableJsonNullValueInput | InputJsonValue
+    admin_name?: NullableStringFieldUpdateOperationsInput | string | null
+    admin_email?: NullableStringFieldUpdateOperationsInput | string | null
+    admin_phone?: NullableStringFieldUpdateOperationsInput | string | null
+    is_active?: BoolFieldUpdateOperationsInput | boolean
+    is_setup_complete?: BoolFieldUpdateOperationsInput | boolean
+    suspended_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    suspension_reason?: NullableStringFieldUpdateOperationsInput | string | null
+    payout_config_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    deleted_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tenant_modules?: tenant_modulesUpdateManyWithoutTenantNestedInput
+    central_user_index?: central_user_indexUpdateManyWithoutTenantNestedInput
+    tenant_branch_links?: tenant_branch_linksUpdateManyWithoutTenantNestedInput
+    tenant_pricing_configs?: tenant_pricing_configsUpdateOneWithoutTenantNestedInput
+    invoices?: invoicesUpdateManyWithoutTenantNestedInput
+  }
+
+  export type tenantsUncheckedUpdateWithoutBilling_eventsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    legal_name?: NullableStringFieldUpdateOperationsInput | string | null
+    subdomain?: StringFieldUpdateOperationsInput | string
+    custom_domain?: NullableStringFieldUpdateOperationsInput | string | null
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    primary_color?: NullableStringFieldUpdateOperationsInput | string | null
+    background_color?: NullableStringFieldUpdateOperationsInput | string | null
+    background_url?: NullableStringFieldUpdateOperationsInput | string | null
+    sitemap_url?: NullableStringFieldUpdateOperationsInput | string | null
+    plan?: StringFieldUpdateOperationsInput | string
+    plan_expires_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    max_employees?: IntFieldUpdateOperationsInput | number
+    db_mode?: StringFieldUpdateOperationsInput | string
+    db_url?: NullableStringFieldUpdateOperationsInput | string | null
+    schema_name?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_type?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_host?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_port?: NullableIntFieldUpdateOperationsInput | number | null
+    local_db_name?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_user?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_pass?: NullableStringFieldUpdateOperationsInput | string | null
+    sync_interval_min?: NullableIntFieldUpdateOperationsInput | number | null
+    gstin?: NullableStringFieldUpdateOperationsInput | string | null
+    pan?: NullableStringFieldUpdateOperationsInput | string | null
+    city?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: NullableStringFieldUpdateOperationsInput | string | null
+    pincode?: NullableStringFieldUpdateOperationsInput | string | null
+    gst_status?: NullableStringFieldUpdateOperationsInput | string | null
+    gst_reg_date?: NullableStringFieldUpdateOperationsInput | string | null
+    taxpayer_type?: NullableStringFieldUpdateOperationsInput | string | null
+    constitution?: NullableStringFieldUpdateOperationsInput | string | null
+    e_invoice_enabled?: NullableBoolFieldUpdateOperationsInput | boolean | null
+    business_nature?: NullableJsonNullValueInput | InputJsonValue
+    admin_name?: NullableStringFieldUpdateOperationsInput | string | null
+    admin_email?: NullableStringFieldUpdateOperationsInput | string | null
+    admin_phone?: NullableStringFieldUpdateOperationsInput | string | null
+    is_active?: BoolFieldUpdateOperationsInput | boolean
+    is_setup_complete?: BoolFieldUpdateOperationsInput | boolean
+    suspended_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    suspension_reason?: NullableStringFieldUpdateOperationsInput | string | null
+    payout_config_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    deleted_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tenant_modules?: tenant_modulesUncheckedUpdateManyWithoutTenantNestedInput
+    central_user_index?: central_user_indexUncheckedUpdateManyWithoutTenantNestedInput
+    tenant_branch_links?: tenant_branch_linksUncheckedUpdateManyWithoutTenantNestedInput
+    tenant_pricing_configs?: tenant_pricing_configsUncheckedUpdateOneWithoutTenantNestedInput
+    invoices?: invoicesUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type tenant_modulesCreateManyTenantInput = {
@@ -19096,6 +21059,19 @@ export namespace Prisma {
     payment_id?: string | null
     created_at?: Date | string
     updated_at?: Date | string
+  }
+
+  export type billing_eventsCreateManyTenantInput = {
+    id?: string
+    gateway: string
+    event_type: string
+    status?: string
+    reference_id?: string | null
+    amount_paise?: number | null
+    message?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip_address?: string | null
+    created_at?: Date | string
   }
 
   export type tenant_modulesUpdateWithoutTenantInput = {
@@ -19270,6 +21246,45 @@ export namespace Prisma {
     payment_id?: NullableStringFieldUpdateOperationsInput | string | null
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type billing_eventsUpdateWithoutTenantInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    gateway?: StringFieldUpdateOperationsInput | string
+    event_type?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    reference_id?: NullableStringFieldUpdateOperationsInput | string | null
+    amount_paise?: NullableIntFieldUpdateOperationsInput | number | null
+    message?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip_address?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type billing_eventsUncheckedUpdateWithoutTenantInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    gateway?: StringFieldUpdateOperationsInput | string
+    event_type?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    reference_id?: NullableStringFieldUpdateOperationsInput | string | null
+    amount_paise?: NullableIntFieldUpdateOperationsInput | number | null
+    message?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip_address?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type billing_eventsUncheckedUpdateManyWithoutTenantInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    gateway?: StringFieldUpdateOperationsInput | string
+    event_type?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    reference_id?: NullableStringFieldUpdateOperationsInput | string | null
+    amount_paise?: NullableIntFieldUpdateOperationsInput | number | null
+    message?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip_address?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
 
