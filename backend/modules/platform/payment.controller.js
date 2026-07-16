@@ -73,7 +73,7 @@ async function resolveTenantId(req) {
 exports.createOrder = async (req, res) => {
   try {
     const { invoiceId } = req.params;
-    const invoice = await centralPrisma.invoice.findUnique({
+    const invoice = await centralPrisma.invoices.findUnique({
       where: { id: invoiceId },
       include: { tenant: true }
     });
@@ -157,7 +157,7 @@ exports.verifyPayment = async (req, res) => {
     const resolvedPaymentId = razorpay_payment_id || razorpayPaymentId;
     const resolvedSignature = razorpay_signature || razorpaySignature;
 
-    const invoice = await centralPrisma.invoice.findUnique({ where: { id: invoiceId } });
+    const invoice = await centralPrisma.invoices.findUnique({ where: { id: invoiceId } });
     if (!invoice) return sendError(res, ERROR_CODES.NOT_FOUND, 'Invoice not found', 404);
     if (invoice.tenant_id !== tenantId && !req.user.is_platform_admin) {
       return sendError(res, ERROR_CODES.FORBIDDEN, 'Unauthorized to verify this invoice', 403);
@@ -177,7 +177,7 @@ exports.verifyPayment = async (req, res) => {
       }
     }
 
-    await centralPrisma.invoice.update({
+    await centralPrisma.invoices.update({
       where: { id: invoiceId },
       data: {
         status: 'paid',
@@ -201,7 +201,7 @@ exports.createPhonePeOrder = async (req, res) => {
     const { invoiceId } = req.params;
     const tenantId = await resolveTenantId(req);
 
-    const invoice = await centralPrisma.invoice.findUnique({
+    const invoice = await centralPrisma.invoices.findUnique({
       where: { id: invoiceId },
       include: { tenant: true }
     });
@@ -285,7 +285,7 @@ exports.handlePhonePeWebhook = async (req, res) => {
       const transactionId = decodedResponse.data.transactionId;
 
       if (invoiceId) {
-        await centralPrisma.invoice.update({
+        await centralPrisma.invoices.update({
           where: { id: invoiceId },
           data: { status: 'paid', payment_id: transactionId, updated_at: new Date() }
         });
@@ -316,7 +316,7 @@ exports.createJioPayOrder = async (req, res) => {
     const { invoiceId } = req.params;
     const tenantId = await resolveTenantId(req);
 
-    const invoice = await centralPrisma.invoice.findUnique({
+    const invoice = await centralPrisma.invoices.findUnique({
       where: { id: invoiceId },
       include: { tenant: true }
     });
@@ -386,12 +386,12 @@ exports.handleJioPayWebhook = async (req, res) => {
     if (status === 'SUCCESS') {
       // Extract invoice ID from metadata or transaction ID mapping
       const invoiceNo = transactionId.split('-')[1]; // Example parsing
-      const invoice = await centralPrisma.invoice.findFirst({
+      const invoice = await centralPrisma.invoices.findFirst({
         where: { invoice_no: invoiceNo }
       });
 
       if (invoice) {
-        await centralPrisma.invoice.update({
+        await centralPrisma.invoices.update({
           where: { id: invoice.id },
           data: { 
             status: 'paid', 
@@ -492,7 +492,7 @@ exports.getBankTransferFile = async (req, res) => {
     
     // We pull from the invoices table which stores the generated payslip snapshots
     const tenantId = await resolveTenantId(req);
-    const payslips = await centralPrisma.invoice.findMany({
+    const payslips = await centralPrisma.invoices.findMany({
       where: { tenant_id: tenantId, breakdown: { path: ['runId'], equals: runId } },
       include: { tenant: { include: { bank_accounts: true } } }
     });
@@ -615,7 +615,7 @@ exports.handleWebhook = async (req, res) => {
       const invoiceId = notes.invoiceId;
 
       if (invoiceId) {
-        const updated = await centralPrisma.invoice.update({
+        const updated = await centralPrisma.invoices.update({
           where: { id: invoiceId },
           data: {
             status: 'paid',

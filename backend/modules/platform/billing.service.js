@@ -43,7 +43,7 @@ async function generateMonthlyInvoices() {
         const periodStart = new Date(date.getFullYear(), date.getMonth() - 1, 1);
         const periodEnd = new Date(date.getFullYear(), date.getMonth(), 0);
 
-        await centralPrisma.invoice.create({
+        await centralPrisma.invoices.create({
           data: {
             tenant_id: tenant.id,
             invoice_no: invoiceNo,
@@ -94,7 +94,7 @@ async function checkOverdueInvoices() {
     } catch (e) {
       logger.warn(`${THEME.ICONS.WARNING} Could not set jwt.claims.is_platform_admin on central DB: ${e.message}`);
     }
-    const overdueInvoices = await centralPrisma.invoice.findMany({
+    const overdueInvoices = await centralPrisma.invoices.findMany({
       where: {
         status: 'unpaid',
         due_date: { lt: new Date() }

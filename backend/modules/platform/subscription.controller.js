@@ -121,7 +121,7 @@ exports.getTenantInvoices = async (req, res) => {
   try {
     const { tenantId } = req.params;
 
-    const invoices = await centralPrisma.invoice.findMany({
+    const invoices = await centralPrisma.invoices.findMany({
       where: { tenant_id: tenantId },
       orderBy: { period_start: 'desc' },
       take: 24 // Last 2 years
@@ -142,7 +142,7 @@ exports.downloadInvoicePDF = async (req, res) => {
     const { tenantId, invoiceId } = req.params;
 
     const [invoice, tenant] = await Promise.all([
-      centralPrisma.invoice.findFirst({ where: { id: invoiceId, tenant_id: tenantId } }),
+      centralPrisma.invoices.findFirst({ where: { id: invoiceId, tenant_id: tenantId } }),
       centralPrisma.tenants.findUnique({ where: { id: tenantId } })
     ]);
 
