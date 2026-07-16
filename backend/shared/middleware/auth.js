@@ -63,10 +63,10 @@ const authMiddleware = async (req, res, next) => {
     // Set JWT claims as Postgres session settings on central connection so
     // RLS policies that rely on current_setting('jwt.claims.*') can work.
     try {
-      await centralPrisma.$executeRawUnsafe(`SET LOCAL "jwt.claims.is_platform_admin" = '${req.user.is_platform_admin ? 'true' : 'false'}'`);
-      await centralPrisma.$executeRawUnsafe(`SET LOCAL "jwt.claims.sub" = '${req.user.id}'`);
+      await centralPrisma.$executeRaw(`SET LOCAL "jwt.claims.is_platform_admin" = '${req.user.is_platform_admin ? 'true' : 'false'}'`);
+      await centralPrisma.$executeRaw(`SET LOCAL "jwt.claims.sub" = '${req.user.id}'`);
       if (req.user.tenantId) {
-        await centralPrisma.$executeRawUnsafe(`SET LOCAL "jwt.claims.tenantId" = '${req.user.tenantId}'`);
+        await centralPrisma.$executeRaw(`SET LOCAL "jwt.claims.tenantId" = '${req.user.tenantId}'`);
       }
     } catch (e) {
       console.warn('[Auth] Could not set jwt.claims.* settings on central DB:', e.message);
