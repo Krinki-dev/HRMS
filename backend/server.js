@@ -1,4 +1,4 @@
-﻿require('dotenv').config();
+require('dotenv').config();
 
 const express      = require('express');
 const http         = require('http');
@@ -15,6 +15,8 @@ const minio  = require('./shared/utils/minio');
 const { THEME } = require('./shared/utils/uiConstants');
 const { tenantMiddleware } = require('./shared/middleware/tenant');
 const { tenantSessionMiddleware } = require('./shared/middleware/tenantSession');
+// Phase-0: WS ticket-based auth (replaces raw JWT in WS upgrade URL)
+const { consumeTicket } = require('./shared/utils/wsTicket');
 
 logger.info(`${THEME.ICONS.PROCESS} [Server] starting with LOG_LEVEL=${process.env.LOG_LEVEL || 'unset'} NODE_ENV=${process.env.NODE_ENV || 'unset'}`);
 
@@ -81,7 +83,6 @@ app.use((req, res, next) => {
     '/api/v1/auth/login',
     '/api/v1/auth/refresh',
   ];
-  // Also exempt paths by prefix for public GST endpoints
   const publicPrefixes = [
     '/api/v1/gst/central/',
     '/api/v1/gst/automation/trigger/',
@@ -98,16 +99,12 @@ app.use((req, res, next) => {
   return res.status(403).json({ success: false, code: 'ERR_CSRF_FAILED', message: 'CSRF validation failed' });
 });
 
-// FIX 1 & 2: Restored proper backticks and fixed logger[level](...) call
 app.use((req, res, next) => {
   const start = Date.now();
-
   logger.debug(`[ACTION START] ${req.method} ${req.originalUrl}`);
-
   res.on('finish', () => {
     const ms = Date.now() - start;
     const level = res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info';
-
     logger[level](`[ACTION END] ${req.method} ${req.originalUrl} ${res.statusCode} ${ms}ms`, {
       ip: req.ip,
       ua: req.headers['user-agent'],
@@ -116,7 +113,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// FIX 3: Replaced corrupted smart-quotes around template literal with proper straight backticks
 app.get('/health', (_req, res) => res.json({ success: true, message: `${THEME.ICONS.SUCCESS} HRMS System Online` }));
 app.use('/uploads', express.static(require('path').join(__dirname, 'uploads')));
 app.use('/api/v1', tenantMiddleware);
@@ -179,22 +175,39 @@ const httpServer = http.createServer(app);
 const wss = new WebSocketServer({ noServer: true });
 const notifSvc = require('./modules/notifications/notifications.service');
 
+// Phase-0: WS upgrade now uses short-lived ticket instead of raw JWT in URL
 httpServer.on('upgrade', (request, socket, head) => {
   const { query } = url.parse(request.url, true);
-  const token = query.token;
-  if (!token) {
+
+  // Support both legacy ?token=JWT (for backward compat) and new ?ticket=UUID
+  // TODO: remove legacy token support after frontend migrates to ws-ticket flow
+  const ticket = query.ticket;
+  const legacyToken = query.token;
+
+  let userId = null;
+
+  if (ticket) {
+    // New secure path: consume one-time ticket
+    userId = consumeTicket(ticket);
+  } else if (legacyToken) {
+    // Legacy path: verify JWT directly — still works but logs a deprecation warning
+    try {
+      const decoded = jwt.verify(legacyToken, process.env.JWT_ACCESS_SECRET);
+      userId = decoded.id || decoded.sub;
+      logger.warn('[WS] Legacy JWT-in-URL upgrade — migrate to POST /auth/ws-ticket flow');
+    } catch {
+      /* invalid token falls through to rejection below */
+    }
+  }
+
+  if (!userId) {
     socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
     socket.destroy();
     return;
   }
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-    request.userId = decoded.id || decoded.sub;
-    wss.handleUpgrade(request, socket, head, (ws) => wss.emit('connection', ws, request));
-  } catch {
-    socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-    socket.destroy();
-  }
+
+  request.userId = userId;
+  wss.handleUpgrade(request, socket, head, (ws) => wss.emit('connection', ws, request));
 });
 
 wss.on('connection', (ws, request) => {
@@ -205,13 +218,27 @@ wss.on('connection', (ws, request) => {
 });
 
 async function startServer() {
+  // Phase-0: Validate all required env vars at startup — fail fast before any requests
   const required = ['JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET', 'ENCRYPTION_KEY'];
   const minLengths = { JWT_ACCESS_SECRET: 32, JWT_REFRESH_SECRET: 32, ENCRYPTION_KEY: 16 };
   for (const varName of required) {
     const val = process.env[varName];
-    if (!val) { logger.error(`${THEME.ICONS.ERROR} Missing required environment variable: ${varName}`); process.exit(1); }
+    if (!val) {
+      logger.error(`${THEME.ICONS.ERROR} Missing required environment variable: ${varName}`);
+      process.exit(1);
+    }
     if (process.env.NODE_ENV === 'production' && val.length < minLengths[varName]) {
-      logger.error(`${THEME.ICONS.ERROR} ${varName} too short (${val.length} chars)`); process.exit(1);
+      logger.error(`${THEME.ICONS.ERROR} ${varName} too short (${val.length} chars, min ${minLengths[varName]})`);
+      process.exit(1);
+    }
+  }
+
+  // Phase-0: Warn if any placeholder values are still in place
+  const placeholderCheck = ['JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET', 'ENCRYPTION_KEY'];
+  for (const v of placeholderCheck) {
+    if ((process.env[v] || '').includes('REPLACE_WITH')) {
+      logger.error(`${THEME.ICONS.ERROR} ${v} is still a placeholder value. Set real secrets before starting.`);
+      process.exit(1);
     }
   }
 
@@ -226,7 +253,7 @@ async function startServer() {
   httpServer.listen(PORT, '0.0.0.0', () => {
     logger.info(`${THEME.ICONS.SUCCESS} HRMS Server running on localhost:${PORT}`);
     logger.info(`${THEME.ICONS.INFO} Health: http://localhost:${PORT}/health`);
-    logger.info(`${THEME.ICONS.INFO} WebSocket: ws://localhost:${PORT}/ws?token=JWT`);
+    logger.info(`${THEME.ICONS.INFO} WebSocket: ws://localhost:${PORT}/ws?ticket=<WS_TICKET>`);
   });
 
   try {
