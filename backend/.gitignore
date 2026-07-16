@@ -35,3 +35,8 @@ Thumbs.db
 .idea/
 .env
 .env.local
+
+# Environment
+.env
+.env.local
+.env.production
