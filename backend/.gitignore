@@ -33,3 +33,5 @@ prisma/*.db-journal
 Thumbs.db
 .vscode/
 .idea/
+.env
+.env.local
