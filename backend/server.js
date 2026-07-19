@@ -9,7 +9,7 @@ const cookieParser = require('cookie-parser');
 const { WebSocketServer } = require('ws');
 const url          = require('url');
 const jwt          = require('jsonwebtoken');
-
+const { logOcrStatus } = require('./shared/utils/ocrCheck');
 const logger = require('./shared/utils/logger');
 const minio  = require('./shared/utils/minio');
 const { THEME } = require('./shared/utils/uiConstants');
@@ -230,6 +230,8 @@ async function startServer() {
     if (process.env.NODE_ENV === 'production' && val.length < minLengths[varName]) {
       logger.error(`${THEME.ICONS.ERROR} ${varName} too short (${val.length} chars, min ${minLengths[varName]})`);
       process.exit(1);
+
+      const OCR_ENABLED = logOcrStatus(); app.locals.OCR_ENABLED = OCR_ENABLED; 
     }
   }
 
