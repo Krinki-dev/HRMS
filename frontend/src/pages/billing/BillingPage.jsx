@@ -1,9 +1,10 @@
-﻿import { useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { THEME } from '../../utils/theme';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
+import { DEFAULT_PLAN_CATALOG, normalizePlanCatalog } from './planCatalog';
 
 const C = {
   blue: THEME.colors.accent,
@@ -53,7 +54,11 @@ export default function BillingPage() {
     queryFn:  () => api.get('/platform/plans').then(r => r.data),
     staleTime: 3600_000,
   });
-  const plans = (plansRes?.data?.plans || []).filter(p => p.id !== 'trial');
+  const plans = useMemo(() => {
+    const payload = plansRes?.data || plansRes || {};
+    const normalized = normalizePlanCatalog(payload, DEFAULT_PLAN_CATALOG);
+    return normalized.filter(p => p.slug !== 'trial');
+  }, [plansRes]);
 
   const trialM = useMutation({
     mutationFn: () => api.post('/platform/subscribe/trial'),
@@ -209,9 +214,10 @@ export default function BillingPage() {
       {}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, marginBottom: 24 }}>
         {plans.map(plan => {
+          const isCustom = plan.price === null;
           const months   = selectedPeriod === 'yearly' ? 12 : 1;
-          const discount = selectedPeriod === 'yearly' ? plan.price * 2 : 0;
-          const total    = plan.price ? ((plan.price * months) - discount) : null;
+          const yearlyDiscount = selectedPeriod === 'yearly' && typeof plan.price === 'number' ? Math.max(plan.price * 2, 0) : 0;
+          const total    = typeof plan.price === 'number' ? (plan.price * months) - yearlyDiscount : null;
           const isCurrentPlan = planData.id === plan.id && !expired;
 
           return (
@@ -223,26 +229,26 @@ export default function BillingPage() {
             >
               {plan.tag && (
                 <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', background: C.purple, color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 10px', borderRadius: 10, whiteSpace: 'nowrap' }}>
-                  {plan.tag.toUpperCase()}
+                  {String(plan.tag).toUpperCase()}
                 </div>
               )}
               <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)', marginBottom: 4 }}>{plan.name}</div>
               <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 12 }}>
-                {PLAN_META[plan.id]?.note || plan.desc || 'Flexible subscription options with configurable modules.'}
+                {PLAN_META[plan.slug]?.note || PLAN_META[plan.id]?.note || plan.desc || 'Flexible subscription options with configurable modules.'}
               </div>
 
-              {plan.price ? (
+              {typeof plan.price === 'number' ? (
                 <div style={{ marginBottom: 14 }}>
                   <span style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)' }}>
                     ₹{total?.toLocaleString()}
                   </span>
                   <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>/{selectedPeriod === 'yearly' ? 'year' : 'month'}</span>
                   {selectedPeriod === 'yearly' && (
-                    <div style={{ fontSize: 10, color: 'var(--color-success)', fontWeight: 600 }}>Save ₹{discount.toLocaleString()}</div>
+                    <div style={{ fontSize: 10, color: 'var(--color-success)', fontWeight: 600 }}>Save ₹{yearlyDiscount.toLocaleString()}</div>
                   )}
                 </div>
               ) : (
-                <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 14 }}>Custom</div>
+                <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 14 }}>Custom quote</div>
               )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
@@ -257,7 +263,7 @@ export default function BillingPage() {
                 <div style={{ padding: '8px', background: 'var(--success-soft)', borderRadius: 6, textAlign: 'center', fontSize: 12, color: 'var(--color-success)', fontWeight: 600 }}>
                   ✓ Current plan
                 </div>
-              ) : plan.price ? (
+              ) : plan.price !== null ? (
                 <button
                   style={{ width: '100%', padding: '9px', background: plan.highlight ? 'var(--color-primary)' : 'var(--color-primary)', color: 'var(--text-on-accent)', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: paying ? 'not-allowed' : 'pointer' }}
                   onClick={() => handleUpgrade(plan.id, selectedPeriod)}
@@ -266,7 +272,7 @@ export default function BillingPage() {
                   {paying ? 'Processing…' : `Upgrade to ${plan.name} →`}
                 </button>
               ) : (
-                <a href="mailto:sales@syntern.in?subject=Enterprise plan enquiry"
+                <a href="mailto:sales@syntern.in?subject=Custom plan enquiry"
                   style={{ display: 'block', width: '100%', padding: '9px', background: '#fef3c7', color: C.amber, border: '1px solid #fde68a', borderRadius: 7, fontSize: 12, fontWeight: 600, textAlign: 'center', textDecoration: 'none' }}>
                   Contact sales →
                 </a>

@@ -7,6 +7,7 @@ const router = express.Router();
 const { sendSuccess, sendError, ERROR_CODES } = require('../../shared/utils/response');
 const { centralPrisma } = require('../../shared/utils/centralPrisma');
 const logger = require('../../shared/utils/logger');
+const { normalizeHostname, buildHostnameCandidates } = require('../../shared/utils/domainRouting');
 
 /**
  * GET /brand
@@ -15,22 +16,22 @@ const logger = require('../../shared/utils/logger');
 router.get('/brand', async (req, res) => {
   try {
     const { subdomain, hostname, domain: customdomain } = req.query;
-    const host = req.hostname;
+    const host = normalizeHostname(req.hostname || req.headers.host || '');
 
     let lookupSubdomain = (subdomain || hostname || customdomain)?.toLowerCase?.().trim();
+    let lookupDomain = null;
     if (!lookupSubdomain && host) {
-      if (host.endsWith('.localhost')) {
-        lookupSubdomain = host.split('.')[0];
-      } else if (host.endsWith('.syntern.in')) {
-        lookupSubdomain = host.split('.')[0];
-      } else {
-        lookupSubdomain = host;
-      }
+      lookupDomain = host;
+    } else if (lookupSubdomain && !lookupSubdomain.includes('.')) {
+      lookupSubdomain = lookupSubdomain.trim();
     }
 
-    if (!lookupSubdomain) {
+    if (!lookupSubdomain && !lookupDomain) {
       return sendError(res, ERROR_CODES.VALIDATION, 'subdomain or domain required', 400);
     }
+
+    const hostnameCandidates = buildHostnameCandidates(lookupDomain || lookupSubdomain || host || '');
+    const lookupValues = [...new Set([lookupSubdomain, lookupDomain, ...(hostnameCandidates || [])].filter(Boolean))];
 
     let rows = [];
     try {
@@ -45,7 +46,12 @@ router.get('/brand', async (req, res) => {
           background_url,
           sitemap_url
         FROM tenants
-        WHERE (LOWER(subdomain) = LOWER(${lookupSubdomain}) OR LOWER(custom_domain) = LOWER(${lookupSubdomain}))
+        WHERE (
+          LOWER(subdomain) = LOWER(${lookupSubdomain || ''})
+          OR LOWER(custom_domain) = LOWER(${lookupDomain || lookupSubdomain || ''})
+          OR LOWER(custom_domain) = LOWER(${lookupDomain ? lookupDomain.replace(/^hrms\./, '') : ''})
+          OR LOWER(custom_domain) = LOWER(${lookupDomain ? `hrms.${lookupDomain.replace(/^hrms\./, '')}` : ''})
+        )
           AND deleted_at IS NULL
           AND is_active = true
         LIMIT 1
@@ -56,7 +62,12 @@ router.get('/brand', async (req, res) => {
       rows = await centralPrisma.$queryRaw`
         SELECT subdomain, custom_domain, name AS company_name, logo_url
         FROM tenants
-        WHERE (LOWER(subdomain) = LOWER(${lookupSubdomain}) OR LOWER(custom_domain) = LOWER(${lookupSubdomain}))
+        WHERE (
+          LOWER(subdomain) = LOWER(${lookupSubdomain || ''})
+          OR LOWER(custom_domain) = LOWER(${lookupDomain || lookupSubdomain || ''})
+          OR LOWER(custom_domain) = LOWER(${lookupDomain ? lookupDomain.replace(/^hrms\./, '') : ''})
+          OR LOWER(custom_domain) = LOWER(${lookupDomain ? `hrms.${lookupDomain.replace(/^hrms\./, '')}` : ''})
+        )
           AND deleted_at IS NULL
           AND is_active = true
         LIMIT 1

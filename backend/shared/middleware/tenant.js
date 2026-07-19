@@ -11,6 +11,7 @@
 const { PrismaClient } = require('@prisma/client');
 const { sendError, ERROR_CODES } = require('../utils/response');
 const { decrypt } = require('../utils/encryption');
+const { normalizeHostname, isPlatformRootHost, buildHostnameCandidates } = require('../utils/domainRouting');
 
 // ── DB connection pool — one PrismaClient per unique DB URL ──────
 const dbPool = {};
@@ -52,10 +53,10 @@ function extractTenantSubdomain(req) {
   const headerSubdomain = req.headers['x-tenant-subdomain']?.toLowerCase().trim();
   if (headerSubdomain) return headerSubdomain;
 
-  const host = req.hostname?.toLowerCase().trim();
-  if (!host || PLATFORM_ROOTS.has(host)) return null;
-
-  return host.replace(/^www\./, '').split('.')[0];
+  const host = normalizeHostname(req.hostname || req.headers.host || '');
+  if (!host || isPlatformRootHost(host)) return null;
+  if (host.startsWith('hrms.')) return null;
+  return host.split('.')[0];
 }
 
 function buildLocalConnectionString(cfg) {
@@ -149,13 +150,13 @@ const PLATFORM_ROOTS = new Set([
 // ================================================================
 const tenantMiddleware = async (req, res, next) => {
   try {
-    const host = req.hostname?.toLowerCase().trim();
+    const host = normalizeHostname(req.hostname || req.headers.host || '');
     const subdomain = extractTenantSubdomain(req);
     const isAuthRoute = req.path?.startsWith('/auth') || req.originalUrl?.startsWith('/api/v1/auth');
     const isRailwayHost = host?.endsWith('.up.railway.app') || host?.endsWith('.railway.app');
-const isPlatformRootHost = PLATFORM_ROOTS.has(host) || isRailwayHost;
+    const isPlatformRootRequestHost = isPlatformRootHost(host) || isRailwayHost;
 
-    if (isPlatformRootHost && isAuthRoute) {
+    if (isPlatformRootRequestHost && isAuthRoute) {
       // Allow auth routes on platform root hosts to resolve tenant by email
       // instead of forcing the tenant or development fallback database.
       req.db = null;
@@ -167,9 +168,9 @@ const isPlatformRootHost = PLATFORM_ROOTS.has(host) || isRailwayHost;
     if (process.env.NODE_ENV === 'development') {
       const subdomain = extractTenantSubdomain(req);
       const isAuthRoute = req.path?.startsWith('/auth');
-      const isPlatformRootHost = PLATFORM_ROOTS.has(host);
+      const isPlatformRootRequestHost = isPlatformRootHost(host);
 
-      if (isPlatformRootHost && isAuthRoute) {
+      if (isPlatformRootRequestHost && isAuthRoute) {
         // Allow auth routes on platform root hosts to resolve tenant by email
         // instead of forcing the development fallback tenant database.
         req.db = null;
@@ -285,29 +286,24 @@ const isPlatformRootHost = PLATFORM_ROOTS.has(host) || isRailwayHost;
     }
 
     // ── PRODUCTION MODE ─────────────────────────────────────────
-    // Determine the subdomain or custom domain from the request.
-    let lookupSubdomain;
+    let lookupSubdomain = null;
     const headerSubdomain = req.headers['x-tenant-subdomain']?.toLowerCase().trim();
 
     if (headerSubdomain) {
       lookupSubdomain = headerSubdomain;
-      } else if (isPlatformRootHost) {  // FIX: platform root/Railway — no tenant needed for admin routes
-        // Platform root host (syntern.in, hrms-production-*.railway.app) — allow /platform/admin/* routes
-        req.tenant = null;
-        req.db = null;
-        return next();
-      } else {
-      lookupSubdomain = host.split('.')[0];
-      // Extract subdomain from the hostname (e.g., 'pcepl' from 'pcepl.syntern.in').
+    } else if (isPlatformRootRequestHost) {
+      req.tenant = null;
+      req.db = null;
+      return next();
     }
 
     const centralDB = getCentralDB();
-    const normalizedHost = host?.toLowerCase()?.replace(/^www\./, '') || host;
+    const normalizedHost = normalizeHostname(host);
     const rows = await centralDB.$queryRaw`
       SELECT
         t.id, t.name, t.subdomain, t.custom_domain,
         t.db_mode, t.db_url, t.is_active, t.is_setup_complete,
-        t.schema_name,           -- ← NEW: select schema_name
+        t.schema_name,
         t.local_db_type, t.local_db_host, t.local_db_port,
         t.local_db_name, t.local_db_user, t.local_db_pass,
         COALESCE(
@@ -317,9 +313,10 @@ const isPlatformRootHost = PLATFORM_ROOTS.has(host) || isRailwayHost;
       FROM tenants t
       LEFT JOIN tenant_modules tm ON tm.tenant_id = t.id
       WHERE (
-        LOWER(t.subdomain)    = LOWER(${lookupSubdomain})
-        OR LOWER(t.custom_domain) = LOWER(${host})
+        (${lookupSubdomain ? centralDB.$queryRaw`LOWER(t.subdomain) = LOWER(${lookupSubdomain})` : centralDB.$queryRaw`FALSE`})
         OR LOWER(t.custom_domain) = LOWER(${normalizedHost})
+        OR LOWER(t.custom_domain) = LOWER(${normalizedHost.replace(/^www\./, '')})
+        OR LOWER(t.custom_domain) = LOWER(${normalizedHost.startsWith('hrms.') ? normalizedHost.slice('hrms.'.length) : `hrms.${normalizedHost}`})
       )
         AND t.deleted_at IS NULL
       GROUP BY t.id

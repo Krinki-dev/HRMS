@@ -28,13 +28,10 @@ function detectDomain() {
     return { isPlatformRoot: false, isSubdomain: true, subdomain: devMode, isCustomDomain: false, hostname };
   }
 
-  const isPlatformRoot  = hostname === 'syntern.in' || hostname === 'www.syntern.in' || isLocalNetwork;
-  const isSubdomain     = (
-    (hostname.endsWith('.syntern.in') && !isPlatformRoot) ||
-    (hostname.endsWith('.localhost') && hostname !== 'localhost')
-  );
-  const subdomain       = isSubdomain ? hostname.split('.')[0] : null;
-  const isCustomDomain  = !isPlatformRoot && !isSubdomain;
+  const isPlatformRoot  = hostname === 'syntern.in' || hostname === 'www.syntern.in' || hostname === 'hrms.syntern.in' || hostname === 'www.hrms.syntern.in' || isLocalNetwork;
+  const isSubdomain     = false;
+  const subdomain       = null;
+  const isCustomDomain  = !isPlatformRoot;
 
   return { isPlatformRoot, isSubdomain, subdomain, isCustomDomain, hostname };
 }

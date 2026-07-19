@@ -38,6 +38,29 @@ function superAdmin(req, res, next) {
 // PUBLIC — no auth, used during tenant onboarding
 // ══════════════════════════════════════════════════════════════════════════════
 
+router.get('/my-plan', auth, async (req, res) => {
+  try {
+    const planId = req.user?.plan || 'free';
+    const planName = planId === 'trial' ? '14-Day Trial' : (planId === 'pro' ? 'Pro' : (planId === 'custom' ? 'Custom / Add-on' : 'Basic / Free'));
+    const expiresAt = req.user?.planExpiresAt || null;
+    return sendSuccess(res, {
+      plan: {
+        id: planId,
+        name: planName,
+        expiresAt,
+        daysLeft: expiresAt ? Math.max(0, Math.ceil((new Date(expiresAt) - new Date()) / (1000 * 60 * 60 * 24))) : null,
+        expired: expiresAt ? new Date(expiresAt) < new Date() : false,
+        modules: req.user?.modules || [],
+        maxEmployees: req.user?.maxEmployees || 200,
+        joinedAt: req.user?.createdAt || null,
+      },
+    }, 'Current plan fetched');
+  } catch (err) {
+    logger.error('[plans/my-plan]', err);
+    return sendError(res, ERROR_CODES.SERVER, 'Failed to load current plan', 500);
+  }
+});
+
 router.get('/plans', async (req, res) => {
   try {
     const [plans, modulePricing, discounts] = await Promise.all([
