@@ -7,9 +7,9 @@ const fmt = (paise) => paise != null
 // ── Loading skeleton ──────────────────────────────────────────────────────────
 const Skeleton = () => (
   <div className="animate-pulse space-y-5">
-    <div className="h-8 bg-[#E2E8F0] rounded-xl w-56" />
-    <div className="flex gap-2">{[1,2,3,4].map(i => <div key={i} className="h-9 w-24 bg-[#E2E8F0] rounded-xl" />)}</div>
-    <div className="grid grid-cols-3 gap-4">{[1,2,3].map(i => <div key={i} className="h-72 bg-[#E2E8F0] rounded-2xl" />)}</div>
+    <div className="h-8 bg-[var(--surface-subtle)] rounded-xl w-56" />
+    <div className="flex gap-2">{[1,2,3,4].map(i => <div key={i} className="h-9 w-24 bg-[var(--surface-subtle)] rounded-xl" />)}</div>
+    <div className="grid grid-cols-3 gap-4">{[1,2,3].map(i => <div key={i} className="h-72 bg-[var(--surface-subtle)] rounded-2xl" />)}</div>
   </div>
 );
 
@@ -20,19 +20,19 @@ function PlanCard({ plan, selected, onSelect, modulePricing, selectedAddons, onT
   return (
     <div
       onClick={() => !isCustom && onSelect(plan.slug)}
-      className={`relative flex flex-col rounded-2xl border-2 transition-all p-5
-        ${selected ? 'border-[#2563EB] bg-white shadow-[0_0_0_4px_rgba(37,99,235,0.08)]' :
-          isCustom ? 'border-[rgba(148,163,184,0.25)] bg-white' :
-          'border-[rgba(148,163,184,0.2)] bg-white hover:border-[#93C5FD] hover:shadow-md cursor-pointer'}`}
+      className={`relative flex flex-col rounded-2xl border-2 transition-all p-5 bg-[var(--surface-raised)] shadow-[var(--shadow-card)]
+        ${selected ? 'border-[var(--color-primary)] shadow-[0_0_0_4px_var(--accent-soft)]' :
+          isCustom ? 'border-[var(--border-color)]' :
+          'border-[var(--border-color)] hover:border-[var(--color-primary)] hover:shadow-md cursor-pointer'}`}
     >
       {/* Badge */}
       {plan.is_popular && (
-        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#2563EB] text-white text-xs font-semibold px-3.5 py-1 rounded-full shadow-sm">
+        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[var(--color-primary)] text-[var(--text-on-accent)] text-xs font-semibold px-3.5 py-1 rounded-full shadow-sm">
           ⭐ {plan.badge || 'Most Popular'}
         </div>
       )}
       {!plan.is_popular && plan.badge && (
-        <div className="absolute -top-3.5 left-5 bg-amber-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
+        <div className="absolute -top-3.5 left-5 bg-[var(--warning-soft)] text-[var(--color-warning)] text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
           {plan.badge}
         </div>
       )}
@@ -40,28 +40,28 @@ function PlanCard({ plan, selected, onSelect, modulePricing, selectedAddons, onT
       {/* Header */}
       <div className="mb-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-[#111827]">{plan.name}</h3>
-          {selected && <span className="text-[#2563EB] text-base">✓</span>}
+          <h3 className="font-bold text-[var(--text-primary)]">{plan.name}</h3>
+          {selected && <span className="text-[var(--color-primary)] text-base">✓</span>}
         </div>
-        <p className="text-xs text-[#64748B] mt-0.5">{plan.tagline}</p>
+        <p className="text-xs text-[var(--text-secondary)] mt-0.5">{plan.tagline}</p>
       </div>
 
       {/* Price */}
       <div className="mb-4 min-h-[3rem]">
         {isCustom ? (
           <div>
-            <p className="text-2xl font-bold text-[#111827]">Custom</p>
-            <p className="text-xs text-[#64748B]">Contact us for pricing</p>
+            <p className="text-2xl font-bold text-[var(--text-primary)]">Custom</p>
+            <p className="text-xs text-[var(--text-secondary)]">Contact us for pricing</p>
           </div>
         ) : calcLoading && selected ? (
           <div className="h-8 bg-[#F1F5F9] rounded-lg animate-pulse w-28" />
         ) : price ? (
           <div>
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-[#111827]">{fmt(price.breakdown?.monthly_subtotal)}</span>
-              <span className="text-xs text-[#64748B]">/month</span>
+              <span className="text-2xl font-bold text-[var(--text-primary)]">{fmt(price.breakdown?.monthly_subtotal)}</span>
+              <span className="text-xs text-[var(--text-secondary)]">/month</span>
             </div>
-            <p className="text-xs text-[#94A3B8]">
+            <p className="text-xs text-[var(--text-muted)]">
               {plan.employee_cap ? `Up to ${plan.employee_cap} employees` : 'Unlimited employees'}
             </p>
             {price.breakdown?.tenure_discount_pct > 0 && (
@@ -82,8 +82,8 @@ function PlanCard({ plan, selected, onSelect, modulePricing, selectedAddons, onT
       {plan.highlights?.length > 0 && (
         <ul className="space-y-1.5 mb-4">
           {plan.highlights.map((h, i) => (
-            <li key={i} className="flex items-start gap-2 text-xs text-[#475569]">
-              <span className="text-green-500 mt-0.5 flex-shrink-0 font-bold">✓</span>
+            <li key={i} className="flex items-start gap-2 text-xs text-[var(--text-secondary)]">
+              <span className="text-[var(--color-success)] mt-0.5 flex-shrink-0 font-bold">✓</span>
               {h}
             </li>
           ))}
@@ -92,8 +92,8 @@ function PlanCard({ plan, selected, onSelect, modulePricing, selectedAddons, onT
 
       {/* Addons (selected plan only) */}
       {selected && plan.addon_modules?.length > 0 && (
-        <div className="mt-auto pt-4 border-t border-[rgba(148,163,184,0.15)]">
-          <p className="text-xs font-semibold text-[#475569] uppercase tracking-wider mb-2.5">Add-on Modules</p>
+        <div className="mt-auto pt-4 border-t border-[var(--border-color)]">
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2.5">Add-on Modules</p>
           <div className="space-y-2">
             {plan.addon_modules.map(mod => {
               const mp = modulePricing[mod];
@@ -106,12 +106,12 @@ function PlanCard({ plan, selected, onSelect, modulePricing, selectedAddons, onT
                   <div
                     onClick={() => onToggleAddon(mod)}
                     className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors
-                      ${active ? 'bg-[#2563EB] border-[#2563EB]' : 'border-[#CBD5E1] group-hover:border-[#2563EB]'}`}
+                      ${active ? 'bg-[var(--color-primary)] border-[var(--color-primary)]' : 'border-[var(--border-color)] group-hover:border-[var(--color-primary)]'}`}
                   >
                     {active && <span className="text-white text-[9px] leading-none font-bold">✓</span>}
                   </div>
-                  <span className="text-xs text-[#475569] flex-1">{mp.label || mod}</span>
-                  <span className="text-xs font-medium text-[#2563EB]">{costLabel}</span>
+                  <span className="text-xs text-[var(--text-secondary)] flex-1">{mp.label || mod}</span>
+                  <span className="text-xs font-medium text-[var(--color-primary)]">{costLabel}</span>
                 </label>
               );
             })}
@@ -120,10 +120,10 @@ function PlanCard({ plan, selected, onSelect, modulePricing, selectedAddons, onT
       )}
 
       {isCustom && (
-        <div className="mt-4 pt-3 border-t border-[rgba(148,163,184,0.15)]">
+        <div className="mt-4 pt-3 border-t border-[var(--border-color)]">
           <a
             href={`mailto:sales@${window.location.hostname.split('.').slice(-2).join('.')}`}
-            className="block text-center text-sm font-medium text-[#2563EB] hover:underline"
+            className="block text-center text-sm font-medium text-[var(--color-primary)] hover:underline"
           >
             Contact Sales →
           </a>
@@ -138,10 +138,10 @@ function PriceSummary({ price, billingMonths, promoCode, setPromoCode, onValidat
   if (!price || price.isCustomQuote) return null;
   const { breakdown, total_paise } = price;
   return (
-    <div className="bg-white border border-[rgba(148,163,184,0.2)] rounded-2xl p-5 shadow-sm">
-      <h3 className="font-semibold text-[#111827] mb-4 text-sm">Price Summary</h3>
+    <div className="bg-[var(--surface-raised)] border border-[var(--border-color)] rounded-2xl p-5 shadow-sm">
+      <h3 className="font-semibold text-[var(--text-primary)] mb-4 text-sm">Price Summary</h3>
       <div className="space-y-2 text-sm">
-        <div className="flex justify-between text-[#475569]">
+        <div className="flex justify-between text-[var(--text-secondary)]">
           <span>Base plan</span><span>{fmt(breakdown.base_monthly_paise)}/mo</span>
         </div>
         {breakdown.excess_paise > 0 && (
@@ -156,7 +156,7 @@ function PriceSummary({ price, billingMonths, promoCode, setPromoCode, onValidat
         ))}
         {billingMonths > 1 && (
           <>
-            <div className="border-t border-[rgba(148,163,184,0.12)] pt-2 flex justify-between text-[#475569]">
+            <div className="border-t border-[var(--border-color)] pt-2 flex justify-between text-[var(--text-secondary)]">
               <span>Subtotal × {billingMonths} months</span><span>{fmt(breakdown.gross_paise)}</span>
             </div>
             {breakdown.total_discount_pct > 0 && (
@@ -173,18 +173,18 @@ function PriceSummary({ price, billingMonths, promoCode, setPromoCode, onValidat
             <span>−{fmt(breakdown.promo_deduction_paise)}</span>
           </div>
         )}
-        <div className="border-t border-[rgba(148,163,184,0.12)] pt-2 flex justify-between text-[#475569]">
+        <div className="border-t border-[var(--border-color)] pt-2 flex justify-between text-[var(--text-secondary)]">
           <span>Before GST</span><span>{fmt(breakdown.amount_before_tax)}</span>
         </div>
-        <div className="flex justify-between text-[#475569]">
+        <div className="flex justify-between text-[var(--text-secondary)]">
           <span>GST 18%</span><span>+{fmt(breakdown.gst_paise)}</span>
         </div>
       </div>
-      <div className="border-t border-[rgba(148,163,184,0.12)] mt-3 pt-3 flex justify-between">
-        <span className="font-semibold text-[#111827]">Total</span>
+      <div className="border-t border-[var(--border-color)] mt-3 pt-3 flex justify-between">
+        <span className="font-semibold text-[var(--text-primary)]">Total</span>
         <div className="text-right">
-          <span className="text-xl font-bold text-[#111827]">{fmt(total_paise)}</span>
-          {billingMonths > 1 && <p className="text-xs text-[#64748B]">for {billingMonths} months</p>}
+          <span className="text-xl font-bold text-[var(--text-primary)]">{fmt(total_paise)}</span>
+          {billingMonths > 1 && <p className="text-xs text-[var(--text-secondary)]">for {billingMonths} months</p>}
         </div>
       </div>
 
@@ -195,11 +195,11 @@ function PriceSummary({ price, billingMonths, promoCode, setPromoCode, onValidat
             value={promoCode}
             onChange={e => setPromoCode(e.target.value.toUpperCase())}
             placeholder="Promo code"
-            className="flex-1 border border-[rgba(148,163,184,0.3)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#2563EB] uppercase tracking-wider"
+            className="flex-1 border border-[var(--border-color)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)] uppercase tracking-wider bg-[var(--surface-muted)]"
           />
           <button
             onClick={onValidatePromo}
-            className="px-3 py-2 bg-[#F1F5F9] text-[#475569] text-sm font-medium rounded-xl hover:bg-[#E2E8F0]"
+            className="px-3 py-2 bg-[var(--surface-subtle)] text-[var(--text-secondary)] text-sm font-medium rounded-xl hover:bg-[var(--bg-hover)]"
           >Apply</button>
         </div>
         {promoStatus === 'valid'   && <p className="text-xs text-green-600 mt-1.5">✓ Promo applied!</p>}
@@ -306,13 +306,13 @@ export default function PlanSelectionStep({ onNext, onBack, employeeCount = 0 })
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-[#111827]">Choose your plan</h2>
-        <p className="text-sm text-[#64748B] mt-1">Select a plan that fits your team. Upgrade or downgrade anytime.</p>
+        <h2 className="text-xl font-bold text-[var(--text-primary)]">Choose your plan</h2>
+        <p className="text-sm text-[var(--text-secondary)] mt-1">Select a plan that fits your team — basic free forever, configurable add-ons, or full-pro access.</p>
       </div>
 
       {/* Billing cycle */}
       <div>
-        <p className="text-xs font-semibold text-[#475569] uppercase tracking-wider mb-2">Billing Cycle</p>
+        <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Billing Cycle</p>
         <div className="flex gap-2 flex-wrap">
           {(discounts.tenure
             ? [{ months: 1, label: 'Monthly', pct: 0 }, ...discounts.tenure.map(t => ({ months: t.months, label: t.label, pct: t.pct, note: t.note }))]
@@ -323,18 +323,18 @@ export default function PlanSelectionStep({ onNext, onBack, employeeCount = 0 })
               onClick={() => setBilling(opt.months)}
               className={`relative px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
                 billingMonths === opt.months
-                  ? 'border-[#2563EB] bg-[#DBEAFE] text-[#1d4ed8]'
-                  : 'border-[rgba(148,163,184,0.3)] bg-white text-[#475569] hover:border-[#93C5FD]'
+                  ? 'border-[var(--color-primary)] bg-[var(--accent-soft)] text-[var(--color-primary)]'
+                  : 'border-[var(--border-color)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--color-primary)]'
               }`}
             >
               {opt.label}
               {opt.pct > 0 && (
-                <span className={`ml-1.5 text-xs font-semibold ${billingMonths === opt.months ? 'text-green-700' : 'text-green-600'}`}>
+                <span className={`ml-1.5 text-xs font-semibold ${billingMonths === opt.months ? 'text-[var(--color-success)]' : 'text-[var(--color-success)]'}`}>
                   −{opt.pct}%
                 </span>
               )}
               {opt.months === 12 && (
-                <span className="absolute -top-2.5 -right-2 bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                <span className="absolute -top-2.5 -right-2 bg-[var(--color-success)] text-[var(--text-on-accent)] text-[9px] font-bold px-1.5 py-0.5 rounded-full">
                   Best
                 </span>
               )}
@@ -362,9 +362,9 @@ export default function PlanSelectionStep({ onNext, onBack, employeeCount = 0 })
 
       {/* Bundle discount badge */}
       {discounts.bundle && selectedAddons.length >= (discounts.bundle.trigger_count || 3) && (
-        <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-2.5">
+        <div className="flex items-center gap-2 bg-[var(--success-soft)] border border-[var(--border-color)] rounded-xl px-4 py-2.5">
           <span>🎁</span>
-          <span className="text-sm text-green-700 font-medium">
+          <span className="text-sm text-[var(--color-success)] font-medium">
             Bundle discount: {discounts.bundle.pct}% off — {selectedAddons.length} add-ons selected!
           </span>
         </div>
@@ -382,9 +382,9 @@ export default function PlanSelectionStep({ onNext, onBack, employeeCount = 0 })
 
       {/* Trial note */}
       {currentPlan?.is_trial_eligible && (
-        <div className="flex items-center gap-2 bg-[#DBEAFE] border border-[#93C5FD] rounded-xl px-4 py-3">
+        <div className="flex items-center gap-2 bg-[var(--accent-soft)] border border-[var(--border-color)] rounded-xl px-4 py-3">
           <span>🎁</span>
-          <span className="text-sm text-[#1d4ed8]">
+          <span className="text-sm text-[var(--color-primary)]">
             Start with a <strong>{currentPlan.trial_days}-day free trial</strong> — no payment needed to begin.
           </span>
         </div>
@@ -393,14 +393,14 @@ export default function PlanSelectionStep({ onNext, onBack, employeeCount = 0 })
       {/* Action row */}
       <div className="flex items-center justify-between pt-2">
         {onBack && (
-          <button onClick={onBack} className="text-sm text-[#64748B] hover:text-[#111827]">← Back</button>
+          <button onClick={onBack} className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]">← Back</button>
         )}
         <div className="flex items-center gap-3 ml-auto">
           {currentPlan?.is_trial_eligible && (
             <button
               onClick={() => handleProceed(true)}
               disabled={proceeding}
-              className="text-sm font-medium text-[#2563EB] hover:underline disabled:opacity-50"
+              className="text-sm font-medium text-[var(--color-primary)] hover:underline disabled:opacity-50"
             >
               Start free trial instead
             </button>
@@ -408,7 +408,7 @@ export default function PlanSelectionStep({ onNext, onBack, employeeCount = 0 })
           <button
             onClick={() => handleProceed(false)}
             disabled={!selectedPlan || proceeding}
-            className="px-6 py-2.5 bg-[#2563EB] text-white text-sm font-semibold rounded-xl hover:bg-[#1d4ed8] disabled:opacity-50 flex items-center gap-2"
+            className="px-6 py-2.5 bg-[var(--color-primary)] text-[var(--text-on-accent)] text-sm font-semibold rounded-xl hover:bg-[var(--color-primary-hover)] disabled:opacity-50 flex items-center gap-2"
           >
             {proceeding
               ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Processing…</>

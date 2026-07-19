@@ -12,22 +12,24 @@ const C = {
   purple: '#7c3aed',
   red: THEME.colors.error,
   muted: THEME.colors.textMuted,
-  border: THEME.colors.surfaceBorder,
-  surface: THEME.colors.surfaceAlt,
+  border: 'var(--border-color)',
+  surface: 'var(--surface-raised)',
+  surfaceAlt: 'var(--surface-muted)',
 };
 
 const PLAN_META = {
-  free:       { color: '#94a3b8', label: 'Free' },
-  trial:      { color: C.green,   label: '14-Day Trial' },
-  starter:    { color: C.blue,    label: 'Starter' },
-  pro:        { color: C.purple,  label: 'Professional' },
-  enterprise: { color: C.amber,   label: 'Enterprise' },
+  free:         { color: THEME.plan?.free?.accent || C.green, label: 'Basic / Free', background: THEME.plan?.free?.badgeBg || 'var(--accent-soft)', note: 'Free forever • up to 200 employees • DB optional' },
+  trial:        { color: THEME.plan?.trial?.accent || C.green, label: '14-Day Trial', background: THEME.plan?.trial?.badgeBg || 'var(--success-soft)', note: 'Try the full product before billing' },
+  starter:      { color: THEME.plan?.custom?.accent || C.blue, label: 'Custom / Add-on', background: THEME.plan?.custom?.badgeBg || 'var(--accent-soft)', note: 'Choose add-ons and modules on demand' },
+  professional: { color: THEME.plan?.pro?.accent || C.purple, label: 'Pro', background: THEME.plan?.pro?.badgeBg || 'var(--accent-soft)', note: 'Full access, automation, and support' },
+  pro:          { color: THEME.plan?.pro?.accent || C.purple, label: 'Pro', background: THEME.plan?.pro?.badgeBg || 'var(--accent-soft)', note: 'Full access, automation, and support' },
+  enterprise:   { color: THEME.plan?.pro?.accent || C.amber, label: 'Pro', background: THEME.plan?.pro?.badgeBg || 'var(--warning-soft)', note: 'Scale without employee limits' },
 };
 
 function PlanBadge({ plan }) {
   const m = PLAN_META[plan] || PLAN_META.free;
   return (
-    <span style={{ background: `${m.color}18`, color: m.color, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6 }}>
+    <span style={{ background: m.background || 'var(--accent-soft)', color: m.color, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6 }}>
       {m.label}
     </span>
   );
@@ -130,20 +132,20 @@ export default function BillingPage() {
   return (
     <div>
       {}
-      <div className="card" style={{ padding: '20px 24px', marginBottom: 20 }}>
+      <div className="card" style={{ padding: '20px 24px', marginBottom: 20, background: 'var(--surface-raised)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>CURRENT PLAN</div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>CURRENT PLAN</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ fontSize: 20, fontWeight: 700 }}>{planData.name || 'Free'}</div>
               <PlanBadge plan={planData.id || 'free'} />
-              {expired && <span style={{ fontSize: 11, background: '#fee2e2', color: '#b91c1c', padding: '2px 8px', borderRadius: 4, fontWeight: 600 }}>Expired</span>}
+              {expired && <span style={{ fontSize: 11, background: 'var(--danger-soft)', color: 'var(--color-danger)', padding: '2px 8px', borderRadius: 4, fontWeight: 600 }}>Expired</span>}
             </div>
             {planData.expiresAt && (
-              <div style={{ fontSize: 11, color: expired ? '#b91c1c' : '#64748b', marginTop: 4 }}>
+              <div style={{ fontSize: 11, color: expired ? 'var(--color-danger)' : 'var(--text-secondary)', marginTop: 4 }}>
                 {expired ? 'Expired on' : 'Renews on'}: {fmt(planData.expiresAt)}
                 {!expired && daysLeft <= 14 && (
-                  <span style={{ color: daysLeft <= 3 ? '#b91c1c' : '#d97706', fontWeight: 600, marginLeft: 8 }}>
+                  <span style={{ color: daysLeft <= 3 ? 'var(--color-danger)' : 'var(--color-warning)', fontWeight: 600, marginLeft: 8 }}>
                     ({daysLeft} day{daysLeft !== 1 ? 's' : ''} left)
                   </span>
                 )}
@@ -153,7 +155,7 @@ export default function BillingPage() {
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             {isFree && (
               <button
-                style={{ padding: '8px 18px', background: C.green, color: '#fff', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                style={{ padding: '8px 18px', background: 'var(--color-success)', color: 'var(--text-on-accent)', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
                 onClick={() => trialM.mutate()}
                 disabled={trialM.isPending}
               >
@@ -170,8 +172,8 @@ export default function BillingPage() {
             { label: 'Plan joined',    value: fmt(planData.joinedAt) },
             { label: 'Modules',        value: Array.isArray(planData.modules) ? (planData.modules.includes('*') ? 'All modules' : `${planData.modules.length} modules`) : '—' },
           ].map(s => (
-            <div key={s.label} style={{ background: C.surface, borderRadius: 7, padding: '10px 12px' }}>
-              <div style={{ fontSize: 10, color: '#94a3b8', marginBottom: 3 }}>{s.label}</div>
+            <div key={s.label} style={{ background: 'var(--surface-muted)', borderRadius: 7, padding: '10px 12px', border: '1px solid var(--border-color)' }}>
+              <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 3 }}>{s.label}</div>
               <div style={{ fontSize: 13, fontWeight: 500 }}>{s.value}</div>
             </div>
           ))}
@@ -179,8 +181,8 @@ export default function BillingPage() {
       </div>
 
       {}
-      <div className="card-title" style={{ marginBottom: 12, padding: '0 4px' }}>
-        {expired ? 'Reactivate your plan' : 'Upgrade plan'}
+      <div className="card-title" style={{ marginBottom: 12, padding: '0 4px', color: 'var(--text-primary)' }}>
+        {expired ? 'Reactivate your plan' : 'Choose a plan'}
       </div>
 
       {}
@@ -193,9 +195,9 @@ export default function BillingPage() {
             onClick={() => setSelectedPeriod(p.id)}
             style={{
               padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: selectedPeriod === p.id ? 600 : 400,
-              background: selectedPeriod === p.id ? '#dbeafe' : '#f8fafc',
-              color: selectedPeriod === p.id ? C.blue : '#64748b',
-              border: `1px solid ${selectedPeriod === p.id ? '#93c5fd' : '#e2e8f0'}`,
+              background: selectedPeriod === p.id ? 'var(--accent-soft)' : 'var(--surface-muted)',
+              color: selectedPeriod === p.id ? 'var(--color-primary)' : 'var(--text-secondary)',
+              border: `1px solid ${selectedPeriod === p.id ? 'var(--color-primary)' : 'var(--border-color)'}`,
               cursor: 'pointer',
             }}
           >
@@ -215,8 +217,8 @@ export default function BillingPage() {
           return (
             <div key={plan.id}
               style={{
-                background: THEME.colors.surface, border: `2px solid ${plan.highlight ? C.purple : C.border}`,
-                borderRadius: 12, padding: '18px 16px', position: 'relative',
+                background: 'var(--surface-raised)', border: `2px solid ${plan.highlight ? 'var(--color-primary)' : 'var(--border-color)'}`,
+                borderRadius: 12, padding: '18px 16px', position: 'relative', boxShadow: 'var(--shadow-card)',
               }}
             >
               {plan.tag && (
@@ -224,17 +226,19 @@ export default function BillingPage() {
                   {plan.tag.toUpperCase()}
                 </div>
               )}
-              <div style={{ fontWeight: 700, fontSize: 15, color: PLAN_META[plan.id]?.color || '#0f172a', marginBottom: 4 }}>{plan.name}</div>
-              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>{plan.desc}</div>
+              <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)', marginBottom: 4 }}>{plan.name}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 12 }}>
+                {PLAN_META[plan.id]?.note || plan.desc || 'Flexible subscription options with configurable modules.'}
+              </div>
 
               {plan.price ? (
                 <div style={{ marginBottom: 14 }}>
-                  <span style={{ fontSize: 24, fontWeight: 800 }}>
+                  <span style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)' }}>
                     ₹{total?.toLocaleString()}
                   </span>
-                  <span style={{ fontSize: 11, color: '#94a3b8' }}>/{selectedPeriod === 'yearly' ? 'year' : 'month'}</span>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>/{selectedPeriod === 'yearly' ? 'year' : 'month'}</span>
                   {selectedPeriod === 'yearly' && (
-                    <div style={{ fontSize: 10, color: C.green, fontWeight: 600 }}>Save ₹{discount.toLocaleString()}</div>
+                    <div style={{ fontSize: 10, color: 'var(--color-success)', fontWeight: 600 }}>Save ₹{discount.toLocaleString()}</div>
                   )}
                 </div>
               ) : (
@@ -243,19 +247,19 @@ export default function BillingPage() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
                 {(plan.features || []).map(f => (
-                  <div key={f} style={{ display: 'flex', gap: 6, fontSize: 11, color: '#475569' }}>
-                    <span style={{ color: C.green, fontWeight: 700 }}>✓</span> {f}
+                  <div key={f} style={{ display: 'flex', gap: 6, fontSize: 11, color: 'var(--text-secondary)' }}>
+                    <span style={{ color: 'var(--color-success)', fontWeight: 700 }}>✓</span> {f}
                   </div>
                 ))}
               </div>
 
               {isCurrentPlan ? (
-                <div style={{ padding: '8px', background: '#f0fdf4', borderRadius: 6, textAlign: 'center', fontSize: 12, color: C.green, fontWeight: 600 }}>
+                <div style={{ padding: '8px', background: 'var(--success-soft)', borderRadius: 6, textAlign: 'center', fontSize: 12, color: 'var(--color-success)', fontWeight: 600 }}>
                   ✓ Current plan
                 </div>
               ) : plan.price ? (
                 <button
-                  style={{ width: '100%', padding: '9px', background: plan.highlight ? C.purple : C.blue, color: '#fff', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: paying ? 'not-allowed' : 'pointer' }}
+                  style={{ width: '100%', padding: '9px', background: plan.highlight ? 'var(--color-primary)' : 'var(--color-primary)', color: 'var(--text-on-accent)', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: paying ? 'not-allowed' : 'pointer' }}
                   onClick={() => handleUpgrade(plan.id, selectedPeriod)}
                   disabled={paying}
                 >
@@ -273,11 +277,11 @@ export default function BillingPage() {
       </div>
 
       {}
-      <div className="card" style={{ padding: '14px 18px' }}>
-        <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.8 }}>
+      <div className="card" style={{ padding: '14px 18px', background: 'var(--surface-raised)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)' }}>
+        <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.8 }}>
           <strong>All plans include:</strong> Employee management · Attendance · Leave · Payroll · Compliance (PF/ESI/PT/TDS/LWF) · KYC & GST automation · No per-seat charges · Unlimited employees on Pro+
           <br />
-          <strong>Questions?</strong> Email us at <a href="mailto:support@syntern.in" style={{ color: C.blue }}>support@syntern.in</a> or WhatsApp us.
+          <strong>Questions?</strong> Email us at <a href="mailto:support@syntern.in" style={{ color: 'var(--color-primary)' }}>support@syntern.in</a> or WhatsApp us.
         </div>
       </div>
     </div>

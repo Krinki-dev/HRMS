@@ -28,6 +28,12 @@ export const THEME = {
     card: '0 24px 60px rgba(15, 23, 42, 0.08)',
     subtle: '0 8px 24px rgba(15, 23, 42, 0.06)',
   },
+  plan: {
+    free: { accent: '#16A34A', label: 'Basic / Free', badgeBg: 'rgba(22,163,74,0.12)', border: 'rgba(22,163,74,0.28)' },
+    trial: { accent: '#16A34A', label: '14-Day Trial', badgeBg: 'rgba(22,163,74,0.12)', border: 'rgba(22,163,74,0.28)' },
+    custom: { accent: '#2563EB', label: 'Custom / Add-on', badgeBg: 'rgba(37,99,235,0.12)', border: 'rgba(37,99,235,0.28)' },
+    pro: { accent: '#7C3AED', label: 'Pro', badgeBg: 'rgba(124,58,237,0.14)', border: 'rgba(124,58,237,0.28)' },
+  },
   toast: {
     success: { background: '#F0FDF4', border: '1px solid #86EFAC', color: '#166534' },
     error: { background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#991B1B' },
