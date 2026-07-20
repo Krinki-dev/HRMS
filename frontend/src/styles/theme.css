@@ -135,3 +135,36 @@
   --scrollbar-bg:   #f6f8fa;
   --scrollbar-thumb: #d0d7de;
 }
+:root,
+[data-theme="dark"],
+[data-theme="light"] {
+  --bg-app: var(--bg-primary);
+  --bg-input: var(--bg-secondary);
+  --text-link: var(--color-primary);
+  --font-size-base: 14px;
+  --line-height-base: 1.5;
+  --radius-sm: 8px;
+  --header-height: var(--topbar-height);
+  --shadow-md: var(--card-shadow);
+  --primary: var(--color-primary);
+  --primary-light: var(--accent-soft);
+  --transition-base: 0.2s ease;
+  --space-sm: 8px;
+  --space-md: 12px;
+
+  --app-text-muted: var(--text-muted);
+  --app-radius-sm: var(--radius-sm);
+  --app-danger: var(--color-danger);
+
+  --admin-surface: var(--bg-card);
+  --admin-surface-muted: var(--bg-secondary);
+  --admin-border: var(--border-color);
+  --admin-radius-lg: var(--radius-lg);
+  --admin-shadow-soft: var(--card-shadow);
+  --admin-accent: var(--color-primary);
+  --admin-accent-soft: var(--accent-soft);
+  --admin-text: var(--text-primary);
+  --admin-text-secondary: var(--text-secondary);
+  --admin-text-muted: var(--text-muted);
+  --admin-text-soft: var(--text-muted);
+}

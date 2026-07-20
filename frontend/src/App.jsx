@@ -1,19 +1,17 @@
-﻿﻿import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+﻿﻿import React, { lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import PricingManager from './pages/admin/PricingManager';
 
 const hostname = window.location.hostname;
 export const IS_PLATFORM_ROOT = (
   hostname === 'syntern.in'     ||
-  hostname === 'www.syntern.in' ||
-  hostname === 'localhost'      ||
-  hostname === '127.0.0.1'      ||
-  hostname === 'app.localhost'  ||
+  hostname === 'www.syntern.in' ||||
   hostname === 'app.syntern.in'
 );
 export const IS_TENANT_SUBDOMAIN = !IS_PLATFORM_ROOT && (
   hostname.endsWith('.syntern.in') ||
-  hostname.endsWith('.localhost')
+
 );
 export const TENANT_SUBDOMAIN = IS_TENANT_SUBDOMAIN ? hostname.split('.')[0] : null;
 
