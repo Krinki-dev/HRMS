@@ -1,10 +1,6 @@
-import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import ThemeToggle from '../ThemeToggle';
-import api from '../../services/api';
-import { applyPlatformThemeSettings } from '../../utils/platformThemeSettings';
 import './AdminLayout.css';
 import {
   LayoutDashboard,
@@ -34,17 +30,6 @@ const NAV_ITEMS = [
 export default function AdminLayout() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
-
-  const { data: settingsRes } = useQuery({
-    queryKey: ['platform-settings-theme'],
-    queryFn: () => api.get('/platform/admin/settings').then((res) => res.data),
-    staleTime: 60_000,
-  });
-
-  useEffect(() => {
-    const platformSettings = settingsRes?.Platform || {};
-    applyPlatformThemeSettings(platformSettings);
-  }, [settingsRes]);
 
   const handleLogout = () => {
     logout();

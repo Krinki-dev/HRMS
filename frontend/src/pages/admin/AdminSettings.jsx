@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import api from '../../services/api';
 import './AdminSettings.css';
 
-const SECTIONS = ['Platform', 'Email / SMTP', 'SMS gateway', 'GST settings', 'Security'];
+const SECTIONS = ['Platform', 'Theme', 'Email / SMTP', 'SMS gateway', 'GST settings', 'Security'];
 
 const FORM_SCHEMA = {
   'Platform': [
@@ -15,6 +15,8 @@ const FORM_SCHEMA = {
     { key: 'trialDays',     label: 'Default trial days',    type: 'select',   placeholder: '14',
       options: [{ v:'7', l:'7 days' }, { v:'14', l:'14 days' }, { v:'30', l:'30 days' }],
       envKey: 'DEFAULT_TRIAL_DAYS' },
+  ],
+  'Theme': [
     { key: 'primaryColor',             label: 'Primary color',                 type: 'text', placeholder: '#2563EB', envKey: 'THEME_PRIMARY_COLOR' },
     { key: 'primaryColorHover',        label: 'Primary hover color',           type: 'text', placeholder: '#1D4ED8', envKey: 'THEME_PRIMARY_HOVER' },
     { key: 'backgroundColor',          label: 'Background color',              type: 'text', placeholder: '#0f1117', envKey: 'THEME_BG_PRIMARY' },
@@ -124,7 +126,8 @@ export default function AdminSettings() {
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--admin-text)' }}>{active}</div>
             <div style={{ fontSize: 11, color: 'var(--admin-text-muted)', marginTop: 2 }}>
-              {active === 'Platform' && 'Global platform identity and runtime theme variables. Update once here and admin UI follows without hardcoded edits.'}
+              {active === 'Platform' && 'Global platform identity and operational defaults.'}
+              {active === 'Theme' && 'Visual tokens for the Mac-style UI. Stored centrally for cleanup and staged rollout.'}
               {active === 'Email / SMTP' && 'Platform-level SMTP for system emails (new company welcome, billing). Tenant-specific SMTP is set per client.'}
               {active === 'SMS gateway' && 'Platform fallback SMS provider. Individual clients configure their own in their settings.'}
               {active === 'GST settings' && 'How GST numbers are verified during company registration.'}

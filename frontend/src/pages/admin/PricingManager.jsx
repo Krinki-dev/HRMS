@@ -15,6 +15,60 @@ const ALL_MODULES = [
   'recruitment','performance','training','expenses','assets','fieldforce','ai',
 ];
 
+const FALLBACK_PLANS = [
+  {
+    id: 'free',
+    slug: 'free',
+    name: 'Basic / Free',
+    tagline: 'Free forever for small teams',
+    badge: null,
+    is_active: true,
+    is_popular: false,
+    base_price_paise: 0,
+    employee_cap: 200,
+    per_employee_excess_paise: 5000,
+    included_modules: ['employees','attendance','leave','payroll','compliance','reports','automation'],
+    addon_modules: ['recruitment','performance','training','expenses','assets','fieldforce','ai'],
+    highlights: ['Core HR foundation', 'Attendance & leave', 'Payroll & compliance essentials'],
+    is_trial_eligible: true,
+    trial_days: 14,
+  },
+  {
+    id: 'custom',
+    slug: 'custom',
+    name: 'Custom / Add-on',
+    tagline: 'Pick add-ons and modules as you grow',
+    badge: 'Custom',
+    is_active: true,
+    is_popular: false,
+    base_price_paise: null,
+    employee_cap: null,
+    per_employee_excess_paise: 0,
+    included_modules: ['employees','attendance','leave','payroll','compliance','reports','automation'],
+    addon_modules: ['recruitment','performance','training','expenses','assets','fieldforce','ai'],
+    highlights: ['Choose add-ons on demand', 'Tailored implementation and support'],
+    is_trial_eligible: false,
+    trial_days: 0,
+  },
+  {
+    id: 'pro',
+    slug: 'pro',
+    name: 'Pro',
+    tagline: 'Full HRMS access with automation and support',
+    badge: 'Most Popular',
+    is_active: true,
+    is_popular: true,
+    base_price_paise: 349900,
+    employee_cap: null,
+    per_employee_excess_paise: 4000,
+    included_modules: ['employees','attendance','leave','payroll','compliance','reports','automation','recruitment','performance','training','expenses','assets'],
+    addon_modules: ['fieldforce','ai'],
+    highlights: ['Unlimited employee access', 'Automation & compliance workflows', 'Priority support and onboarding'],
+    is_trial_eligible: true,
+    trial_days: 30,
+  },
+];
+
 // ── Atoms ─────────────────────────────────────────────────────────────────────
 const Input = ({ label, value, onChange, type = 'text', placeholder, small }) => (
   <div>
@@ -440,8 +494,9 @@ export default function PricingManager() {
     try {
       const res = await api.get('/platform/admin/plans');
       const payload = res.data?.data || res.data || {};
+      const plans = Array.isArray(payload.plans) && payload.plans.length ? payload.plans : FALLBACK_PLANS;
       setData({ 
-        plans: payload.plans || [], 
+        plans, 
         modulePricing: payload.modulePricing || {}, 
         discounts: payload.discounts || { tenure: [], bundle: {} }, 
         promoCodes: payload.promoCodes || [],
@@ -459,7 +514,7 @@ export default function PricingManager() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="bg-[#F8FAFC]">
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-[#111827]">Plan & Pricing Manager</h1>

@@ -75,3 +75,11 @@ Owner: Frontend System Audit
 - Expanded frontend/src/pages/admin/AdminSettings.jsx (`Platform` section) with editable theme tokens.
 - Fixed frontend/src/utils/tenantDomain.js to expose `isPreviewHost` through shared getter/export.
 - Converted frontend/src/utils/theme.js color values from hardcoded literals to CSS variable references.
+
+## Regression Recovery (2026-07-22)
+
+- Root cause identified: admin page utility classes were stripped from frontend/src/pages/admin/AdminLayout.css, breaking grid/card/table layout and causing large blank vertical flow.
+- Disabled automatic runtime admin theme override from settings in frontend/src/components/admin/AdminLayout.jsx to preserve previous visual baseline.
+- Moved theme token controls into a dedicated `Theme` tab in frontend/src/pages/admin/AdminSettings.jsx so platform operational settings stay clean.
+- Restored compact admin utility CSS classes (`stats-grid-4`, `admin-page-grid-2`, `card`, `data-table`, `btn-sm`, modal/alerts/forms), matching pre-centralization layout behavior.
+- Added frontend fallback baseline plans in frontend/src/pages/admin/PricingManager.jsx to ensure 3 plan cards remain visible even when API returns an empty catalog.
