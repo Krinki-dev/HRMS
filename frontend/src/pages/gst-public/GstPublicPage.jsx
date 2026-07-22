@@ -50,6 +50,7 @@ export default function GstPublicPage() {
   const [assistedCaptchaText, setAssistedCaptchaText] = useState('');
   const [assistedSubmitting, setAssistedSubmitting] = useState(false);
   const [assistedWarning, setAssistedWarning] = useState('');
+  const [showDetailsPopup, setShowDetailsPopup] = useState(false);
 
   const pollRef  = useRef(null);
   const inputRef = useRef(null);
@@ -90,6 +91,7 @@ export default function GstPublicPage() {
     setAssistedCaptchaImage('');
     setAssistedCaptchaText('');
     setAssistedWarning('');
+    setShowDetailsPopup(false);
 
     try {
       
@@ -183,6 +185,7 @@ export default function GstPublicPage() {
       if (res.data?.cached && res.data?.data) {
         setData(res.data.data);
         setPhase('done');
+        setShowDetailsPopup(true);
         return;
       }
 
@@ -225,6 +228,7 @@ export default function GstPublicPage() {
         setAssistedCaptchaImage('');
         setAssistedCaptchaText('');
         setPhase('done');
+        setShowDetailsPopup(true);
         return;
       }
 
@@ -279,6 +283,7 @@ export default function GstPublicPage() {
     setAssistedCaptchaImage('');
     setAssistedCaptchaText('');
     setAssistedWarning('');
+    setShowDetailsPopup(false);
     setQuery('');
     setTimeout(() => inputRef.current?.focus(), 100);
   }
@@ -821,6 +826,167 @@ export default function GstPublicPage() {
         }
         .sg-chip:hover { border-color: #E8A23A; color: #8B5E2A; background: #FFF8EE; }
 
+        .sg-seo-wrap {
+          max-width: 980px;
+          margin: 24px auto 14px;
+          padding: 0 24px;
+          display: grid;
+          grid-template-columns: 1.6fr 1fr;
+          gap: 16px;
+        }
+        .sg-seo-card,
+        .sg-ad-card {
+          background: #fff;
+          border: 1px solid #E8E4DE;
+          border-radius: 14px;
+          padding: 18px 20px;
+        }
+        .sg-seo-title {
+          font-family: 'Instrument Serif', serif;
+          font-size: 24px;
+          line-height: 1.2;
+          margin-bottom: 8px;
+          color: #1A1814;
+        }
+        .sg-seo-p {
+          font-size: 14px;
+          line-height: 1.65;
+          color: #6B6458;
+          margin-bottom: 10px;
+        }
+        .sg-seo-keywords {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        .sg-keyword {
+          border: 1px solid #E8E4DE;
+          border-radius: 999px;
+          padding: 6px 10px;
+          font-size: 12px;
+          color: #6B6458;
+          background: #F9F8F6;
+        }
+        .sg-ad-title {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          letter-spacing: 1.2px;
+          text-transform: uppercase;
+          color: #A09890;
+          margin-bottom: 10px;
+        }
+        .sg-ad-slot {
+          min-height: 120px;
+          border: 1px dashed #DDD8CF;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #A09890;
+          font-size: 12px;
+          background: #FCFBF9;
+        }
+
+        .sg-result-toast {
+          max-width: 600px;
+          margin: 20px auto 0;
+          background: #fff;
+          border: 1px solid #D8EEDB;
+          border-radius: 12px;
+          padding: 14px 16px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+        .sg-result-toast-msg {
+          font-size: 13px;
+          color: #1A7A3A;
+          line-height: 1.5;
+        }
+        .sg-view-btn {
+          border: 1px solid #B5E5C5;
+          background: #E8F8EE;
+          color: #1A7A3A;
+          padding: 8px 14px;
+          border-radius: 8px;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+
+        .sg-modal {
+          position: fixed;
+          inset: 0;
+          background: rgba(20, 16, 10, 0.52);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1200;
+          padding: 16px;
+        }
+        .sg-modal-card {
+          width: min(720px, 92vw);
+          max-height: 86vh;
+          overflow: auto;
+          background: #fff;
+          border-radius: 16px;
+          border: 1px solid #E8E4DE;
+          box-shadow: 0 18px 60px rgba(0,0,0,0.22);
+          padding: 20px;
+        }
+        .sg-modal-head {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 14px;
+        }
+        .sg-modal-title {
+          font-family: 'Instrument Serif', serif;
+          font-size: clamp(24px, 3vw, 30px);
+          line-height: 1.2;
+          color: #1A1814;
+          margin-bottom: 4px;
+        }
+        .sg-modal-sub {
+          font-size: 13px;
+          color: #8B7E6F;
+        }
+        .sg-close {
+          border: 1px solid #DDD8CF;
+          background: #fff;
+          color: #6B6458;
+          width: 34px;
+          height: 34px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 700;
+        }
+        .sg-mini-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          gap: 12px;
+          margin-top: 6px;
+        }
+        .sg-mini-item {
+          border: 1px solid #E8E4DE;
+          border-radius: 10px;
+          padding: 12px 12px;
+          background: #FAF9F7;
+        }
+        .sg-mini-label {
+          font-size: 11px;
+          color: #A09890;
+          margin-bottom: 3px;
+        }
+        .sg-mini-val {
+          color: #1A1814;
+          font-size: 14px;
+          line-height: 1.5;
+        }
+
         /* ── RESPONSIVE ── */
         @media (max-width: 600px) {
           .sg-hero { padding: 48px 16px 40px; }
@@ -829,6 +995,7 @@ export default function GstPublicPage() {
           .sg-result-wrap { padding: 0 16px; }
           .sg-topbar { padding: 0 16px; }
           .sg-topbar-cta .sg-topbar-desc { display: none; }
+          .sg-seo-wrap { grid-template-columns: 1fr; padding: 0 16px; }
         }
       `}</style>
 
@@ -891,6 +1058,31 @@ export default function GstPublicPage() {
       <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 24px' }}>
         <AdBanner />
       </div>
+
+      <section className="sg-seo-wrap">
+        <article className="sg-seo-card">
+          <h2 className="sg-seo-title">GSTIN Verification for Better Compliance and Faster Vendor Checks</h2>
+          <p className="sg-seo-p">
+            Use this free GST search tool to verify legal entity name, trade name, registration date, and principal place of business.
+            It helps with vendor onboarding, invoice validation, payroll compliance workflows, and finance controls.
+          </p>
+          <p className="sg-seo-p">
+            Manual captcha verification keeps the process compliant while our automation extracts structured GST data for faster lookup and caching.
+          </p>
+          <div className="sg-seo-keywords">
+            {['GSTIN lookup', 'GST verification', 'GST taxpayer search', 'vendor KYC', 'compliance automation', 'business registration check'].map(k => (
+              <span key={k} className="sg-keyword">{k}</span>
+            ))}
+          </div>
+        </article>
+        <aside className="sg-ad-card">
+          <div className="sg-ad-title">Sponsored & Product Spotlight</div>
+          <div className="sg-ad-slot">Google Ads Slot (300x250 / Responsive)</div>
+          <div style={{ marginTop: 12 }}>
+            <AdBanner />
+          </div>
+        </aside>
+      </section>
 
       {}
       {isLoading && (
@@ -965,98 +1157,63 @@ export default function GstPublicPage() {
         </div>
       )}
 
-      {}
       {phase === 'done' && data && (
-        <div className="sg-result-wrap">
-          <div className="sg-cache-note">
-            <span>✓</span>
-            {data.cachedAt
-              ? `Data from ${new Date(data.cachedAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })}`
-              : 'Fresh from GST portal'
-            }
+        <div className="sg-result-toast">
+          <div className="sg-result-toast-msg">
+            Verification complete. Open popup to view details.
+            {data.cachedAt ? ' Data loaded from recent cache.' : ' Data fetched from GST portal.'}
+            {!!assistedWarning ? ` Cache warning: ${assistedWarning}` : ''}
           </div>
-          {!!assistedWarning && (
-            <div className="sg-hint" style={{ marginBottom: 16 }}>
-              Note: verification succeeded, but cache save warning: {assistedWarning}
-            </div>
-          )}
+          <button className="sg-view-btn" onClick={() => setShowDetailsPopup(true)}>View GST Details</button>
+        </div>
+      )}
 
-          <div className="sg-result-header">
-            <div>
-              <div className="sg-company-name">
-                {data.legalname || data.company_name || data.tradename || data.gstin}
+      {showDetailsPopup && data && (
+        <div className="sg-modal" role="dialog" aria-modal="true" aria-label="GST details popup">
+          <div className="sg-modal-card">
+            <div className="sg-modal-head">
+              <div>
+                <div className="sg-modal-title">{data.legalname || data.company_name || data.tradename || data.gstin}</div>
+                <div className="sg-modal-sub">GST verification summary</div>
               </div>
-              {data.tradename && data.tradename !== data.legalname && (
-                <div className="sg-company-tradename">Trade name: {data.tradename}</div>
-              )}
+              <button className="sg-close" onClick={() => setShowDetailsPopup(false)}>×</button>
             </div>
-            <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:8 }}>
-              <div className={`sg-status-pill ${
-                data.status?.toLowerCase().includes('active') ? 'sg-status-active' :
-                data.status?.toLowerCase().includes('cancel') ? 'sg-status-inactive' :
-                'sg-status-unknown'
-              }`}>
-                {data.status || 'Status N/A'}
+
+            <div className="sg-mini-grid">
+              <div className="sg-mini-item">
+                <div className="sg-mini-label">GSTIN</div>
+                <div className="sg-mini-val">{data.gstin || '—'}</div>
               </div>
-              <button className="sg-new-search" onClick={reset}>← New Search</button>
-            </div>
-          </div>
-
-          {}
-          <AdBanner />
-
-          <div className="sg-grid">
-            <div className="sg-card">
-              <div className="sg-card-title">Business</div>
-              <div className="sg-field-row">
-                <div className="sg-field">
-                  <span className="sg-field-label">Legal Name</span>
-                  <span className="sg-field-value">{data.legalname || data.company_name || <span className="sg-field-empty">—</span>}</span>
-                </div>
-                <div className="sg-field">
-                  <span className="sg-field-label">Trade Name</span>
-                  <span className="sg-field-value">{data.tradename || <span className="sg-field-empty">—</span>}</span>
-                </div>
-                <div className="sg-field">
-                  <span className="sg-field-label">GSTIN</span>
-                  <span className="sg-field-value mono">{data.gstin || <span className="sg-field-empty">—</span>}</span>
-                </div>
+              <div className="sg-mini-item">
+                <div className="sg-mini-label">Legal Name</div>
+                <div className="sg-mini-val">{data.legalname || data.company_name || '—'}</div>
+              </div>
+              <div className="sg-mini-item">
+                <div className="sg-mini-label">Trade Name</div>
+                <div className="sg-mini-val">{data.tradename || '—'}</div>
+              </div>
+              <div className="sg-mini-item">
+                <div className="sg-mini-label">Registration Date</div>
+                <div className="sg-mini-val">{data.regdate || '—'}</div>
+              </div>
+              <div className="sg-mini-item">
+                <div className="sg-mini-label">Status</div>
+                <div className="sg-mini-val">{data.status || '—'}</div>
+              </div>
+              <div className="sg-mini-item">
+                <div className="sg-mini-label">Principal Address</div>
+                <div className="sg-mini-val">{[data.flat_no, data.branch_name, data.branch_no && `Branch No. ${data.branch_no}`, data.street, data.location, data.district, data.state, data.pincode].filter(Boolean).join(', ') || '—'}</div>
               </div>
             </div>
 
-            <div className="sg-card">
-              <div className="sg-card-title">Registration</div>
-              <div className="sg-field-row">
-                <div className="sg-field">
-                  <span className="sg-field-label">Registration Date</span>
-                  <span className="sg-field-value">{data.regdate || <span className="sg-field-empty">—</span>}</span>
-                </div>
-                <div className="sg-field">
-                  <span className="sg-field-label">Status</span>
-                  <span className="sg-field-value">{data.status || <span className="sg-field-empty">—</span>}</span>
-                </div>
-                <div className="sg-field">
-                  <span className="sg-field-label">Principal State</span>
-                  <span className="sg-field-value">{data.state || STATE_CODES[data.state_code] || <span className="sg-field-empty">—</span>}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="sg-card sg-card-full">
-              <div className="sg-card-title">Principal Address</div>
-              <div className="sg-address-text">
-                {[data.flat_no, data.branch_name, data.branch_no && `Branch No. ${data.branch_no}`, data.street, data.location, data.district, data.state, data.pincode]
-                  .filter(Boolean).join(', ') || '—'}
-              </div>
+            <div style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <p style={{fontSize:11, color:'#8B7E6F', lineHeight:1.6, margin: 0}}>
+                Data sourced from public GST portal. Verify official records at{' '}
+                <a href="https://www.gst.gov.in" target="_blank" rel="noopener noreferrer" style={{color:'#8B5E2A'}}>gst.gov.in</a>.
+              </p>
+              <button className="sg-new-search" onClick={reset}>New Search</button>
             </div>
           </div>
-
-          {}
-          <p style={{fontSize:11, color:'#A09890', marginTop:8, marginBottom:32, lineHeight:1.6}}>
-            Data sourced from public GST portal. For official verification visit{' '}
-            <a href="https://www.gst.gov.in" target="_blank" rel="noopener noreferrer" style={{color:'#8B7E6F'}}>gst.gov.in</a>.
-            SearchGST by Syntern is an independent tool and is not affiliated with GSTN or the Government of India.
-          </p>
         </div>
       )}
 

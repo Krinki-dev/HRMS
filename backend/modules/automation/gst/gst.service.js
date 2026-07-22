@@ -420,7 +420,64 @@ async function getCaptchaImageDataUrl(context, page) {
 }
 
 async function getCaptchaScreenshotDataUrl(page) {
+  const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+
+  const captchaImgSelectors = [
+    'img#imgCaptcha',
+    'img[src*="captcha" i]',
+    'img[alt*="captcha" i]',
+    'img[title*="captcha" i]'
+  ];
+
   try {
+    let box = null;
+
+    for (const selector of captchaImgSelectors) {
+      const loc = page.locator(selector).first();
+      const count = await loc.count();
+      if (!count) continue;
+      const b = await loc.boundingBox().catch(() => null);
+      if (b && b.width > 20 && b.height > 10) {
+        box = { ...b };
+        break;
+      }
+    }
+
+    if (!box) {
+      const input = await findCaptchaInput(page, 1500);
+      if (input) {
+        const b = await input.boundingBox().catch(() => null);
+        if (b && b.width > 20 && b.height > 10) {
+          box = {
+            x: b.x - 30,
+            y: b.y - 30,
+            width: Math.max(b.width + 60, 320),
+            height: Math.max(b.height + 130, 120),
+          };
+        }
+      }
+    }
+
+    if (box) {
+      const viewport = page.viewportSize() || { width: 1366, height: 768 };
+      const clip = {
+        x: clamp(Math.floor(box.x), 0, Math.max(0, viewport.width - 1)),
+        y: clamp(Math.floor(box.y), 0, Math.max(0, viewport.height - 1)),
+        width: clamp(Math.ceil(box.width), 40, viewport.width),
+        height: clamp(Math.ceil(box.height), 30, viewport.height),
+      };
+
+      if (clip.x + clip.width > viewport.width) {
+        clip.width = viewport.width - clip.x;
+      }
+      if (clip.y + clip.height > viewport.height) {
+        clip.height = viewport.height - clip.y;
+      }
+
+      const buffer = await page.screenshot({ type: 'png', clip });
+      return `data:image/png;base64,${buffer.toString('base64')}`;
+    }
+
     const challengeSection = page.locator('form, .searchtp-content, .container, body').first();
     const buffer = await challengeSection.screenshot({ type: 'png' });
     return `data:image/png;base64,${buffer.toString('base64')}`;
