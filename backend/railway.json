@@ -1,1 +1,11 @@
-{"build":{"builder":"NIXPACKS","buildCommand":"npx prisma generate"},"deploy":{"startCommand":"node server.js","restartPolicyType":"ON_FAILURE","restartPolicyMaxRetries":3}}
+{
+	"build": {
+		"builder": "NIXPACKS",
+		"buildCommand": "PLAYWRIGHT_BROWSERS_PATH=0 npx playwright install --with-deps chromium && npx prisma generate"
+	},
+	"deploy": {
+		"startCommand": "PLAYWRIGHT_BROWSERS_PATH=0 node server.js",
+		"restartPolicyType": "ON_FAILURE",
+		"restartPolicyMaxRetries": 3
+	}
+}
