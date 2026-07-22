@@ -362,12 +362,20 @@ async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function fetchResourceBytes(context, resourceUrl) {
+async function fetchResource(context, resourceUrl) {
   const response = await context.request.get(resourceUrl);
   if (!response.ok()) {
     throw new Error(`Failed to fetch resource ${resourceUrl} (${response.status()})`);
   }
-  return await response.body();
+  return {
+    body: await response.body(),
+    contentType: response.headers()['content-type'] || '',
+  };
+}
+
+async function fetchResourceBytes(context, resourceUrl) {
+  const { body } = await fetchResource(context, resourceUrl);
+  return body;
 }
 
 function cleanupAssistedSessions() {
@@ -398,9 +406,17 @@ async function getCaptchaImageDataUrl(context, page) {
 
   if (!imgSrc) return null;
   const imageUrl = new URL(imgSrc, page.url()).href;
-  const buffer = await fetchResourceBytes(context, imageUrl);
+  const { body: buffer, contentType } = await fetchResource(context, imageUrl);
+  const mimeType = String(contentType || '').split(';')[0].trim().toLowerCase();
+  const asText = buffer.slice(0, 16).toString('utf8').trim().toLowerCase();
+
+  // Bot protection can return an HTML challenge at the image URL.
+  if (!mimeType.startsWith('image/') || asText.startsWith('<!doctype') || asText.startsWith('<html')) {
+    return null;
+  }
+
   const base64 = buffer.toString('base64');
-  return `data:image/png;base64,${base64}`;
+  return `data:${mimeType};base64,${base64}`;
 }
 
 async function getCaptchaScreenshotDataUrl(page) {
