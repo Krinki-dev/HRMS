@@ -337,20 +337,28 @@ async function calculatePrice({ planSlug, selectedAddons = [], billingMonths = 1
  *
  * @param {string} tenantId
  * @param {object} priceResult — return value of calculatePrice()
+ * @param {object} [meta]
+ * @param {'auto'|'manual'} [meta.renewalMode]
+ * @param {string} [meta.paymentMethod]
  */
-async function saveSelectionToTenantConfig(tenantId, priceResult) {
+async function saveSelectionToTenantConfig(tenantId, priceResult, meta = {}) {
   if (!tenantId || !priceResult || priceResult.isCustomQuote) return;
   const { breakdown, plan, billingMonths } = priceResult;
 
   // Map tenure months → discount pct for subscriptionCalculator
   const tenurePct = breakdown.tenure_discount_pct || 0;
 
+  const moduleDiscountMeta = {
+    __renewalMode: meta.renewalMode === 'auto' ? 'auto' : 'manual',
+    __paymentMethod: meta.paymentMethod || null,
+  };
+
   const json = JSON.stringify({
     base_price_paise:           breakdown.base_monthly_paise,
     employee_cap:               null,          // billed for actual count by billing cron
     per_employee_excess_paise:  5000,
     discount_base_pct:          0,
-    discount_module_pct:        {},
+    discount_module_pct:        moduleDiscountMeta,
     discount_bundle_pct:        breakdown.bundle_discount_pct || 0,
     bundle_trigger_count:       3,
     discount_tenure_pct:        tenurePct,
@@ -373,7 +381,7 @@ async function saveSelectionToTenantConfig(tenantId, priceResult) {
     VALUES (
       ${tenantId}::uuid,
       ${breakdown.base_monthly_paise}, 5000,
-      0, '{}'::jsonb,
+      0, ${JSON.stringify(moduleDiscountMeta)}::jsonb,
       ${breakdown.bundle_discount_pct || 0}, 3,
       ${tenurePct}, ${billingMonths},
       false, ${breakdown.promo_deduction_paise || 0},
@@ -387,7 +395,8 @@ async function saveSelectionToTenantConfig(tenantId, priceResult) {
           tenure_months             = ${billingMonths},
           offer_flat_paise          = ${breakdown.promo_deduction_paise || 0},
           billing_cycle             = ${billingMonths === 1 ? 'monthly' : `${billingMonths}_months`},
-          updated_at                = NOW()
+            discount_module_pct       = ${JSON.stringify(moduleDiscountMeta)}::jsonb,
+            updated_at                = NOW()
   `;
 
   logger.info(`[plans.service] Saved pricing config for tenant ${tenantId} → plan "${plan.slug}", ${billingMonths}mo, total ₹${priceResult.total_inr}`);
@@ -402,42 +411,3 @@ module.exports = {
   saveSelectionToTenantConfig,
   DEFAULT_MODULE_PRICING,
 };
-
-/**
- * Saves a completed plan selection to tenant_pricing_configs
- * so billing.cron.js picks up the correct price for future invoice runs.
- * Called by payment.controller.js after successful payment verification.
- * @param {string} tenantId
- * @param {object} priceResult - output from calculatePrice()
- */
-async function saveSelectionToTenantConfig(tenantId, priceResult) {
-  const { breakdown, billingMonths } = priceResult;
-
-  await centralPrisma.$executeRaw`
-    INSERT INTO tenant_pricing_configs (
-      id, tenant_id,
-      base_price_paise, discount_tenure_pct, discount_bundle_pct,
-      tenure_months, offer_flat_paise, is_stackable, billing_cycle, updated_at
-    )
-    VALUES (
-      gen_random_uuid(), ${tenantId}::uuid,
-      ${breakdown.base_monthly_paise},
-      ${breakdown.tenure_discount_pct || 0},
-      ${breakdown.bundle_discount_pct || 0},
-      ${billingMonths},
-      ${breakdown.promo_deduction_paise || 0},
-      false,
-      ${billingMonths === 1 ? 'monthly' : 'custom'},
-      NOW()
-    )
-    ON CONFLICT (tenant_id) DO UPDATE SET
-      base_price_paise    = ${breakdown.base_monthly_paise},
-      discount_tenure_pct = ${breakdown.tenure_discount_pct || 0},
-      discount_bundle_pct = ${breakdown.bundle_discount_pct || 0},
-      tenure_months       = ${billingMonths},
-      offer_flat_paise    = ${breakdown.promo_deduction_paise || 0},
-      is_stackable        = false,
-      billing_cycle       = ${billingMonths === 1 ? 'monthly' : 'custom'},
-      updated_at          = NOW()
-  `;
-}

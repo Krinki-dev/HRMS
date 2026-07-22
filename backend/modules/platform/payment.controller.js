@@ -67,6 +67,21 @@ async function resolveTenantId(req) {
   return null;
 }
 
+async function resolveTargetTenantId(req, requestedTenantId) {
+  if (requestedTenantId && req.user?.is_platform_admin) return requestedTenantId;
+  return resolveTenantId(req);
+}
+
+function normalizeRenewalMode(mode) {
+  return mode === 'auto' ? 'auto' : 'manual';
+}
+
+function toBillingCycleLabel(months) {
+  if (months === 12) return 'annual';
+  if (months === 3) return 'quarterly';
+  return 'monthly';
+}
+
 /**
  * Creates a Razorpay Order for an unpaid invoice.
  */
@@ -665,8 +680,14 @@ exports.createSubscriptionOrder = async (req, res) => {
       planId, period, addons = [],
       // Common:
       method = 'phonepe',
+      tenantId: requestedTenantId,
+      renewalMode = 'manual',
     } = req.body;
-    const tenantId = await resolveTenantId(req);
+    const tenantId = await resolveTargetTenantId(req, requestedTenantId);
+    if (!tenantId) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Tenant could not be resolved for subscription order', 400);
+    }
+    const normalizedRenewalMode = normalizeRenewalMode(renewalMode);
 
     // ── Dynamic pricing via plans.service ──────────────────────────────────
     let finalAmount, description, resolvedPlanId;
@@ -686,11 +707,6 @@ exports.createSubscriptionOrder = async (req, res) => {
       finalAmount = priceResult.total_paise;
       resolvedPlanId = planSlug;
       description = `${priceResult.plan.name} — ${billingMonths === 1 ? 'Monthly' : `${billingMonths}-month`} (incl. 18% GST)`;
-
-      // Stash priceResult on req so verifySubscription can save the config
-      req._priceResult = priceResult;
-      req._selectedAddons = selectedAddons;
-      req._billingMonths  = billingMonths;
 
     } else {
       // LEGACY: hardcoded prices (kept until all tenants use new flow)
@@ -737,7 +753,7 @@ exports.createSubscriptionOrder = async (req, res) => {
       const order = await rp.orders.create({
         amount: finalAmount, currency: 'INR',
         receipt: `SUB-${String(tenantId||'new').substring(0,8)}-${Date.now()}`,
-        notes: { tenantId, planId: resolvedPlanId, billingMonths, type: 'subscription', gst_applied: '18%' },
+        notes: { tenantId, planId: resolvedPlanId, billingMonths, renewalMode: normalizedRenewalMode, type: 'subscription', gst_applied: '18%' },
       });
       return sendSuccess(res, {
         method: 'razorpay', orderId: order.id, amount: order.amount,
@@ -764,7 +780,7 @@ exports.createSubscriptionOrder = async (req, res) => {
         callbackUrl: `${process.env.BACKEND_URL}/api/v1/platform/subscribe/phonepe-webhook`,
         mobileNumber: tenant?.admin_phone || '9999999999',
         paymentInstrument: { type: 'PAY_PAGE' },
-        metadata: { tenantId, planId: resolvedPlanId, period: billingMonths ? `${billingMonths}months` : period, addons: safeAddons.join(','), type: 'subscription' }
+        metadata: { tenantId, planId: resolvedPlanId, period: billingMonths ? `${billingMonths}months` : period, renewalMode: normalizedRenewalMode, addons: safeAddons.join(','), type: 'subscription' }
       };
 
       const base64Payload = Buffer.from(JSON.stringify(payload)).toString('base64');
@@ -835,9 +851,24 @@ exports.verifySubscription = async (req, res) => {
     const {
       razorpay_order_id, razorpay_payment_id, razorpay_signature,
       razorpayOrderId, razorpayPaymentId, razorpaySignature,
-      transactionId, planId, period, addons = [], method = 'razorpay', mock
+      transactionId,
+      planId,
+      planSlug,
+      period,
+      addons = [],
+      selectedAddons = [],
+      billingMonths,
+      employeeCount = 0,
+      promoCode,
+      renewalMode = 'manual',
+      method = 'razorpay',
+      tenantId: requestedTenantId,
+      mock,
     } = req.body;
-    const tenantId = await resolveTenantId(req);
+    const tenantId = await resolveTargetTenantId(req, requestedTenantId);
+    if (!tenantId) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Tenant could not be resolved for subscription verification', 400);
+    }
 
     const resolvedOrderId = razorpay_order_id || razorpayOrderId;
     const resolvedPaymentId = razorpay_payment_id || razorpayPaymentId || transactionId;
@@ -845,13 +876,19 @@ exports.verifySubscription = async (req, res) => {
 
     const validPeriods = ['monthly', 'yearly', 'quarterly'];
     const planBasePrices = { basic: 0, full: 999900, starter: 299900, pro: 799900, trial: 0 };
+    const selectedPlanSlug = planSlug || planId;
+    const normalizedRenewalMode = normalizeRenewalMode(renewalMode);
+    const normalizedAddons = Array.isArray(selectedAddons) && selectedAddons.length ? selectedAddons : (Array.isArray(addons) ? addons : []);
+    const normalizedBillingMonths = Number.isFinite(Number(billingMonths)) && Number(billingMonths) > 0
+      ? Number(billingMonths)
+      : (period === 'yearly' ? 12 : (period === 'quarterly' ? 3 : 1));
 
-    if (planId === 'enterprise') {
+    if (selectedPlanSlug === 'enterprise') {
       return sendError(res, ERROR_CODES.VALIDATION, 'Enterprise plan requires sales consultation', 400);
     }
 
-    if (planBasePrices[planId] === undefined) return sendError(res, ERROR_CODES.VALIDATION, 'Invalid plan selected', 400);
-    if (!validPeriods.includes(period)) return sendError(res, ERROR_CODES.VALIDATION, 'Invalid billing period', 400);
+    if (!selectedPlanSlug) return sendError(res, ERROR_CODES.VALIDATION, 'Invalid plan selected', 400);
+    if (period && !validPeriods.includes(period)) return sendError(res, ERROR_CODES.VALIDATION, 'Invalid billing period', 400);
 
     if (!mock) {
       // 1. RAZORPAY SIGNATURE VERIFICATION
@@ -907,39 +944,81 @@ exports.verifySubscription = async (req, res) => {
     }
 
     const expiryDate = new Date();
-    if (period === 'yearly') expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-    else if (period === 'quarterly') expiryDate.setMonth(expiryDate.getMonth() + 3);
-    else expiryDate.setMonth(expiryDate.getMonth() + 1);
+    expiryDate.setMonth(expiryDate.getMonth() + normalizedBillingMonths);
 
-    const safeAddons = Array.isArray(addons) ? addons : [];
+    let calculatedPrice = null;
+    if (selectedPlanSlug && !['basic', 'full', 'trial'].includes(selectedPlanSlug)) {
+      calculatedPrice = await plansService.calculatePrice({
+        planSlug: selectedPlanSlug,
+        selectedAddons: normalizedAddons,
+        billingMonths: normalizedBillingMonths,
+        employeeCount: Number(employeeCount) || 0,
+        promoCode,
+      });
+      if (calculatedPrice?.isCustomQuote) {
+        return sendError(res, ERROR_CODES.VALIDATION, 'Custom quote plans cannot be auto-verified', 400);
+      }
+    }
+
+    const normalizedPlan = selectedPlanSlug === 'full' ? 'pro' : (selectedPlanSlug === 'basic' ? 'starter' : selectedPlanSlug);
+    const planCatalog = await plansService.getPlans({ includeInactive: true });
+    const planDef = planCatalog.find((p) => p.slug === normalizedPlan || p.id === normalizedPlan);
+
+    const maxEmployees = planDef?.employee_cap ?? (
+      normalizedPlan === 'free' ? 200 :
+      normalizedPlan === 'pro' ? 999999 :
+      100
+    );
+
+    const existingConfig = await centralPrisma.tenant_pricing_configs.findUnique({ where: { tenant_id: tenantId } });
+    const existingModuleDiscounts = (existingConfig?.discount_module_pct && typeof existingConfig.discount_module_pct === 'object')
+      ? existingConfig.discount_module_pct
+      : {};
+    const discountModuleMeta = {
+      ...existingModuleDiscounts,
+      __renewalMode: normalizedRenewalMode,
+      __lastPaymentMethod: method,
+    };
+
+    const basePricePaise = calculatedPrice?.breakdown?.base_monthly_paise
+      ?? planDef?.base_price_paise
+      ?? planBasePrices[selectedPlanSlug]
+      ?? 0;
+
+    const offerExpiry = expiryDate;
+    const billingCycle = toBillingCycleLabel(normalizedBillingMonths);
 
     await centralPrisma.$transaction([
       centralPrisma.tenants.update({
         where: { id: tenantId },
         data: {
-          plan: planId === 'full' ? 'pro' : 'starter',
+          plan: normalizedPlan,
           plan_expires_at: expiryDate,
-          max_employees: (planId === 'starter' || planId === 'basic') ? 100 : 999999
+          max_employees: maxEmployees
         }
       }),
-      centralPrisma.tenant_pricing_config.upsert({
+      centralPrisma.tenant_pricing_configs.upsert({
         where: { tenant_id: tenantId },
         update: {
-          billing_cycle: period,
-          offer_expiry_date: expiryDate,
-          base_price_paise: planBasePrices[planId],
-          employee_cap: (planId === 'starter' || planId === 'basic') ? 100 : null
+          billing_cycle: billingCycle,
+          offer_expiry_date: offerExpiry,
+          base_price_paise: basePricePaise,
+          employee_cap: maxEmployees === 999999 ? null : maxEmployees,
+          tenure_months: normalizedBillingMonths,
+          discount_module_pct: discountModuleMeta,
         },
         create: {
           tenant_id: tenantId,
-          billing_cycle: period,
-          offer_expiry_date: expiryDate,
-          base_price_paise: planBasePrices[planId],
-          employee_cap: (planId === 'starter' || planId === 'basic') ? 100 : null
+          billing_cycle: billingCycle,
+          offer_expiry_date: offerExpiry,
+          base_price_paise: basePricePaise,
+          employee_cap: maxEmployees === 999999 ? null : maxEmployees,
+          tenure_months: normalizedBillingMonths,
+          discount_module_pct: discountModuleMeta,
         }
       }),
       // Update enabled modules based on selection
-      ...safeAddons.map(mod => centralPrisma.tenant_modules.upsert({
+      ...normalizedAddons.map(mod => centralPrisma.tenant_modules.upsert({
         where: { tenant_id_module_name: { tenant_id: tenantId, module_name: String(mod).toLowerCase() } },
         update: { is_active: true, enabled_at: new Date() },
         create: { tenant_id: tenantId, module_name: String(mod).toLowerCase(), is_active: true, enabled_at: new Date() }
@@ -947,10 +1026,55 @@ exports.verifySubscription = async (req, res) => {
     ]);
 
     // Save plan selection to tenant_pricing_configs (feeds billing cron)
-    if (req._priceResult) {
-      await plansService.saveSelectionToTenantConfig(tenantId, req._priceResult);
+    if (calculatedPrice) {
+      await plansService.saveSelectionToTenantConfig(tenantId, calculatedPrice, {
+        renewalMode: normalizedRenewalMode,
+        paymentMethod: method,
+      });
       logger.info(`[verifySubscription] Pricing config saved for tenant ${tenantId}`);
     }
+
+    // Create a paid invoice snapshot for this successful subscription purchase.
+    const tenant = await centralPrisma.tenants.findUnique({ where: { id: tenantId }, select: { subdomain: true } });
+    const now = new Date();
+    const invNo = `SUB-${String((tenant?.subdomain || 'TENANT')).toUpperCase()}-${now.getTime()}`;
+
+    const breakdown = calculatedPrice?.breakdown || {
+      base_monthly_paise: basePricePaise,
+      excess_paise: 0,
+      addons: [],
+      discount_paise: 0,
+      gst_paise: 0,
+      amount_before_tax: basePricePaise * normalizedBillingMonths,
+    };
+
+    const grossBeforeTax = breakdown.amount_before_tax ?? (basePricePaise * normalizedBillingMonths);
+    const gstPaise = breakdown.gst_paise ?? Math.round(grossBeforeTax * 0.18);
+    const totalPaise = calculatedPrice?.total_paise ?? (grossBeforeTax + gstPaise);
+
+    await centralPrisma.invoices.create({
+      data: {
+        tenant_id: tenantId,
+        invoice_no: invNo,
+        period_start: now,
+        period_end: expiryDate,
+        due_date: now,
+        base_amount_paise: (breakdown.base_monthly_paise || basePricePaise) * normalizedBillingMonths,
+        module_amount_paise: (breakdown.addon_total_monthly || 0) * normalizedBillingMonths,
+        excess_amount_paise: (breakdown.excess_paise || 0) * normalizedBillingMonths,
+        discount_amount_paise: (breakdown.discount_paise || 0) + (breakdown.promo_deduction_paise || 0),
+        tax_amount_paise: gstPaise,
+        total_paise: totalPaise,
+        status: 'paid',
+        payment_id: resolvedPaymentId || transactionId || (mock ? `MOCK-SUB-${tenantId}` : null),
+        breakdown: {
+          ...(calculatedPrice || {}),
+          renewalMode: normalizedRenewalMode,
+          paymentMethod: method,
+          purchaseType: 'subscription_activation',
+        },
+      },
+    });
 
     return sendSuccess(res, null, "Subscription activated successfully.");
   } catch (error) {

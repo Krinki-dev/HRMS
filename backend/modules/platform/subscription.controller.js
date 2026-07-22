@@ -13,8 +13,8 @@ exports.getTenantPricing = async (req, res) => {
     const { tenantId } = req.params;
 
     const [config, modules, tenant] = await Promise.all([
-      centralPrisma.tenant_pricing_config.findUnique({ where: { tenant_id: tenantId } }),
-      centralPrisma.tenant_module.findMany({ where: { tenant_id: tenantId, is_active: true } }),
+      centralPrisma.tenant_pricing_configs.findUnique({ where: { tenant_id: tenantId } }),
+      centralPrisma.tenant_modules.findMany({ where: { tenant_id: tenantId, is_active: true } }),
       centralPrisma.tenants.findUnique({ where: { id: tenantId }, select: { max_employees: true } })
     ]);
 
@@ -69,7 +69,7 @@ exports.updateTenantPricing = async (req, res) => {
     // Remove undefined fields
     Object.keys(formattedData).forEach(key => formattedData[key] === undefined && delete formattedData[key]);
 
-    const updated = await centralPrisma.tenant_pricing_config.update({
+    const updated = await centralPrisma.tenant_pricing_configs.update({
       where: { tenant_id: tenantId },
       data: formattedData
     });
@@ -261,7 +261,7 @@ exports.activateTrial = async (req, res) => {
           where: { id: resolvedTenantId },
           data: { plan: 'trial', plan_expires_at: expiryDate }
         }),
-        centralPrisma.tenant_pricing_config.upsert({
+        centralPrisma.tenant_pricing_configs.upsert({
           where: { tenant_id: resolvedTenantId },
           update: { offer_expiry_date: expiryDate },
           create: {

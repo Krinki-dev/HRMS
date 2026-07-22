@@ -10,6 +10,11 @@ const BillingConfigTab = ({ tenantId }) => {
   const [localConfig, setLocalConfig] = useState(null);
   const [preview, setPreview] = useState(null);
   const [modules, setModules] = useState([]);
+  const [planCatalog, setPlanCatalog] = useState([]);
+  const [selectedPlanSlug, setSelectedPlanSlug] = useState('pro');
+  const [billingMonths, setBillingMonths] = useState(1);
+  const [renewalMode, setRenewalMode] = useState('manual');
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
 
   // 1. Fetch current config
   const { data: remoteData, isLoading, refetch } = useQuery({
@@ -39,6 +44,30 @@ const BillingConfigTab = ({ tenantId }) => {
       setModules(moduleData.modules);
     }
   }, [moduleData]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const catalogRes = await F.get('/platform/plans').then(res => res.data);
+        const plans = catalogRes?.data?.plans || [];
+        setPlanCatalog(plans);
+      } catch {
+        setPlanCatalog([]);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+      if (remoteData?.tenant?.plan) setSelectedPlanSlug(remoteData.tenant.plan);
+  }, [remoteData]);
+
+  useEffect(() => {
+    if (!planCatalog.length) return;
+    const payablePlans = planCatalog.filter(p => Number(p.base_price_paise) > 0);
+    if (!payablePlans.length) return;
+    const hasSelected = payablePlans.some(p => p.slug === selectedPlanSlug);
+    if (!hasSelected) setSelectedPlanSlug(payablePlans[0].slug);
+  }, [planCatalog, selectedPlanSlug]);
 
   // 2. Live Preview Mutation (debounced in a real app, but for now immediate)
   const previewMutation = useMutation({
@@ -123,6 +152,115 @@ const BillingConfigTab = ({ tenantId }) => {
     }
   };
 
+  const loadRazorpay = async () => {
+    if (window.Razorpay) return true;
+    await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+    return !!window.Razorpay;
+  };
+
+  const handlePlanCheckout = async () => {
+    if (!selectedPlanSlug) {
+      toast.error('Select a plan first');
+      return;
+    }
+
+    setCheckoutBusy(true);
+    try {
+      const selectedPlan = planCatalog.find(p => p.slug === selectedPlanSlug);
+      const addonSet = new Set(selectedPlan?.addon_modules || []);
+      const selectedAddons = modules
+        .filter(m => m.isActive && addonSet.has(m.name))
+        .map(m => m.name);
+
+      const orderRes = await F.post('/platform/subscribe/order', {
+        tenantId,
+        planSlug: selectedPlanSlug,
+        billingMonths,
+        renewalMode,
+        selectedAddons,
+        employeeCount: remoteData?.employeeCount || 0,
+        method: 'razorpay',
+      }).then(res => res.data);
+
+      const orderData = orderRes?.data;
+      if (!orderData) {
+        toast.error('Could not start checkout');
+        return;
+      }
+
+      if (orderData.mock) {
+        await F.post('/platform/subscribe/verify', {
+          tenantId,
+          planSlug: selectedPlanSlug,
+          billingMonths,
+          period: billingMonths === 12 ? 'yearly' : (billingMonths === 3 ? 'quarterly' : 'monthly'),
+          renewalMode,
+          selectedAddons,
+          method: 'razorpay',
+          mock: true,
+          razorpay_payment_id: `mock-sub-${tenantId}`,
+          razorpay_order_id: 'mock-order',
+          razorpay_signature: 'mock-signature',
+        });
+        toast.success('Plan activated (dev mode)');
+        queryClient.invalidateQueries({ queryKey: ['admin-subscription', tenantId] });
+        queryClient.invalidateQueries({ queryKey: ['admin-invoices', tenantId] });
+        return;
+      }
+
+      const loaded = await loadRazorpay();
+      if (!loaded) {
+        toast.error('Unable to load payment gateway');
+        return;
+      }
+
+      const rzp = new window.Razorpay({
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency || 'INR',
+        order_id: orderData.orderId,
+        name: orderData.companyName,
+        description: orderData.description,
+        prefill: orderData.prefill || {},
+        handler: async (response) => {
+          try {
+            await F.post('/platform/subscribe/verify', {
+              tenantId,
+              planSlug: selectedPlanSlug,
+              billingMonths,
+              period: billingMonths === 12 ? 'yearly' : (billingMonths === 3 ? 'quarterly' : 'monthly'),
+              renewalMode,
+              selectedAddons,
+              method: 'razorpay',
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            toast.success('Subscription updated and invoice recorded');
+            queryClient.invalidateQueries({ queryKey: ['admin-subscription', tenantId] });
+            queryClient.invalidateQueries({ queryKey: ['admin-invoices', tenantId] });
+          } catch (e) {
+            toast.error(e?.response?.data?.message || 'Verification failed');
+          }
+        },
+        modal: { ondismiss: () => toast.error('Payment cancelled') },
+        theme: { color: '#2563EB' },
+      });
+
+      rzp.open();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to start plan checkout');
+    } finally {
+      setCheckoutBusy(false);
+    }
+  };
+
   if (isLoading || !localConfig) return <div className="p-10 text-center text-gray-400">Loading billing engine...</div>;
 
   return (
@@ -130,6 +268,62 @@ const BillingConfigTab = ({ tenantId }) => {
       {/* Configuration Column */}
       <div className="lg:col-span-2 space-y-6">
         {/* Module Management Section */}
+        <section className="bg-white rounded-xl border border-gray-200 p-5">
+          <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+            💳 Tenant Plan Checkout
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase block mb-1">Plan</label>
+              <select
+                value={selectedPlanSlug}
+                onChange={(e) => setSelectedPlanSlug(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              >
+                {planCatalog.filter(p => Number(p.base_price_paise) > 0).map((plan) => (
+                  <option key={plan.id} value={plan.slug}>{plan.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase block mb-1">Billing Tenure</label>
+              <select
+                value={billingMonths}
+                onChange={(e) => setBillingMonths(Number(e.target.value))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              >
+                <option value={1}>1 month</option>
+                <option value={3}>3 months</option>
+                <option value={6}>6 months</option>
+                <option value={12}>12 months</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase block mb-1">Renewal</label>
+              <select
+                value={renewalMode}
+                onChange={(e) => setRenewalMode(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              >
+                <option value="manual">Manual</option>
+                <option value="auto">Auto</option>
+              </select>
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={handlePlanCheckout}
+                disabled={checkoutBusy || planCatalog.length === 0}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-blue-700 transition-colors disabled:opacity-60"
+              >
+                {checkoutBusy ? 'Processing...' : 'Select Plan & Pay'}
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500">
+            Checkout applies to this tenant directly, updates subscription expiry, stores renewal mode, and writes a paid invoice record on successful verification.
+          </p>
+        </section>
+
         <section className="bg-white rounded-xl border border-gray-200 p-5">
           <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
             🧩 Module Management & Custom Pricing

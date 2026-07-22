@@ -4,6 +4,26 @@ const logger = require('../../shared/utils/logger');
 const { THEME } = require('../../shared/utils/uiConstants');
 const billingEmailer = require('../../shared/utils/billingEmailer');
 
+function getRenewalContext(pricingConfig) {
+  const moduleMeta = pricingConfig?.discount_module_pct && typeof pricingConfig.discount_module_pct === 'object'
+    ? pricingConfig.discount_module_pct
+    : {};
+  const renewalMode = moduleMeta.__renewalMode === 'auto' ? 'auto' : 'manual';
+  const paymentMethod = moduleMeta.__lastPaymentMethod || moduleMeta.__paymentMethod || null;
+  return { renewalMode, paymentMethod };
+}
+
+async function attemptAutoRenewalPayment({ tenant, invoiceNo, totalPaise, paymentMethod }) {
+  // Placeholder until tokenized/mandate-backed recurring payments are enabled.
+  logger.warn(`${THEME.ICONS.WARNING} [AutoRenewal] ${tenant.subdomain} ${invoiceNo}: no saved mandate for ${paymentMethod || 'gateway'}, fallback to manual collection.`);
+  return {
+    attempted: true,
+    success: false,
+    reason: 'No saved recurring mandate/token configured',
+    paymentId: null,
+  };
+}
+
 /**
  * Generates monthly invoices for all active tenants.
  */
@@ -31,6 +51,8 @@ async function generateMonthlyInvoices() {
       try {
         if (!tenant.pricing_config) continue;
 
+        const { renewalMode, paymentMethod } = getRenewalContext(tenant.pricing_config);
+
         const employeeCount = tenant.max_employees || 0;
         const activeModules = tenant.modules.map(m => m.module_name);
 
@@ -43,21 +65,47 @@ async function generateMonthlyInvoices() {
         const periodStart = new Date(date.getFullYear(), date.getMonth() - 1, 1);
         const periodEnd = new Date(date.getFullYear(), date.getMonth(), 0);
 
+        let invoiceStatus = 'unpaid';
+        let paymentId = null;
+        let autoAttempt = { attempted: false, success: false, reason: null };
+
+        if (renewalMode === 'auto') {
+          autoAttempt = await attemptAutoRenewalPayment({
+            tenant,
+            invoiceNo,
+            totalPaise: calc.finalPrice,
+            paymentMethod,
+          });
+          if (autoAttempt.success) {
+            invoiceStatus = 'paid';
+            paymentId = autoAttempt.paymentId || `AUTO-${tenant.id}-${Date.now()}`;
+          }
+        }
+
+        const dueDate = invoiceStatus === 'paid'
+          ? date
+          : new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000);
+
         await centralPrisma.invoices.create({
           data: {
             tenant_id: tenant.id,
             invoice_no: invoiceNo,
             period_start: periodStart,
             period_end: periodEnd,
-            due_date: new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000), // 7-day grace period
+            due_date: dueDate,
             base_amount_paise: calc.breakDown.base.final,
             module_amount_paise: calc.breakDown.modules.total,
             excess_amount_paise: calc.breakDown.excessCharges,
             discount_amount_paise: calc.breakDown.discounts.amount + calc.breakDown.discounts.flat,
             tax_amount_paise: calc.breakDown.tax.amount, // Ensuring 18% GST is saved
             total_paise: calc.finalPrice,
-            breakdown: calc.breakDown,
-            status: 'unpaid'
+            payment_id: paymentId,
+            breakdown: {
+              ...calc.breakDown,
+              renewalMode,
+              autoPayment: autoAttempt,
+            },
+            status: invoiceStatus
           }
         });
 

@@ -83,3 +83,16 @@ Owner: Frontend System Audit
 - Moved theme token controls into a dedicated `Theme` tab in frontend/src/pages/admin/AdminSettings.jsx so platform operational settings stay clean.
 - Restored compact admin utility CSS classes (`stats-grid-4`, `admin-page-grid-2`, `card`, `data-table`, `btn-sm`, modal/alerts/forms), matching pre-centralization layout behavior.
 - Added frontend fallback baseline plans in frontend/src/pages/admin/PricingManager.jsx to ensure 3 plan cards remain visible even when API returns an empty catalog.
+
+## Billing + Subscription Flow Delta (2026-07-22)
+
+- Backend model accessor consistency fixed for subscription config/modules in backend/modules/platform/subscription.controller.js (`tenant_pricing_configs`, `tenant_modules`).
+- Removed duplicate `saveSelectionToTenantConfig` function in backend/modules/platform/plans.service.js to prevent accidental override and non-deterministic renewal config writes.
+- Subscription verification in backend/modules/platform/payment.controller.js now:
+   - accepts admin-targeted `tenantId` for platform-admin initiated checkout,
+   - persists renewal mode metadata (`auto` / `manual`) into tenant pricing config,
+   - recalculates canonical pricing before activation,
+   - writes a paid invoice snapshot after successful verification.
+- Onboarding plan step now includes renewal mode selector and sends renewal mode through order + verify payloads.
+- Admin billing tab now includes direct tenant checkout controls (plan, billing tenure, renewal mode, pay) and calls `/platform/subscribe/order` + `/platform/subscribe/verify` with selected tenant context.
+- Monthly billing engine in backend/modules/platform/billing.service.js now reads renewal mode metadata from tenant pricing config and records auto-renew attempt/fallback details in invoice breakdown.

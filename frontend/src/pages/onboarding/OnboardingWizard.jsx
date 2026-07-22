@@ -135,7 +135,7 @@ export default function OnboardingWizard({ onComplete }) {
     onError: (e) => toast.error(e.response?.data?.message || 'Failed'),
   });
 
-  async function handlePlanNext({ planSlug, selectedAddons, billingMonths, promoCode, priceResult, startTrial, method }) {
+  async function handlePlanNext({ planSlug, selectedAddons, billingMonths, renewalMode = 'manual', promoCode, priceResult, startTrial, method }) {
     try {
       if (startTrial) {
         // Free trial path — no payment
@@ -143,6 +143,7 @@ export default function OnboardingWizard({ onComplete }) {
           planSlug,
           selectedAddons,
           billingMonths: 1,
+          renewalMode,
         });
         toast.success('🎉 Free trial activated!');
         setStep(STEPS.findIndex(s => s.key === 'org'));
@@ -160,6 +161,7 @@ export default function OnboardingWizard({ onComplete }) {
         planSlug,
         selectedAddons,
         billingMonths,
+        renewalMode,
         promoCode,
         employeeCount: 0,
         method: method || 'razorpay',
@@ -170,7 +172,7 @@ export default function OnboardingWizard({ onComplete }) {
       if (orderData?.mock) {
         // Dev mode: skip real payment
         await api.post('/platform/subscribe/verify', {
-          planSlug, billingMonths, selectedAddons, promoCode,
+          planSlug, billingMonths, renewalMode, selectedAddons, promoCode,
           mock: true, razorpay_payment_id: 'mock', razorpay_order_id: 'mock', razorpay_signature: 'mock',
         });
         toast.success('Plan activated (dev mode)!');
@@ -190,7 +192,7 @@ export default function OnboardingWizard({ onComplete }) {
         handler:     async function (response) {
           try {
             await api.post('/platform/subscribe/verify', {
-              planSlug, billingMonths, selectedAddons, promoCode,
+              planSlug, billingMonths, renewalMode, selectedAddons, promoCode,
               razorpay_payment_id:  response.razorpay_payment_id,
               razorpay_order_id:    response.razorpay_order_id,
               razorpay_signature:   response.razorpay_signature,
