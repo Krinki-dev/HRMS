@@ -493,6 +493,21 @@ async function clickSearchOnPortal(page) {
   return clicked;
 }
 
+async function typeIntoFieldLikeHuman(page, fieldHandle, text) {
+  await fieldHandle.click({ clickCount: 3 }).catch(() => {});
+  await page.keyboard.press('Backspace').catch(() => {});
+  await page.waitForTimeout(120);
+
+  for (const ch of String(text || '')) {
+    await page.keyboard.type(ch, { delay: 95 });
+    await page.waitForTimeout(45);
+  }
+
+  // Trigger blur/change style listeners used by some anti-bot forms.
+  await page.keyboard.press('Tab').catch(() => {});
+  await page.waitForTimeout(150);
+}
+
 async function extractOfficialPageData(page) {
   return await page.evaluate(() => {
     const root = document.querySelector('#lottable') || document.querySelector('div[data-ng-show="for_gstin.searchresult"]') || document.body;
@@ -588,8 +603,10 @@ async function createAssistedCaptchaSession(gstinUpper) {
     await dismissPortalModalIfPresent(page);
 
     const gstInput = await page.waitForSelector('input#for_gstin[name="for_gstin"], input[name*="gst" i], input[id*="gst" i]', { timeout: 25000 });
-    await gstInput.fill(gstinUpper);
-    await page.waitForTimeout(300);
+    await gstInput.click().catch(() => {});
+    await page.waitForTimeout(100);
+    await typeIntoFieldLikeHuman(page, gstInput, gstinUpper);
+    await page.waitForTimeout(350);
 
     let captchaInput = await findCaptchaInput(page, 15000);
     if (!captchaInput) {
@@ -663,7 +680,7 @@ async function submitAssistedCaptchaSession(sessionId, captchaText) {
     };
   }
 
-  await captchaInput.fill(String(captchaText || '').trim());
+  await typeIntoFieldLikeHuman(page, captchaInput, String(captchaText || '').trim());
 
   const button = await page.$(searchButton);
   if (!button) {
