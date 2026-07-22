@@ -178,7 +178,8 @@ const tenantMiddleware = async (req, res, next) => {
         return next();
       }
 
-      if (!subdomain || subdomain === 'dev') {
+      const isPreviewHost = host.endsWith('.github.dev') || host.endsWith('.githubpreview.dev') || host.endsWith('.railway.app') || host.endsWith('.vercel.app');
+      if (!subdomain || subdomain === 'dev' || isPreviewHost) {
         const devUrl = process.env.DEV_TENANT_DATABASE_URL;
         if (!devUrl) {
           console.error('[Tenant] DEV_TENANT_DATABASE_URL is not set in .env!');
@@ -208,7 +209,7 @@ const tenantMiddleware = async (req, res, next) => {
             'reports','automation','communication','settings',
           ],
         };
-        console.log(`[Tenant] DEV — using ${devSchema ? 'schema ' + devSchema : 'default'} for ${req.method} ${req.path}`);
+        console.log(`[Tenant] DEV — using ${devSchema ? 'schema ' + devSchema : 'default'} for ${req.method} ${req.path} (preview host fallback: ${isPreviewHost})`);
         return next();
       }
 

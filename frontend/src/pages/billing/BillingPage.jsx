@@ -42,23 +42,42 @@ export default function BillingPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('monthly');
   const [paying, setPaying] = useState(false);
 
-  const { data: planRes, isLoading: planLoading, refetch } = useQuery({
+  const {
+    data: planRes,
+    isLoading: planLoading,
+    isError: planError,
+    error: planErrorObj,
+    refetch,
+  } = useQuery({
     queryKey: ['my-plan'],
     queryFn:  () => api.get('/platform/my-plan').then(r => r.data),
     staleTime: 60_000,
   });
-  const planData = planRes?.data?.plan || {};
+  const planData = planRes?.plan || planRes?.data?.plan || planRes || {};
 
-  const { data: plansRes } = useQuery({
+  const {
+    data: plansRes,
+    isLoading: plansLoading,
+    isError: plansError,
+    error: plansErrorObj,
+    refetch: refetchPlans,
+  } = useQuery({
     queryKey: ['plans'],
     queryFn:  () => api.get('/platform/plans').then(r => r.data),
     staleTime: 3600_000,
   });
   const plans = useMemo(() => {
-    const payload = plansRes?.data || plansRes || {};
+    const payload = plansRes?.plans || plansRes?.data || plansRes || {};
     const normalized = normalizePlanCatalog(payload, DEFAULT_PLAN_CATALOG);
     return normalized.filter(p => p.slug !== 'trial');
   }, [plansRes]);
+
+  const isError = planError || plansError;
+  const errorMessage = planError
+    ? planErrorObj?.response?.data?.message || planErrorObj?.message || 'Failed to load current plan.'
+    : plansError
+      ? plansErrorObj?.response?.data?.message || plansErrorObj?.message || 'Failed to load plan catalog.'
+      : null;
 
   const trialM = useMutation({
     mutationFn: () => api.post('/platform/subscribe/trial'),
@@ -136,8 +155,31 @@ export default function BillingPage() {
 
   return (
     <div>
-      {}
-      <div className="card" style={{ padding: '20px 24px', marginBottom: 20, background: 'var(--surface-raised)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)' }}>
+      {errorMessage && (
+        <div style={{ marginBottom: 16, padding: '14px 18px', background: 'var(--danger-soft)', border: '1px solid var(--color-danger)', borderRadius: 10, color: 'var(--color-danger)' }}>
+          {errorMessage}
+        </div>
+      )}
+      {(planLoading || plansLoading) ? (
+        <div style={{ padding: 20, marginBottom: 20, borderRadius: 'var(--radius-lg)', background: 'var(--surface-muted)', border: '1px solid var(--border-color)' }}>
+          Loading billing information…
+        </div>
+      ) : isError ? (
+        <div style={{ padding: 20, marginBottom: 20, borderRadius: 'var(--radius-lg)', background: 'var(--surface-muted)', border: '1px solid var(--border-color)' }}>
+          <div style={{ fontWeight: 700, marginBottom: 10 }}>Unable to load billing data</div>
+          <div style={{ marginBottom: 12 }}>{errorMessage}</div>
+          <button
+            onClick={() => {
+              refetch();
+              refetchPlans();
+            }}
+            style={{ padding: '10px 14px', borderRadius: 7, background: 'var(--accent-soft)', border: '1px solid var(--color-primary)', color: 'var(--color-primary)', cursor: 'pointer' }}
+          >
+            Retry
+          </button>
+        </div>
+      ) : (
+        <div className="card" style={{ padding: '20px 24px', marginBottom: 20, background: 'var(--surface-raised)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>CURRENT PLAN</div>
@@ -170,7 +212,6 @@ export default function BillingPage() {
           </div>
         </div>
 
-        {}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 18 }}>
           {[
             { label: 'Max employees',  value: planData.maxEmployees === 999999 || !planData.maxEmployees ? 'Unlimited' : planData.maxEmployees },
@@ -184,13 +225,12 @@ export default function BillingPage() {
           ))}
         </div>
       </div>
+      )}
 
-      {}
       <div className="card-title" style={{ marginBottom: 12, padding: '0 4px', color: 'var(--text-primary)' }}>
         {expired ? 'Reactivate your plan' : 'Choose a plan'}
       </div>
 
-      {}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {[
           { id: 'monthly', label: 'Monthly' },
@@ -211,7 +251,6 @@ export default function BillingPage() {
         ))}
       </div>
 
-      {}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, marginBottom: 24 }}>
         {plans.map(plan => {
           const isCustom = plan.price === null;
@@ -282,7 +321,6 @@ export default function BillingPage() {
         })}
       </div>
 
-      {}
       <div className="card" style={{ padding: '14px 18px', background: 'var(--surface-raised)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)' }}>
         <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.8 }}>
           <strong>All plans include:</strong> Employee management · Attendance · Leave · Payroll · Compliance (PF/ESI/PT/TDS/LWF) · KYC & GST automation · No per-seat charges · Unlimited employees on Pro+

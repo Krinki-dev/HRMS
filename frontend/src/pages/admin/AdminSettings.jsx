@@ -15,6 +15,20 @@ const FORM_SCHEMA = {
     { key: 'trialDays',     label: 'Default trial days',    type: 'select',   placeholder: '14',
       options: [{ v:'7', l:'7 days' }, { v:'14', l:'14 days' }, { v:'30', l:'30 days' }],
       envKey: 'DEFAULT_TRIAL_DAYS' },
+    { key: 'primaryColor',             label: 'Primary color',                 type: 'text', placeholder: '#2563EB', envKey: 'THEME_PRIMARY_COLOR' },
+    { key: 'primaryColorHover',        label: 'Primary hover color',           type: 'text', placeholder: '#1D4ED8', envKey: 'THEME_PRIMARY_HOVER' },
+    { key: 'backgroundColor',          label: 'Background color',              type: 'text', placeholder: '#0f1117', envKey: 'THEME_BG_PRIMARY' },
+    { key: 'secondaryBackgroundColor', label: 'Secondary background color',    type: 'text', placeholder: '#161b22', envKey: 'THEME_BG_SECONDARY' },
+    { key: 'surfaceColor',             label: 'Card / surface color',          type: 'text', placeholder: '#1c2128', envKey: 'THEME_BG_CARD' },
+    { key: 'textColor',                label: 'Primary text color',            type: 'text', placeholder: '#e6edf3', envKey: 'THEME_TEXT_PRIMARY' },
+    { key: 'textSecondaryColor',       label: 'Secondary text color',          type: 'text', placeholder: '#8b949e', envKey: 'THEME_TEXT_SECONDARY' },
+    { key: 'borderColor',              label: 'Border color',                  type: 'text', placeholder: '#30363d', envKey: 'THEME_BORDER' },
+    { key: 'sidebarColor',             label: 'Admin sidebar color',           type: 'text', placeholder: '#161b22', envKey: 'THEME_SIDEBAR' },
+    { key: 'topbarColor',              label: 'Admin topbar color',            type: 'text', placeholder: '#161b22', envKey: 'THEME_TOPBAR' },
+    { key: 'accentSoft',               label: 'Accent soft background',        type: 'text', placeholder: '#388bfd1a', envKey: 'THEME_ACCENT_SOFT' },
+    { key: 'successColor',             label: 'Success color',                 type: 'text', placeholder: '#3fb950', envKey: 'THEME_SUCCESS' },
+    { key: 'warningColor',             label: 'Warning color',                 type: 'text', placeholder: '#d29922', envKey: 'THEME_WARNING' },
+    { key: 'dangerColor',              label: 'Danger color',                  type: 'text', placeholder: '#f85149', envKey: 'THEME_DANGER' },
   ],
   'Email / SMTP': [
     { key: 'smtpHost',   label: 'SMTP host',       type: 'text',     placeholder: 'smtp.gmail.com',       envKey: 'SMTP_HOST' },
@@ -110,7 +124,7 @@ export default function AdminSettings() {
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--admin-text)' }}>{active}</div>
             <div style={{ fontSize: 11, color: 'var(--admin-text-muted)', marginTop: 2 }}>
-              {active === 'Platform' && 'Global platform identity and branding settings.'}
+              {active === 'Platform' && 'Global platform identity and runtime theme variables. Update once here and admin UI follows without hardcoded edits.'}
               {active === 'Email / SMTP' && 'Platform-level SMTP for system emails (new company welcome, billing). Tenant-specific SMTP is set per client.'}
               {active === 'SMS gateway' && 'Platform fallback SMS provider. Individual clients configure their own in their settings.'}
               {active === 'GST settings' && 'How GST numbers are verified during company registration.'}

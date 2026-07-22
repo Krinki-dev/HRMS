@@ -8,32 +8,30 @@ import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
+import { getTenantDomain } from '../../utils/tenantDomain';
 
 /**
  * Domain detection utility
  * Handles localhost development, syntern.in subdomains, and custom domains.
  */
 function detectDomain() {
-  const hostname   = window.location.hostname;
-  const params     = new URLSearchParams(window.location.search);
-  const devMode    = params.get('devmode') || import.meta.env?.VITE_DEV_SUBDOMAIN || null;
-  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-  const isPrivateNetwork = /^10\.|^192\.168\.|^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname);
-  const isLocalNetwork = isLocalhost || isPrivateNetwork;
+  const params = new URLSearchParams(window.location.search);
+  const devMode = params.get('devmode') || import.meta.env?.VITE_DEV_SUBDOMAIN || null;
+  const tenant = getTenantDomain();
 
-  if (isLocalNetwork && devMode && devMode !== 'root') {
+  if ((tenant.isLocalhost || tenant.isPreviewHost) && devMode && devMode !== 'root') {
     if (devMode === 'custom') {
-      return { isPlatformRoot: false, isSubdomain: false, subdomain: null, isCustomDomain: true, hostname };
+      return { ...tenant, isPlatformRoot: false, isSubdomain: false, subdomain: null, isCustomDomain: true };
     }
-    return { isPlatformRoot: false, isSubdomain: true, subdomain: devMode, isCustomDomain: false, hostname };
+    return { ...tenant, isPlatformRoot: false, isSubdomain: true, subdomain: devMode, isCustomDomain: false };
   }
 
-  const isPlatformRoot  = hostname === 'syntern.in' || hostname === 'www.syntern.in' || hostname === 'hrms.syntern.in' || hostname === 'www.hrms.syntern.in' || isLocalNetwork;
-  const isSubdomain     = false;
-  const subdomain       = null;
-  const isCustomDomain  = !isPlatformRoot;
-
-  return { isPlatformRoot, isSubdomain, subdomain, isCustomDomain, hostname };
+  return {
+    ...tenant,
+    isSubdomain: tenant.isTenantSubdomain,
+    subdomain: tenant.tenantSubdomain,
+    isCustomDomain: tenant.isCustomDomain,
+  };
 }
 
 /**
@@ -349,7 +347,7 @@ export default function SmartLoginPage() {
 
   const loginMutation = useMutation({
     mutationFn: async () => {
-      const subdomain = company?.subdomain;
+      const subdomain = company?.subdomain || domain.subdomain;
       const headers   = subdomain ? { 'X-Tenant-Subdomain': subdomain } : {};
       const normalizedEmail = normalizeEmail(email);
 

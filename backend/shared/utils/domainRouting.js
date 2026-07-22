@@ -34,6 +34,11 @@ function buildHostnameCandidates(hostname = '') {
   return [...candidates].filter(Boolean);
 }
 
+function isPreviewHost(hostname = '') {
+  const host = normalizeHostname(hostname);
+  return host.endsWith('.github.dev') || host.endsWith('.githubpreview.dev') || host.endsWith('.railway.app') || host.endsWith('.vercel.app');
+}
+
 function getHostnameLookup(hostname = '', fallbackSubdomain = null) {
   const host = normalizeHostname(hostname);
   if (!host) return fallbackSubdomain || null;

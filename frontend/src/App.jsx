@@ -1,19 +1,15 @@
 ﻿﻿import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
+import { getTenantDomain } from './utils/tenantDomain';
 import PricingManager from './pages/admin/PricingManager';
 
-const hostname = window.location.hostname;
-export const IS_PLATFORM_ROOT = (
-  hostname === 'syntern.in'     ||
-  hostname === 'www.syntern.in' ||||
-  hostname === 'app.syntern.in'
-);
-export const IS_TENANT_SUBDOMAIN = !IS_PLATFORM_ROOT && (
-  hostname.endsWith('.syntern.in') ||
-
-);
-export const TENANT_SUBDOMAIN = IS_TENANT_SUBDOMAIN ? hostname.split('.')[0] : null;
+const {
+  isPlatformRoot: IS_PLATFORM_ROOT,
+  isTenantDomain: IS_TENANT_DOMAIN,
+  isTenantSubdomain: IS_TENANT_SUBDOMAIN,
+  tenantSubdomain: TENANT_SUBDOMAIN,
+} = getTenantDomain();
 
 import AdminLayout       from './components/admin/AdminLayout';
 import AdminDashboard    from './pages/admin/AdminDashboard';
@@ -228,7 +224,7 @@ export default function App() {
         <Route path="/onboarding" element={<OnboardingRoute />} />
 
         {}
-        {IS_TENANT_SUBDOMAIN && (
+        {IS_TENANT_DOMAIN && (
           <>
             <Route element={<HRAppLayout />}>
               <Route path="/dashboard"          element={<HRDashboard />} />
@@ -260,8 +256,8 @@ export default function App() {
             <Route path="/ess" element={<RequireAuth><ESSLayout /></RequireAuth>}>
               <Route index              element={<ESSDashboard />} />
               <Route path="dashboard"   element={<ESSDashboard />} />
-              <Route path="leave-apply" element={<ESSLeaveApply />} />
-              <Route path="payslips"    element={<ESSPayslips />} />
+              <Route path="/leave-apply" element={<ESSLeaveApply />} />
+              <Route path="/payslips"    element={<ESSPayslips />} />
             </Route>
           </>
         )}
