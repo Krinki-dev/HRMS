@@ -5,6 +5,9 @@ const { getOptionalCentralDB } = require('../../../shared/utils/centralDb');
 
 const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 const CACHE_TTL_HOURS = 24;
+const ASSISTED_SESSION_TTL_MS = 5 * 60 * 1000;
+
+const assistedSessions = new Map();
 
 // Optional: Tesseract for CAPTCHA OCR (install: npm install tesseract.js)
 let Tesseract;
@@ -367,6 +370,373 @@ async function fetchResourceBytes(context, resourceUrl) {
   return await response.body();
 }
 
+function cleanupAssistedSessions() {
+  const now = Date.now();
+  for (const [sessionId, session] of assistedSessions.entries()) {
+    if ((now - session.createdAt) <= ASSISTED_SESSION_TTL_MS) continue;
+    assistedSessions.delete(sessionId);
+    Promise.resolve(session.browser?.close()).catch(() => {});
+  }
+}
+
+async function closeAssistedSession(sessionId) {
+  const session = assistedSessions.get(sessionId);
+  if (!session) return;
+  assistedSessions.delete(sessionId);
+  try {
+    await session.browser.close();
+  } catch {
+    // ignore browser close errors
+  }
+}
+
+async function getCaptchaImageDataUrl(context, page) {
+  const imgSrc = await page.evaluate(() => {
+    const image = document.querySelector('img#imgCaptcha, img[src*="captcha"], img[src*="Captcha"], img[alt*="captcha" i], img[title*="captcha" i]');
+    return image ? image.src || image.getAttribute('src') : null;
+  });
+
+  if (!imgSrc) return null;
+  const imageUrl = new URL(imgSrc, page.url()).href;
+  const buffer = await fetchResourceBytes(context, imageUrl);
+  const base64 = buffer.toString('base64');
+  return `data:image/png;base64,${base64}`;
+}
+
+async function getCaptchaScreenshotDataUrl(page) {
+  try {
+    const challengeSection = page.locator('form, .searchtp-content, .container, body').first();
+    const buffer = await challengeSection.screenshot({ type: 'png' });
+    return `data:image/png;base64,${buffer.toString('base64')}`;
+  } catch {
+    try {
+      const buffer = await page.screenshot({ type: 'png', fullPage: false });
+      return `data:image/png;base64,${buffer.toString('base64')}`;
+    } catch {
+      return null;
+    }
+  }
+}
+
+async function findCaptchaInput(page, timeoutMs = 20000) {
+  const selectors = [
+    'input[id*="captcha" i]',
+    'input[name*="captcha" i]',
+    'input[placeholder*="Characters" i]',
+    'input[placeholder*="captcha" i]',
+    'input[aria-label*="captcha" i]',
+    'input[type="text"]',
+  ];
+
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    for (const sel of selectors) {
+      const handle = await page.$(sel);
+      if (!handle) continue;
+      const visible = await handle.isVisible().catch(() => false);
+      const enabled = await handle.isEnabled().catch(() => false);
+      if (visible && enabled) return handle;
+    }
+    await page.waitForTimeout(500);
+  }
+  return null;
+}
+
+async function dismissPortalModalIfPresent(page) {
+  const candidates = [
+    'button:has-text("OK")',
+    'button:has-text("I Agree")',
+    'button:has-text("Accept")',
+    '.modal-dialog button.btn-primary',
+  ];
+
+  for (const selector of candidates) {
+    const el = await page.$(selector);
+    if (!el) continue;
+    const visible = await el.isVisible().catch(() => false);
+    if (!visible) continue;
+    await el.click({ timeout: 3000 }).catch(() => {});
+    await page.waitForTimeout(400);
+    break;
+  }
+}
+
+async function clickSearchOnPortal(page) {
+  const candidates = [
+    '#lotsearch',
+    'button[type="submit"]',
+    'input[type="submit"]',
+    'input[type="button"][value*="Search" i]',
+    'button:has-text("Search")',
+  ];
+
+  for (const selector of candidates) {
+    const el = await page.$(selector);
+    if (!el) continue;
+    const visible = await el.isVisible().catch(() => false);
+    if (visible) {
+      await el.click({ timeout: 5000 }).catch(() => {});
+      await page.waitForTimeout(700);
+      return true;
+    }
+  }
+
+  // Final fallback: click by JS in case visibility checks are strict due overlays.
+  const clicked = await page.evaluate(() => {
+    const btn = document.querySelector('#lotsearch, button[type="submit"], input[type="submit"], button');
+    if (!btn) return false;
+    btn.click();
+    return true;
+  }).catch(() => false);
+
+  if (clicked) await page.waitForTimeout(700);
+  return clicked;
+}
+
+async function extractOfficialPageData(page) {
+  return await page.evaluate(() => {
+    const root = document.querySelector('#lottable') || document.querySelector('div[data-ng-show="for_gstin.searchresult"]') || document.body;
+    const kvData = {};
+    const hsnRows = [];
+
+    const heading = root.querySelector('h4');
+    if (heading) {
+      const match = heading.innerText.match(/GSTIN\/?UIN\s*:\s*(\S+)/i);
+      if (match) kvData['GSTIN/UIN Number'] = match[1].trim();
+    }
+
+    const strongs = Array.from(root.querySelectorAll('p strong'));
+    strongs.forEach(strong => {
+      const label = strong.textContent.trim().replace(/:$/, '');
+      let value = '';
+      const parent = strong.parentElement;
+      if (parent?.nextElementSibling?.tagName === 'P') {
+        value = parent.nextElementSibling.textContent.trim();
+      } else {
+        value = parent.textContent.replace(strong.textContent, '').trim();
+      }
+      if (label && value) {
+        kvData[label] = value;
+      }
+    });
+
+    const addressEl = root.querySelector('p[data-ng-bind*="pradr"], p.wordCls, .principal-place, .address, #principalPlace');
+    if (addressEl) kvData['Address'] = addressEl.innerText.trim();
+
+    const natureItems = Array.from(root.querySelectorAll('ul.list-child-inline li')).map(li => li.textContent.trim()).filter(Boolean);
+    if (natureItems.length) {
+      kvData['Nature of Business Activities'] = natureItems.join(', ');
+    }
+
+    const rows = Array.from(root.querySelectorAll('table.table tbody tr'));
+    rows.forEach(row => {
+      const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
+      if (cells.length >= 4) {
+        const gHsn = cells[0].replace(/\s/g, '');
+        const gDesc = cells[1].trim();
+        const sHsn = cells[2].replace(/\s/g, '');
+        const sDesc = cells[3].trim();
+        if (/^\d{4,8}$/.test(gHsn)) hsnRows.push({ type: 'Goods', hsn: gHsn, description: gDesc || null });
+        if (/^\d{4,8}$/.test(sHsn)) hsnRows.push({ type: 'Services', hsn: sHsn, description: sDesc || null });
+      }
+    });
+
+    const errorMsg = document.querySelector('.err, .error, .alert-danger, .text-danger')?.textContent?.trim() || null;
+    return { kvData, hsnRows, errorMsg };
+  });
+}
+
+async function createAssistedCaptchaSession(gstinUpper) {
+  cleanupAssistedSessions();
+
+  const browser = await chromium.launch({
+    headless: true,
+    args: [
+      '--no-sandbox','--disable-setuid-sandbox',
+      '--disable-dev-shm-usage','--disable-gpu',
+      '--disable-blink-features=AutomationControlled',
+    ],
+  });
+
+  try {
+    const context = await browser.newContext({
+      locale: 'en-IN',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    });
+    await context.addInitScript(() => {
+      Object.defineProperty(navigator, 'webdriver', { get: () => false });
+    });
+
+    const page = await context.newPage();
+    const possibleUrls = [
+      'https://services.gst.gov.in/services/searchtp',
+      'https://www.gst.gov.in/search-taxpayer',
+    ];
+
+    let loaded = false;
+    for (const url of possibleUrls) {
+      try {
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+        loaded = true;
+        break;
+      } catch {
+        // try next URL
+      }
+    }
+    if (!loaded) throw new Error('Could not open GST search page');
+
+    await dismissPortalModalIfPresent(page);
+
+    const gstInput = await page.waitForSelector('input#for_gstin[name="for_gstin"], input[name*="gst" i], input[id*="gst" i]', { timeout: 25000 });
+    await gstInput.fill(gstinUpper);
+    await page.waitForTimeout(300);
+
+    let captchaInput = await findCaptchaInput(page, 15000);
+    if (!captchaInput) {
+      await clickSearchOnPortal(page);
+      await dismissPortalModalIfPresent(page);
+      captchaInput = await findCaptchaInput(page, 12000);
+    }
+    if (!captchaInput) {
+      const refreshBtn = await page.$('img[src*="refresh" i], button[aria-label*="refresh" i], a[title*="refresh" i]');
+      if (refreshBtn) {
+        await refreshBtn.click().catch(() => {});
+        await page.waitForTimeout(1000);
+      }
+      captchaInput = await findCaptchaInput(page, 15000);
+    }
+    if (!captchaInput) throw new Error('CAPTCHA input not available on GST portal right now');
+
+    let captchaImageDataUrl = await getCaptchaImageDataUrl(context, page);
+    if (!captchaImageDataUrl) {
+      captchaImageDataUrl = await getCaptchaScreenshotDataUrl(page);
+    }
+    if (!captchaImageDataUrl) {
+      throw new Error('CAPTCHA challenge unavailable on GST portal right now');
+    }
+
+    const sessionId = require('crypto').randomUUID();
+    assistedSessions.set(sessionId, {
+      sessionId,
+      gstin: gstinUpper,
+      browser,
+      context,
+      page,
+      createdAt: Date.now(),
+      attempts: 0,
+    });
+
+    return {
+      sessionId,
+      gstin: gstinUpper,
+      captchaImageDataUrl,
+      expiresInSeconds: Math.floor(ASSISTED_SESSION_TTL_MS / 1000),
+    };
+  } catch (err) {
+    await browser.close().catch(() => {});
+    throw err;
+  }
+}
+
+async function submitAssistedCaptchaSession(sessionId, captchaText) {
+  cleanupAssistedSessions();
+
+  const session = assistedSessions.get(sessionId);
+  if (!session) {
+    return {
+      status: 'expired',
+      message: 'Assisted session expired. Start again.',
+    };
+  }
+
+  const { context, page, gstin } = session;
+  session.attempts += 1;
+
+  const searchButton = '#lotsearch, button[type="submit"], button:has-text("Search")';
+
+  const captchaInput = await findCaptchaInput(page, 15000);
+  if (!captchaInput) {
+    await closeAssistedSession(sessionId);
+    return {
+      status: 'failed',
+      message: 'CAPTCHA input is not available anymore. Please start again.',
+    };
+  }
+
+  await captchaInput.fill(String(captchaText || '').trim());
+
+  const button = await page.$(searchButton);
+  if (!button) {
+    await closeAssistedSession(sessionId);
+    throw new Error('Search button not found on GST portal');
+  }
+
+  await Promise.all([
+    button.click(),
+    page.waitForTimeout(1200),
+  ]);
+
+  const extracted = await extractOfficialPageData(page);
+  if (extracted.errorMsg && /invalid|captcha|character/i.test(extracted.errorMsg)) {
+    const captchaImageDataUrl = await getCaptchaImageDataUrl(context, page);
+    return {
+      status: 'captcha_invalid',
+      message: extracted.errorMsg,
+      captchaImageDataUrl,
+      attempts: session.attempts,
+    };
+  }
+
+  if (!extracted.kvData || Object.keys(extracted.kvData).length === 0) {
+    await closeAssistedSession(sessionId);
+    return {
+      status: 'failed',
+      message: extracted.errorMsg || 'Could not extract GST details from result page.',
+    };
+  }
+
+  const parsed = parseSearchPageData(extracted.kvData, extracted.hsnRows);
+  if (!parsed) {
+    await closeAssistedSession(sessionId);
+    return {
+      status: 'failed',
+      message: 'GST details could not be parsed.',
+    };
+  }
+
+  const hasMeaningfulResult = Boolean(
+    parsed.gstin && (
+      parsed.legalname ||
+      parsed.tradename ||
+      parsed.status ||
+      parsed.regdate ||
+      parsed.state ||
+      parsed.pincode ||
+      parsed.center_juri ||
+      parsed.state_juri
+    )
+  );
+
+  if (!hasMeaningfulResult) {
+    const captchaImageDataUrl = await getCaptchaImageDataUrl(context, page) || await getCaptchaScreenshotDataUrl(page);
+    return {
+      status: 'captcha_invalid',
+      message: 'Captcha validation failed or GST details not available. Please try again.',
+      captchaImageDataUrl,
+      attempts: session.attempts,
+    };
+  }
+
+  parsed.gstin = parsed.gstin || gstin;
+  parsed.source = 'gst.gov.in-assisted';
+  await closeAssistedSession(sessionId);
+
+  return {
+    status: 'completed',
+    data: parsed,
+  };
+}
+
 async function recognizeAudioCaptchaBuffer(buffer) {
   const apiKey = process.env.ASSEMBLYAI_API_KEY;
   if (!apiKey) {
@@ -537,55 +907,7 @@ async function scrapeOfficialGstSite(gstinUpper) {
 
     await page.waitForTimeout(800);
 
-    const result = await page.evaluate(() => {
-      const root = document.querySelector('#lottable') || document.querySelector('div[data-ng-show="for_gstin.searchresult"]') || document.body;
-      const kvData = {};
-      const hsnRows = [];
-
-      const heading = root.querySelector('h4');
-      if (heading) {
-        const match = heading.innerText.match(/GSTIN\/?UIN\s*:\s*(\S+)/i);
-        if (match) kvData['GSTIN/UIN Number'] = match[1].trim();
-      }
-
-      const strongs = Array.from(root.querySelectorAll('p strong'));
-      strongs.forEach(strong => {
-        const label = strong.textContent.trim().replace(/:$/, '');
-        let value = '';
-        const parent = strong.parentElement;
-        if (parent?.nextElementSibling?.tagName === 'P') {
-          value = parent.nextElementSibling.textContent.trim();
-        } else {
-          value = parent.textContent.replace(strong.textContent, '').trim();
-        }
-        if (label && value) {
-          kvData[label] = value;
-        }
-      });
-
-      const addressEl = root.querySelector('p[data-ng-bind*="pradr"], p.wordCls, .principal-place, .address, #principalPlace');
-      if (addressEl) kvData['Address'] = addressEl.innerText.trim();
-
-      const natureItems = Array.from(root.querySelectorAll('ul.list-child-inline li')).map(li => li.textContent.trim()).filter(Boolean);
-      if (natureItems.length) {
-        kvData['Nature of Business Activities'] = natureItems.join(', ');
-      }
-
-      const rows = Array.from(root.querySelectorAll('table.table tbody tr'));
-      rows.forEach(row => {
-        const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
-        if (cells.length >= 4) {
-          const gHsn = cells[0].replace(/\s/g, '');
-          const gDesc = cells[1].trim();
-          const sHsn = cells[2].replace(/\s/g, '');
-          const sDesc = cells[3].trim();
-          if (/^\d{4,8}$/.test(gHsn)) hsnRows.push({ type: 'Goods', hsn: gHsn, description: gDesc || null });
-          if (/^\d{4,8}$/.test(sHsn)) hsnRows.push({ type: 'Services', hsn: sHsn, description: sDesc || null });
-        }
-      });
-
-      return { kvData, hsnRows };
-    });
+    const result = await extractOfficialPageData(page);
 
     if (!result || Object.keys(result.kvData).length === 0) {
       throw new Error('Official GST page returned no usable data');
@@ -832,6 +1154,9 @@ module.exports = {
   GSTIN_REGEX,
   parseGstinStructure,
   scrapeGstSearchSite,
+  createAssistedCaptchaSession,
+  submitAssistedCaptchaSession,
+  closeAssistedSession,
   readCentralGstRecord,      
   getCachedGstRecord,
   upsertCentralGstRecord,

@@ -45,6 +45,11 @@ export default function GstPublicPage() {
   const [logs,    setLogs]    = useState([]);
   const [errMsg,  setErrMsg]  = useState('');
   const [pct,     setPct]     = useState(0);
+  const [assistedSessionId, setAssistedSessionId] = useState('');
+  const [assistedCaptchaImage, setAssistedCaptchaImage] = useState('');
+  const [assistedCaptchaText, setAssistedCaptchaText] = useState('');
+  const [assistedSubmitting, setAssistedSubmitting] = useState(false);
+  const [assistedWarning, setAssistedWarning] = useState('');
 
   const pollRef  = useRef(null);
   const inputRef = useRef(null);
@@ -61,6 +66,8 @@ export default function GstPublicPage() {
       document.title = 'SearchGST — Free GSTIN Lookup Tool | Syntern';
     }
   }, [data]);
+
+  useEffect(() => () => stopPoll(), []);
 
   function stopPoll() {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
@@ -79,13 +86,17 @@ export default function GstPublicPage() {
     setLogs([]);
     setErrMsg('');
     setPct(10);
+    setAssistedSessionId('');
+    setAssistedCaptchaImage('');
+    setAssistedCaptchaText('');
+    setAssistedWarning('');
 
     try {
       
       const cacheRes = await gst.get(`/gst/central/${gstin}`);
       if (cacheRes.data?.success && cacheRes.data?.data) {
         setPct(100);
-        setData(cacheRes.data);
+        setData(cacheRes.data.data);
         setPhase('done');
         return;
       }
@@ -136,7 +147,7 @@ export default function GstPublicPage() {
             const finalRes = await gst.get(`/gst/central/${gstin}`);
             if (finalRes.data?.success && finalRes.data?.data) {
               setPct(100);
-              setData(finalRes.data);
+              setData(finalRes.data.data);
               setPhase('done');
             } else {
               setErrMsg('Automation completed but could not retrieve data. Try again.');
@@ -155,13 +166,119 @@ export default function GstPublicPage() {
     }, 2000);
   }
 
+  async function startAssistedLookup() {
+    const gstin = query.trim().toUpperCase().replace(/\s/g, '');
+    if (!GSTIN_RE.test(gstin)) {
+      setErrMsg('Invalid GSTIN format. Example: 27AABCU9603R1ZX (15 characters)');
+      setPhase('error');
+      return;
+    }
+
+    setPhase('checking');
+    setErrMsg('');
+    setAssistedWarning('');
+
+    try {
+      const res = await gst.post(`/gst/automation/assisted/start/${gstin}`);
+      if (res.data?.cached && res.data?.data) {
+        setData(res.data.data);
+        setPhase('done');
+        return;
+      }
+
+      if (!res.data?.sessionId || !res.data?.captchaImageDataUrl) {
+        throw new Error('Could not start assisted verification session');
+      }
+
+      setAssistedSessionId(res.data.sessionId);
+      setAssistedCaptchaImage(res.data.captchaImageDataUrl);
+      setAssistedCaptchaText('');
+      setPhase('assisted');
+    } catch (e) {
+      setErrMsg(e.response?.data?.message || 'Assisted verification is unavailable right now. Please retry.');
+      setPhase('error');
+    }
+  }
+
+  async function submitAssistedCaptcha() {
+    if (!assistedSessionId) {
+      setErrMsg('Assisted session expired. Start assisted verification again.');
+      setPhase('error');
+      return;
+    }
+
+    const captcha = assistedCaptchaText.trim();
+    if (!captcha) {
+      setErrMsg('Please enter the captcha text.');
+      return;
+    }
+
+    setAssistedSubmitting(true);
+    setErrMsg('');
+
+    try {
+      const res = await gst.post(`/gst/automation/assisted/submit/${assistedSessionId}`, { captcha });
+      if (res.data?.success && res.data?.data) {
+        setData(res.data.data);
+        setAssistedWarning(res.data?.warning || '');
+        setAssistedSessionId('');
+        setAssistedCaptchaImage('');
+        setAssistedCaptchaText('');
+        setPhase('done');
+        return;
+      }
+
+      throw new Error('Assisted verification failed');
+    } catch (e) {
+      const payload = e.response?.data;
+      if (payload?.code === 'CAPTCHA_INVALID') {
+        setErrMsg(payload?.message || 'Invalid captcha. Please try again.');
+        if (payload?.captchaImageDataUrl) setAssistedCaptchaImage(payload.captchaImageDataUrl);
+        setAssistedCaptchaText('');
+        setPhase('assisted');
+      } else if (payload?.code === 'ASSISTED_SESSION_EXPIRED') {
+        setErrMsg(payload?.message || 'Session expired. Start assisted verification again.');
+        setAssistedSessionId('');
+        setAssistedCaptchaImage('');
+        setAssistedCaptchaText('');
+        setPhase('error');
+      } else {
+        setErrMsg(payload?.message || 'Could not complete assisted verification.');
+        setPhase('error');
+      }
+    } finally {
+      setAssistedSubmitting(false);
+    }
+  }
+
+  async function cancelAssistedSession() {
+    if (!assistedSessionId) {
+      setPhase('error');
+      setErrMsg('Assisted session is no longer active.');
+      return;
+    }
+    await gst.post(`/gst/automation/assisted/cancel/${assistedSessionId}`).catch(() => {});
+    setAssistedSessionId('');
+    setAssistedCaptchaImage('');
+    setAssistedCaptchaText('');
+    setPhase('error');
+    setErrMsg('Assisted verification cancelled. You can start again anytime.');
+  }
+
   function reset() {
+    if (assistedSessionId) {
+      gst.post(`/gst/automation/assisted/cancel/${assistedSessionId}`).catch(() => {});
+    }
     stopPoll();
     setPhase('idle');
     setData(null);
     setLogs([]);
     setErrMsg('');
     setPct(0);
+    setAssistedSessionId('');
+    setAssistedCaptchaImage('');
+    setAssistedCaptchaText('');
+    setAssistedWarning('');
     setQuery('');
     setTimeout(() => inputRef.current?.focus(), 100);
   }
@@ -805,8 +922,45 @@ export default function GstPublicPage() {
             <div className="sg-error-body">
               <div className="sg-error-title">Lookup failed</div>
               <div className="sg-error-msg">{errMsg}</div>
+              <button className="sg-retry-btn" style={{ marginRight: 8 }} onClick={startAssistedLookup}>Manual Captcha Verification (Official GST)</button>
               <button className="sg-retry-btn" onClick={reset}>Try another GSTIN</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {phase === 'assisted' && (
+        <div className="sg-search-wrap" style={{ margin: '0 auto', padding: '0 24px' }}>
+          <div className="sg-progress-wrap" style={{ textAlign: 'left' }}>
+            <div className="sg-progress-label">Manual Captcha Verification (Official GST)</div>
+            {assistedCaptchaImage && (
+              <img
+                src={assistedCaptchaImage}
+                alt="GST captcha"
+                style={{ display: 'block', maxWidth: '100%', margin: '12px 0', border: '1px solid #E8E4DE', borderRadius: 8 }}
+              />
+            )}
+            <div className="sg-search-box" style={{ marginTop: 8 }}>
+              <input
+                className="sg-input"
+                type="text"
+                placeholder="Enter captcha"
+                value={assistedCaptchaText}
+                onChange={e => setAssistedCaptchaText(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && !assistedSubmitting && submitAssistedCaptcha()}
+              />
+              <button className="sg-search-btn" onClick={submitAssistedCaptcha} disabled={assistedSubmitting}>
+                {assistedSubmitting ? 'Submitting...' : 'Submit Captcha'}
+              </button>
+            </div>
+            <div className="sg-hint" style={{ marginTop: 12 }}>
+              Stay on this page. Enter captcha shown above, then we fetch and save GST details automatically.
+            </div>
+            <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button className="sg-retry-btn" style={{ marginTop: 0 }} onClick={startAssistedLookup} disabled={assistedSubmitting}>Get New Challenge</button>
+              <button className="sg-retry-btn" style={{ marginTop: 0 }} onClick={cancelAssistedSession} disabled={assistedSubmitting}>Cancel Assisted Mode</button>
+            </div>
+            {!!errMsg && <div className="sg-error-msg" style={{ marginTop: 10 }}>{errMsg}</div>}
           </div>
         </div>
       )}
@@ -821,6 +975,11 @@ export default function GstPublicPage() {
               : 'Fresh from GST portal'
             }
           </div>
+          {!!assistedWarning && (
+            <div className="sg-hint" style={{ marginBottom: 16 }}>
+              Note: verification succeeded, but cache save warning: {assistedWarning}
+            </div>
+          )}
 
           <div className="sg-result-header">
             <div>

@@ -87,6 +87,9 @@ app.use((req, res, next) => {
     '/api/v1/gst/central/',
     '/api/v1/gst/automation/trigger/',
     '/api/v1/gst/automation/status/',
+    '/api/v1/gst/automation/assisted/start/',
+    '/api/v1/gst/automation/assisted/submit/',
+    '/api/v1/gst/automation/assisted/cancel/',
     '/api/v1/gst/lookup/',
   ];
   if (publicPaths.includes(req.path)) return next();

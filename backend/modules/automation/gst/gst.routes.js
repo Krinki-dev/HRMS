@@ -14,6 +14,9 @@ const {
   GSTIN_REGEX,
   parseGstinStructure,
   scrapeGstSearchSite,
+  createAssistedCaptchaSession,
+  submitAssistedCaptchaSession,
+  closeAssistedSession,
   readCentralGstRecord,
   getCachedGstRecord,
   upsertCentralGstRecord,
@@ -188,6 +191,149 @@ router.post('/automation/trigger/:gstin', async (req, res) => {
       success: false,
       code: 'INTERNAL_ERROR',
       message: 'Failed to start lookup task'
+    });
+  }
+});
+
+// ============================================================
+//  POST /api/gst/automation/assisted/start/:gstin
+//  Start assisted flow: return captcha image for user to solve
+// ============================================================
+router.post('/automation/assisted/start/:gstin', async (req, res) => {
+  try {
+    const gstin = (req.params.gstin || '').trim().toUpperCase();
+    if (!GSTIN_REGEX.test(gstin)) {
+      return res.status(400).json({
+        success: false,
+        code: 'INVALID_GSTIN',
+        message: 'Invalid GSTIN format. Example: 27AABCU9603R1ZX'
+      });
+    }
+
+    const cached = await getGstRecord(gstin);
+    if (cached && !isGstRecordStale(cached)) {
+      return res.json({
+        success: true,
+        cached: true,
+        data: cached,
+        message: 'Data already in cache'
+      });
+    }
+
+    const session = await createAssistedCaptchaSession(gstin);
+    return res.json({
+      success: true,
+      cached: false,
+      mode: 'assisted',
+      ...session,
+      message: 'Enter the captcha shown to complete assisted verification'
+    });
+  } catch (err) {
+    console.error('[GST] Error in /automation/assisted/start:', err);
+    return res.status(500).json({
+      success: false,
+      code: 'ASSISTED_START_FAILED',
+      message: err.message || 'Could not start assisted verification session'
+    });
+  }
+});
+
+// ============================================================
+//  POST /api/gst/automation/assisted/submit/:sessionId
+//  Submit user-entered captcha and fetch GST result
+// ============================================================
+router.post('/automation/assisted/submit/:sessionId', async (req, res) => {
+  try {
+    const sessionId = (req.params.sessionId || '').trim();
+    const captcha = String(req.body?.captcha || '').trim();
+    if (!sessionId || !captcha) {
+      return res.status(400).json({
+        success: false,
+        code: 'CAPTCHA_REQUIRED',
+        message: 'Session ID and captcha are required'
+      });
+    }
+
+    const result = await submitAssistedCaptchaSession(sessionId, captcha);
+    if (result.status === 'expired') {
+      return res.status(410).json({
+        success: false,
+        code: 'ASSISTED_SESSION_EXPIRED',
+        message: result.message
+      });
+    }
+
+    if (result.status === 'captcha_invalid') {
+      return res.status(400).json({
+        success: false,
+        code: 'CAPTCHA_INVALID',
+        message: result.message || 'Invalid captcha. Please try again.',
+        captchaImageDataUrl: result.captchaImageDataUrl || null,
+        attempts: result.attempts || 1,
+      });
+    }
+
+    if (result.status !== 'completed' || !result.data) {
+      return res.status(502).json({
+        success: false,
+        code: 'ASSISTED_LOOKUP_FAILED',
+        message: result.message || 'Assisted verification failed'
+      });
+    }
+
+    let saveWarning = null;
+    try {
+      await saveGstData(result.data, {
+        tenantId: req.body?.tenantId || null,
+        userId: req.user?.id || null,
+        userAgent: req.headers['user-agent'],
+        ipAddress: req.ip
+      });
+    } catch (saveErr) {
+      saveWarning = saveErr?.message || 'Failed to cache GST data';
+      console.warn('[GST] Assisted submit: saveGstData failed:', saveWarning);
+    }
+
+    return res.json({
+      success: true,
+      mode: 'assisted',
+      data: result.data,
+      cached: !saveWarning,
+      warning: saveWarning,
+      message: 'GST verification completed via assisted mode'
+    });
+  } catch (err) {
+    console.error('[GST] Error in /automation/assisted/submit:', err);
+    return res.status(500).json({
+      success: false,
+      code: 'ASSISTED_SUBMIT_FAILED',
+      message: err.message || 'Failed to submit captcha for assisted verification'
+    });
+  }
+});
+
+// ============================================================
+//  POST /api/gst/automation/assisted/cancel/:sessionId
+//  Cancel assisted session and release browser resources
+// ============================================================
+router.post('/automation/assisted/cancel/:sessionId', async (req, res) => {
+  try {
+    const sessionId = (req.params.sessionId || '').trim();
+    if (!sessionId) {
+      return res.status(400).json({
+        success: false,
+        code: 'SESSION_ID_REQUIRED',
+        message: 'sessionId is required'
+      });
+    }
+    await closeAssistedSession(sessionId);
+    return res.json({ success: true, message: 'Assisted session cancelled' });
+  } catch (err) {
+    console.error('[GST] Error in /automation/assisted/cancel:', err);
+    return res.status(500).json({
+      success: false,
+      code: 'ASSISTED_CANCEL_FAILED',
+      message: 'Could not cancel assisted session'
     });
   }
 });
