@@ -1,5 +1,6 @@
 ﻿const svc  = require('./employees.service');
 const emailSvc = require('../../shared/utils/emailService');
+const eventNotifier = require('../notifications/event-notifier.service');
 const logger = require('../../shared/utils/logger');
 const { sendSuccess, sendError, ERROR_CODES } = require('../../shared/utils/response');
 
@@ -49,11 +50,25 @@ module.exports = {
     const { firstName, lastName } = req.body;
     if (!firstName?.trim()) return sendError(res, ERROR_CODES.VALIDATION, 'First name is required.', 400);
     if (!lastName?.trim())  return sendError(res, ERROR_CODES.VALIDATION, 'Last name is required.', 400);
-    sendSuccess(res, await svc.create(req.db, req.user.tenantId, req.body, actor(req)), 'Employee created.', 201);
+    const created = await svc.create(req.db, req.user.tenantId, req.body, actor(req));
+    eventNotifier.notifyEmployeeCreated({
+      db: req.db,
+      companyId: req.user.tenantId,
+      employee: created,
+      actorLabel: req.user?.email,
+    }).catch((err) => logger.warn('[Employees/Create] Notification failed', { error: err.message }));
+    sendSuccess(res, created, 'Employee created.', 201);
   }),
 
   update: wrap(async (req, res) => {
-    sendSuccess(res, await svc.update(req.db, req.user.tenantId, req.params.id, req.body, actor(req)), 'Employee updated.');
+    const updated = await svc.update(req.db, req.user.tenantId, req.params.id, req.body, actor(req));
+    eventNotifier.notifyEmployeeUpdated({
+      db: req.db,
+      companyId: req.user.tenantId,
+      employee: updated,
+      actorLabel: req.user?.email,
+    }).catch((err) => logger.warn('[Employees/Update] Notification failed', { error: err.message }));
+    sendSuccess(res, updated, 'Employee updated.');
   }),
 
   softDelete: wrap(async (req, res) => {
@@ -128,10 +143,26 @@ module.exports = {
       logger.error('[Employees/CreateLogin] Welcome email failed', { error: err.message, email: loginResult.email });
     }
 
+    eventNotifier.notifyEmployeeLoginProvisioned({
+      db: req.db,
+      companyId: req.user.tenantId,
+      employeeId: req.params.id,
+      loginEmail: loginResult.email,
+      actorLabel: req.user?.email,
+    }).catch((err) => logger.warn('[Employees/CreateLogin] Notification failed', { error: err.message }));
+
     sendSuccess(res, loginResult, 'Login created and welcome email triggered.');
   }),
   toggleLogin: wrap(async (req, res) => {
-    sendSuccess(res, await svc.toggleLogin(req.db, req.user.tenantId, req.params.id), 'Login status updated.');
+    const result = await svc.toggleLogin(req.db, req.user.tenantId, req.params.id);
+    eventNotifier.notifyEmployeeLoginToggled({
+      db: req.db,
+      companyId: req.user.tenantId,
+      employeeId: req.params.id,
+      isActive: result.isActive,
+      actorLabel: req.user?.email,
+    }).catch((err) => logger.warn('[Employees/ToggleLogin] Notification failed', { error: err.message }));
+    sendSuccess(res, result, 'Login status updated.');
   }),
 
   bulkImport: wrap(async (req, res) => {

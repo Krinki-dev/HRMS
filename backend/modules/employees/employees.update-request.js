@@ -1,4 +1,5 @@
 ﻿const { sendSuccess, sendError, ERROR_CODES } = require('../../shared/utils/response');
+const eventNotifier = require('../notifications/event-notifier.service');
 
 exports.submit = async (req, res) => {
   try {
@@ -129,6 +130,13 @@ exports.approve = async (req, res) => {
       data:  { new_values: updated, action: 'update_approved' },
     });
 
+    eventNotifier.notifyEmployeeUpdateRequestDecision({
+      db,
+      companyId,
+      requestId,
+      decision: 'approved',
+    }).catch(() => {});
+
     return sendSuccess(res, null, 'Update request approved and applied.');
   } catch (e) {
     console.error('[UpdateRequest.approve]', e.message);
@@ -163,6 +171,14 @@ exports.reject = async (req, res) => {
       where: { id: requestId },
       data:  { new_values: updated, action: 'update_rejected' },
     });
+
+    eventNotifier.notifyEmployeeUpdateRequestDecision({
+      db,
+      companyId,
+      requestId,
+      decision: 'rejected',
+      reason: req.body.reason || '',
+    }).catch(() => {});
 
     return sendSuccess(res, null, 'Request rejected.');
   } catch (e) {

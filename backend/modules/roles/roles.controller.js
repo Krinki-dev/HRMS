@@ -1,6 +1,7 @@
 ﻿const svc  = require('./roles.service');
 const { sendSuccess, sendError, ERROR_CODES } = require('../../shared/utils/response');
 const { resolveTenantId } = require('../../shared/utils/tenantResolver');
+const eventNotifier = require('../notifications/event-notifier.service');
 
 const wrap = (fn) => async (req, res) => {
   try { await fn(req, res); }
@@ -28,12 +29,28 @@ module.exports = {
 
   create: wrap(async (req, res) => {
     const tenantId = await resolveTenantId(req);
-    sendSuccess(res, await svc.create(req.db, tenantId, req.body), 'Role created.', 201);
+    const created = await svc.create(req.db, tenantId, req.body);
+    eventNotifier.notifyRoleChanged({
+      db: req.db,
+      companyId: tenantId,
+      roleName: created.name,
+      actorLabel: req.user?.email,
+      action: 'created',
+    }).catch(() => {});
+    sendSuccess(res, created, 'Role created.', 201);
   }),
 
   update: wrap(async (req, res) => {
     const tenantId = await resolveTenantId(req);
-    sendSuccess(res, await svc.update(req.db, tenantId, req.params.id, req.body), 'Role updated.');
+    const updated = await svc.update(req.db, tenantId, req.params.id, req.body);
+    eventNotifier.notifyRoleChanged({
+      db: req.db,
+      companyId: tenantId,
+      roleName: updated.name,
+      actorLabel: req.user?.email,
+      action: 'updated',
+    }).catch(() => {});
+    sendSuccess(res, updated, 'Role updated.');
   }),
 
   remove: wrap(async (req, res) => {
@@ -45,10 +62,15 @@ module.exports = {
   assignRole: wrap(async (req, res) => {
     if (!req.body.roleId) return sendError(res, ERROR_CODES.VALIDATION, 'roleId required.');
     const tenantId = await resolveTenantId(req);
-    sendSuccess(res,
-      await svc.assignRole(req.db, tenantId, req.params.userId, req.body.roleId),
-      'Role assigned.'
-    );
+    const assigned = await svc.assignRole(req.db, tenantId, req.params.userId, req.body.roleId);
+    eventNotifier.notifyRoleAssigned({
+      db: req.db,
+      companyId: tenantId,
+      userId: req.params.userId,
+      roleId: req.body.roleId,
+      actorLabel: req.user?.email,
+    }).catch(() => {});
+    sendSuccess(res, assigned, 'Role assigned.');
   }),
 };
 

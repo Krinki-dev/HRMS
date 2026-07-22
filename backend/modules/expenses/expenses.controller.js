@@ -1,4 +1,5 @@
 ﻿const svc = require('./expenses.service');
+const eventNotifier = require('../notifications/event-notifier.service');
 const { sendSuccess, sendError, ERROR_CODES } = require('../../shared/utils/response');
 
 const h = (fn) => async (req, res) => {
@@ -22,8 +23,27 @@ module.exports = {
   createClaim:      h(async (req, res) => sendSuccess(res, await svc.createClaim(req.db, empId(req), req.body), 'Claim submitted.', 201)),
   pendingApprovals: h(async (req, res) => sendSuccess(res, await svc.pendingApprovals(req.db, req.user.tenantId))),
   getClaim:         h(async (req, res) => sendSuccess(res, await svc.getClaim(req.db, req.params.id, empId(req), req.user.tenantId))),
-  approveClaim:     h(async (req, res) => sendSuccess(res, await svc.approveClaim(req.db, req.user.tenantId, req.params.id, req.user.id, req.body), 'Claim approved.')),
-  rejectClaim:      h(async (req, res) => sendSuccess(res, await svc.rejectClaim(req.db, req.user.tenantId, req.params.id, req.user.id, req.body), 'Claim rejected.')),
+  approveClaim:     h(async (req, res) => {
+    const claim = await svc.approveClaim(req.db, req.user.tenantId, req.params.id, req.user.id, req.body);
+    eventNotifier.notifyExpenseDecision({
+      db: req.db,
+      companyId: req.user.tenantId,
+      claim,
+      decision: 'approved',
+    }).catch(() => {});
+    sendSuccess(res, claim, 'Claim approved.');
+  }),
+  rejectClaim:      h(async (req, res) => {
+    const claim = await svc.rejectClaim(req.db, req.user.tenantId, req.params.id, req.user.id, req.body);
+    eventNotifier.notifyExpenseDecision({
+      db: req.db,
+      companyId: req.user.tenantId,
+      claim,
+      decision: 'rejected',
+      reason: req.body?.reason || '',
+    }).catch(() => {});
+    sendSuccess(res, claim, 'Claim rejected.');
+  }),
   deleteClaim:      h(async (req, res) => sendSuccess(res, await svc.deleteClaim(req.db, empId(req), req.params.id), 'Claim deleted.')),
   listPolicies:     h(async (req, res) => sendSuccess(res, await svc.listPolicies(req.db, req.user.tenantId))),
   createPolicy:     h(async (req, res) => sendSuccess(res, await svc.createPolicy(req.db, req.user.tenantId, req.body), 'Policy created.', 201)),

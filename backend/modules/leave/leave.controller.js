@@ -1,5 +1,6 @@
 ﻿const svc = require('./leave.service');
 const emailSvc = require('../../shared/utils/emailService');
+const eventNotifier = require('../notifications/event-notifier.service');
 const logger = require('../../shared/utils/logger');
 const { sendSuccess, sendError, ERROR_CODES } = require('../../shared/utils/response');
 
@@ -79,7 +80,7 @@ const ctrl = {
         const application = await req.db.leave_applications.findUnique({
           where: { id: req.params.id },
           include: {
-            employee: { select: { first_name: true, last_name: true, work_email: true, personal_email: true } },
+            employee: { select: { first_name: true, last_name: true, work_email: true, personal_email: true, phone: true } },
             leave_type: { select: { name: true } },
           },
         });
@@ -96,6 +97,12 @@ const ctrl = {
               days: application.days,
             });
           }
+          eventNotifier.notifyLeaveDecision({
+            db: req.db,
+            companyId: req.user.tenantId,
+            application,
+            decision: 'approved',
+          }).catch(() => {});
         }
       } catch (emailError) {
         logger.error('[Leave/approveLeave] Notification email failed', { error: emailError.message, applicationId: req.params.id });
@@ -118,7 +125,7 @@ const ctrl = {
         const application = await req.db.leave_applications.findUnique({
           where: { id: req.params.id },
           include: {
-            employee: { select: { first_name: true, last_name: true, work_email: true, personal_email: true } },
+            employee: { select: { first_name: true, last_name: true, work_email: true, personal_email: true, phone: true } },
             leave_type: { select: { name: true } },
           },
         });
@@ -136,6 +143,13 @@ const ctrl = {
               rejectionReason: reason,
             });
           }
+          eventNotifier.notifyLeaveDecision({
+            db: req.db,
+            companyId: req.user.tenantId,
+            application,
+            decision: 'rejected',
+            reason,
+          }).catch(() => {});
         }
       } catch (emailError) {
         logger.error('[Leave/rejectLeave] Notification email failed', { error: emailError.message, applicationId: req.params.id });

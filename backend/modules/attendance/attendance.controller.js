@@ -1,4 +1,5 @@
 ﻿const svc = require('./attendance.service');
+const eventNotifier = require('../notifications/event-notifier.service');
 const { sendSuccess, sendError, ERROR_CODES } = require('../../shared/utils/response');
 
 const ctrl = {
@@ -84,6 +85,12 @@ const ctrl = {
   approveRegularization: async (req, res) => {
     try {
       await svc.approveRegularization(req.db, req.params.id, req.user.tenantId, req.user.id);
+      eventNotifier.notifyRegularizationDecision({
+        db: req.db,
+        companyId: req.user.tenantId,
+        requestId: req.params.id,
+        decision: 'approved',
+      }).catch(() => {});
       sendSuccess(res, null, 'Regularization approved.');
     } catch (e) {
       if (e.message === 'NOT_FOUND') return sendError(res, ERROR_CODES.NOT_FOUND, 'Request not found.', 404);
@@ -94,6 +101,13 @@ const ctrl = {
   rejectRegularization: async (req, res) => {
     try {
       await svc.rejectRegularization(req.db, req.params.id, req.user.tenantId, req.user.id, req.body.reason);
+      eventNotifier.notifyRegularizationDecision({
+        db: req.db,
+        companyId: req.user.tenantId,
+        requestId: req.params.id,
+        decision: 'rejected',
+        reason: req.body.reason,
+      }).catch(() => {});
       sendSuccess(res, null, 'Regularization rejected.');
     } catch (e) {
       if (e.message === 'REASON_REQUIRED') return sendError(res, ERROR_CODES.VALIDATION, 'Rejection reason is required.');

@@ -14,6 +14,7 @@ const auth     = require('../../shared/middleware/auth');
 const emailSvc = require('../../shared/utils/emailService');
 const authService = require('./auth.service');
 const logger   = require('../../shared/utils/logger');
+const eventNotifier = require('../notifications/event-notifier.service');
 const { centralPrisma } = require('../../shared/utils/centralPrisma');
 const { resolveTenantDbUrl } = require('../platform/platform.service');
 const { issueTicket } = require('../../shared/utils/wsTicket');
@@ -321,6 +322,14 @@ router.post('/verify-otp', otpLimiter, async (req, res) => {
       const tenantInfo = await authService.getTenantInfo(tenantId || user.company_id);
       const isPlatformAdmin = await authService.isPlatformAdmin(user.id);
       const payload = authService.buildUserPayload(user, permissions, tenantInfo, isPlatformAdmin);
+      eventNotifier.notifyLogin({
+        db: activeDb,
+        companyId: tenantId || user.company_id,
+        user,
+        ipAddress: req.ip,
+      }).catch((err) => {
+        logger.warn('[Auth/VerifyOTP] Login notification failed', { error: err.message });
+      });
       if (isTemporary) setTimeout(() => activeDb.$disconnect(), 5000);
       return sendSuccess(res, { accessToken, user: payload }, 'Login successful');
     }
@@ -356,6 +365,14 @@ router.post('/login', loginLimiter, async (req, res) => {
     const tenantInfo = await authService.getTenantInfo(tenantId || user.company_id);
     const isPlatformAdmin = await authService.isPlatformAdmin(user.id);
     const payload = authService.buildUserPayload(user, permissions, tenantInfo, isPlatformAdmin);
+    eventNotifier.notifyLogin({
+      db: activeDb,
+      companyId: tenantId || user.company_id,
+      user,
+      ipAddress: req.ip,
+    }).catch((err) => {
+      logger.warn('[Auth/Login] Login notification failed', { error: err.message });
+    });
     if (isTemporary) setTimeout(() => activeDb.$disconnect(), 5000);
     return sendSuccess(res, { accessToken, user: payload }, 'Login successful');
   } catch (err) {
@@ -578,8 +595,15 @@ router.post('/reset-password', async (req, res) => {
     });
     if (!resetRecord) return sendError(res, ERROR_CODES.VALIDATION, 'INVALID_TOKEN', 400);
     const passwordHash = await bcrypt.hash(newPassword, 12);
-    await req.db.users.update({ where: { id: resetRecord.user_id }, data: { password_hash: passwordHash, is_first_login: false } });
+    const updatedByReset = await req.db.users.update({ where: { id: resetRecord.user_id }, data: { password_hash: passwordHash, is_first_login: false } });
     await req.db.password_resets.update({ where: { id: resetRecord.id }, data: { used: true } });
+    eventNotifier.notifyPasswordChanged({
+      db: req.db,
+      companyId: updatedByReset.company_id,
+      userId: updatedByReset.id,
+    }).catch((err) => {
+      logger.warn('[Auth/ResetPwd] Password change notification failed', { error: err.message });
+    });
     return sendSuccess(res, null, 'Password updated. You can now sign in.');
   } catch (err) {
     console.error('[Auth/ResetPwd] Error:', err.message);
@@ -602,7 +626,7 @@ router.post('/change-password', auth, async (req, res) => {
     const sameAsOld = await bcrypt.compare(newPassword, user.password_hash);
     if (sameAsOld) return sendError(res, ERROR_CODES.VALIDATION, 'New password must be different from your current password', 400);
     const passwordHash = await bcrypt.hash(newPassword, 12);
-    await req.db.users.update({ where: { id: user.id }, data: { password_hash: passwordHash, is_first_login: false } });
+    const changedUser = await req.db.users.update({ where: { id: user.id }, data: { password_hash: passwordHash, is_first_login: false } });
     const updatedUser = await req.db.users.findUnique({ where: { id: user.id }, include: { employee: true } });
     if (updatedUser) {
       try {
@@ -615,6 +639,13 @@ router.post('/change-password', auth, async (req, res) => {
         logger.error('[Auth/ChangePwd] Notification failed', { error: err.message });
       }
     }
+    eventNotifier.notifyPasswordChanged({
+      db: req.db,
+      companyId: changedUser.company_id,
+      userId: changedUser.id,
+    }).catch((err) => {
+      logger.warn('[Auth/ChangePwd] Password change notification failed', { error: err.message });
+    });
     return sendSuccess(res, null, 'Password changed successfully.');
   } catch (err) {
     console.error('[Auth/ChangePwd] Error:', err.message);

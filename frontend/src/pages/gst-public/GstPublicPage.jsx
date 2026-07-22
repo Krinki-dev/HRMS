@@ -1,191 +1,54 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useRef, useState } from 'react';
 import axios from 'axios';
 
-const API_BASE        = import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1';
-const ADSENSE_SLOT_ID = '';   
-const ADSENSE_CLIENT  = '';   
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1';
 const gst = axios.create({ baseURL: API_BASE, timeout: 60_000 });
 const GSTIN_RE = /^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]$/;
-const STATE_CODES = {
-  '01':'Jammu & Kashmir','02':'Himachal Pradesh','03':'Punjab','04':'Chandigarh',
-  '05':'Uttarakhand','06':'Haryana','07':'Delhi','08':'Rajasthan','09':'Uttar Pradesh',
-  '10':'Bihar','11':'Sikkim','12':'Arunachal Pradesh','13':'Nagaland','14':'Manipur',
-  '15':'Mizoram','16':'Tripura','17':'Meghalaya','18':'Assam','19':'West Bengal',
-  '20':'Jharkhand','21':'Odisha','22':'Chhattisgarh','23':'Madhya Pradesh','24':'Gujarat',
-  '25':'Daman & Diu','26':'Dadra & Nagar Haveli','27':'Maharashtra','28':'Andhra Pradesh (Old)',
-  '29':'Karnataka','30':'Goa','31':'Lakshadweep','32':'Kerala','33':'Tamil Nadu',
-  '34':'Puducherry','35':'Andaman & Nicobar','36':'Telangana','37':'Andhra Pradesh','38':'Ladakh',
-};
 
-function AdBanner({ slot = ADSENSE_SLOT_ID }) {
-  const ref = useRef(null);
-  useEffect(() => {
-    if (!slot || !ADSENSE_CLIENT) return;
-    try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch {}
-  }, [slot]);
-  if (!slot || !ADSENSE_CLIENT) return null;
-  return (
-    <div ref={ref} style={{ textAlign: 'center', margin: '24px 0' }}>
-      <ins
-        className="adsbygoogle"
-        style={{ display: 'block' }}
-        data-ad-client={ADSENSE_CLIENT}
-        data-ad-slot={slot}
-        data-ad-format="auto"
-        data-full-width-responsive="true"
-      />
-    </div>
-  );
+function valueOrDash(value) {
+  const text = value == null ? '' : String(value).trim();
+  return text || '—';
+}
+
+function buildPrincipalAddress(data) {
+  const parts = [
+    data.flat_no,
+    data.branch_name,
+    data.branch_no ? `Branch No. ${data.branch_no}` : '',
+    data.street,
+    data.location,
+    data.district,
+    data.state,
+    data.pincode,
+  ].filter(Boolean);
+
+  if (parts.length) return parts.join(', ');
+  return valueOrDash(data.address || data.address_line);
 }
 
 export default function GstPublicPage() {
-  const [query,   setQuery]   = useState('');
-  const [phase,   setPhase]   = useState('idle');   
-  const [data,    setData]    = useState(null);
-  const [logs,    setLogs]    = useState([]);
-  const [errMsg,  setErrMsg]  = useState('');
-  const [pct,     setPct]     = useState(0);
+  const [query, setQuery] = useState('');
+  const [phase, setPhase] = useState('idle');
+  const [errMsg, setErrMsg] = useState('');
+  const [data, setData] = useState(null);
+
   const [assistedSessionId, setAssistedSessionId] = useState('');
   const [assistedCaptchaImage, setAssistedCaptchaImage] = useState('');
   const [assistedCaptchaText, setAssistedCaptchaText] = useState('');
   const [assistedSubmitting, setAssistedSubmitting] = useState(false);
-  const [assistedWarning, setAssistedWarning] = useState('');
-  const [showDetailsPopup, setShowDetailsPopup] = useState(false);
 
-  const pollRef  = useRef(null);
   const inputRef = useRef(null);
 
-  useEffect(() => {
-    if (data) {
-      const name = data.legalname || data.tradename || data.company_name || data.gstin;
-      document.title = `${name} — GST Details | SearchGST by Syntern`;
-      const desc = document.querySelector('meta[name="description"]');
-      if (desc) desc.setAttribute('content',
-        `GST details for ${name}. GSTIN: ${data.gstin}. Status: ${data.status || 'N/A'}. State: ${data.state || 'N/A'}. Free GST verification tool by Syntern HRMS.`
-      );
-    } else {
-      document.title = 'SearchGST — Free GSTIN Lookup Tool | Syntern';
-    }
-  }, [data]);
-
-  useEffect(() => () => stopPoll(), []);
-
-  function stopPoll() {
-    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
-  }
-
-  async function search() {
-    const gstin = query.trim().toUpperCase().replace(/\s/g, '');
-    if (!GSTIN_RE.test(gstin)) {
-      setErrMsg('Invalid GSTIN format. Example: 27AABCU9603R1ZX (15 characters)');
-      setPhase('error');
-      return;
-    }
-
-    setPhase('checking');
-    setData(null);
-    setLogs([]);
-    setErrMsg('');
-    setPct(10);
-    setAssistedSessionId('');
-    setAssistedCaptchaImage('');
-    setAssistedCaptchaText('');
-    setAssistedWarning('');
-    setShowDetailsPopup(false);
-
-    try {
-      
-      const cacheRes = await gst.get(`/gst/central/${gstin}`);
-      if (cacheRes.data?.success && cacheRes.data?.data) {
-        setPct(100);
-        setData(cacheRes.data.data);
-        setPhase('done');
-        return;
-      }
-    } catch (e) {
-      if (e.response?.status !== 404) {
-        setErrMsg('Server error. Please try again.');
-        setPhase('error');
-        return;
-      }
-    }
-
-    setPhase('automating');
-    setPct(20);
-    setLogs(['Starting live lookup from GST portal...']);
-
-    let taskId;
-    try {
-      const trigRes = await gst.post(`/gst/automation/trigger/${gstin}`);
-      taskId = trigRes.data?.taskId;
-      if (!taskId) throw new Error('No task ID');
-    } catch {
-      setErrMsg('Could not start GST lookup. Please try again in a moment.');
-      setPhase('error');
-      return;
-    }
-
-    const start = Date.now();
-    pollRef.current = setInterval(async () => {
-      const elapsed = (Date.now() - start) / 1000;
-      setPct(Math.min(20 + elapsed * 2, 90));
-
-      if (elapsed > 90) {
-        stopPoll();
-        setErrMsg('Lookup timed out. The GST portal may be slow. Please try again.');
-        setPhase('error');
-        return;
-      }
-
-      try {
-        const statusRes = await gst.get(`/gst/automation/status/${taskId}`);
-        const task = statusRes.data;
-        if (task.logs?.length) setLogs(task.logs.map(l => l.message));
-
-        if (task.status === 'completed') {
-          stopPoll();
-          
-          try {
-            const finalRes = await gst.get(`/gst/central/${gstin}`);
-            if (finalRes.data?.success && finalRes.data?.data) {
-              setPct(100);
-              setData(finalRes.data.data);
-              setPhase('done');
-            } else {
-              setErrMsg('Automation completed but could not retrieve data. Try again.');
-              setPhase('error');
-            }
-          } catch {
-            setErrMsg('Could not retrieve data after lookup. Try again.');
-            setPhase('error');
-          }
-        } else if (task.status === 'failed') {
-          stopPoll();
-          setErrMsg(task.error || 'GST portal returned no data. The GSTIN may be invalid or cancelled.');
-          setPhase('error');
-        }
-      } catch {  }
-    }, 2000);
-  }
-
-  async function startAssistedLookup() {
-    const gstin = query.trim().toUpperCase().replace(/\s/g, '');
-    if (!GSTIN_RE.test(gstin)) {
-      setErrMsg('Invalid GSTIN format. Example: 27AABCU9603R1ZX (15 characters)');
-      setPhase('error');
-      return;
-    }
-
+  async function startAssistedLookup(gstin) {
     setPhase('checking');
     setErrMsg('');
-    setAssistedWarning('');
 
     try {
       const res = await gst.post(`/gst/automation/assisted/start/${gstin}`);
+
       if (res.data?.cached && res.data?.data) {
         setData(res.data.data);
         setPhase('done');
-        setShowDetailsPopup(true);
         return;
       }
 
@@ -198,21 +61,51 @@ export default function GstPublicPage() {
       setAssistedCaptchaText('');
       setPhase('assisted');
     } catch (e) {
-      setErrMsg(e.response?.data?.message || 'Assisted verification is unavailable right now. Please retry.');
+      setErrMsg(e.response?.data?.message || 'Unable to start verification. Please retry.');
       setPhase('error');
     }
   }
 
+  async function search() {
+    const gstin = query.trim().toUpperCase().replace(/\s/g, '');
+    if (!GSTIN_RE.test(gstin)) {
+      setErrMsg('Invalid GSTIN format. Example: 27AABCU9603R1ZX');
+      setPhase('error');
+      return;
+    }
+
+    setPhase('checking');
+    setErrMsg('');
+    setData(null);
+
+    try {
+      const cacheRes = await gst.get(`/gst/central/${gstin}`);
+      if (cacheRes.data?.success && cacheRes.data?.data) {
+        setData(cacheRes.data.data);
+        setPhase('done');
+        return;
+      }
+    } catch (e) {
+      if (e.response?.status !== 404) {
+        setErrMsg('Server error. Please try again.');
+        setPhase('error');
+        return;
+      }
+    }
+
+    await startAssistedLookup(gstin);
+  }
+
   async function submitAssistedCaptcha() {
     if (!assistedSessionId) {
-      setErrMsg('Assisted session expired. Start assisted verification again.');
+      setErrMsg('Session expired. Start verification again.');
       setPhase('error');
       return;
     }
 
     const captcha = assistedCaptchaText.trim();
     if (!captcha) {
-      setErrMsg('Please enter the captcha text.');
+      setErrMsg('Please enter captcha text.');
       return;
     }
 
@@ -223,16 +116,13 @@ export default function GstPublicPage() {
       const res = await gst.post(`/gst/automation/assisted/submit/${assistedSessionId}`, { captcha });
       if (res.data?.success && res.data?.data) {
         setData(res.data.data);
-        setAssistedWarning(res.data?.warning || '');
         setAssistedSessionId('');
         setAssistedCaptchaImage('');
         setAssistedCaptchaText('');
         setPhase('done');
-        setShowDetailsPopup(true);
         return;
       }
-
-      throw new Error('Assisted verification failed');
+      throw new Error('Verification failed');
     } catch (e) {
       const payload = e.response?.data;
       if (payload?.code === 'CAPTCHA_INVALID') {
@@ -241,13 +131,13 @@ export default function GstPublicPage() {
         setAssistedCaptchaText('');
         setPhase('assisted');
       } else if (payload?.code === 'ASSISTED_SESSION_EXPIRED') {
-        setErrMsg(payload?.message || 'Session expired. Start assisted verification again.');
+        setErrMsg(payload?.message || 'Session expired. Please start again.');
         setAssistedSessionId('');
         setAssistedCaptchaImage('');
         setAssistedCaptchaText('');
         setPhase('error');
       } else {
-        setErrMsg(payload?.message || 'Could not complete assisted verification.');
+        setErrMsg(payload?.message || 'Could not complete verification.');
         setPhase('error');
       }
     } finally {
@@ -256,996 +146,375 @@ export default function GstPublicPage() {
   }
 
   async function cancelAssistedSession() {
-    if (!assistedSessionId) {
-      setPhase('error');
-      setErrMsg('Assisted session is no longer active.');
-      return;
+    if (assistedSessionId) {
+      await gst.post(`/gst/automation/assisted/cancel/${assistedSessionId}`).catch(() => {});
     }
-    await gst.post(`/gst/automation/assisted/cancel/${assistedSessionId}`).catch(() => {});
     setAssistedSessionId('');
     setAssistedCaptchaImage('');
     setAssistedCaptchaText('');
+    setErrMsg('Verification canceled. Start a new search.');
     setPhase('error');
-    setErrMsg('Assisted verification cancelled. You can start again anytime.');
   }
 
   function reset() {
     if (assistedSessionId) {
       gst.post(`/gst/automation/assisted/cancel/${assistedSessionId}`).catch(() => {});
     }
-    stopPoll();
     setPhase('idle');
     setData(null);
-    setLogs([]);
     setErrMsg('');
-    setPct(0);
     setAssistedSessionId('');
     setAssistedCaptchaImage('');
     setAssistedCaptchaText('');
-    setAssistedWarning('');
-    setShowDetailsPopup(false);
     setQuery('');
-    setTimeout(() => inputRef.current?.focus(), 100);
+    setTimeout(() => inputRef.current?.focus(), 50);
   }
 
-  const isLoading = phase === 'checking' || phase === 'automating';
+  const isBusy = phase === 'checking' || assistedSubmitting;
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;600;700&display=swap');
 
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        html { scroll-behavior: smooth; }
-
+        * { box-sizing: border-box; }
         body {
+          margin: 0;
           font-family: 'DM Sans', sans-serif;
-          background: #F7F5F0;
-          color: #1A1814;
-          min-height: 100vh;
+          color: #1f1a14;
+          background: radial-gradient(1200px 500px at 50% -180px, #f6e2c3 0%, #f8f5ee 52%, #f6f3ec 100%);
         }
 
-        /* ── TOPBAR ── */
-        .sg-topbar {
-          background: #1A1814;
-          padding: 0 32px;
-          height: 52px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          position: sticky;
-          top: 0;
-          z-index: 100;
-        }
-        .sg-logo {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          text-decoration: none;
-        }
-        .sg-logo-mark {
-          width: 28px; height: 28px;
-          background: #E8A23A;
-          border-radius: 6px;
+        .gst-page {
+          min-height: 100vh;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-family: 'DM Mono', monospace;
-          font-size: 12px;
-          font-weight: 500;
-          color: #1A1814;
-        }
-        .sg-logo-text {
-          font-family: 'DM Sans', sans-serif;
-          font-size: 14px;
-          font-weight: 600;
-          color: #fff;
-          letter-spacing: -0.2px;
-        }
-        .sg-logo-text span { color: #E8A23A; }
-        .sg-topbar-cta {
-          font-size: 12px;
-          color: rgba(255,255,255,0.6);
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        .sg-topbar-cta a {
-          color: #E8A23A;
-          text-decoration: none;
-          font-weight: 500;
-          font-size: 12px;
+          padding: 18px;
         }
 
-        /* ── HERO ── */
-        .sg-hero {
-          padding: 72px 24px 56px;
-          text-align: center;
-          position: relative;
+        .gst-shell {
+          width: min(1160px, 98vw);
+          background: #fff;
+          border: 1px solid #e7dfd1;
+          border-radius: 18px;
+          box-shadow: 0 16px 50px rgba(47, 34, 17, 0.12);
           overflow: hidden;
         }
-        .sg-hero::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background:
-            radial-gradient(ellipse 600px 300px at 50% 0%, rgba(232,162,58,0.12) 0%, transparent 70%);
-          pointer-events: none;
+
+        .gst-head {
+          padding: 24px 24px 14px;
+          border-bottom: 1px solid #efe8dc;
+          background: linear-gradient(180deg, #fffdf8 0%, #fff 100%);
         }
-        .sg-eyebrow {
-          font-family: 'DM Mono', monospace;
-          font-size: 11px;
-          letter-spacing: 2.5px;
-          text-transform: uppercase;
-          color: #E8A23A;
-          margin-bottom: 16px;
-        }
-        .sg-headline {
+
+        .gst-title {
+          margin: 0 0 6px;
           font-family: 'Instrument Serif', serif;
-          font-size: clamp(36px, 6vw, 64px);
+          font-size: clamp(30px, 3.5vw, 48px);
+          line-height: 1.08;
           font-weight: 400;
-          line-height: 1.1;
-          color: #1A1814;
-          margin-bottom: 16px;
-          letter-spacing: -1px;
+          letter-spacing: -0.7px;
+          color: #20170e;
         }
-        .sg-headline em {
-          font-style: italic;
-          color: #8B5E2A;
+
+        .gst-sub {
+          margin: 0;
+          font-size: 15px;
+          color: #786c5c;
         }
-        .sg-sub {
-          font-size: 16px;
-          color: #6B6458;
-          font-weight: 300;
-          max-width: 480px;
-          margin: 0 auto 40px;
+
+        .gst-body {
+          padding: 18px 24px 24px;
+        }
+
+        .gst-search-row {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 10px;
+          margin-bottom: 12px;
+        }
+
+        .gst-input {
+          height: 52px;
+          border: 1px solid #d9cfbf;
+          border-radius: 12px;
+          padding: 0 14px;
+          font-size: 18px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #20170e;
+          outline: none;
+        }
+
+        .gst-input:focus {
+          border-color: #b98639;
+          box-shadow: 0 0 0 3px rgba(185, 134, 57, 0.18);
+        }
+
+        .gst-btn {
+          height: 52px;
+          border: 1px solid #1f1a14;
+          background: #1f1a14;
+          color: #fff;
+          border-radius: 12px;
+          padding: 0 18px;
+          font-size: 15px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .gst-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .gst-hint {
+          margin: 0 0 16px;
+          font-size: 12px;
+          color: #8d8070;
+        }
+
+        .gst-block {
+          border: 1px solid #e8dfd2;
+          border-radius: 14px;
+          padding: 14px;
+          background: #fffcf7;
+        }
+
+        .gst-block + .gst-block {
+          margin-top: 12px;
+        }
+
+        .gst-info {
+          font-size: 14px;
+          color: #645948;
+          margin: 0;
           line-height: 1.6;
         }
 
-        /* ── SEARCH BOX ── */
-        .sg-search-wrap {
-          max-width: 600px;
-          margin: 0 auto;
-          position: relative;
+        .gst-error {
+          border-color: #efc8c8;
+          background: #fff5f5;
         }
-        .sg-search-box {
-          display: flex;
-          background: #fff;
-          border: 1.5px solid #DDD8CF;
-          border-radius: 12px;
-          overflow: hidden;
-          box-shadow: 0 4px 24px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
-          transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .sg-search-box:focus-within {
-          border-color: #E8A23A;
-          box-shadow: 0 4px 24px rgba(232,162,58,0.12), 0 0 0 3px rgba(232,162,58,0.1);
-        }
-        .sg-input {
-          flex: 1;
-          padding: 16px 20px;
-          border: none;
-          outline: none;
-          font-family: 'DM Mono', monospace;
-          font-size: 16px;
-          color: #1A1814;
-          background: transparent;
-          letter-spacing: 1.5px;
-          text-transform: uppercase;
-        }
-        .sg-input::placeholder {
-          color: #C4BFBA;
-          font-size: 14px;
-          letter-spacing: 0.5px;
-          text-transform: none;
-        }
-        .sg-search-btn {
-          background: #1A1814;
-          color: #fff;
-          border: none;
-          padding: 0 28px;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 14px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: background 0.2s;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          white-space: nowrap;
-        }
-        .sg-search-btn:hover:not(:disabled) { background: #2D2920; }
-        .sg-search-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        .sg-hint {
+        .gst-error p {
+          color: #8b2d2d;
+        }
+
+        .gst-actions {
           margin-top: 10px;
-          font-size: 12px;
-          color: #A09890;
-          font-family: 'DM Mono', monospace;
-          letter-spacing: 0.3px;
-        }
-
-        /* ── PROGRESS ── */
-        .sg-progress-wrap {
-          max-width: 600px;
-          margin: 32px auto 0;
-          padding: 24px;
-          background: #fff;
-          border: 1px solid #E8E4DE;
-          border-radius: 12px;
-        }
-        .sg-progress-label {
-          font-size: 13px;
-          font-weight: 500;
-          color: #1A1814;
-          margin-bottom: 12px;
           display: flex;
-          align-items: center;
           gap: 8px;
-        }
-        .sg-spinner {
-          width: 14px; height: 14px;
-          border: 2px solid #E8E4DE;
-          border-top-color: #E8A23A;
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-          flex-shrink: 0;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .sg-bar-track {
-          background: #F0EDE8;
-          border-radius: 99px;
-          height: 4px;
-          overflow: hidden;
-          margin-bottom: 16px;
-        }
-        .sg-bar-fill {
-          height: 100%;
-          background: linear-gradient(90deg, #E8A23A, #C47B1A);
-          border-radius: 99px;
-          transition: width 1s ease;
-        }
-        .sg-log-list {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-        .sg-log-item {
-          font-family: 'DM Mono', monospace;
-          font-size: 11px;
-          color: #8B7E6F;
-          padding: 3px 0;
-          border-bottom: 1px solid #F5F2EE;
-        }
-        .sg-log-item:last-child { color: #1A1814; font-weight: 500; border: none; }
-
-        /* ── ERROR ── */
-        .sg-error {
-          max-width: 600px;
-          margin: 24px auto 0;
-          background: #FFF5F5;
-          border: 1px solid #FFCACA;
-          border-radius: 10px;
-          padding: 16px 20px;
-          display: flex;
-          align-items: flex-start;
-          gap: 12px;
-        }
-        .sg-error-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
-        .sg-error-body { flex: 1; }
-        .sg-error-title { font-size: 13px; font-weight: 600; color: #C0392B; margin-bottom: 4px; }
-        .sg-error-msg   { font-size: 13px; color: #8B3A2B; line-height: 1.5; }
-        .sg-retry-btn {
-          margin-top: 10px;
-          padding: 6px 16px;
-          background: transparent;
-          border: 1px solid #FFCACA;
-          border-radius: 6px;
-          font-size: 12px;
-          font-weight: 600;
-          color: #C0392B;
-          cursor: pointer;
-          transition: background 0.15s;
-        }
-        .sg-retry-btn:hover { background: #FFECEC; }
-
-        /* ── RESULTS ── */
-        .sg-result-wrap {
-          max-width: 860px;
-          margin: 40px auto 0;
-          padding: 0 24px;
-        }
-        .sg-result-header {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          gap: 16px;
-          margin-bottom: 24px;
           flex-wrap: wrap;
         }
-        .sg-company-name {
-          font-family: 'Instrument Serif', serif;
-          font-size: clamp(22px, 4vw, 32px);
-          color: #1A1814;
-          line-height: 1.2;
-          font-weight: 400;
+
+        .gst-secondary {
+          height: 40px;
+          border: 1px solid #d7ccbc;
+          background: #fff;
+          color: #5c5041;
+          border-radius: 10px;
+          padding: 0 14px;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
         }
-        .sg-company-tradename {
-          font-size: 14px;
-          color: #8B7E6F;
+
+        .gst-captcha {
+          max-width: 100%;
+          border: 1px solid #dfd4c3;
+          border-radius: 10px;
+          margin: 10px 0;
+          display: block;
+        }
+
+        .gst-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
           margin-top: 4px;
         }
-        .sg-status-pill {
-          padding: 6px 16px;
-          border-radius: 99px;
-          font-size: 12px;
-          font-weight: 600;
-          letter-spacing: 0.5px;
-          text-transform: uppercase;
-          white-space: nowrap;
-          flex-shrink: 0;
-        }
-        .sg-status-active   { background: #E8F8EE; color: #1A7A3A; border: 1px solid #B5E5C5; }
-        .sg-status-inactive { background: #FEECEC; color: #B02A2A; border: 1px solid #F5C5C5; }
-        .sg-status-unknown  { background: #F5F2EE; color: #7A6E60; border: 1px solid #DDD8CF; }
 
-        /* ── GRID ── */
-        .sg-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-          gap: 16px;
-          margin-bottom: 20px;
-        }
-        .sg-card {
+        .gst-cell {
+          border: 1px solid #e5dbcb;
           background: #fff;
-          border: 1px solid #E8E4DE;
           border-radius: 12px;
-          padding: 20px 22px;
-        }
-        .sg-card-title {
-          font-family: 'DM Mono', monospace;
-          font-size: 10px;
-          letter-spacing: 1.5px;
-          text-transform: uppercase;
-          color: #A09890;
-          margin-bottom: 12px;
-        }
-        .sg-field-row {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-        .sg-field {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-        }
-        .sg-field-label {
-          font-size: 11px;
-          color: #A09890;
-          font-weight: 500;
-          letter-spacing: 0.3px;
-        }
-        .sg-field-value {
-          font-size: 14px;
-          color: #1A1814;
-          font-weight: 500;
-          word-break: break-word;
-        }
-        .sg-field-value.mono {
-          font-family: 'DM Mono', monospace;
-          font-size: 13px;
-          font-weight: 400;
-          letter-spacing: 0.5px;
-        }
-        .sg-field-empty { color: #C4BFBA; font-style: italic; font-weight: 400; }
-
-        /* Full-width address card */
-        .sg-card-full {
-          grid-column: 1 / -1;
-        }
-        .sg-address-text {
-          font-size: 14px;
-          color: #1A1814;
-          line-height: 1.7;
+          padding: 12px;
         }
 
-        /* Nature of business tags */
-        .sg-tags {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 6px;
-        }
-        .sg-tag {
-          padding: 4px 10px;
-          background: #F5F2EE;
-          border: 1px solid #E8E4DE;
-          border-radius: 99px;
+        .gst-label {
           font-size: 12px;
-          color: #6B6458;
-        }
-
-        /* HSN / Dealing-in table */
-        .sg-hsn-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 13px;
-        }
-        .sg-hsn-table th {
-          text-align: left;
-          font-family: 'DM Mono', monospace;
-          font-size: 10px;
-          letter-spacing: 1px;
-          text-transform: uppercase;
-          color: #A09890;
-          padding: 6px 0;
-          border-bottom: 1px solid #E8E4DE;
-        }
-        .sg-hsn-table td {
-          padding: 8px 0;
-          color: #1A1814;
-          border-bottom: 1px solid #F5F2EE;
-          vertical-align: top;
-        }
-        .sg-hsn-table tr:last-child td { border: none; }
-
-        /* Cache badge */
-        .sg-cache-note {
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          font-size: 11px;
-          color: #A09890;
-          background: #F5F2EE;
-          padding: 4px 10px;
-          border-radius: 99px;
-          margin-bottom: 20px;
-        }
-
-        /* ── NEW SEARCH BTN ── */
-        .sg-new-search {
-          margin-top: 8px;
-          padding: 8px 20px;
-          background: transparent;
-          border: 1.5px solid #DDD8CF;
-          border-radius: 8px;
-          font-size: 13px;
-          font-weight: 500;
-          color: #6B6458;
-          cursor: pointer;
-          transition: all 0.15s;
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-        }
-        .sg-new-search:hover { border-color: #1A1814; color: #1A1814; }
-
-        /* ── CTA STRIP ── */
-        .sg-cta {
-          max-width: 860px;
-          margin: 40px auto;
-          padding: 32px 36px;
-          background: #1A1814;
-          border-radius: 16px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 24px;
-          flex-wrap: wrap;
-        }
-        .sg-cta-left {}
-        .sg-cta-eyebrow {
-          font-family: 'DM Mono', monospace;
-          font-size: 10px;
-          letter-spacing: 2px;
-          text-transform: uppercase;
-          color: #E8A23A;
-          margin-bottom: 6px;
-        }
-        .sg-cta-headline {
-          font-family: 'Instrument Serif', serif;
-          font-size: 22px;
-          color: #fff;
-          font-weight: 400;
-          line-height: 1.3;
-        }
-        .sg-cta-sub {
-          font-size: 13px;
-          color: rgba(255,255,255,0.5);
-          margin-top: 6px;
-          line-height: 1.5;
-        }
-        .sg-cta-btn {
-          padding: 12px 28px;
-          background: #E8A23A;
-          color: #1A1814;
-          border: none;
-          border-radius: 8px;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 14px;
-          font-weight: 700;
-          cursor: pointer;
-          text-decoration: none;
-          white-space: nowrap;
-          transition: background 0.15s, transform 0.15s;
-          display: inline-block;
-        }
-        .sg-cta-btn:hover { background: #F5B24A; transform: translateY(-1px); }
-
-        /* ── FOOTER ── */
-        .sg-footer {
-          text-align: center;
-          padding: 32px 24px 48px;
-          font-size: 12px;
-          color: #A09890;
-          line-height: 1.7;
-        }
-        .sg-footer a { color: #8B7E6F; text-decoration: underline; }
-        .sg-footer-links {
-          display: flex;
-          justify-content: center;
-          gap: 20px;
-          margin-bottom: 12px;
-          flex-wrap: wrap;
-        }
-        .sg-footer-links a {
-          font-size: 12px;
-          color: #A09890;
-          text-decoration: none;
-        }
-        .sg-footer-links a:hover { color: #1A1814; }
-
-        /* ── POPULAR STATES ── */
-        .sg-popular {
-          max-width: 700px;
-          margin: 28px auto 0;
-          text-align: center;
-        }
-        .sg-popular-label {
-          font-size: 11px;
-          color: #A09890;
-          margin-bottom: 10px;
-          font-family: 'DM Mono', monospace;
-          letter-spacing: 1px;
-        }
-        .sg-state-chips {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          justify-content: center;
-        }
-        .sg-chip {
-          padding: 5px 14px;
-          background: #fff;
-          border: 1px solid #E8E4DE;
-          border-radius: 99px;
-          font-size: 12px;
-          color: #6B6458;
-          cursor: pointer;
-          transition: all 0.15s;
-        }
-        .sg-chip:hover { border-color: #E8A23A; color: #8B5E2A; background: #FFF8EE; }
-
-        .sg-seo-wrap {
-          max-width: 980px;
-          margin: 24px auto 14px;
-          padding: 0 24px;
-          display: grid;
-          grid-template-columns: 1.6fr 1fr;
-          gap: 16px;
-        }
-        .sg-seo-card,
-        .sg-ad-card {
-          background: #fff;
-          border: 1px solid #E8E4DE;
-          border-radius: 14px;
-          padding: 18px 20px;
-        }
-        .sg-seo-title {
-          font-family: 'Instrument Serif', serif;
-          font-size: 24px;
-          line-height: 1.2;
-          margin-bottom: 8px;
-          color: #1A1814;
-        }
-        .sg-seo-p {
-          font-size: 14px;
-          line-height: 1.65;
-          color: #6B6458;
-          margin-bottom: 10px;
-        }
-        .sg-seo-keywords {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-        }
-        .sg-keyword {
-          border: 1px solid #E8E4DE;
-          border-radius: 999px;
-          padding: 6px 10px;
-          font-size: 12px;
-          color: #6B6458;
-          background: #F9F8F6;
-        }
-        .sg-ad-title {
-          font-family: 'DM Mono', monospace;
-          font-size: 11px;
-          letter-spacing: 1.2px;
-          text-transform: uppercase;
-          color: #A09890;
-          margin-bottom: 10px;
-        }
-        .sg-ad-slot {
-          min-height: 120px;
-          border: 1px dashed #DDD8CF;
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #A09890;
-          font-size: 12px;
-          background: #FCFBF9;
-        }
-
-        .sg-result-toast {
-          max-width: 600px;
-          margin: 20px auto 0;
-          background: #fff;
-          border: 1px solid #D8EEDB;
-          border-radius: 12px;
-          padding: 14px 16px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-        }
-        .sg-result-toast-msg {
-          font-size: 13px;
-          color: #1A7A3A;
-          line-height: 1.5;
-        }
-        .sg-view-btn {
-          border: 1px solid #B5E5C5;
-          background: #E8F8EE;
-          color: #1A7A3A;
-          padding: 8px 14px;
-          border-radius: 8px;
-          font-size: 12px;
-          font-weight: 700;
-          cursor: pointer;
-          white-space: nowrap;
-        }
-
-        .sg-modal {
-          position: fixed;
-          inset: 0;
-          background: rgba(20, 16, 10, 0.52);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1200;
-          padding: 16px;
-        }
-        .sg-modal-card {
-          width: min(720px, 92vw);
-          max-height: 86vh;
-          overflow: auto;
-          background: #fff;
-          border-radius: 16px;
-          border: 1px solid #E8E4DE;
-          box-shadow: 0 18px 60px rgba(0,0,0,0.22);
-          padding: 20px;
-        }
-        .sg-modal-head {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          gap: 16px;
-          margin-bottom: 14px;
-        }
-        .sg-modal-title {
-          font-family: 'Instrument Serif', serif;
-          font-size: clamp(24px, 3vw, 30px);
-          line-height: 1.2;
-          color: #1A1814;
+          color: #8a7d6d;
           margin-bottom: 4px;
         }
-        .sg-modal-sub {
-          font-size: 13px;
-          color: #8B7E6F;
-        }
-        .sg-close {
-          border: 1px solid #DDD8CF;
-          background: #fff;
-          color: #6B6458;
-          width: 34px;
-          height: 34px;
-          border-radius: 8px;
-          cursor: pointer;
-          font-weight: 700;
-        }
-        .sg-mini-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-          gap: 12px;
-          margin-top: 6px;
-        }
-        .sg-mini-item {
-          border: 1px solid #E8E4DE;
-          border-radius: 10px;
-          padding: 12px 12px;
-          background: #FAF9F7;
-        }
-        .sg-mini-label {
-          font-size: 11px;
-          color: #A09890;
-          margin-bottom: 3px;
-        }
-        .sg-mini-val {
-          color: #1A1814;
-          font-size: 14px;
-          line-height: 1.5;
+
+        .gst-value {
+          font-size: 23px;
+          font-weight: 500;
+          line-height: 1.4;
+          color: #2b2017;
+          word-break: break-word;
         }
 
-        /* ── RESPONSIVE ── */
-        @media (max-width: 600px) {
-          .sg-hero { padding: 48px 16px 40px; }
-          .sg-search-btn { padding: 0 16px; font-size: 13px; }
-          .sg-cta { padding: 24px 20px; }
-          .sg-result-wrap { padding: 0 16px; }
-          .sg-topbar { padding: 0 16px; }
-          .sg-topbar-cta .sg-topbar-desc { display: none; }
-          .sg-seo-wrap { grid-template-columns: 1fr; padding: 0 16px; }
+        .gst-legal {
+          margin: 0 0 8px;
+          font-family: 'Instrument Serif', serif;
+          font-size: clamp(30px, 2.3vw, 38px);
+          font-weight: 400;
+          letter-spacing: -0.25px;
+          color: #20170e;
+          text-wrap: balance;
+        }
+
+        .gst-foot {
+          margin-top: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .gst-note {
+          margin: 0;
+          font-size: 12px;
+          color: #847665;
+        }
+
+        .gst-note a {
+          color: #8a5a16;
+          text-decoration: none;
+          font-weight: 700;
+        }
+
+        @media (max-width: 860px) {
+          .gst-page { padding: 10px; }
+          .gst-head { padding: 18px 14px 12px; }
+          .gst-body { padding: 12px 14px 14px; }
+          .gst-search-row { grid-template-columns: 1fr; }
+          .gst-grid { grid-template-columns: 1fr; }
+          .gst-btn { width: 100%; }
         }
       `}</style>
 
-      {}
-      <nav className="sg-topbar">
-        <a href="https://searchgst.syntern.in" className="sg-logo">
-          <div className="sg-logo-mark">GST</div>
-          <div className="sg-logo-text">Search<span>GST</span></div>
-        </a>
-        <div className="sg-topbar-cta">
-          <span className="sg-topbar-desc">Automate your HR & Payroll —</span>
-          <a href="https://syntern.in/register">Try Syntern HRMS Free →</a>
-        </div>
-      </nav>
+      <main className="gst-page">
+        <section className="gst-shell" aria-label="GST verification card">
+          <header className="gst-head">
+            <h1 className="gst-title">GST Verification</h1>
+            <p className="gst-sub">
+              Fast lookup with minimum steps. If not cached, one manual captcha is shown on this page.
+            </p>
+          </header>
 
-      {}
-      <section className="sg-hero">
-        <div className="sg-eyebrow">Free GST Verification Tool</div>
-        <h1 className="sg-headline">
-          Search any <em>GSTIN</em><br />instantly
-        </h1>
-        <p className="sg-sub">
-          Enter a 15-digit GSTIN to get complete company details — trade name, legal name, address, status, and more. Free, no signup.
-        </p>
-
-        <div className="sg-search-wrap">
-          <div className="sg-search-box">
-            <input
-              ref={inputRef}
-              className="sg-input"
-              type="text"
-              maxLength={15}
-              placeholder="e.g. 27AABCU9603R1ZX"
-              value={query}
-              onChange={e => setQuery(e.target.value.toUpperCase().replace(/\s/g, ''))}
-              onKeyDown={e => e.key === 'Enter' && !isLoading && search()}
-              autoFocus
-            />
-            <button className="sg-search-btn" onClick={search} disabled={isLoading}>
-              {isLoading ? <><div className="sg-spinner" style={{borderTopColor:'#fff'}} /> Searching</> : '→ Search'}
-            </button>
-          </div>
-          <div className="sg-hint">Format: 2-digit state code + 10-digit PAN + 3 digits &nbsp;·&nbsp; 15 characters total</div>
-        </div>
-
-        {}
-        {phase === 'idle' && (
-          <div className="sg-popular">
-            <div className="sg-popular-label">POPULAR BY STATE</div>
-            <div className="sg-state-chips">
-              {['Delhi (07)', 'Maharashtra (27)', 'Karnataka (29)', 'Gujarat (24)', 'Tamil Nadu (33)', 'UP (09)', 'Telangana (36)', 'Rajasthan (08)'].map(s => (
-                <div key={s} className="sg-chip">{s}</div>
-              ))}
-            </div>
-          </div>
-        )}
-      </section>
-
-      {}
-      <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 24px' }}>
-        <AdBanner />
-      </div>
-
-      <section className="sg-seo-wrap">
-        <article className="sg-seo-card">
-          <h2 className="sg-seo-title">GSTIN Verification for Better Compliance and Faster Vendor Checks</h2>
-          <p className="sg-seo-p">
-            Use this free GST search tool to verify legal entity name, trade name, registration date, and principal place of business.
-            It helps with vendor onboarding, invoice validation, payroll compliance workflows, and finance controls.
-          </p>
-          <p className="sg-seo-p">
-            Manual captcha verification keeps the process compliant while our automation extracts structured GST data for faster lookup and caching.
-          </p>
-          <div className="sg-seo-keywords">
-            {['GSTIN lookup', 'GST verification', 'GST taxpayer search', 'vendor KYC', 'compliance automation', 'business registration check'].map(k => (
-              <span key={k} className="sg-keyword">{k}</span>
-            ))}
-          </div>
-        </article>
-        <aside className="sg-ad-card">
-          <div className="sg-ad-title">Sponsored & Product Spotlight</div>
-          <div className="sg-ad-slot">Google Ads Slot (300x250 / Responsive)</div>
-          <div style={{ marginTop: 12 }}>
-            <AdBanner />
-          </div>
-        </aside>
-      </section>
-
-      {}
-      {isLoading && (
-        <div className="sg-search-wrap" style={{ margin: '0 auto', padding: '0 24px' }}>
-          <div className="sg-progress-wrap">
-            <div className="sg-progress-label">
-              <div className="sg-spinner" />
-              {phase === 'checking' ? 'Checking database cache…' : 'Live lookup from GST portal…'}
-            </div>
-            <div className="sg-bar-track">
-              <div className="sg-bar-fill" style={{ width: `${pct}%` }} />
-            </div>
-            {logs.length > 0 && (
-              <div className="sg-log-list">
-                {logs.slice(-5).map((l, i) => (
-                  <div key={i} className="sg-log-item">{l}</div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {}
-      {phase === 'error' && (
-        <div className="sg-search-wrap" style={{ margin: '0 auto', padding: '0 24px' }}>
-          <div className="sg-error">
-            <div className="sg-error-icon">⚠</div>
-            <div className="sg-error-body">
-              <div className="sg-error-title">Lookup failed</div>
-              <div className="sg-error-msg">{errMsg}</div>
-              <button className="sg-retry-btn" style={{ marginRight: 8 }} onClick={startAssistedLookup}>Manual Captcha Verification (Official GST)</button>
-              <button className="sg-retry-btn" onClick={reset}>Try another GSTIN</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {phase === 'assisted' && (
-        <div className="sg-search-wrap" style={{ margin: '0 auto', padding: '0 24px' }}>
-          <div className="sg-progress-wrap" style={{ textAlign: 'left' }}>
-            <div className="sg-progress-label">Manual Captcha Verification (Official GST)</div>
-            {assistedCaptchaImage && (
-              <img
-                src={assistedCaptchaImage}
-                alt="GST captcha"
-                style={{ display: 'block', maxWidth: '100%', margin: '12px 0', border: '1px solid #E8E4DE', borderRadius: 8 }}
-              />
-            )}
-            <div className="sg-search-box" style={{ marginTop: 8 }}>
+          <div className="gst-body">
+            <div className="gst-search-row">
               <input
-                className="sg-input"
+                ref={inputRef}
+                className="gst-input"
                 type="text"
-                placeholder="Enter captcha"
-                value={assistedCaptchaText}
-                onChange={e => setAssistedCaptchaText(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && !assistedSubmitting && submitAssistedCaptcha()}
+                value={query}
+                maxLength={15}
+                placeholder="Enter 15-digit GSTIN"
+                onChange={(e) => setQuery(e.target.value.toUpperCase().replace(/\s/g, ''))}
+                onKeyDown={(e) => e.key === 'Enter' && !isBusy && search()}
+                autoFocus
               />
-              <button className="sg-search-btn" onClick={submitAssistedCaptcha} disabled={assistedSubmitting}>
-                {assistedSubmitting ? 'Submitting...' : 'Submit Captcha'}
+              <button className="gst-btn" onClick={search} disabled={isBusy}>
+                {phase === 'checking' ? 'Checking...' : assistedSubmitting ? 'Submitting...' : 'Search GST'}
               </button>
             </div>
-            <div className="sg-hint" style={{ marginTop: 12 }}>
-              Stay on this page. Enter captcha shown above, then we fetch and save GST details automatically.
-            </div>
-            <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button className="sg-retry-btn" style={{ marginTop: 0 }} onClick={startAssistedLookup} disabled={assistedSubmitting}>Get New Challenge</button>
-              <button className="sg-retry-btn" style={{ marginTop: 0 }} onClick={cancelAssistedSession} disabled={assistedSubmitting}>Cancel Assisted Mode</button>
-            </div>
-            {!!errMsg && <div className="sg-error-msg" style={{ marginTop: 10 }}>{errMsg}</div>}
+
+            <p className="gst-hint">Format example: 27AABCU9603R1ZX</p>
+
+            {phase === 'checking' && (
+              <div className="gst-block">
+                <p className="gst-info">Checking records and preparing verification...</p>
+              </div>
+            )}
+
+            {phase === 'error' && (
+              <div className="gst-block gst-error">
+                <p className="gst-info">{errMsg}</p>
+                <div className="gst-actions">
+                  <button className="gst-secondary" onClick={search} disabled={isBusy}>Retry</button>
+                  <button className="gst-secondary" onClick={reset} disabled={isBusy}>New Search</button>
+                </div>
+              </div>
+            )}
+
+            {phase === 'assisted' && (
+              <div className="gst-block">
+                <p className="gst-info">Complete one captcha below to fetch official GST details.</p>
+                {assistedCaptchaImage && <img className="gst-captcha" src={assistedCaptchaImage} alt="GST captcha" />}
+
+                <div className="gst-search-row" style={{ marginBottom: 0 }}>
+                  <input
+                    className="gst-input"
+                    type="text"
+                    value={assistedCaptchaText}
+                    placeholder="Enter captcha"
+                    onChange={(e) => setAssistedCaptchaText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && !assistedSubmitting && submitAssistedCaptcha()}
+                  />
+                  <button className="gst-btn" onClick={submitAssistedCaptcha} disabled={assistedSubmitting}>
+                    Submit Captcha
+                  </button>
+                </div>
+
+                <div className="gst-actions">
+                  <button className="gst-secondary" onClick={() => startAssistedLookup(query.trim().toUpperCase())} disabled={assistedSubmitting}>
+                    Refresh Captcha
+                  </button>
+                  <button className="gst-secondary" onClick={cancelAssistedSession} disabled={assistedSubmitting}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {phase === 'done' && data && (
+              <div className="gst-block" style={{ background: '#fff' }}>
+                <h2 className="gst-legal">{valueOrDash(data.legalname || data.company_name)}</h2>
+
+                <div className="gst-grid">
+                  <div className="gst-cell">
+                    <div className="gst-label">GSTIN</div>
+                    <div className="gst-value">{valueOrDash(data.gstin)}</div>
+                  </div>
+                  <div className="gst-cell">
+                    <div className="gst-label">Business Name (Legal)</div>
+                    <div className="gst-value">{valueOrDash(data.legalname || data.company_name)}</div>
+                  </div>
+                  <div className="gst-cell">
+                    <div className="gst-label">Trade Name</div>
+                    <div className="gst-value">{valueOrDash(data.tradename)}</div>
+                  </div>
+                  <div className="gst-cell">
+                    <div className="gst-label">Registration Date</div>
+                    <div className="gst-value">{valueOrDash(data.regdate)}</div>
+                  </div>
+                  <div className="gst-cell">
+                    <div className="gst-label">Status</div>
+                    <div className="gst-value">{valueOrDash(data.status)}</div>
+                  </div>
+                  <div className="gst-cell">
+                    <div className="gst-label">Principal Address</div>
+                    <div className="gst-value">{buildPrincipalAddress(data)}</div>
+                  </div>
+                </div>
+
+                <div className="gst-foot">
+                  <p className="gst-note">
+                    Data sourced from official GST portal. Verify at <a href="https://www.gst.gov.in" target="_blank" rel="noopener noreferrer">gst.gov.in</a>.
+                  </p>
+                  <button className="gst-secondary" onClick={reset}>New Search</button>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
-
-      {phase === 'done' && data && (
-        <div className="sg-result-toast">
-          <div className="sg-result-toast-msg">
-            Verification complete. Open popup to view details.
-            {data.cachedAt ? ' Data loaded from recent cache.' : ' Data fetched from GST portal.'}
-            {!!assistedWarning ? ` Cache warning: ${assistedWarning}` : ''}
-          </div>
-          <button className="sg-view-btn" onClick={() => setShowDetailsPopup(true)}>View GST Details</button>
-        </div>
-      )}
-
-      {showDetailsPopup && data && (
-        <div className="sg-modal" role="dialog" aria-modal="true" aria-label="GST details popup">
-          <div className="sg-modal-card">
-            <div className="sg-modal-head">
-              <div>
-                <div className="sg-modal-title">{data.legalname || data.company_name || data.tradename || data.gstin}</div>
-                <div className="sg-modal-sub">GST verification summary</div>
-              </div>
-              <button className="sg-close" onClick={() => setShowDetailsPopup(false)}>×</button>
-            </div>
-
-            <div className="sg-mini-grid">
-              <div className="sg-mini-item">
-                <div className="sg-mini-label">GSTIN</div>
-                <div className="sg-mini-val">{data.gstin || '—'}</div>
-              </div>
-              <div className="sg-mini-item">
-                <div className="sg-mini-label">Legal Name</div>
-                <div className="sg-mini-val">{data.legalname || data.company_name || '—'}</div>
-              </div>
-              <div className="sg-mini-item">
-                <div className="sg-mini-label">Trade Name</div>
-                <div className="sg-mini-val">{data.tradename || '—'}</div>
-              </div>
-              <div className="sg-mini-item">
-                <div className="sg-mini-label">Registration Date</div>
-                <div className="sg-mini-val">{data.regdate || '—'}</div>
-              </div>
-              <div className="sg-mini-item">
-                <div className="sg-mini-label">Status</div>
-                <div className="sg-mini-val">{data.status || '—'}</div>
-              </div>
-              <div className="sg-mini-item">
-                <div className="sg-mini-label">Principal Address</div>
-                <div className="sg-mini-val">{[data.flat_no, data.branch_name, data.branch_no && `Branch No. ${data.branch_no}`, data.street, data.location, data.district, data.state, data.pincode].filter(Boolean).join(', ') || '—'}</div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <p style={{fontSize:11, color:'#8B7E6F', lineHeight:1.6, margin: 0}}>
-                Data sourced from public GST portal. Verify official records at{' '}
-                <a href="https://www.gst.gov.in" target="_blank" rel="noopener noreferrer" style={{color:'#8B5E2A'}}>gst.gov.in</a>.
-              </p>
-              <button className="sg-new-search" onClick={reset}>New Search</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {}
-      <div style={{ padding: '0 24px' }}>
-        <div className="sg-cta">
-          <div className="sg-cta-left">
-            <div className="sg-cta-eyebrow">For Business Owners & HR Teams</div>
-            <div className="sg-cta-headline">Automate payroll, attendance<br />& compliance — free to start</div>
-            <div className="sg-cta-sub">
-              Syntern HRMS handles GST-linked company setup, PF/ESI filing,<br />
-              salary processing, and employee management on your own subdomain.
-            </div>
-          </div>
-          <a href="https://syntern.in/register" className="sg-cta-btn">
-            Start Free Trial →
-          </a>
-        </div>
-      </div>
-
-      {}
-      <footer className="sg-footer">
-        <div className="sg-footer-links">
-          <a href="https://syntern.in">Syntern HRMS</a>
-          <a href="https://syntern.in/register">Register Company</a>
-          <a href="https://syntern.in/privacy">Privacy Policy</a>
-          <a href="mailto:support@syntern.in">Contact</a>
-        </div>
-        <div>© {new Date().getFullYear()} Syntern Technologies · SearchGST is a free public tool</div>
-        <div style={{marginTop:6}}>Data accuracy not guaranteed. Always verify from <a href="https://www.gst.gov.in" target="_blank" rel="noopener noreferrer">gst.gov.in</a></div>
-      </footer>
+        </section>
+      </main>
     </>
   );
 }
-
