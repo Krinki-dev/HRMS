@@ -155,9 +155,9 @@ async function savePlan(planData) {
     planData.id = uuidv4();
     plans.push(planData);
   } else {
-    const idx = plans.findIndex(p => p.id === planData.id);
+    const idx = plans.findIndex(p => p.id === planData.id || p.slug === planData.slug);
     if (idx === -1) throw new Error('Plan not found');
-    plans[idx] = { ...plans[idx], ...planData };
+    plans[idx] = { ...plans[idx], ...planData, id: plans[idx].id };
   }
   await _write(KEY.PLANS, { plans });
   return planData;

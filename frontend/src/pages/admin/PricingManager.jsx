@@ -17,7 +17,7 @@ const ALL_MODULES = [
 
 const FALLBACK_PLANS = [
   {
-    id: 'free',
+    id: 'a1b2c3d4-0001-4000-8000-000000000001',
     slug: 'free',
     name: 'Basic / Free',
     tagline: 'Free forever for small teams',
@@ -34,7 +34,7 @@ const FALLBACK_PLANS = [
     trial_days: 14,
   },
   {
-    id: 'custom',
+    id: 'a1b2c3d4-0002-4000-8000-000000000002',
     slug: 'custom',
     name: 'Custom / Add-on',
     tagline: 'Pick add-ons and modules as you grow',
@@ -51,7 +51,7 @@ const FALLBACK_PLANS = [
     trial_days: 0,
   },
   {
-    id: 'pro',
+    id: 'a1b2c3d4-0003-4000-8000-000000000003',
     slug: 'pro',
     name: 'Pro',
     tagline: 'Full HRMS access with automation and support',
@@ -72,12 +72,12 @@ const FALLBACK_PLANS = [
 // ── Atoms ─────────────────────────────────────────────────────────────────────
 const Input = ({ label, value, onChange, type = 'text', placeholder, small }) => (
   <div>
-    {label && <label className="block text-xs font-medium text-[#475569] mb-1">{label}</label>}
+    {label && <label className="block text-xs font-medium text-[var(--admin-text-secondary)] mb-1">{label}</label>}
     <input
       type={type} value={value ?? ''} onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
-      className={`w-full border border-[rgba(148,163,184,0.3)] rounded-xl bg-white px-3 text-sm text-[#111827]
-        focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB]
+      className={`w-full border border-[var(--admin-border)] rounded-xl bg-[var(--admin-surface)] px-3 text-sm text-[var(--admin-text)]
+        focus:outline-none focus:ring-2 focus:ring-[var(--admin-accent-soft)] focus:border-[var(--admin-accent)]
         ${small ? 'py-1.5' : 'py-2'}`}
     />
   </div>
@@ -87,10 +87,10 @@ const Toggle = ({ checked, onChange, label }) => (
   <label className="flex items-center gap-2 cursor-pointer">
     <div className="relative">
       <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="sr-only" />
-      <div className={`w-9 h-5 rounded-full transition-colors ${checked ? 'bg-[#2563EB]' : 'bg-[#CBD5E1]'}`} />
-      <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-[18px] left-0.5' : 'left-0.5'}`} />
+      <div className={`w-9 h-5 rounded-full transition-colors ${checked ? 'bg-[var(--admin-accent)]' : 'bg-[var(--admin-border)]'}`} />
+      <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-[var(--admin-surface)] shadow transition-transform ${checked ? 'translate-x-[18px] left-0.5' : 'left-0.5'}`} />
     </div>
-    {label && <span className="text-sm text-[#475569]">{label}</span>}
+    {label && <span className="text-sm text-[var(--admin-text-secondary)]">{label}</span>}
   </label>
 );
 
@@ -98,16 +98,21 @@ const Btn = ({ children, onClick, variant = 'primary', small, disabled }) => {
   const base = 'font-medium rounded-xl transition-all flex items-center gap-1.5 disabled:opacity-50';
   const sz = small ? 'px-3 py-1.5 text-xs' : 'px-4 py-2 text-sm';
   const v = {
-    primary:   'bg-[#2563EB] text-white hover:bg-[#1d4ed8]',
-    secondary: 'border border-[#2563EB] text-[#2563EB] hover:bg-[#DBEAFE]',
-    danger:    'bg-red-50 text-red-600 hover:bg-red-100',
-    ghost:     'text-[#475569] hover:bg-[#F1F5F9]',
+    primary:   'bg-[var(--admin-accent)] text-white hover:opacity-95',
+    secondary: 'border border-[var(--admin-accent)] text-[var(--admin-accent)] hover:bg-[var(--admin-accent-soft)]',
+    danger:    'bg-[var(--danger-soft)] text-[var(--color-danger)] hover:opacity-90',
+    ghost:     'text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-muted)]',
   };
   return <button onClick={onClick} disabled={disabled} className={`${base} ${sz} ${v[variant] || v.primary}`}>{children}</button>;
 };
 
 const Badge = ({ children, color = 'blue' }) => {
-  const c = { blue:'bg-blue-50 text-blue-700', green:'bg-green-50 text-green-700', gray:'bg-gray-100 text-gray-600', amber:'bg-amber-50 text-amber-700' };
+  const c = {
+    blue:'bg-[var(--admin-accent-soft)] text-[var(--admin-accent)]',
+    green:'bg-[var(--success-soft)] text-[var(--color-success)]',
+    gray:'bg-[var(--admin-surface-muted)] text-[var(--admin-text-soft)]',
+    amber:'bg-[var(--warning-soft)] text-[var(--color-warning)]'
+  };
   return <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${c[color]}`}>{children}</span>;
 };
 
@@ -117,6 +122,7 @@ function PlanModal({ plan, onSave, onClose }) {
     name:'', slug:'', tagline:'', badge:'', is_active:true, is_popular:false,
     base_price_paise:'', employee_cap:'', per_employee_excess_paise:5000,
     included_modules:['employees','attendance','leave','payroll','compliance','reports','automation','notifications','settings','documents'],
+    addon_modules:['recruitment','performance','training','expenses','assets','fieldforce','ai'],
     is_trial_eligible:true, trial_days:90, sort_order:99,
     ...plan, highlights: plan.highlights?.length ? plan.highlights : [''],
   });
@@ -146,10 +152,10 @@ function PlanModal({ plan, onSave, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-[rgba(148,163,184,0.2)]">
+      <div className="bg-[var(--admin-surface)] text-[var(--admin-text)] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-[var(--admin-border)]">
+        <div className="flex items-center justify-between p-5 border-b border-[var(--admin-border)]">
           <h2 className="text-base font-semibold">{!plan.id ? 'New Plan' : 'Edit Plan'}</h2>
-          <button onClick={onClose} className="text-[#94A3B8] hover:text-[#475569]">✕</button>
+          <button onClick={onClose} className="text-[var(--admin-text-soft)] hover:text-[var(--admin-text-secondary)]">✕</button>
         </div>
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-2 gap-3">
@@ -166,15 +172,15 @@ function PlanModal({ plan, onSave, onClose }) {
             </div>
           </div>
 
-          <div className="p-3.5 bg-[#F8FAFC] rounded-xl border border-[rgba(148,163,184,0.2)]">
-            <p className="text-xs font-semibold text-[#475569] uppercase tracking-wider mb-3">Pricing</p>
+          <div className="p-3.5 bg-[var(--admin-surface-muted)] rounded-xl border border-[var(--admin-border)]">
+            <p className="text-xs font-semibold text-[var(--admin-text-secondary)] uppercase tracking-wider mb-3">Pricing</p>
             <div className="grid grid-cols-3 gap-3">
               <Input label="Base Price (paise)" type="number" value={f.base_price_paise} onChange={v => s('base_price_paise', v)} placeholder="149900" />
               <Input label="Employee Cap" type="number" value={f.employee_cap} onChange={v => s('employee_cap', v)} placeholder="25" />
               <Input label="Overage/emp (paise)" type="number" value={f.per_employee_excess_paise} onChange={v => s('per_employee_excess_paise', v)} />
             </div>
             {f.base_price_paise && (
-              <p className="text-xs text-[#2563EB] mt-2">= {fmt(Number(f.base_price_paise))}/mo · +{fmt(Number(f.per_employee_excess_paise))}/extra emp</p>
+              <p className="text-xs text-[var(--admin-accent)] mt-2">= {fmt(Number(f.base_price_paise))}/mo · +{fmt(Number(f.per_employee_excess_paise))}/extra emp</p>
             )}
           </div>
 
@@ -186,8 +192,8 @@ function PlanModal({ plan, onSave, onClose }) {
           </div>
 
           {['included_modules','addon_modules'].map(k => (
-            <div key={k} className="p-3.5 bg-[#F8FAFC] rounded-xl border border-[rgba(148,163,184,0.2)]">
-              <p className="text-xs font-semibold text-[#475569] uppercase tracking-wider mb-2.5">
+            <div key={k} className="p-3.5 bg-[var(--admin-surface-muted)] rounded-xl border border-[var(--admin-border)]">
+              <p className="text-xs font-semibold text-[var(--admin-text-secondary)] uppercase tracking-wider mb-2.5">
                 {k === 'included_modules' ? '✅ Included in plan' : '➕ Available as add-ons'}
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -195,8 +201,8 @@ function PlanModal({ plan, onSave, onClose }) {
                   <button key={mod} onClick={() => toggleMod(k, mod)}
                     className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
                       f[k].includes(mod)
-                        ? k === 'included_modules' ? 'bg-[#2563EB] text-white border-[#2563EB]' : 'bg-purple-600 text-white border-purple-600'
-                        : 'bg-white text-[#64748B] border-[rgba(148,163,184,0.3)] hover:border-[#2563EB]'
+                        ? k === 'included_modules' ? 'bg-[var(--admin-accent)] text-white border-[var(--admin-accent)]' : 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                        : 'bg-[var(--admin-surface)] text-[var(--admin-text-secondary)] border-[var(--admin-border)] hover:border-[var(--admin-accent)]'
                     }`}
                   >{mod}</button>
                 ))}
@@ -205,21 +211,21 @@ function PlanModal({ plan, onSave, onClose }) {
           ))}
 
           <div>
-            <p className="text-xs font-semibold text-[#475569] uppercase tracking-wider mb-2">Selling Points</p>
+            <p className="text-xs font-semibold text-[var(--admin-text-secondary)] uppercase tracking-wider mb-2">Selling Points</p>
             <div className="space-y-2">
               {f.highlights.map((h, i) => (
                 <div key={i} className="flex gap-2">
                   <input value={h} onChange={e => { const hl = [...f.highlights]; hl[i]=e.target.value; s('highlights',hl); }}
                     placeholder={`Feature ${i+1}…`}
-                    className="flex-1 border border-[rgba(148,163,184,0.3)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#2563EB]" />
-                  <button onClick={() => s('highlights', f.highlights.filter((_,j)=>j!==i))} className="text-red-400 hover:text-red-600 px-2">✕</button>
+                    className="flex-1 border border-[var(--admin-border)] rounded-xl px-3 py-2 text-sm bg-[var(--admin-surface)] text-[var(--admin-text)] focus:outline-none focus:border-[var(--admin-accent)]" />
+                  <button onClick={() => s('highlights', f.highlights.filter((_,j)=>j!==i))} className="text-[var(--color-danger)] hover:opacity-80 px-2">✕</button>
                 </div>
               ))}
               <Btn small variant="ghost" onClick={() => s('highlights', [...f.highlights,''])}>+ Add point</Btn>
             </div>
           </div>
         </div>
-        <div className="flex justify-end gap-3 p-5 border-t border-[rgba(148,163,184,0.2)]">
+        <div className="flex justify-end gap-3 p-5 border-t border-[var(--admin-border)]">
           <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
           <Btn onClick={save} disabled={saving}>{saving ? 'Saving…' : !plan.id ? 'Create Plan' : 'Save Changes'}</Btn>
         </div>
@@ -245,31 +251,31 @@ function PlansTab({ data, reload }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold text-[#111827]">Plan Catalog</h2>
-          <p className="text-xs text-[#64748B] mt-0.5">Plans shown on the onboarding plan selection screen</p>
+          <h2 className="text-base font-semibold text-[var(--admin-text)]">Plan Catalog</h2>
+          <p className="text-xs text-[var(--admin-text-secondary)] mt-0.5">Plans shown on the onboarding plan selection screen</p>
         </div>
         <Btn onClick={() => setModal({})}>+ New Plan</Btn>
       </div>
       <div className="space-y-3">
         {(data.plans || []).map(plan => (
-          <div key={plan.id} className="bg-white border border-[rgba(148,163,184,0.2)] rounded-2xl p-5 shadow-sm">
+          <div key={plan.id} className="bg-[var(--admin-surface)] border border-[var(--admin-border)] rounded-2xl p-5 shadow-sm">
             <div className="flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-[#111827]">{plan.name}</span>
+                  <span className="font-semibold text-[var(--admin-text)]">{plan.name}</span>
                   {plan.badge && <Badge color="amber">{plan.badge}</Badge>}
                   {plan.is_popular && <Badge color="blue">Popular</Badge>}
                   {!plan.is_active && <Badge color="gray">Inactive</Badge>}
-                  <span className="text-xs text-[#94A3B8] font-mono">/{plan.slug}</span>
+                  <span className="text-xs text-[var(--admin-text-soft)] font-mono">/{plan.slug}</span>
                 </div>
-                <p className="text-sm text-[#64748B] mt-0.5">{plan.tagline}</p>
+                <p className="text-sm text-[var(--admin-text-secondary)] mt-0.5">{plan.tagline}</p>
               </div>
               <div className="text-right ml-4">
-                <p className="text-lg font-bold text-[#111827]">{plan.base_price_paise ? fmt(plan.base_price_paise) : 'Custom'}</p>
-                {plan.base_price_paise && <p className="text-xs text-[#94A3B8]">/month · cap {plan.employee_cap ?? '∞'} emp</p>}
+                <p className="text-lg font-bold text-[var(--admin-text)]">{plan.base_price_paise ? fmt(plan.base_price_paise) : 'Custom'}</p>
+                {plan.base_price_paise && <p className="text-xs text-[var(--admin-text-soft)]">/month · cap {plan.employee_cap ?? '∞'} emp</p>}
               </div>
             </div>
-            <div className="mt-3 flex flex-wrap gap-4 text-xs text-[#64748B]">
+            <div className="mt-3 flex flex-wrap gap-4 text-xs text-[var(--admin-text-secondary)]">
               <span>✅ {plan.included_modules?.length || 0} included</span>
               <span>➕ {plan.addon_modules?.length || 0} add-ons</span>
               {plan.is_trial_eligible && <span>🎁 {plan.trial_days}d trial</span>}
@@ -277,7 +283,7 @@ function PlansTab({ data, reload }) {
             </div>
             {plan.highlights?.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
-                {plan.highlights.map((h,i) => <span key={i} className="text-xs bg-[#F1F5F9] text-[#475569] px-2 py-0.5 rounded-full">{h}</span>)}
+                {plan.highlights.map((h,i) => <span key={i} className="text-xs bg-[var(--admin-surface-muted)] text-[var(--admin-text-secondary)] px-2 py-0.5 rounded-full">{h}</span>)}
               </div>
             )}
             <div className="flex gap-2 mt-4">
@@ -311,44 +317,44 @@ function PricingTab({ data, reload }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold text-[#111827]">Module Pricing</h2>
-          <p className="text-xs text-[#64748B] mt-0.5">Default add-on price per module. Used in plan selection and billing.</p>
+          <h2 className="text-base font-semibold text-[var(--admin-text)]">Module Pricing</h2>
+          <p className="text-xs text-[var(--admin-text-secondary)] mt-0.5">Default add-on price per module. Used in plan selection and billing.</p>
         </div>
         <Btn onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save All'}</Btn>
       </div>
-      <div className="bg-white border border-[rgba(148,163,184,0.2)] rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-[var(--admin-surface)] border border-[var(--admin-border)] rounded-2xl overflow-hidden shadow-sm">
         <table className="w-full text-sm">
-          <thead className="bg-[#F8FAFC]">
+          <thead className="bg-[var(--admin-surface-muted)]">
             <tr>{['Module','Label','Type','Price (paise)','Preview','Description'].map(h => (
-              <th key={h} className="text-left px-4 py-2.5 text-xs font-semibold text-[#475569] uppercase tracking-wider">{h}</th>
+              <th key={h} className="text-left px-4 py-2.5 text-xs font-semibold text-[var(--admin-text-secondary)] uppercase tracking-wider">{h}</th>
             ))}</tr>
           </thead>
           <tbody>
             {Object.entries(pricing).map(([mod, cfg]) => (
-              <tr key={mod} className="border-t border-[rgba(148,163,184,0.1)] hover:bg-[#F8FAFC]/60">
-                <td className="px-4 py-2.5 font-mono text-xs text-[#64748B]">{mod}</td>
+              <tr key={mod} className="border-t border-[var(--admin-border)] hover:bg-[var(--admin-surface-muted)]/60">
+                <td className="px-4 py-2.5 font-mono text-xs text-[var(--admin-text-secondary)]">{mod}</td>
                 <td className="px-4 py-2.5">
                   <input value={cfg.label||''} onChange={e => setField(mod,'label',e.target.value)}
-                    className="w-32 border border-[rgba(148,163,184,0.3)] rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-[#2563EB]" />
+                    className="w-32 border border-[var(--admin-border)] rounded-lg px-2 py-1 text-xs bg-[var(--admin-surface)] text-[var(--admin-text)] focus:outline-none focus:border-[var(--admin-accent)]" />
                 </td>
                 <td className="px-4 py-2.5">
                   <select value={cfg.type} onChange={e => setField(mod,'type',e.target.value)}
-                    className="border border-[rgba(148,163,184,0.3)] rounded-lg px-2 py-1 text-xs bg-white focus:outline-none">
+                    className="border border-[var(--admin-border)] rounded-lg px-2 py-1 text-xs bg-[var(--admin-surface)] text-[var(--admin-text)] focus:outline-none">
                     <option value="per_employee">Per Employee</option>
                     <option value="flat">Flat Monthly</option>
                   </select>
                 </td>
                 <td className="px-4 py-2.5">
                   <input type="number" value={cfg.price_paise||''} onChange={e => setField(mod,'price_paise',e.target.value)}
-                    className="w-24 border border-[rgba(148,163,184,0.3)] rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-[#2563EB]" />
+                    className="w-24 border border-[var(--admin-border)] rounded-lg px-2 py-1 text-xs bg-[var(--admin-surface)] text-[var(--admin-text)] focus:outline-none focus:border-[var(--admin-accent)]" />
                 </td>
-                <td className="px-4 py-2.5 text-[#2563EB] font-medium text-xs">
+                <td className="px-4 py-2.5 text-[var(--admin-accent)] font-medium text-xs">
                   {fmt(Number(cfg.price_paise))}{cfg.type==='per_employee'?'/emp':'/mo'}
                 </td>
                 <td className="px-4 py-2.5">
                   <input value={cfg.desc||''} onChange={e => setField(mod,'desc',e.target.value)}
                     placeholder="Short description"
-                    className="w-48 border border-[rgba(148,163,184,0.3)] rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-[#2563EB]" />
+                    className="w-48 border border-[var(--admin-border)] rounded-lg px-2 py-1 text-xs bg-[var(--admin-surface)] text-[var(--admin-text)] focus:outline-none focus:border-[var(--admin-accent)]" />
                 </td>
               </tr>
             ))}
@@ -397,11 +403,11 @@ function DiscountsTab({ data, reload }) {
   return (
     <div className="space-y-5">
       {/* Tenure Discounts */}
-      <div className="bg-white border border-[rgba(148,163,184,0.2)] rounded-2xl p-5 shadow-sm">
+      <div className="bg-[var(--admin-surface)] border border-[var(--admin-border)] rounded-2xl p-5 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="font-semibold text-[#111827]">Tenure Discounts</h3>
-            <p className="text-xs text-[#64748B] mt-0.5">Discount % for longer billing commitments</p>
+            <h3 className="font-semibold text-[var(--admin-text)]">Tenure Discounts</h3>
+            <p className="text-xs text-[var(--admin-text-secondary)] mt-0.5">Discount % for longer billing commitments</p>
           </div>
           <div className="flex gap-2">
             <Btn small variant="ghost" onClick={() => setDisc(d=>({...d,tenure:[...(d.tenure||[]),{months:3,pct:3,label:'3 Months',note:''}]}))}>+ Add Tier</Btn>
@@ -415,15 +421,15 @@ function DiscountsTab({ data, reload }) {
               <Input small label="Label" value={t.label} onChange={v=>setTenure(i,'label',v)} placeholder="1 Year" />
               <Input small label="Discount %" type="number" value={t.pct} onChange={v=>setTenure(i,'pct',v)} />
               <Input small label="Display Note" value={t.note} onChange={v=>setTenure(i,'note',v)} placeholder="~2 months free" />
-              <button onClick={() => setDisc(d=>({...d,tenure:d.tenure.filter((_,j)=>j!==i)}))} className="text-red-400 hover:text-red-600 text-lg pb-1">✕</button>
+              <button onClick={() => setDisc(d=>({...d,tenure:d.tenure.filter((_,j)=>j!==i)}))} className="text-[var(--color-danger)] hover:opacity-80 text-lg pb-1">✕</button>
             </div>
           ))}
         </div>
       </div>
 
       {/* Bundle Discount */}
-      <div className="bg-white border border-[rgba(148,163,184,0.2)] rounded-2xl p-5 shadow-sm">
-        <h3 className="font-semibold text-[#111827] mb-4">Bundle Discount</h3>
+      <div className="bg-[var(--admin-surface)] border border-[var(--admin-border)] rounded-2xl p-5 shadow-sm">
+        <h3 className="font-semibold text-[var(--admin-text)] mb-4">Bundle Discount</h3>
         <div className="grid grid-cols-4 gap-3 items-end">
           <Input label="Min add-ons" type="number" value={disc.bundle?.trigger_count??3} onChange={v=>setBundle('trigger_count',Number(v))} />
           <Input label="Discount %" type="number" value={disc.bundle?.pct??15} onChange={v=>setBundle('pct',Number(v))} />
@@ -433,14 +439,14 @@ function DiscountsTab({ data, reload }) {
       </div>
 
       {/* Promo Codes */}
-      <div className="bg-white border border-[rgba(148,163,184,0.2)] rounded-2xl p-5 shadow-sm">
-        <h3 className="font-semibold text-[#111827] mb-4">Promo Codes</h3>
-        <div className="grid grid-cols-6 gap-2 items-end p-3.5 bg-[#F8FAFC] rounded-xl mb-4">
+      <div className="bg-[var(--admin-surface)] border border-[var(--admin-border)] rounded-2xl p-5 shadow-sm">
+        <h3 className="font-semibold text-[var(--admin-text)] mb-4">Promo Codes</h3>
+        <div className="grid grid-cols-6 gap-2 items-end p-3.5 bg-[var(--admin-surface-muted)] rounded-xl mb-4">
           <Input small label="Code" value={np.code} onChange={v=>setNp(p=>({...p,code:v.toUpperCase()}))} placeholder="LAUNCH50" />
           <div>
-            <label className="block text-xs font-medium text-[#475569] mb-1">Type</label>
+            <label className="block text-xs font-medium text-[var(--admin-text-secondary)] mb-1">Type</label>
             <select value={np.type} onChange={e=>setNp(p=>({...p,type:e.target.value}))}
-              className="w-full border border-[rgba(148,163,184,0.3)] rounded-xl px-2 py-1.5 text-sm bg-white focus:outline-none">
+              className="w-full border border-[var(--admin-border)] rounded-xl px-2 py-1.5 text-sm bg-[var(--admin-surface)] text-[var(--admin-text)] focus:outline-none">
               <option value="flat">Flat ₹ Off</option>
               <option value="percent">% Off</option>
             </select>
@@ -453,24 +459,24 @@ function DiscountsTab({ data, reload }) {
           <Btn small onClick={addPromo}>Add Code</Btn>
         </div>
         {promos.length === 0
-          ? <p className="text-sm text-[#94A3B8] text-center py-4">No promo codes yet</p>
+          ? <p className="text-sm text-[var(--admin-text-soft)] text-center py-4">No promo codes yet</p>
           : (
             <table className="w-full text-sm">
-              <thead className="bg-[#F8FAFC]">
+              <thead className="bg-[var(--admin-surface-muted)]">
                 <tr>{['Code','Type','Value','Expiry','Description','Status',''].map(h=>(
-                  <th key={h} className="text-left px-3 py-2 text-xs font-semibold text-[#475569]">{h}</th>
+                  <th key={h} className="text-left px-3 py-2 text-xs font-semibold text-[var(--admin-text-secondary)]">{h}</th>
                 ))}</tr>
               </thead>
               <tbody>
                 {promos.map(p => {
                   const expired = p.expiry && new Date(p.expiry) < new Date();
                   return (
-                    <tr key={p.code} className="border-t border-[rgba(148,163,184,0.1)]">
-                      <td className="px-3 py-2 font-mono font-bold text-[#2563EB]">{p.code}</td>
-                      <td className="px-3 py-2 text-[#475569]">{p.type}</td>
+                    <tr key={p.code} className="border-t border-[var(--admin-border)]">
+                      <td className="px-3 py-2 font-mono font-bold text-[var(--admin-accent)]">{p.code}</td>
+                      <td className="px-3 py-2 text-[var(--admin-text-secondary)]">{p.type}</td>
                       <td className="px-3 py-2 font-medium">{p.type==='flat'?fmt(p.value_paise):`${p.value_pct}%`}</td>
-                      <td className="px-3 py-2 text-[#64748B]">{p.expiry||'—'}</td>
-                      <td className="px-3 py-2 text-[#64748B]">{p.description||'—'}</td>
+                      <td className="px-3 py-2 text-[var(--admin-text-secondary)]">{p.expiry||'—'}</td>
+                      <td className="px-3 py-2 text-[var(--admin-text-secondary)]">{p.description||'—'}</td>
                       <td className="px-3 py-2">{!p.is_active||expired?<Badge color="gray">Inactive</Badge>:<Badge color="green">Active</Badge>}</td>
                       <td className="px-3 py-2"><Btn small variant="danger" onClick={()=>delPromo(p.code)}>Delete</Btn></td>
                     </tr>
@@ -514,24 +520,24 @@ export default function PricingManager() {
   ];
 
   return (
-    <div className="bg-[#F8FAFC]">
+    <div className="bg-[var(--admin-bg)] min-h-full">
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-[#111827]">Plan & Pricing Manager</h1>
-          <p className="text-sm text-[#64748B] mt-1">Configure plans, pricing, and discounts shown during tenant onboarding</p>
+          <h1 className="text-2xl font-bold text-[var(--admin-text)]">Plan & Pricing Manager</h1>
+          <p className="text-sm text-[var(--admin-text-secondary)] mt-1">Configure plans, pricing, and discounts shown during tenant onboarding</p>
         </div>
-        <div className="flex gap-1 bg-white border border-[rgba(148,163,184,0.2)] rounded-2xl p-1 shadow-sm mb-6 w-fit">
+        <div className="flex gap-1 bg-[var(--admin-surface)] border border-[var(--admin-border)] rounded-2xl p-1 shadow-sm mb-6 w-fit">
           {TABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
               className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
-                tab===t.key ? 'bg-[#2563EB] text-white shadow-sm' : 'text-[#475569] hover:text-[#111827] hover:bg-[#F1F5F9]'
+                tab===t.key ? 'bg-[var(--admin-accent)] text-white shadow-sm' : 'text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)] hover:bg-[var(--admin-surface-muted)]'
               }`}>
               <span>{t.icon}</span>{t.label}
             </button>
           ))}
         </div>
         {loading
-          ? <div className="flex justify-center py-24"><div className="w-8 h-8 border-2 border-[#2563EB] border-t-transparent rounded-full animate-spin" /></div>
+          ? <div className="flex justify-center py-24"><div className="w-8 h-8 border-2 border-[var(--admin-accent)] border-t-transparent rounded-full animate-spin" /></div>
           : (
             <>
               {tab==='plans'     && <PlansTab data={data} reload={load} />}
