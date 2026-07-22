@@ -110,35 +110,52 @@ async function saveGstData(gstinLookupResult, metadata = {}) {
     return null;
   }
 
-  const {
-    gstin,
-    pan,
-    legalName,
-    tradeName,
-    status,
-    registrationDate,
-    cancelDate,
-    taxpayerType,
-    constitution,
-    businessType,
-    coreBusinessActivity,
-    businessNature = [],
-    dealingIn = [],
-    address,
-    state,
-    district,
-    pincode,
-    stateJuri,
-    centerJuri,
-    centerCode,
-    branchNo,
-    branchName,
-    aadhaarAuthenticated,
-    aadhaarAuthDate,
-    ekycVerified,
-    source = 'official',
-    rawData = {}
-  } = gstinLookupResult;
+  const gstin = gstinLookupResult.gstin;
+  const pan = gstinLookupResult.pan || null;
+  const legalName = gstinLookupResult.legalName || gstinLookupResult.legalname || null;
+  const tradeName = gstinLookupResult.tradeName || gstinLookupResult.tradename || null;
+  const status = gstinLookupResult.status || null;
+  const registrationDate = gstinLookupResult.registrationDate || gstinLookupResult.regdate || null;
+  const cancelDate = gstinLookupResult.cancelDate || gstinLookupResult.cancel_date || gstinLookupResult.canceldate || null;
+  const taxpayerType = gstinLookupResult.taxpayerType || gstinLookupResult.type || null;
+  const constitution = gstinLookupResult.constitution || gstinLookupResult.constitutionofbusiness || null;
+  const businessType = gstinLookupResult.businessType || null;
+  const businessNature = Array.isArray(gstinLookupResult.businessNature) && gstinLookupResult.businessNature.length
+    ? gstinLookupResult.businessNature
+    : (Array.isArray(gstinLookupResult.business_nature) ? gstinLookupResult.business_nature : []);
+  const dealingIn = Array.isArray(gstinLookupResult.dealingIn) && gstinLookupResult.dealingIn.length
+    ? gstinLookupResult.dealingIn
+    : (Array.isArray(gstinLookupResult.dealing_in) ? gstinLookupResult.dealing_in : []);
+
+  const composedAddress = [
+    gstinLookupResult.flat_no,
+    gstinLookupResult.branch_name,
+    gstinLookupResult.branch_no ? `Branch No. ${gstinLookupResult.branch_no}` : null,
+    gstinLookupResult.street,
+    gstinLookupResult.location,
+    gstinLookupResult.district,
+    gstinLookupResult.state,
+    gstinLookupResult.pincode,
+  ].filter(Boolean).join(', ');
+
+  const address = gstinLookupResult.address || gstinLookupResult.address_line || composedAddress || null;
+  const state = gstinLookupResult.state || null;
+  const district = gstinLookupResult.district || null;
+  const pincode = gstinLookupResult.pincode || null;
+  const stateJuri = gstinLookupResult.stateJuri || gstinLookupResult.state_juri || null;
+  const centerJuri = gstinLookupResult.centerJuri || gstinLookupResult.center_juri || null;
+  const centerCode = gstinLookupResult.centerCode || gstinLookupResult.center_code || null;
+  const branchNo = gstinLookupResult.branchNo || gstinLookupResult.branch_no || null;
+  const branchName = gstinLookupResult.branchName || gstinLookupResult.branch_name || null;
+  const aadhaarAuthDate = gstinLookupResult.aadhaarAuthDate || gstinLookupResult.aadhaar_auth_date || null;
+  const source = gstinLookupResult.source || 'official';
+  const rawData = (gstinLookupResult.rawData && Object.keys(gstinLookupResult.rawData).length)
+    ? gstinLookupResult.rawData
+    : (gstinLookupResult.raw || {});
+
+  if (!gstin) {
+    throw new Error('saveGstData requires gstin');
+  }
 
   // Parse dates
   const regDate = parseIndianDate(registrationDate);
@@ -169,7 +186,7 @@ async function saveGstData(gstinLookupResult, metadata = {}) {
         ${gstin}, ${pan || null},
         ${legalName || tradeName || null}, ${legalName || null}, ${tradeName || null},
         ${state || addressParts.state || null}, 
-        ${gstin.substring(0, 2)},  -- State code from GSTIN
+        ${gstin.substring(0, 2)},
         ${normalizeStatus(status)}, ${regDate}, ${cancelDateParsed},
         ${taxpayerType || businessType || null}, ${constitution || null},
         ${stateJuri || null}, ${centerJuri || null}, ${centerCode || null},

@@ -1006,30 +1006,24 @@ export default function GstPublicPage() {
           <AdBanner />
 
           <div className="sg-grid">
-            {}
             <div className="sg-card">
-              <div className="sg-card-title">GST Identity</div>
+              <div className="sg-card-title">Business</div>
               <div className="sg-field-row">
                 <div className="sg-field">
+                  <span className="sg-field-label">Legal Name</span>
+                  <span className="sg-field-value">{data.legalname || data.company_name || <span className="sg-field-empty">—</span>}</span>
+                </div>
+                <div className="sg-field">
+                  <span className="sg-field-label">Trade Name</span>
+                  <span className="sg-field-value">{data.tradename || <span className="sg-field-empty">—</span>}</span>
+                </div>
+                <div className="sg-field">
                   <span className="sg-field-label">GSTIN</span>
-                  <span className="sg-field-value mono">{data.gstin}</span>
-                </div>
-                <div className="sg-field">
-                  <span className="sg-field-label">PAN</span>
-                  <span className="sg-field-value mono">{data.pan || <span className="sg-field-empty">—</span>}</span>
-                </div>
-                <div className="sg-field">
-                  <span className="sg-field-label">Constitution</span>
-                  <span className="sg-field-value">{data.constitutionofbusiness || <span className="sg-field-empty">—</span>}</span>
-                </div>
-                <div className="sg-field">
-                  <span className="sg-field-label">Taxpayer Type</span>
-                  <span className="sg-field-value">{data.type || <span className="sg-field-empty">—</span>}</span>
+                  <span className="sg-field-value mono">{data.gstin || <span className="sg-field-empty">—</span>}</span>
                 </div>
               </div>
             </div>
 
-            {}
             <div className="sg-card">
               <div className="sg-card-title">Registration</div>
               <div className="sg-field-row">
@@ -1037,90 +1031,24 @@ export default function GstPublicPage() {
                   <span className="sg-field-label">Registration Date</span>
                   <span className="sg-field-value">{data.regdate || <span className="sg-field-empty">—</span>}</span>
                 </div>
-                {data.cancel_date && (
-                  <div className="sg-field">
-                    <span className="sg-field-label">Cancellation Date</span>
-                    <span className="sg-field-value">{data.cancel_date}</span>
-                  </div>
-                )}
                 <div className="sg-field">
-                  <span className="sg-field-label">State Jurisdiction</span>
-                  <span className="sg-field-value">{data.state_juri || <span className="sg-field-empty">—</span>}</span>
+                  <span className="sg-field-label">Status</span>
+                  <span className="sg-field-value">{data.status || <span className="sg-field-empty">—</span>}</span>
                 </div>
                 <div className="sg-field">
-                  <span className="sg-field-label">Centre Jurisdiction</span>
-                  <span className="sg-field-value">{data.center_juri || <span className="sg-field-empty">—</span>}</span>
+                  <span className="sg-field-label">Principal State</span>
+                  <span className="sg-field-value">{data.state || STATE_CODES[data.state_code] || <span className="sg-field-empty">—</span>}</span>
                 </div>
               </div>
             </div>
 
-            {}
-            <div className="sg-card">
-              <div className="sg-card-title">Location</div>
-              <div className="sg-field-row">
-                <div className="sg-field">
-                  <span className="sg-field-label">State</span>
-                  <span className="sg-field-value">
-                    {data.state || STATE_CODES[data.state_code] || <span className="sg-field-empty">—</span>}
-                    {data.state_code && <span style={{color:'#A09890', fontWeight:400}}> ({data.state_code})</span>}
-                  </span>
-                </div>
-                <div className="sg-field">
-                  <span className="sg-field-label">District / Location</span>
-                  <span className="sg-field-value">{data.location || data.district || <span className="sg-field-empty">—</span>}</span>
-                </div>
-                <div className="sg-field">
-                  <span className="sg-field-label">Pincode</span>
-                  <span className="sg-field-value mono">{data.pincode || <span className="sg-field-empty">—</span>}</span>
-                </div>
+            <div className="sg-card sg-card-full">
+              <div className="sg-card-title">Principal Address</div>
+              <div className="sg-address-text">
+                {[data.flat_no, data.branch_name, data.branch_no && `Branch No. ${data.branch_no}`, data.street, data.location, data.district, data.state, data.pincode]
+                  .filter(Boolean).join(', ') || '—'}
               </div>
             </div>
-
-            {}
-            {(data.flat_no || data.street || data.branch_name || data.district) && (
-              <div className="sg-card sg-card-full">
-                <div className="sg-card-title">Registered Address</div>
-                <div className="sg-address-text">
-                  {[data.flat_no, data.branch_name, data.branch_no && `Branch No. ${data.branch_no}`, data.street, data.location, data.district, data.state, data.pincode]
-                    .filter(Boolean).join(', ')}
-                </div>
-              </div>
-            )}
-
-            {}
-            {data.business_nature?.length > 0 && (
-              <div className="sg-card sg-card-full">
-                <div className="sg-card-title">Nature of Business</div>
-                <div className="sg-tags">
-                  {data.business_nature.map((b, i) => <span key={i} className="sg-tag">{b}</span>)}
-                </div>
-              </div>
-            )}
-
-            {}
-            {data.dealing_in?.length > 0 && (
-              <div className="sg-card sg-card-full">
-                <div className="sg-card-title">Dealing In (HSN / SAC Codes)</div>
-                <table className="sg-hsn-table">
-                  <thead>
-                    <tr>
-                      <th>HSN / SAC</th>
-                      <th>Type</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.dealing_in.slice(0, 20).map((d, i) => (
-                      <tr key={i}>
-                        <td><span className="sg-field-value mono">{d.hsn || '—'}</span></td>
-                        <td style={{color:'#6B6458'}}>{d.type || '—'}</td>
-                        <td style={{color:'#6B6458'}}>{d.description || '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
           </div>
 
           {}
