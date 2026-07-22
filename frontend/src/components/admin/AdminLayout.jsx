@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import { getTenantDomain } from '../../utils/tenantDomain';
 import ThemeToggle from '../ThemeToggle';
 import './AdminLayout.css';
 import {
@@ -27,9 +28,28 @@ const NAV_ITEMS = [
   { path: '/admin/settings',   icon: Settings,          label: 'Settings'           },
 ];
 
+function buildCompanyPortalUrl(user) {
+  const subdomain = user?.subdomain;
+  if (!subdomain) return null;
+
+  const domain = getTenantDomain();
+  const protocol = window.location.protocol || 'https:';
+
+  if (domain.isLocalhost || domain.hostname.endsWith('.localhost') || domain.hostname.endsWith('.127.0.0.1')) {
+    return `${window.location.origin}/login?devmode=${encodeURIComponent(subdomain)}`;
+  }
+
+  if (domain.isPreviewHost) {
+    return `${window.location.origin}/login?devmode=${encodeURIComponent(subdomain)}`;
+  }
+
+  return `${protocol}//${subdomain}.syntern.in/login`;
+}
+
 export default function AdminLayout() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const companyPortalUrl = buildCompanyPortalUrl(user);
 
   const handleLogout = () => {
     logout();
@@ -67,14 +87,11 @@ export default function AdminLayout() {
           <div className="nav-divider" />
 
           <a
-            href={user?.subdomain
-              ? `https://${user.subdomain}.syntern.in/dashboard`
-              : '#'
-            }
+            href={companyPortalUrl || '#'}
             target="_blank"
             rel="noopener noreferrer"
-            className={`nav-btn${!user?.subdomain ? ' disabled' : ''}`}
-            title={user?.subdomain ? `Open HR portal for ${user.subdomain}` : 'No company linked'}
+            className={`nav-btn${!companyPortalUrl ? ' disabled' : ''}`}
+            title={companyPortalUrl ? `Open HR portal for ${user.subdomain}` : 'No company linked'}
           >
             <Building2 size={18} className="nav-icon" />
             <span>My Company HR</span>

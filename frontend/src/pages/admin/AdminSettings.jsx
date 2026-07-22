@@ -84,7 +84,15 @@ export default function AdminSettings() {
   });
 
   const testSmtpM = useMutation({
-    mutationFn: () => api.post('/platform/admin/test-smtp', { toEmail: testEmail }),
+    mutationFn: () => api.post('/platform/admin/test-smtp', {
+      toEmail: testEmail,
+      host: values.smtpHost ?? currentValues.smtpHost,
+      port: values.smtpPort ?? currentValues.smtpPort,
+      user: values.smtpUser ?? currentValues.smtpUser,
+      pass: values.smtpPass && values.smtpPass !== '********' ? values.smtpPass : undefined,
+      from: values.smtpFrom ?? currentValues.smtpFrom,
+      secure: values.smtpSecure ?? currentValues.smtpSecure,
+    }),
     onSuccess:  (r) => toast.success(`Test email sent to ${r.data?.sentTo || testEmail}`),
     onError:    (e) => toast.error(e.response?.data?.message || 'SMTP test failed'),
   });

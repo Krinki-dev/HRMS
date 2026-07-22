@@ -215,6 +215,36 @@ const emailService = {
     });
   },
 
+  async sendClientPortalWelcome(db, companyId, { companyName, adminName, email, portalUrl, loginUrl, supportEmail }) {
+    const product = process.env.PRODUCT_NAME || 'Syntern HRMS';
+    const safePortalUrl = portalUrl || `https://${process.env.PRODUCT_DOMAIN || 'syntern.in'}`;
+    const safeLoginUrl = loginUrl || `${safePortalUrl.replace(/\/$/, '')}/login`;
+    const html = baseTemplate(`
+      <div class="header">
+        <h1>${product}</h1>
+        <p>Your company workspace is ready</p>
+      </div>
+      <div class="body">
+        <p>Hi <strong>${adminName || email}</strong>,</p>
+        <p>Your company <strong>${companyName || 'workspace'}</strong> has been created successfully.</p>
+        <div style="border:1px solid #E5E7EB;border-radius:8px;padding:16px;margin:16px 0">
+          <div class="info-row"><span class="info-label">Portal URL</span><span class="info-value"><a href="${safePortalUrl}">${safePortalUrl}</a></span></div>
+          <div class="info-row"><span class="info-label">Login URL</span><span class="info-value"><a href="${safeLoginUrl}">${safeLoginUrl}</a></span></div>
+          <div class="info-row"><span class="info-label">Login email</span><span class="info-value">${email}</span></div>
+        </div>
+        <p>Use the password you set during registration to sign in.</p>
+        <a href="${safeLoginUrl}" class="btn">Open company HR portal</a>
+        <p style="font-size:12px;color:#9CA3AF;margin-top:16px">
+          Need help? Contact ${supportEmail || process.env.SUPPORT_EMAIL || 'support@syntern.in'}.
+        </p>
+      </div>`);
+    return send(db, companyId, {
+      to: email,
+      subject: `Your ${product} company portal is ready`,
+      html,
+    });
+  },
+
   async sendPayslip(db, companyId, { email, name, pdfBuffer, month, year, netSalary }) {
     const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const label = `${monthNames[(month || 1) - 1]} ${year}`;

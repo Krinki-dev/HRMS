@@ -9,6 +9,7 @@ const { encrypt, decrypt, mask } = require('../../shared/utils/encryption');
 const { cloneSchema, appendSchemaToUrl } = require('../../shared/utils/dbSchema');
 const { sendSuccess, sendError, ERROR_CODES } = require('../../shared/utils/response');
 const { centralPrisma } = require('../../shared/utils/centralPrisma');
+const emailService = require('../../shared/utils/emailService');
 const logger = require('../../shared/utils/logger');
 
 /**
@@ -407,14 +408,52 @@ const registerTenant = async (req, res) => {
       }
     }
 
+    const portalUrl = cleanCustomDomain ? `https://${cleanCustomDomain}` : `https://${cleanSubdomain}.syntern.in`;
+    const loginUrl = `${portalUrl}/login`;
+
+    try {
+      await emailService.sendClientPortalWelcome(null, null, {
+        companyName: company.name.trim(),
+        adminName: admin.name.trim(),
+        email: cleanEmail,
+        portalUrl,
+        loginUrl,
+        supportEmail: process.env.SUPPORT_EMAIL || 'support@syntern.in',
+      });
+    } catch (emailErr) {
+      logger.error('[registerTenant] Client welcome email failed', { error: emailErr.message, email: cleanEmail, subdomain: cleanSubdomain });
+    }
+
+    const supportEmail = process.env.SUPPORT_EMAIL;
+    if (supportEmail && supportEmail.toLowerCase() !== cleanEmail.toLowerCase()) {
+      try {
+        await emailService.sendCustom(null, null, {
+          to: supportEmail,
+          subject: `New tenant registered: ${company.name.trim()}`,
+          html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto">
+            <h2>New tenant registration</h2>
+            <p>A new client workspace has been created on Syntern HRMS.</p>
+            <table style="border-collapse:collapse;width:100%;margin-top:16px">
+              <tr><td style="padding:8px 0;color:#6B7280">Company</td><td>${company.name.trim()}</td></tr>
+              <tr><td style="padding:8px 0;color:#6B7280">Admin</td><td>${admin.name.trim()} (${cleanEmail})</td></tr>
+              <tr><td style="padding:8px 0;color:#6B7280">Portal</td><td><a href="${portalUrl}">${portalUrl}</a></td></tr>
+              <tr><td style="padding:8px 0;color:#6B7280">DB mode</td><td>${dbMode || 'cloud'}</td></tr>
+            </table>
+          </div>`,
+        });
+      } catch (emailErr) {
+        logger.error('[registerTenant] Support notification email failed', { error: emailErr.message, email: supportEmail, subdomain: cleanSubdomain });
+      }
+    }
+
     return sendSuccess(res, 
       {
         id:         tenantId,
         name:       company.name.trim(),
         subdomain:  cleanSubdomain,
         customDomain: cleanCustomDomain,
-        portalUrl:  cleanCustomDomain ? `https://${cleanCustomDomain}` : `https://${cleanSubdomain}.syntern.in`,
-        loginUrl:   cleanCustomDomain ? `https://${cleanCustomDomain}/login` : `https://${cleanSubdomain}.syntern.in/login`,
+        portalUrl,
+        loginUrl,
         dbMode:     dbMode || 'cloud',
         setupReady: seedSucceeded,
         credentials: {
