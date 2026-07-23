@@ -3,8 +3,6 @@
 const express     = require('express');
 const router      = express.Router();
 const { PrismaClient } = require('@prisma/client');
-const path = require('path');
-const os = require('os');
 const { encrypt, decrypt } = require('../../shared/utils/encryption');
 const { sendSuccess, sendError, ERROR_CODES } = require('../../shared/utils/response');
 const auth        = require('../../shared/middleware/auth');
@@ -13,6 +11,10 @@ const { centralPrisma } = require('../../shared/utils/centralPrisma');
 const logger = require('../../shared/utils/logger');
 const { THEME } = require('../../shared/utils/uiConstants');
 const { resolveTenantDbUrl } = require('./platform.service');
+const {
+  getDeletionReadiness,
+  permanentlyDeleteTenant,
+} = require('./tenantDeletion.service');
 
 const getCentral = () => centralPrisma;
 
@@ -51,14 +53,6 @@ function normalizeSectionId(id) {
   if (s.includes('plat')  || s.includes('brand')) return 'Platform';
   if (s.includes('secu'))                        return 'Security';
   return id;
-}
-
-function isManagedTenantDb(tenant) {
-  return tenant && tenant.db_mode === 'cloud';
-}
-
-function isExternalTenantDb(tenant) {
-  return tenant && ['external_cloud', 'local', 'hybrid'].includes(tenant.db_mode);
 }
 
 const ALL_MODULES = [
@@ -384,8 +378,26 @@ router.post('/tenants/:id/activate', async (req, res) => {
 });
 
 // ================================================================
+// GET /api/v1/platform/admin/tenants/:id/deletion-readiness
+// Returns whether backup credentials are configured before hard-delete.
+// ================================================================
+router.get('/tenants/:id/deletion-readiness', async (req, res) => {
+  try {
+    const c = getCentral();
+    const data = await getDeletionReadiness(c, req.params.id);
+    return sendSuccess(res, data);
+  } catch (err) {
+    if (err.status) {
+      return sendError(res, err.code || ERROR_CODES.VALIDATION, err.message, err.status);
+    }
+    logger.error('[Admin/deletion-readiness] Failure:', err);
+    return sendError(res, ERROR_CODES.SERVER, 'Failed to load deletion readiness', 500);
+  }
+});
+
+// ================================================================
 // POST /api/v1/platform/admin/tenants/:id/delete-permanent
-// Body: { password, reason, backup: true }
+// Body: { password, reason, confirmExternalDelete, backupConfig }
 // ================================================================
 /**
  * POST /tenants/:id/delete-permanent
@@ -394,7 +406,12 @@ router.post('/tenants/:id/activate', async (req, res) => {
 router.post('/tenants/:id/delete-permanent', async (req, res) => {
   try {
     const c = getCentral();
-    const { password, reason = '', backup = true } = req.body;
+    const {
+      password,
+      reason = '',
+      confirmExternalDelete = false,
+      backupConfig = null,
+    } = req.body;
 
     // 1. Verify delete password
     const deletePwd = process.env.SUPER_ADMIN_DELETE_PASSWORD;
@@ -405,102 +422,31 @@ router.post('/tenants/:id/delete-permanent', async (req, res) => {
       return sendError(res, ERROR_CODES.FORBIDDEN, 'Incorrect delete password', 403);
     }
 
-    // 2. Fetch tenant info
-    const tenantRows = await c.$queryRaw`
-      SELECT *
-      FROM tenants
-      WHERE id = ${req.params.id}::uuid AND deleted_at IS NULL
-      LIMIT 1
-    `;
-    if (!tenantRows.length) return sendError(res, ERROR_CODES.NOT_FOUND, 'Tenant not found', 404);
+    const result = await permanentlyDeleteTenant({
+      centralDb: c,
+      tenantId: req.params.id,
+      actorEmail: req.user?.email,
+      reason,
+      confirmExternalDelete,
+      backupConfig,
+    });
 
-    const tenant = tenantRows[0];
-    const dbUrl = resolveTenantDbUrl(tenant.db_mode, tenant);
-    const managedDb = isManagedTenantDb(tenant);
-    const externalDb = isExternalTenantDb(tenant);
-    const confirmExternalDelete = req.body.confirmExternalDelete === true;
-
-    if (!dbUrl) {
-      return sendError(res, ERROR_CODES.SERVER, 'Tenant database URL could not be resolved. Deletion cannot proceed.', 500);
-    }
-
-    if (managedDb && !backup) {
-      return sendError(res, ERROR_CODES.VALIDATION, 'Backup is required before permanently deleting a cloud-hosted tenant database', 400);
-    }
-    if (externalDb && !confirmExternalDelete) {
-      return sendError(res, ERROR_CODES.VALIDATION, 'External/dedicated tenant databases require explicit confirmation before permanent deletion', 400);
-    }
-
-    // 3. Backup entire database/schema (optional)
-    let backupUrl = null;
-    let backupSucceeded = false;
-    if (backup && dbUrl) {
-      try {
-        const { execSync } = require('child_process');
-        const urlObj = new URL(dbUrl);
-        const host = urlObj.hostname;
-        const port = urlObj.port || '5432';
-        const database = urlObj.pathname.replace('/', '');
-        const user = urlObj.username;
-        const pass = urlObj.password;
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const fileName = `backup_${tenant.subdomain}_${timestamp}.sql`;
-        const filePath = path.join(os.tmpdir(), fileName);
-
-        // Build pg_dump command — if schema_name exists we dump only that schema, else whole DB
-        let dumpCmd;
-        if (tenant.schema_name) {
-          dumpCmd = `pg_dump -h ${host} -p ${port} -U "${user}" -d "${database}" -n "${tenant.schema_name}" -f "${filePath}" --no-owner --no-privileges`;
-        } else {
-          dumpCmd = `pg_dump -h ${host} -p ${port} -U "${user}" -d "${database}" -f "${filePath}" --no-owner --no-privileges`;
-        }
-        execSync(dumpCmd, { env: { ...process.env, PGPASSWORD: pass }, shell: true });
-
-        // Upload to MinIO
-        const fs = require('fs');
-        const minio = require('../../shared/utils/minio');
-        if (!fs.existsSync(filePath)) throw new Error('Backup file was not created by pg_dump');
-        const stats = fs.statSync(filePath);
-        if (!stats.size) throw new Error('Backup file is empty');
-        const fileBuffer = fs.readFileSync(filePath);
-        await minio.uploadBuffer(fileBuffer, fileName, 'application/sql');
-        backupUrl = `${process.env.MINIO_ENDPOINT}:${process.env.MINIO_PORT}/${process.env.MINIO_BUCKET}/${fileName}`;
-        fs.unlinkSync(filePath);
-        backupSucceeded = true;
-      } catch (backupErr) {
-        logger.error('[Admin/delete-permanent] Backup failed:', backupErr);
-      }
-    }
-
-    if (backup && !backupSucceeded) {
-      return sendError(res, ERROR_CODES.SERVER, 'Backup failed or could not be verified. Deletion stopped.', 500);
-    }
-
-    // 4. Wipe tenant data
-    if (dbUrl) {
-      const { PrismaClient: TenantPrisma } = require('@prisma/client');
-      const tenantDb = new TenantPrisma({ datasources: { db: { url: dbUrl } } });
-
-      if (tenant.schema_name) {
-        // Shared DB – drop the tenant's schema entirely
-        await tenantDb.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${tenant.schema_name}" CASCADE`);
-      } else {
-        // Dedicated DB – drop the public schema (all tables) and recreate it
-        // This is safe because the database is used by one tenant only.
-        await tenantDb.$executeRawUnsafe(`DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public`);
-      }
-      await tenantDb.$disconnect();
-    }
-
-    // 5. Clean up central DB
-    await c.$executeRaw`DELETE FROM tenant_modules WHERE tenant_id = ${tenant.id}::uuid`;
-    await c.$executeRaw`DELETE FROM central_user_index WHERE company_id = ${tenant.id}::uuid`;
-    await c.$executeRaw`DELETE FROM tenant_branch_links WHERE tenant_id = ${tenant.id}::uuid`;
-    await c.$executeRaw`DELETE FROM tenants WHERE id = ${tenant.id}::uuid`;
-
-    logger.info(`[Admin] Permanent delete: ${tenant.name} (${tenant.subdomain}). Backup: ${backupUrl || 'none'}, By: ${req.user.email}`);
-    return sendSuccess(res, { backupUrl }, 'Tenant and all its data permanently deleted');
+    logger.info(
+      `[Admin] Permanent delete: ${result.tenantName} (${result.subdomain}). ` +
+      `Backup provider: ${result.backupProvider}, URL: ${result.backupUrl || 'n/a'}, By: ${req.user.email}`
+    );
+    return sendSuccess(
+      res,
+      {
+        backupProvider: result.backupProvider,
+        backupUrl: result.backupUrl,
+      },
+      'Tenant and all its data permanently deleted'
+    );
   } catch (err) {
+    if (err.status) {
+      return sendError(res, err.code || ERROR_CODES.VALIDATION, err.message, err.status);
+    }
     logger.error('[Admin/delete-permanent] Fatal:', err);
     return sendError(res, ERROR_CODES.SERVER, 'Deletion failed', 500);
   }

@@ -63,6 +63,7 @@ const STEPS = [
   { key: 'payroll',     label: 'Payroll',         icon: '₹' },
   { key: 'email',       label: 'Email',           icon: '✉' },
   { key: 'compliance',  label: 'Compliance',      icon: '📋' },
+  { key: 'backup',      label: 'Cloud backup',    icon: '☁️' },
   { key: 'done',        label: 'Launch',          icon: '✅' },
 ];
 
@@ -234,6 +235,14 @@ export default function OnboardingWizard({ onComplete }) {
   const [pf, setPf] = useState({ username: '', password: '', employerCode: '' });
   const [esi, setEsi] = useState({ username: '', password: '' });
   const [skipCompliance, setSkipCompliance] = useState(false);
+  const [backupProvider, setBackupProvider] = useState('');
+  const [backupClientId, setBackupClientId] = useState('');
+  const [backupClientSecret, setBackupClientSecret] = useState('');
+  const [backupRefreshToken, setBackupRefreshToken] = useState('');
+  const [backupFolderId, setBackupFolderId] = useState('root');
+  const [backupTenantId, setBackupTenantId] = useState('common');
+  const [backupFolderPath, setBackupFolderPath] = useState('/HRMS_Backups');
+  const [skipBackupSetup, setSkipBackupSetup] = useState(false);
 
   async function saveOrg() {
     setSavingOrg(true);
@@ -306,6 +315,32 @@ export default function OnboardingWizard({ onComplete }) {
       toast.success(skipCompliance ? 'Skipped' : 'Compliance saved');
       setStep(s => s + 1);
     } finally { setBusy(false); }
+  }
+
+  async function saveBackup() {
+    setBusy(true);
+    try {
+      if (!skipBackupSetup && backupProvider) {
+        await api.post('/platform/onboarding/save-step', {
+          step: 'backup',
+          data: {
+            provider: backupProvider,
+            clientId: backupClientId,
+            clientSecret: backupClientSecret,
+            refreshToken: backupProvider === 'gdrive' ? backupRefreshToken : undefined,
+            folderId: backupProvider === 'gdrive' ? backupFolderId : undefined,
+            tenantId: backupProvider === 'onedrive' ? backupTenantId : undefined,
+            folderPath: backupProvider === 'onedrive' ? backupFolderPath : undefined,
+          },
+        });
+      }
+      toast.success(skipBackupSetup ? 'Backup setup skipped for now' : 'Backup settings saved');
+      setStep(s => s + 1);
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to save backup settings');
+    } finally {
+      setBusy(false);
+    }
   }
 
   const currentStep = STEPS[step];
@@ -490,6 +525,56 @@ export default function OnboardingWizard({ onComplete }) {
             </div>
           )}
 
+          {currentStep.key === 'backup' && (
+            <div>
+              <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Cloud backup setup</div>
+              <div style={{ fontSize: 13, color: C.muted, marginBottom: 18 }}>
+                Choose OneDrive or Google Drive for mandatory account-deletion backups.
+              </div>
+
+              {!skipBackupSetup && (
+                <div style={{ background: C.surface, borderRadius: 10, padding: 18, border: `1px solid ${C.border}`, marginBottom: 14 }}>
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={styles.label}>Provider</label>
+                    <select
+                      value={backupProvider}
+                      onChange={e => setBackupProvider(e.target.value)}
+                      style={{ ...styles.input, padding: '8px' }}
+                    >
+                      <option value="">Select provider</option>
+                      <option value="gdrive">Google Drive</option>
+                      <option value="onedrive">OneDrive</option>
+                    </select>
+                  </div>
+
+                  {backupProvider && (
+                    <>
+                      <Inp label="Client ID" value={backupClientId} onChange={setBackupClientId} required />
+                      <Inp label="Client Secret" value={backupClientSecret} onChange={setBackupClientSecret} type="password" required />
+                      {backupProvider === 'gdrive' && (
+                        <>
+                          <Inp label="Refresh Token" value={backupRefreshToken} onChange={setBackupRefreshToken} type="password" required />
+                          <Inp label="Folder ID" value={backupFolderId} onChange={setBackupFolderId} placeholder="root" />
+                        </>
+                      )}
+                      {backupProvider === 'onedrive' && (
+                        <>
+                          <Inp label="Tenant ID" value={backupTenantId} onChange={setBackupTenantId} placeholder="common" />
+                          <Inp label="Folder Path" value={backupFolderPath} onChange={setBackupFolderPath} placeholder="/HRMS_Backups" />
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+                <input type="checkbox" checked={skipBackupSetup} onChange={e => setSkipBackupSetup(e.target.checked)} />
+                Skip for now — you can set this later before any permanent deletion.
+              </label>
+            </div>
+          )}
+
           {currentStep.key === 'done' && (
             <div style={{ textAlign: 'center' }}>
               <div style={{ width: 80, height: 80, background: 'rgba(34,197,94,0.12)', border: '2px solid rgba(34,197,94,0.3)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, margin: '0 auto 24px' }}>🎉</div>
@@ -515,6 +600,7 @@ export default function OnboardingWizard({ onComplete }) {
               if (currentStep.key === 'payroll') return savePayroll();
               if (currentStep.key === 'email') return saveEmail();
               if (currentStep.key === 'compliance') return saveCompliance();
+              if (currentStep.key === 'backup') return saveBackup();
               if (currentStep.key === 'done') return completeM.mutate();
             }} disabled={busy || savingOrg || completeM.isPending}>
               {currentStep.key === 'org' ? (savingOrg ? 'Saving…' : 'Save & continue →') :
@@ -522,10 +608,14 @@ export default function OnboardingWizard({ onComplete }) {
             currentStep.key === 'payroll' ? (busy ? 'Saving…' : `Save ${components.filter(c=>c.selected).length} components & continue →`) :
             currentStep.key === 'email' ? (busy ? 'Saving…' : 'Continue →') :
             currentStep.key === 'compliance' ? (busy ? 'Saving…' : 'Continue →') :
+            currentStep.key === 'backup' ? (busy ? 'Saving…' : 'Save & continue →') :
             currentStep.key === 'done' ? (completeM.isPending ? 'Launching…' : '🚀 Launch dashboard →') : 'Continue'
             }</WizBtn>
           )}
           {(currentStep.key === 'org' || currentStep.key === 'work') && (
+            <WizBtn variant="ghost" onClick={() => setStep(s => s + 1)}>Skip</WizBtn>
+          )}
+          {currentStep.key === 'backup' && (
             <WizBtn variant="ghost" onClick={() => setStep(s => s + 1)}>Skip</WizBtn>
           )}
         </div>

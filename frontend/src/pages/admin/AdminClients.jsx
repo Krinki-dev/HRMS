@@ -25,8 +25,14 @@ export default function AdminClients() {
   const [suspendReason, setSuspendReason] = useState('');
   const [deleteModal, setDeleteModal] = useState(null);
   const [deletePassword, setDeletePassword] = useState('');
-  const [deleteBackup, setDeleteBackup] = useState(true);
   const [deleteConfirmExternal, setDeleteConfirmExternal] = useState(false);
+  const [backupProvider, setBackupProvider] = useState('');
+  const [backupClientId, setBackupClientId] = useState('');
+  const [backupClientSecret, setBackupClientSecret] = useState('');
+  const [backupRefreshToken, setBackupRefreshToken] = useState('');
+  const [backupFolderId, setBackupFolderId] = useState('root');
+  const [backupTenantId, setBackupTenantId] = useState('common');
+  const [backupFolderPath, setBackupFolderPath] = useState('/HRMS_Backups');
 
   const reset = useCallback(() => { setCursor(null); setHistory([null]); }, []);
 
@@ -40,6 +46,16 @@ export default function AdminClients() {
   const tenants = data?.tenants || [];
   const hasMore = data?.hasMore || false;
   const nextCursor = data?.cursor || null;
+
+  const { data: deleteReadinessRes } = useQuery({
+    queryKey: ['admin-delete-readiness', deleteModal?.id],
+    queryFn: () => adminApi.getDeleteReadiness(deleteModal.id),
+    enabled: !!deleteModal?.id,
+    staleTime: 15_000,
+  });
+
+  const deleteReadiness = deleteReadinessRes?.data;
+  const backupNeedsSetup = !!deleteReadiness?.backup?.needsSetup;
 
   const suspendM = useMutation({
     mutationFn: ({ id, reason }) => adminApi.suspendTenant(id, reason),
@@ -64,8 +80,8 @@ export default function AdminClients() {
   });
 
   const deleteM = useMutation({
-    mutationFn: ({ id, password, reason, backup, confirmExternalDelete }) =>
-      adminApi.deleteTenantPermanent(id, { password, reason, backup, confirmExternalDelete }),
+    mutationFn: ({ id, password, reason, confirmExternalDelete, backupConfig }) =>
+      adminApi.deleteTenantPermanent(id, { password, reason, confirmExternalDelete, backupConfig }),
     onSuccess: () => {
       toast.success('Company permanently deleted');
       setDeleteModal(null);
@@ -192,7 +208,18 @@ export default function AdminClients() {
                       <button
                         className="btn-sm"
                         style={{ color: 'var(--admin-danger)', borderColor: 'rgba(220,38,38,0.24)', marginLeft: 4 }}
-                        onClick={() => { setDeleteModal(t); setDeletePassword(''); setDeleteBackup(true); setDeleteConfirmExternal(false); }}
+                        onClick={() => {
+                          setDeleteModal(t);
+                          setDeletePassword('');
+                          setDeleteConfirmExternal(false);
+                          setBackupProvider('');
+                          setBackupClientId('');
+                          setBackupClientSecret('');
+                          setBackupRefreshToken('');
+                          setBackupFolderId('root');
+                          setBackupTenantId('common');
+                          setBackupFolderPath('/HRMS_Backups');
+                        }}
                       >
                         🗑 Delete
                       </button>
@@ -254,7 +281,7 @@ export default function AdminClients() {
             <div style={{ fontSize: 12, color: 'var(--admin-text-soft)', marginBottom: 16 }}>
               This will delete all employee data, payroll history, and documents. <br/>
               <strong>This action cannot be undone.</strong> 
-              {deleteBackup && ' A backup will be saved before deletion.'}
+              {' A successful cloud backup is mandatory before deletion.'}
             </div>
             <div className="form-group" style={{ marginBottom: 12 }}>
               <label className="form-label">Super Admin delete password</label>
@@ -267,20 +294,60 @@ export default function AdminClients() {
                 autoFocus
               />
             </div>
-            {deleteModal?.dbMode === 'cloud' && (
-              <div style={{ marginBottom: 12, fontSize: 12, color: 'var(--admin-text)' }}>
-                This tenant is hosted on our managed cloud database. A backup is required and will be applied before deletion.
+            <div style={{ marginBottom: 12, fontSize: 12, color: 'var(--admin-text)' }}>
+              Backup status: {deleteReadiness?.backup?.configured ? `Configured (${deleteReadiness.backup.provider})` : 'Not configured'}
+            </div>
+            {backupNeedsSetup && (
+              <div style={{ border: '1px solid rgba(245,158,11,0.35)', borderRadius: 8, padding: 10, marginBottom: 14 }}>
+                <div style={{ fontSize: 12, color: 'var(--admin-text)', marginBottom: 8 }}>
+                  Backup credentials were not set during onboarding. Configure now to continue deletion.
+                </div>
+                <div className="form-group" style={{ marginBottom: 8 }}>
+                  <label className="form-label">Backup provider</label>
+                  <select className="form-input" value={backupProvider} onChange={e => setBackupProvider(e.target.value)}>
+                    <option value="">Select provider</option>
+                    <option value="gdrive">Google Drive</option>
+                    <option value="onedrive">OneDrive</option>
+                  </select>
+                </div>
+                {backupProvider && (
+                  <>
+                    <div className="form-group" style={{ marginBottom: 8 }}>
+                      <label className="form-label">Client ID</label>
+                      <input className="form-input" value={backupClientId} onChange={e => setBackupClientId(e.target.value)} />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 8 }}>
+                      <label className="form-label">Client Secret</label>
+                      <input type="password" className="form-input" value={backupClientSecret} onChange={e => setBackupClientSecret(e.target.value)} />
+                    </div>
+                    {backupProvider === 'gdrive' && (
+                      <>
+                        <div className="form-group" style={{ marginBottom: 8 }}>
+                          <label className="form-label">Refresh Token</label>
+                          <input type="password" className="form-input" value={backupRefreshToken} onChange={e => setBackupRefreshToken(e.target.value)} />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label className="form-label">Folder ID (optional)</label>
+                          <input className="form-input" value={backupFolderId} onChange={e => setBackupFolderId(e.target.value)} placeholder="root" />
+                        </div>
+                      </>
+                    )}
+                    {backupProvider === 'onedrive' && (
+                      <>
+                        <div className="form-group" style={{ marginBottom: 8 }}>
+                          <label className="form-label">Tenant ID (optional)</label>
+                          <input className="form-input" value={backupTenantId} onChange={e => setBackupTenantId(e.target.value)} placeholder="common" />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label className="form-label">Folder Path (optional)</label>
+                          <input className="form-input" value={backupFolderPath} onChange={e => setBackupFolderPath(e.target.value)} placeholder="/HRMS_Backups" />
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
               </div>
             )}
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, marginBottom: 16 }}>
-              <input
-                type="checkbox"
-                checked={deleteBackup}
-                onChange={e => setDeleteBackup(e.target.checked)}
-                disabled={deleteModal?.dbMode === 'cloud'}
-              />
-              Backup database before deletion
-            </label>
             {['external_cloud', 'local', 'hybrid'].includes(deleteModal?.dbMode) && (
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, marginBottom: 16 }}>
                 <input
@@ -299,14 +366,28 @@ export default function AdminClients() {
                 disabled={
                   !deletePassword ||
                   deleteM.isPending ||
+                  (backupNeedsSetup && (
+                    !backupProvider ||
+                    !backupClientId ||
+                    !backupClientSecret ||
+                    (backupProvider === 'gdrive' && !backupRefreshToken)
+                  )) ||
                   (['external_cloud', 'local', 'hybrid'].includes(deleteModal?.dbMode) && !deleteConfirmExternal)
                 }
                 onClick={() => deleteM.mutate({
                   id: deleteModal.id,
                   password: deletePassword,
                   reason: '',
-                  backup: deleteBackup,
                   confirmExternalDelete: deleteConfirmExternal,
+                  backupConfig: backupNeedsSetup ? {
+                    provider: backupProvider,
+                    clientId: backupClientId,
+                    clientSecret: backupClientSecret,
+                    refreshToken: backupProvider === 'gdrive' ? backupRefreshToken : undefined,
+                    folderId: backupProvider === 'gdrive' ? backupFolderId : undefined,
+                    tenantId: backupProvider === 'onedrive' ? backupTenantId : undefined,
+                    folderPath: backupProvider === 'onedrive' ? backupFolderPath : undefined,
+                  } : null,
                 })}
               >
                 {deleteM.isPending ? 'Deleting…' : 'Delete Forever'}

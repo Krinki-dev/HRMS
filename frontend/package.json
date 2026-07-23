@@ -4,8 +4,6 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 5173",
-    "proxy": "node ./port80-proxy.js",
-    "proxy:https": "set PROXY_ENABLE_HTTPS=true&& node ./port80-proxy.js",
     "build": "vite build",
     "preview": "vite preview"
   },

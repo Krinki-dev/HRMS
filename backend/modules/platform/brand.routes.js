@@ -113,6 +113,7 @@ router.get('/brand', async (req, res) => {
 
 
 const auth = require('../../shared/middleware/auth');
+const { upsertBackupConfigForTenant } = require('./tenantDeletion.service');
 
 /**
  * POST /onboarding/save-step
@@ -132,6 +133,11 @@ router.post('/onboarding/save-step', auth, async (req, res) => {
         tenantId
       );
       return res.json({ success: true, message: 'Logo saved successfully' });
+    }
+
+    if (step === 'backup') {
+      await upsertBackupConfigForTenant(centralPrisma, tenantId, data || {});
+      return res.json({ success: true, message: 'Backup provider and credentials saved' });
     }
 
     // For other steps, just acknowledge (handled by other endpoints or no DB action needed)

@@ -36,15 +36,20 @@ const settingsApi = {
   createBranch:  (d)          => api.post('/settings/branches', d).then(r => r.data),
   updateBranch:  (id, d)      => api.put(`/settings/branches/${id}`, d).then(r => r.data),
   deleteBranch:  (id)         => api.delete(`/settings/branches/${id}`).then(r => r.data),
+
+  getAccountDeletionReadiness: () => api.get('/settings/account/deletion-readiness').then(r => r.data),
+  deleteAccountPermanent: (payload) => api.post('/settings/account/delete-permanent', payload).then(r => r.data),
 };
 
 const TABS = [
   { id: 'company',      label: 'Company Profile',  icon: '🏢' },
+  { id: 'database',     label: 'Database',         icon: '🗄' },
   { id: 'holidays',     label: 'Holidays',          icon: '📅' },
   { id: 'shifts',       label: 'Shifts',            icon: '🕐' },
   { id: 'departments',  label: 'Departments',       icon: '🏗' },
   { id: 'designations', label: 'Designations',      icon: '🎖' },
   { id: 'branches',     label: 'Branches',          icon: '📍' },
+  { id: 'account',      label: 'Account',           icon: '⚠️' },
 ]
 
 const HOLIDAY_TYPES = [
@@ -52,7 +57,6 @@ const HOLIDAY_TYPES = [
   { value: 'state',    label: 'State Holiday' },
   { value: 'optional', label: 'Optional Holiday' },
   { value: 'company',  label: 'Company Holiday' },
-  { id: 'database', label: '🗄 Database', icon: '🗄' },
 ];
 
 const HOLIDAY_TYPE_BADGE = {
@@ -743,6 +747,147 @@ function DatabaseTab() {
   );
 }
 
+function AccountDangerTab() {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [confirmExternalDelete, setConfirmExternalDelete] = useState(false);
+  const [provider, setProvider] = useState('');
+  const [clientId, setClientId] = useState('');
+  const [clientSecret, setClientSecret] = useState('');
+  const [refreshToken, setRefreshToken] = useState('');
+  const [folderId, setFolderId] = useState('root');
+  const [tenantId, setTenantId] = useState('common');
+  const [folderPath, setFolderPath] = useState('/HRMS_Backups');
+  const [confirmText, setConfirmText] = useState('');
+
+  const { data: readinessRes, isLoading } = useQuery({
+    queryKey: ['account-delete-readiness'],
+    queryFn: settingsApi.getAccountDeletionReadiness,
+    staleTime: 15_000,
+  });
+
+  const readiness = readinessRes?.data;
+  const needsSetup = !!readiness?.backup?.needsSetup;
+  const requiresExternalConfirm = !!readiness?.tenant?.requiresExternalDeleteConfirmation;
+  const canDelete =
+    currentPassword &&
+    confirmText === 'DELETE' &&
+    (!requiresExternalConfirm || confirmExternalDelete) &&
+    (!needsSetup || (
+      provider &&
+      clientId &&
+      clientSecret &&
+      (provider !== 'gdrive' || refreshToken)
+    ));
+
+  const deleteMutation = useMutation({
+    mutationFn: settingsApi.deleteAccountPermanent,
+    onSuccess: (res) => {
+      toast.success(`Backup completed via ${res?.data?.backupProvider || 'cloud provider'}. Account deleted.`);
+      window.location.href = '/login';
+    },
+    onError: (e) => toast.error(e.response?.data?.message || 'Permanent deletion failed'),
+  });
+
+  if (isLoading) {
+    return <div className="flex justify-center py-10"><Spinner /></div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+        <p className="font-semibold text-red-700 mb-1">Danger Zone: Permanently Delete Account</p>
+        <p className="text-sm text-red-700">
+          This deletes your tenant and all data from both client and admin sides. A successful Google Drive or OneDrive backup is mandatory before deletion.
+        </p>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+        <div className="text-sm text-gray-700">
+          Backup status: {readiness?.backup?.configured ? `Configured (${readiness.backup.provider})` : 'Not configured'}
+        </div>
+
+        {needsSetup && (
+          <div className="space-y-3 border border-amber-300 bg-amber-50 rounded-xl p-3">
+            <p className="text-xs font-semibold text-amber-800">
+              Backup credentials were not set during onboarding. Configure now to continue.
+            </p>
+            <div>
+              <label className="text-xs font-semibold text-gray-600 block mb-1">Provider *</label>
+              <select value={provider} onChange={e => setProvider(e.target.value)} className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm bg-white">
+                <option value="">Select provider</option>
+                <option value="gdrive">Google Drive</option>
+                <option value="onedrive">OneDrive</option>
+              </select>
+            </div>
+            {provider && (
+              <>
+                <Input label="Client ID *" value={clientId} onChange={e => setClientId(e.target.value)} />
+                <Input label="Client Secret *" type="password" value={clientSecret} onChange={e => setClientSecret(e.target.value)} />
+                {provider === 'gdrive' && (
+                  <>
+                    <Input label="Refresh Token *" type="password" value={refreshToken} onChange={e => setRefreshToken(e.target.value)} />
+                    <Input label="Folder ID" value={folderId} onChange={e => setFolderId(e.target.value)} />
+                  </>
+                )}
+                {provider === 'onedrive' && (
+                  <>
+                    <Input label="Tenant ID" value={tenantId} onChange={e => setTenantId(e.target.value)} />
+                    <Input label="Folder Path" value={folderPath} onChange={e => setFolderPath(e.target.value)} />
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {requiresExternalConfirm && (
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" checked={confirmExternalDelete} onChange={e => setConfirmExternalDelete(e.target.checked)} />
+            I confirm this account uses a dedicated/external database and I want permanent deletion.
+          </label>
+        )}
+
+        <Input
+          label="Current Password *"
+          type="password"
+          value={currentPassword}
+          onChange={e => setCurrentPassword(e.target.value)}
+          placeholder="Enter your current password"
+        />
+
+        <Input
+          label='Type DELETE to confirm *'
+          value={confirmText}
+          onChange={e => setConfirmText(e.target.value)}
+          placeholder="DELETE"
+        />
+
+        <Button
+          onClick={() => deleteMutation.mutate({
+            currentPassword,
+            confirmExternalDelete,
+            reason: 'Client self-service permanent delete',
+            backupConfig: needsSetup ? {
+              provider,
+              clientId,
+              clientSecret,
+              refreshToken: provider === 'gdrive' ? refreshToken : undefined,
+              folderId: provider === 'gdrive' ? folderId : undefined,
+              tenantId: provider === 'onedrive' ? tenantId : undefined,
+              folderPath: provider === 'onedrive' ? folderPath : undefined,
+            } : null,
+          })}
+          loading={deleteMutation.isPending}
+          disabled={!canDelete || deleteMutation.isPending}
+          variant="danger"
+        >
+          Delete Account Permanently
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const [tab, setTab] = useState('company');
 
@@ -823,6 +968,8 @@ export default function SettingsPage() {
           )}
         />
       )}
+
+      {tab === 'account' && <AccountDangerTab />}
     </div>
   );
 }

@@ -1,8 +1,15 @@
 ﻿const router = require('express').Router();
 const auth   = require('../../shared/middleware/auth');
 const perm   = require('../../shared/middleware/permission');
+const bcrypt = require('bcryptjs');
 const requireSetupComplete = require('../../shared/middleware/requireSetupComplete');
 const ctrl   = require('./settings.controller');
+const { centralPrisma } = require('../../shared/utils/centralPrisma');
+const { resolveTenantId } = require('../../shared/utils/tenantResolver');
+const {
+  getDeletionReadiness,
+  permanentlyDeleteTenant,
+} = require('../platform/tenantDeletion.service');
 
 router.use(auth);
 const can = (a) => perm.checkPermission('settings', a);
@@ -153,6 +160,84 @@ router.delete(
   requireAdminRole,
   can('delete'),
   ctrl.deleteBranch
+);
+
+router.get(
+  '/account/deletion-readiness',
+  requireAdminRole,
+  can('view'),
+  async (req, res) => {
+    try {
+      const tenantId = await resolveTenantId(req);
+      if (!tenantId) {
+        return res.status(400).json({
+          success: false,
+          code: 'TENANT_REQUIRED',
+          message: 'Tenant ID could not be resolved',
+        });
+      }
+      const data = await getDeletionReadiness(centralPrisma, tenantId);
+      return res.json({ success: true, data });
+    } catch (err) {
+      if (err.status) {
+        return res.status(err.status).json({ success: false, code: err.code, message: err.message });
+      }
+      return res.status(500).json({ success: false, code: 'SERVER', message: 'Failed to load deletion readiness' });
+    }
+  }
+);
+
+router.post(
+  '/account/delete-permanent',
+  requireSetupComplete,
+  requireAdminRole,
+  can('delete'),
+  async (req, res) => {
+    try {
+      const tenantId = await resolveTenantId(req);
+      if (!tenantId) {
+        return res.status(400).json({ success: false, code: 'TENANT_REQUIRED', message: 'Tenant ID could not be resolved' });
+      }
+
+      const { currentPassword, confirmExternalDelete = false, backupConfig = null, reason = '' } = req.body || {};
+      if (!currentPassword) {
+        return res.status(400).json({ success: false, code: 'PASSWORD_REQUIRED', message: 'Current password is required' });
+      }
+
+      const user = await req.db.users.findUnique({ where: { id: req.user.id } });
+      if (!user || !user.password_hash) {
+        return res.status(403).json({ success: false, code: 'FORBIDDEN', message: 'User not allowed' });
+      }
+
+      const ok = await bcrypt.compare(currentPassword, user.password_hash);
+      if (!ok) {
+        return res.status(403).json({ success: false, code: 'INVALID_PASSWORD', message: 'Current password is incorrect' });
+      }
+
+      const result = await permanentlyDeleteTenant({
+        centralDb: centralPrisma,
+        tenantId,
+        actorEmail: req.user?.email,
+        reason,
+        confirmExternalDelete,
+        backupConfig,
+      });
+
+      return res.json({
+        success: true,
+        data: {
+          backupProvider: result.backupProvider,
+          backupUrl: result.backupUrl,
+        },
+        message: 'Account and tenant data permanently deleted',
+      });
+    } catch (err) {
+      if (err.status) {
+        return res.status(err.status).json({ success: false, code: err.code, message: err.message });
+      }
+      return res.status(500).json({ success: false, code: 'SERVER', message: 'Permanent deletion failed' });
+    }
+  }
 );
 
 module.exports = router;

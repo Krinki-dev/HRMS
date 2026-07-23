@@ -20,11 +20,14 @@ export const adminApi = {
   activateTenant: (id) =>
     api.post(`/platform/admin/tenants/${id}/activate`).then(r => r.data),
 
+  getDeleteReadiness: (id) =>
+    api.get(`/platform/admin/tenants/${id}/deletion-readiness`).then(r => r.data),
+
   deleteTenant: (id) =>
     api.delete(`/platform/admin/tenants/${id}`).then(r => r.data),
 
-  deleteTenantPermanent: (id, { password, reason, backup, confirmExternalDelete }) =>
-    api.post(`/platform/admin/tenants/${id}/delete-permanent`, { password, reason, backup, confirmExternalDelete }).then(r => r.data),
+  deleteTenantPermanent: (id, { password, reason, confirmExternalDelete, backupConfig }) =>
+    api.post(`/platform/admin/tenants/${id}/delete-permanent`, { password, reason, confirmExternalDelete, backupConfig }).then(r => r.data),
 
   getModules: (id) =>
     api.get(`/platform/admin/tenants/${id}/modules`).then(r => r.data),
