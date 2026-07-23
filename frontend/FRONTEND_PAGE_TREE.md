@@ -44,7 +44,6 @@ Generated: 2026-07-22
 - frontend/src/pages/ess/ESSPages.jsx
 - frontend/src/pages/expenses/ExpensesPage.jsx
 - frontend/src/pages/gst-public/GstPublicPage.jsx
-- frontend/src/pages/gst-public/GstPublicPageEnhanced.jsx
 - frontend/src/pages/hr/HRAttendance.jsx
 - frontend/src/pages/hr/HRDashboard.jsx
 - frontend/src/pages/hr/HREmployees.jsx

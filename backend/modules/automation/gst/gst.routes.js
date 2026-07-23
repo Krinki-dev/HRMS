@@ -20,13 +20,10 @@ const {
   readCentralGstRecord,
   getCachedGstRecord,
   upsertCentralGstRecord,
-} = require('./gst.service');
-
-const {
   getGstRecord,
   saveGstData,
   isGstRecordStale
-} = require('./gst.db.service');
+} = require('./gst.service');
 
 // In-memory task store (for progress tracking)
 const taskStore = new Map();

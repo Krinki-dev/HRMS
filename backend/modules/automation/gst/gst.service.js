@@ -1240,6 +1240,266 @@ async function scrapeGstSearchSite(gstinUpper) {
   throw new Error('All GST providers failed to fetch data');
 }
 
+const CACHE_TTL_DAYS = 30; // Re-verify GST data every 30 days
+
+function parseIndianDate(dateStr) {
+  if (!dateStr) return null;
+  const match = String(dateStr).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (!match) return null;
+  const [, day, month, year] = match;
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function parseAddress(addressStr) {
+  if (!addressStr) {
+    return {
+      address_line: null, flat_no: null, street: null,
+      location: null, city: null, district: null, state: null, pincode: null
+    };
+  }
+
+  const parts = String(addressStr)
+    .split(',')
+    .map((p) => p.trim())
+    .filter((p) => p && p !== 'na' && p !== 'NA' && p !== 'N/A');
+
+  const pincodeMatch = addressStr.match(/(\d{6})/);
+  const pincode = pincodeMatch ? pincodeMatch[1] : null;
+
+  let state = null;
+  let district = null;
+  let location = null;
+  if (pincode) {
+    const idx = parts.length - 1;
+    state = parts[idx - 1] || null;
+    district = parts[idx - 2] || null;
+    location = parts.slice(0, Math.max(0, idx - 2)).pop() || null;
+  } else {
+    state = parts[parts.length - 1] || null;
+    district = parts[parts.length - 2] || null;
+    location = parts[parts.length - 3] || null;
+  }
+
+  return {
+    address_line: addressStr,
+    flat_no: null,
+    street: parts[1] || null,
+    location,
+    city: location || district,
+    district,
+    state,
+    pincode
+  };
+}
+
+function normalizeStatus(raw = '') {
+  const s = String(raw).toLowerCase();
+  if (s.includes('active')) return 'Active';
+  if (s.includes('cancel')) return 'Cancelled';
+  if (s.includes('suspend')) return 'Suspended';
+  if (s.includes('provisional')) return 'Provisionally Cancelled';
+  return 'Unknown';
+}
+
+async function getGstRecord(gstin) {
+  const db = getOptionalCentralDB();
+  if (!db) return null;
+
+  try {
+    const rows = await db.$queryRaw`
+      SELECT * FROM central_gst_records
+      WHERE gstin = ${gstin}
+      LIMIT 1
+    `;
+
+    if (rows && rows.length > 0) {
+      const rec = rows[0];
+      if (typeof rec.business_nature === 'string') {
+        try { rec.business_nature = JSON.parse(rec.business_nature); } catch { rec.business_nature = []; }
+      }
+      if (typeof rec.dealing_in === 'string') {
+        try { rec.dealing_in = JSON.parse(rec.dealing_in); } catch { rec.dealing_in = []; }
+      }
+      if (typeof rec.raw === 'string') {
+        try { rec.raw = JSON.parse(rec.raw); } catch { rec.raw = {}; }
+      }
+      return rec;
+    }
+    return null;
+  } catch (err) {
+    console.warn('[GST.DB] getGstRecord error:', err.message);
+    return null;
+  }
+}
+
+function isGstRecordStale(record) {
+  if (!record || !record.last_verified_at) return true;
+  const lastVerified = new Date(record.last_verified_at);
+  const now = new Date();
+  const daysDiff = (now - lastVerified) / (1000 * 60 * 60 * 24);
+  return daysDiff > CACHE_TTL_DAYS;
+}
+
+async function saveGstData(gstinLookupResult, metadata = {}) {
+  const db = getOptionalCentralDB();
+  if (!db) {
+    console.warn('[GST.DB] No database configured — skipping save');
+    return null;
+  }
+
+  const gstin = gstinLookupResult.gstin;
+  const pan = gstinLookupResult.pan || null;
+  const legalName = gstinLookupResult.legalName || gstinLookupResult.legalname || null;
+  const tradeName = gstinLookupResult.tradeName || gstinLookupResult.tradename || null;
+  const status = gstinLookupResult.status || null;
+  const registrationDate = gstinLookupResult.registrationDate || gstinLookupResult.regdate || null;
+  const cancelDate = gstinLookupResult.cancelDate || gstinLookupResult.cancel_date || gstinLookupResult.canceldate || null;
+  const taxpayerType = gstinLookupResult.taxpayerType || gstinLookupResult.type || null;
+  const constitution = gstinLookupResult.constitution || gstinLookupResult.constitutionofbusiness || null;
+  const businessType = gstinLookupResult.businessType || null;
+  const businessNature = Array.isArray(gstinLookupResult.businessNature) && gstinLookupResult.businessNature.length
+    ? gstinLookupResult.businessNature
+    : (Array.isArray(gstinLookupResult.business_nature) ? gstinLookupResult.business_nature : []);
+  const dealingIn = Array.isArray(gstinLookupResult.dealingIn) && gstinLookupResult.dealingIn.length
+    ? gstinLookupResult.dealingIn
+    : (Array.isArray(gstinLookupResult.dealing_in) ? gstinLookupResult.dealing_in : []);
+
+  const composedAddress = [
+    gstinLookupResult.flat_no,
+    gstinLookupResult.branch_name,
+    gstinLookupResult.branch_no ? `Branch No. ${gstinLookupResult.branch_no}` : null,
+    gstinLookupResult.street,
+    gstinLookupResult.location,
+    gstinLookupResult.district,
+    gstinLookupResult.state,
+    gstinLookupResult.pincode,
+  ].filter(Boolean).join(', ');
+
+  const address = gstinLookupResult.address || gstinLookupResult.address_line || composedAddress || null;
+  const state = gstinLookupResult.state || null;
+  const district = gstinLookupResult.district || null;
+  const pincode = gstinLookupResult.pincode || null;
+  const stateJuri = gstinLookupResult.stateJuri || gstinLookupResult.state_juri || null;
+  const centerJuri = gstinLookupResult.centerJuri || gstinLookupResult.center_juri || null;
+  const centerCode = gstinLookupResult.centerCode || gstinLookupResult.center_code || null;
+  const branchNo = gstinLookupResult.branchNo || gstinLookupResult.branch_no || null;
+  const branchName = gstinLookupResult.branchName || gstinLookupResult.branch_name || null;
+  const aadhaarAuthDate = gstinLookupResult.aadhaarAuthDate || gstinLookupResult.aadhaar_auth_date || null;
+  const source = gstinLookupResult.source || 'official';
+  const rawData = (gstinLookupResult.rawData && Object.keys(gstinLookupResult.rawData).length)
+    ? gstinLookupResult.rawData
+    : (gstinLookupResult.raw || {});
+
+  if (!gstin) {
+    throw new Error('saveGstData requires gstin');
+  }
+
+  const regDate = parseIndianDate(registrationDate);
+  const cancelDateParsed = parseIndianDate(cancelDate);
+  const aadhaarDateParsed = parseIndianDate(aadhaarAuthDate);
+  const addressParts = parseAddress(address);
+  const { tenantId = null, userId = null } = metadata;
+
+  try {
+    await db.$executeRaw`
+      INSERT INTO central_gst_records (
+        gstin, pan,
+        company_name, legalname, tradename,
+        state, state_code,
+        status, regdate, cancel_date,
+        type, constitutionofbusiness,
+        state_juri, center_juri, center_code,
+        pincode, district, branch_no, branch_name, flat_no, street, location,
+        business_nature, dealing_in,
+        raw, data_source,
+        last_verified_at, created_at, updated_at
+      ) VALUES (
+        ${gstin}, ${pan || null},
+        ${legalName || tradeName || null}, ${legalName || null}, ${tradeName || null},
+        ${state || addressParts.state || null},
+        ${gstin.substring(0, 2)},
+        ${normalizeStatus(status)}, ${regDate}, ${cancelDateParsed},
+        ${taxpayerType || businessType || null}, ${constitution || null},
+        ${stateJuri || null}, ${centerJuri || null}, ${centerCode || null},
+        ${pincode || addressParts.pincode},
+        ${district || addressParts.district},
+        ${branchNo}, ${branchName},
+        ${addressParts.flat_no},
+        ${addressParts.street},
+        ${addressParts.location},
+        ${JSON.stringify(businessNature)},
+        ${JSON.stringify(dealingIn)},
+        ${JSON.stringify(rawData)},
+        ${source},
+        NOW(), NOW(), NOW()
+      )
+      ON DUPLICATE KEY UPDATE
+        pan                    = VALUES(pan),
+        company_name           = VALUES(company_name),
+        legalname              = VALUES(legalname),
+        tradename              = VALUES(tradename),
+        state                  = VALUES(state),
+        status                 = VALUES(status),
+        regdate                = VALUES(regdate),
+        cancel_date            = VALUES(cancel_date),
+        type                   = VALUES(type),
+        constitutionofbusiness = VALUES(constitutionofbusiness),
+        state_juri             = VALUES(state_juri),
+        center_juri            = VALUES(center_juri),
+        center_code            = VALUES(center_code),
+        pincode                = VALUES(pincode),
+        district               = VALUES(district),
+        branch_no              = VALUES(branch_no),
+        branch_name            = VALUES(branch_name),
+        flat_no                = VALUES(flat_no),
+        street                 = VALUES(street),
+        location               = VALUES(location),
+        business_nature        = VALUES(business_nature),
+        dealing_in             = VALUES(dealing_in),
+        raw                    = VALUES(raw),
+        data_source            = VALUES(data_source),
+        last_verified_at       = NOW(),
+        updated_at             = NOW()
+    `;
+
+    console.log(`[GST.DB] Saved GSTIN ${gstin} to database`);
+
+    if (process.env.ENABLE_GST_AUDIT_LOG === 'true') {
+      await db.$executeRaw`
+        INSERT INTO gst_lookup_log (
+          gstin, lookup_by_user_id, tenant_id,
+          status, source, response_ms,
+          user_agent, ip_address,
+          created_at
+        ) VALUES (
+          ${gstin}, ${userId}, ${tenantId},
+          'success', ${source}, ${metadata.responseTimes || null},
+          ${metadata.userAgent || null}, ${metadata.ipAddress || null},
+          NOW()
+        )
+      `;
+    }
+
+    return { success: true, gstin, saved: true };
+  } catch (err) {
+    console.error('[GST.DB] saveGstData error:', err.message);
+    if (process.env.ENABLE_GST_AUDIT_LOG === 'true') {
+      try {
+        await db.$executeRaw`
+          INSERT INTO gst_lookup_log (
+            gstin, tenant_id, status, error_message, created_at
+          ) VALUES (
+            ${gstin}, ${tenantId}, 'failed', ${err.message}, NOW()
+          )
+        `;
+      } catch {
+        // Ignore audit log write failure
+      }
+    }
+    throw err;
+  }
+}
+
 module.exports = {
   GSTIN_REGEX,
   parseGstinStructure,
@@ -1250,5 +1510,8 @@ module.exports = {
   readCentralGstRecord,      
   getCachedGstRecord,
   upsertCentralGstRecord,
+  getGstRecord,
+  saveGstData,
+  isGstRecordStale,
 };
 
