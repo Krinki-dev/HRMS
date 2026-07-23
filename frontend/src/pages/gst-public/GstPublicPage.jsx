@@ -873,17 +873,6 @@ export default function GstPublicPage() {
           </div>
           <div className="sg-hint">Format: 2‑digit state code + 10‑digit PAN + 3 digits · 15 characters total</div>
         </div>
-
-        {phase === 'idle' && (
-          <div className="sg-popular">
-            <div className="sg-popular-label">POPULAR BY STATE</div>
-            <div className="sg-state-chips">
-              {['Delhi (07)', 'Maharashtra (27)', 'Karnataka (29)', 'Gujarat (24)', 'Tamil Nadu (33)', 'UP (09)', 'Telangana (36)', 'Rajasthan (08)'].map(s => (
-                <div key={s} className="sg-chip">{s}</div>
-              ))}
-            </div>
-          </div>
-        )}
       </section>
 
       {/* AdSense banner */}

@@ -231,35 +231,30 @@ CREATE TABLE IF NOT EXISTS central_gst_records (
   gstin             TEXT NOT NULL UNIQUE,
   pan               TEXT,
   company_name      TEXT,
-  legal_name        TEXT,
-  trade_name        TEXT,
+  legalname         TEXT,
+  tradename         TEXT,
   state             TEXT,
   state_code        TEXT,
-  gst_status        TEXT,
-  gst_reg_date      TEXT,
-  taxpayer_type     TEXT,
-  constitution      TEXT,
+  status            TEXT,
+  regdate           TEXT,
+  type              TEXT,
+  constitutionofbusiness TEXT,
   business_nature   JSONB DEFAULT '[]',
   dealing_in        JSONB DEFAULT '[]',
-  address           TEXT,
-  city              TEXT,
-  pincode           TEXT,
-  location          TEXT,
-  district          TEXT,
-  branch_no         TEXT,
-  branch_name       TEXT,
-  flat_no           TEXT,
-  street            TEXT,
-  centre_jurisdiction TEXT,
-  centre_code       TEXT,
-  state_jurisdiction  TEXT,
-  cancellation_date   TEXT,
-  data_source       TEXT,
+  address           JSONB NOT NULL DEFAULT '{}', -- { flat_no, street, location, district, branch_no, branch_name, pincode }
+  center_juri       TEXT,
+  center_code       TEXT,
+  state_juri        VARCHAR(255),
+  cancel_date       TEXT,
+  data_source       VARCHAR(100),
   raw               JSONB,
-  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_verified_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_central_gst_gstin ON central_gst_records (gstin);
+CREATE INDEX IF NOT EXISTS idx_central_gst_last_verified ON central_gst_records (last_verified_at);
 
 -- ================================================================
 -- TABLE 7: platform_settings

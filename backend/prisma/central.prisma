@@ -149,38 +149,34 @@ model central_kyc_records {
 }
 
 model central_gst_records {
-  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  gstin               String   @unique
-  pan                 String?
-  company_name        String?
-  legal_name          String?
-  trade_name          String?
-  state               String?
-  state_code          String?
-  gst_status          String?
-  gst_reg_date        String?
-  taxpayer_type       String?
-  constitution        String?
-  business_nature     Json?    @default("[]")
-  dealing_in          Json?    @default("[]")
-  address             String?
-  city                String?
-  pincode             String?
-  location            String?
-  district            String?
-  branch_no           String?
-  branch_name         String?
-  flat_no             String?
-  street              String?
-  centre_jurisdiction String?
-  centre_code         String?
-  state_jurisdiction  String?
-  cancellation_date   String?
-  data_source         String?
-  raw                 Json?
-  created_at          DateTime @default(now()) @db.Timestamptz
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gstin                  String   @unique
+  pan                    String?
+  company_name           String?
+  legalname              String?
+  tradename              String?
+  state                  String?
+  state_code             String?
+  status                 String?
+  regdate                String?
+  type                   String?
+  constitutionofbusiness String?
+  business_nature        Json?    @default("[]")
+  dealing_in             Json?    @default("[]")
+  /// Consolidated address: { flat_no, street, location, district, branch_no, branch_name, pincode }
+  address                Json     @default("{}")
+  center_juri            String?
+  center_code            String?
+  state_juri             String?  @db.VarChar(255)
+  cancel_date            String?
+  data_source            String?  @db.VarChar(100)
+  raw                    Json?
+  created_at             DateTime @default(now()) @db.Timestamptz
+  last_verified_at       DateTime @default(now()) @db.Timestamptz
+  updated_at             DateTime @default(now()) @db.Timestamptz
 
   @@index([gstin])
+  @@index([last_verified_at])
 }
 
 model platform_settings {
