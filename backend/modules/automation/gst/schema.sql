@@ -71,6 +71,8 @@ CREATE TABLE IF NOT EXISTS central_gst_records (
   -- Data Quality & Source
   source                VARCHAR(50) DEFAULT 'official' COMMENT 'official|gstsearch.in|knowyourgst|tally',
   raw_data              JSONB COMMENT 'Full unprocessed scrape response',
+  verification_status   VARCHAR(30) DEFAULT 'verified' COMMENT 'verified|failed|retry_required|manual_review',
+  lookup_error_message  TEXT COMMENT 'Internal-only error message for support/debugging',
   
   -- Timestamps
   cached_at             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

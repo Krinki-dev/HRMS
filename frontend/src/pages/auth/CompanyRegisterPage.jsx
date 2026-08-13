@@ -210,6 +210,10 @@ export default function CompanyRegisterPage() {
   const [gstCardData, setGstCardData] = useState(null);
   const [gstInfo, setGstInfo] = useState('');
   const [gstRecordAgeDays, setGstRecordAgeDays] = useState(null);
+  const [gstManualSessionId, setGstManualSessionId] = useState('');
+  const [gstManualCaptchaImage, setGstManualCaptchaImage] = useState('');
+  const [gstManualCaptchaText, setGstManualCaptchaText] = useState('');
+  const [gstManualSubmitting, setGstManualSubmitting] = useState(false);
   const [samePanTenant, setSamePanTenant] = useState(null);
   const [gstRegisteredTenant, setGstRegisteredTenant] = useState(null);
   const [branchLinkTenantId, setBranchLinkTenantId] = useState('');
@@ -363,42 +367,99 @@ export default function CompanyRegisterPage() {
     }
   }, [company.branchNo, company.branchName, company.city, company.state, company.pincode]);
 
-  const triggerAutomation = useCallback(async gstin => {
-    const res = await api.post(`/gst/automation/trigger/${gstin}`);
-    return res.data.taskId;
-  }, []);
+  const startManualGstVerification = useCallback(async gstin => {
+    setGstLoading(true);
+    setGstError('');
+    setGstInfo('Opening official GST portal for captcha verification…');
+    try {
+      const res = await api.post(`/gst/automation/assisted/start/${gstin}`);
+      if (res.data?.cached && res.data?.data) {
+        applyGstData(res.data.data, false);
+        setGstSuccess(true);
+        setGstLoading(false);
+        setGstManualSessionId('');
+        setGstManualCaptchaImage('');
+        setGstManualCaptchaText('');
+        setGstInfo('GST details loaded from the database.');
+        return;
+      }
 
-  const pollAutomationStatus = useCallback((taskId, gstin) => {
-    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-    pollIntervalRef.current = setInterval(async () => {
-      try {
-        const res = await api.get(`/gst/automation/status/${taskId}`);
-        const { status, logs, error } = res.data;
-        if (logs?.length) setAutoStep(logs[logs.length-1]?.message || '');
+      if (!res.data?.sessionId || !res.data?.captchaImageDataUrl) {
+        throw new Error('Could not start official GST captcha flow');
+      }
 
-        if (status === 'completed') {
-          clearInterval(pollIntervalRef.current); pollIntervalRef.current = null;
-          setAutoStep('Saving data…');
-          
-          const centralData = await fetchFromCentralTable(gstin);
-          if (centralData) {
-            applyGstData(centralData.data, false);
-            setGstSuccess(true);
-            toast.success('✅ GST details fetched and auto-filled!');
-          } else {
-            setGstError('Automation completed but data not found. Fill manually.');
-            toast.error('Automation done but no data found.');
-          }
-          setAutoTaskId(null); setAutoStatus(null); setAutoStep(''); setGstLoading(false);
-        } else if (status === 'failed') {
-          clearInterval(pollIntervalRef.current); pollIntervalRef.current = null;
-          setGstError(`Automation failed: ${error||'Unknown error'}. Fill manually.`);
-          toast.error(`GST automation failed: ${error||'Unknown error'}`);
-          setAutoTaskId(null); setAutoStatus(null); setAutoStep(''); setGstLoading(false);
-        }
-      } catch(err) { console.error('GST Poll error', err.message); }
-    }, 2000);
-  }, [fetchFromCentralTable, applyGstData]);
+      setGstManualSessionId(res.data.sessionId);
+      setGstManualCaptchaImage(res.data.captchaImageDataUrl);
+      setGstManualCaptchaText('');
+      setGstInfo('Official GST captcha is ready. Please solve it to continue.');
+      setGstLoading(false);
+    } catch (err) {
+      setGstManualSessionId('');
+      setGstManualCaptchaImage('');
+      setGstManualCaptchaText('');
+      setGstError(err.response?.data?.message || 'Official GST verification is unavailable right now. Please try again.');
+      setGstLoading(false);
+    }
+  }, [applyGstData]);
+
+  const submitManualGstVerification = useCallback(async () => {
+    if (!gstManualSessionId) {
+      setGstError('GST verification session expired. Please try again.');
+      return;
+    }
+    const captcha = gstManualCaptchaText.trim();
+    if (!captcha) {
+      setGstError('Please enter the captcha text.');
+      return;
+    }
+
+    setGstManualSubmitting(true);
+    setGstError('');
+    try {
+      const res = await api.post(`/gst/automation/assisted/submit/${gstManualSessionId}`, { captcha });
+      if (res.data?.success && res.data?.data) {
+        applyGstData(res.data.data, false);
+        setGstSuccess(true);
+        setGstManualSessionId('');
+        setGstManualCaptchaImage('');
+        setGstManualCaptchaText('');
+        setGstInfo('GST details fetched and verified successfully.');
+        setGstLoading(false);
+        toast.success('✅ GST details verified and saved.');
+        return;
+      }
+      throw new Error('GST verification failed');
+    } catch (err) {
+      const payload = err.response?.data;
+      if (payload?.code === 'CAPTCHA_INVALID') {
+        setGstError(payload?.message || 'Invalid captcha. Please try again.');
+        if (payload?.captchaImageDataUrl) setGstManualCaptchaImage(payload.captchaImageDataUrl);
+        setGstManualCaptchaText('');
+      } else {
+        setGstError(payload?.message || 'GST verification failed. Please try again.');
+        setGstManualSessionId('');
+        setGstManualCaptchaImage('');
+        setGstManualCaptchaText('');
+      }
+    } finally {
+      setGstManualSubmitting(false);
+    }
+  }, [applyGstData, gstManualCaptchaText, gstManualSessionId]);
+
+  const cancelManualGstVerification = useCallback(async () => {
+    if (!gstManualSessionId) {
+      setGstManualCaptchaImage('');
+      setGstManualCaptchaText('');
+      setGstManualSessionId('');
+      return;
+    }
+
+    await api.post(`/gst/automation/assisted/cancel/${gstManualSessionId}`).catch(() => {});
+    setGstManualSessionId('');
+    setGstManualCaptchaImage('');
+    setGstManualCaptchaText('');
+    setGstInfo('Manual GST verification cancelled. You can try again anytime.');
+  }, [gstManualSessionId]);
 
   const handleGstinChange = useCallback(async (value, forceFresh = false) => {
     const formatted = fmt.gstin(value);
@@ -443,37 +504,33 @@ export default function CompanyRegisterPage() {
         }
 
         if (age !== null && age >= 90) {
-          setGstInfo(`GST details in central database are ${age} days old. Press Refresh to fetch latest data.`);
+          setGstInfo(`Your GST details are ${age} days old. Press Refresh to verify the latest data.`);
           if (!forceFresh) {
             setGstLoading(false);
             return;
           }
-          setGstInfo('Fetching the latest GST data because the central record is older than 90 days...');
+          setGstInfo('Refreshing from the official GST portal because the stored record is older than 90 days...');
         }
 
         if (age !== null && age >= 90 && forceFresh) {
-          const taskId = await triggerAutomation(formatted);
-          setAutoTaskId(taskId); setAutoStatus('running'); setAutoStep('Opening gstsearch.in…');
-          pollAutomationStatus(taskId, formatted);
+          await startManualGstVerification(formatted);
           return;
         }
 
         applyGstData(centralData.data, false);
         setGstSuccess(true);
-        toast.success('✅ GST details loaded from central database');
+        toast.success('✅ GST details loaded successfully');
         setGstLoading(false);
         return;
       }
 
-      const taskId = await triggerAutomation(formatted);
-      setAutoTaskId(taskId); setAutoStatus('running'); setAutoStep('Opening gstsearch.in…');
-      pollAutomationStatus(taskId, formatted);
+      await startManualGstVerification(formatted);
     } catch(err) {
       setGstError('Failed to fetch GST details. Fill manually or try again.');
       toast.error(err.response?.data?.message || 'GST lookup failed');
       setGstLoading(false);
     }
-  }, [company.pan, checkGstinRegistration, fetchFromCentralTable, applyGstData, triggerAutomation, pollAutomationStatus]);
+  }, [company.pan, checkGstinRegistration, fetchFromCentralTable, applyGstData, startManualGstVerification]);
 
   const handleRefresh = useCallback(async () => {
     if (!company.gstin || company.gstin.length !== 15) return;
@@ -639,6 +696,27 @@ export default function CompanyRegisterPage() {
                     <span>{gstInfo}</span>
                     {gstRecordAgeDays != null && <button onClick={handleRefresh} type="button" disabled={refreshing} style={{padding:'4px 10px',background:'rgba(37,99,235,0.16)',border:'1px solid rgba(37,99,235,0.35)',borderRadius:6,color:'#60A5FA',fontSize:11,cursor:refreshing?'not-allowed':'pointer',opacity:refreshing?0.6:1}}>Refresh</button>}
                   </div>}
+                  {gstManualCaptchaImage && (
+                    <div style={{marginTop:12, padding:12, borderRadius:10, background:'rgba(15,23,42,0.4)', border:'1px solid rgba(96,165,250,0.35)'}}>
+                      <div style={{fontSize:11, color:'#93C5FD', marginBottom:8}}>Official GST captcha</div>
+                      <img src={gstManualCaptchaImage} alt="GST captcha" style={{display:'block', maxWidth:'100%', borderRadius:8, border:'1px solid rgba(148,163,184,0.2)'}} />
+                      <div style={{display:'flex', gap:8, marginTop:10, alignItems:'center'}}>
+                        <input
+                          value={gstManualCaptchaText}
+                          onChange={e => setGstManualCaptchaText(e.target.value)}
+                          placeholder="Enter captcha"
+                          style={{...S.input, flex:1, minWidth:0, fontFamily:'monospace'}}
+                          onKeyDown={e => e.key === 'Enter' && !gstManualSubmitting && submitManualGstVerification()}
+                        />
+                        <button type="button" onClick={submitManualGstVerification} disabled={gstManualSubmitting} style={{...S.btn, padding: '8px 12px', opacity: gstManualSubmitting ? 0.7 : 1}}>
+                          {gstManualSubmitting ? 'Verifying…' : 'Submit'}
+                        </button>
+                        <button type="button" onClick={cancelManualGstVerification} style={{padding:'8px 10px', borderRadius:8, border:'1px solid rgba(148,163,184,0.3)', background:'transparent', color:'#E2E8F8', cursor:'pointer'}}>
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   {samePanTenant && samePanTenant.length > 0 && (
                     <div style={{color:'#FBBF24',fontSize:11,marginTop:4}}>
                       <div>This PAN is already registered with {samePanTenant.length} other account(s).</div>

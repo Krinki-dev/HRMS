@@ -255,7 +255,10 @@ CREATE TABLE IF NOT EXISTS central_gst_records (
   state_jurisdiction  TEXT,
   cancellation_date   TEXT,
   data_source       TEXT,
-  raw               JSONB,
+  raw_data          JSONB,
+  verification_status TEXT DEFAULT 'verified',
+  lookup_error_message TEXT,
+  last_verified_at  TIMESTAMPTZ DEFAULT NOW(),
   created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

@@ -278,7 +278,7 @@ router.post('/automation/assisted/submit/:sessionId', async (req, res) => {
       });
     }
 
-    let saveWarning = null;
+    let persistedData = result.data;
     try {
       await saveGstData(result.data, {
         tenantId: req.body?.tenantId || null,
@@ -286,17 +286,19 @@ router.post('/automation/assisted/submit/:sessionId', async (req, res) => {
         userAgent: req.headers['user-agent'],
         ipAddress: req.ip
       });
+
+      const freshRecord = await getGstRecord(result.data.gstin);
+      if (freshRecord) {
+        persistedData = freshRecord;
+      }
     } catch (saveErr) {
-      saveWarning = saveErr?.message || 'Failed to cache GST data';
-      console.warn('[GST] Assisted submit: saveGstData failed:', saveWarning);
+      console.warn('[GST] Assisted submit: saveGstData failed:', saveErr?.message || 'Failed to cache GST data');
     }
 
     return res.json({
       success: true,
       mode: 'assisted',
-      data: result.data,
-      cached: !saveWarning,
-      warning: saveWarning,
+      data: persistedData,
       message: 'GST verification completed via assisted mode'
     });
   } catch (err) {

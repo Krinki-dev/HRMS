@@ -177,7 +177,10 @@ model central_gst_records {
   state_jurisdiction  String?
   cancellation_date   String?
   data_source         String?
-  raw                 Json?
+  raw_data            Json?
+  verification_status String?  @default("verified")
+  lookup_error_message String?
+  last_verified_at    DateTime? @db.Timestamptz
   created_at          DateTime @default(now()) @db.Timestamptz
 
   @@index([gstin])

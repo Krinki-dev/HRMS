@@ -62,8 +62,6 @@ export default function GstPublicPage() {
   const [assistedCaptchaImage, setAssistedCaptchaImage] = useState('');
   const [assistedCaptchaText, setAssistedCaptchaText] = useState('');
   const [assistedSubmitting, setAssistedSubmitting] = useState(false);
-  const [assistedWarning, setAssistedWarning] = useState('');
-
   const pollRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -105,9 +103,7 @@ export default function GstPublicPage() {
     setAssistedSessionId('');
     setAssistedCaptchaImage('');
     setAssistedCaptchaText('');
-    setAssistedWarning('');
 
-    // 1. Try cache
     try {
       const cacheRes = await gst.get(`/gst/central/${gstin}`);
       if (cacheRes.data?.success && cacheRes.data?.data) {
@@ -124,62 +120,18 @@ export default function GstPublicPage() {
       }
     }
 
-    // 2. Start automation
-    setPhase('automating');
-    setPct(20);
-    setLogs(['Starting live lookup from GST portal...']);
+    setPct(35);
+    setLogs([
+      'GSTIN not found in local cache.',
+      'Opening official GST portal and requesting captcha verification…'
+    ]);
 
-    let taskId;
     try {
-      const trigRes = await gst.post(`/gst/automation/trigger/${gstin}`);
-      taskId = trigRes.data?.taskId;
-      if (!taskId) throw new Error('No task ID');
+      await startAssistedLookup();
     } catch {
-      setErrMsg('Could not start GST lookup. Please try again in a moment.');
+      setErrMsg('Could not open the official GST portal. Please try again in a moment.');
       setPhase('error');
-      return;
     }
-
-    const start = Date.now();
-    pollRef.current = setInterval(async () => {
-      const elapsed = (Date.now() - start) / 1000;
-      setPct(Math.min(20 + elapsed * 2, 90));
-
-      if (elapsed > 90) {
-        stopPoll();
-        setErrMsg('Lookup timed out. The GST portal may be slow. Please try again.');
-        setPhase('error');
-        return;
-      }
-
-      try {
-        const statusRes = await gst.get(`/gst/automation/status/${taskId}`);
-        const task = statusRes.data;
-        if (task.logs?.length) setLogs(task.logs.map(l => l.message));
-
-        if (task.status === 'completed') {
-          stopPoll();
-          try {
-            const finalRes = await gst.get(`/gst/central/${gstin}`);
-            if (finalRes.data?.success && finalRes.data?.data) {
-              setPct(100);
-              setData(finalRes.data.data);
-              setPhase('done');
-            } else {
-              setErrMsg('Automation completed but could not retrieve data. Try again.');
-              setPhase('error');
-            }
-          } catch {
-            setErrMsg('Could not retrieve data after lookup. Try again.');
-            setPhase('error');
-          }
-        } else if (task.status === 'failed') {
-          stopPoll();
-          setErrMsg(task.error || 'GST portal returned no data. The GSTIN may be invalid or cancelled.');
-          setPhase('error');
-        }
-      } catch {}
-    }, 2000);
   }
 
   // ========== Assisted (manual captcha) ==========
@@ -193,11 +145,15 @@ export default function GstPublicPage() {
 
     setPhase('checking');
     setErrMsg('');
-    setAssistedWarning('');
+    setLogs([
+      'Checking official GST portal for a fresh captcha challenge…',
+      'This step does not auto-solve the captcha; it is shown for manual entry to keep the flow stable.'
+    ]);
 
     try {
       const res = await gst.post(`/gst/automation/assisted/start/${gstin}`);
       if (res.data?.cached && res.data?.data) {
+        setPct(100);
         setData(res.data.data);
         setPhase('done');
         return;
@@ -210,6 +166,7 @@ export default function GstPublicPage() {
       setAssistedSessionId(res.data.sessionId);
       setAssistedCaptchaImage(res.data.captchaImageDataUrl);
       setAssistedCaptchaText('');
+      setPct(70);
       setPhase('assisted');
     } catch (e) {
       setErrMsg(e.response?.data?.message || 'Assisted verification is unavailable right now. Please retry.');
@@ -236,7 +193,6 @@ export default function GstPublicPage() {
       const res = await gst.post(`/gst/automation/assisted/submit/${assistedSessionId}`, { captcha });
       if (res.data?.success && res.data?.data) {
         setData(res.data.data);
-        setAssistedWarning(res.data?.warning || '');
         setAssistedSessionId('');
         setAssistedCaptchaImage('');
         setAssistedCaptchaText('');
@@ -293,7 +249,6 @@ export default function GstPublicPage() {
     setAssistedSessionId('');
     setAssistedCaptchaImage('');
     setAssistedCaptchaText('');
-    setAssistedWarning('');
     setQuery('');
     setTimeout(() => inputRef.current?.focus(), 100);
   }
@@ -993,9 +948,9 @@ export default function GstPublicPage() {
               </div>
             </div>
 
-            {assistedWarning && (
-              <div className="sg-cache-note">⚠ {assistedWarning}</div>
-            )}
+            <div className="sg-cache-note" style={{ marginTop: 6 }}>
+              {data?.source === 'gst.gov.in-assisted' ? 'Fresh GST portal verification' : data?.cachedAt ? 'Previously verified result' : 'GST record loaded'}
+            </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
               <p style={{ fontSize: 12, color: '#8B7E6F' }}>

@@ -67,12 +67,14 @@ async function readCentralGstRecord(gstin) {
   try {
     const rows = await db.$queryRaw`
       SELECT
-        gstin, pan, company_name, legalname, tradename,
-        state, state_code, status, regdate, type,
-        constitutionofbusiness, business_nature, pincode,
-        center_juri, center_code, state_juri, cancel_date,
+        gstin, pan, company_name, legal_name AS legalname, trade_name AS tradename,
+        state, state_code, gst_status AS status, gst_reg_date AS regdate,
+        taxpayer_type AS type, constitution AS constitutionofbusiness, business_nature, pincode,
+        centre_jurisdiction AS center_juri, centre_code AS center_code,
+        state_jurisdiction AS state_juri, cancellation_date AS cancel_date,
         dealing_in, district, branch_no, flat_no, street,
-        branch_name, location, created_at
+        branch_name, location, raw_data, verification_status, data_source AS source,
+        lookup_error_message, last_verified_at, created_at
       FROM public.central_gst_records
       WHERE gstin = ${gstin}
       LIMIT 1
@@ -92,7 +94,9 @@ async function readCentralGstRecord(gstin) {
       ...row,
       business_nature: parseJsonb(row.business_nature),
       dealing_in:      parseJsonb(row.dealing_in),
-      cachedAt:        row.created_at,
+      raw:             row.raw_data || row.raw || null,
+      cachedAt:        row.created_at || row.last_verified_at,
+      source:          row.source || row.data_source || 'official',
     };
 
   } catch (err) {
@@ -167,13 +171,13 @@ async function upsertCentralGstRecord(data) {
   try {
     await db.$executeRaw`
       INSERT INTO public.central_gst_records (
-        gstin, pan, company_name, legalname, tradename,
-        state, state_code, status, regdate, cancel_date,
-        type, constitutionofbusiness,
-        state_juri, center_juri, center_code,
+        gstin, pan, company_name, legal_name, trade_name,
+        state, state_code, gst_status, gst_reg_date, cancellation_date,
+        taxpayer_type, constitution,
+        state_jurisdiction, centre_jurisdiction, centre_code,
         pincode, district, branch_no, branch_name, flat_no, street, location,
-        business_nature, dealing_in, raw_data, source,
-        cached_at
+        business_nature, dealing_in, raw_data, data_source,
+        last_verified_at
       ) VALUES (
         ${gstin}, ${pan || null}, ${company_name}, ${legalname || null}, ${tradename || null},
         ${state || null}, ${sc}, ${status || null}, ${regdate || null}, ${cd},
@@ -186,18 +190,18 @@ async function upsertCentralGstRecord(data) {
       ON CONFLICT (gstin) DO UPDATE SET
         pan                    = EXCLUDED.pan,
         company_name           = EXCLUDED.company_name,
-        legalname              = EXCLUDED.legalname,
-        tradename              = EXCLUDED.tradename,
+        legal_name             = EXCLUDED.legal_name,
+        trade_name             = EXCLUDED.trade_name,
         state                  = EXCLUDED.state,
         state_code             = EXCLUDED.state_code,
-        status                 = EXCLUDED.status,
-        regdate                = EXCLUDED.regdate,
-        cancel_date            = EXCLUDED.cancel_date,
-        type                   = EXCLUDED.type,
-        constitutionofbusiness = EXCLUDED.constitutionofbusiness,
-        state_juri             = EXCLUDED.state_juri,
-        center_juri            = EXCLUDED.center_juri,
-        center_code            = EXCLUDED.center_code,
+        gst_status             = EXCLUDED.gst_status,
+        gst_reg_date           = EXCLUDED.gst_reg_date,
+        cancellation_date      = EXCLUDED.cancellation_date,
+        taxpayer_type          = EXCLUDED.taxpayer_type,
+        constitution           = EXCLUDED.constitution,
+        state_jurisdiction     = EXCLUDED.state_jurisdiction,
+        centre_jurisdiction    = EXCLUDED.centre_jurisdiction,
+        centre_code            = EXCLUDED.centre_code,
         pincode                = EXCLUDED.pincode,
         district               = EXCLUDED.district,
         branch_no              = EXCLUDED.branch_no,
@@ -208,8 +212,8 @@ async function upsertCentralGstRecord(data) {
         business_nature        = EXCLUDED.business_nature,
         dealing_in             = EXCLUDED.dealing_in,
         raw_data               = EXCLUDED.raw_data,
-        source                 = EXCLUDED.source,
-        cached_at              = NOW()
+        data_source            = EXCLUDED.data_source,
+        last_verified_at       = NOW()
     `;
 
     console.log(`[gst.service] Saved/updated central_gst_records for ${gstin}`);
@@ -827,186 +831,12 @@ async function submitAssistedCaptchaSession(sessionId, captchaText) {
   };
 }
 
-async function recognizeAudioCaptchaBuffer(buffer) {
-  const apiKey = process.env.ASSEMBLYAI_API_KEY;
-  if (!apiKey) {
-    throw new Error('ASSEMBLYAI_API_KEY is not set; audio CAPTCHA recognition is unavailable');
-  }
-
-  const uploadResp = await fetch('https://api.assemblyai.com/v2/upload', {
-    method: 'POST',
-    headers: {
-      authorization: apiKey,
-      'Content-Type': 'application/octet-stream',
-    },
-    body: buffer,
-  });
-
-  if (!uploadResp.ok) {
-    const body = await uploadResp.text();
-    throw new Error(`AssemblyAI upload failed: ${uploadResp.status} ${body}`);
-  }
-
-  const uploadData = await uploadResp.json();
-  const uploadUrl = uploadData.upload_url;
-  if (!uploadUrl) {
-    throw new Error('AssemblyAI upload did not return an upload_url');
-  }
-
-  const transcriptResp = await fetch('https://api.assemblyai.com/v2/transcript', {
-    method: 'POST',
-    headers: {
-      authorization: apiKey,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ audio_url: uploadUrl, punctuate: false, language_model: 'assemblyai_default' }),
-  });
-
-  if (!transcriptResp.ok) {
-    const body = await transcriptResp.text();
-    throw new Error(`AssemblyAI transcript request failed: ${transcriptResp.status} ${body}`);
-  }
-
-  const transcriptData = await transcriptResp.json();
-  const transcriptId = transcriptData.id;
-  if (!transcriptId) {
-    throw new Error('AssemblyAI transcript creation failed');
-  }
-
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    await sleep(1200);
-    const statusResp = await fetch(`https://api.assemblyai.com/v2/transcript/${transcriptId}`, {
-      method: 'GET',
-      headers: { authorization: apiKey },
-    });
-    if (!statusResp.ok) {
-      const body = await statusResp.text();
-      throw new Error(`AssemblyAI status failed: ${statusResp.status} ${body}`);
-    }
-    const statusData = await statusResp.json();
-    if (statusData.status === 'completed') {
-      return statusData.text?.trim() || null;
-    }
-    if (statusData.status === 'error') {
-      throw new Error(`AssemblyAI transcription error: ${statusData.error || 'unknown'}`);
-    }
-  }
-
-  throw new Error('AssemblyAI transcription timed out');
-}
-
-async function recognizeImageCaptcha(context, page) {
-  if (!Tesseract) {
-    throw new Error('Tesseract not installed; image CAPTCHA recognition not available');
-  }
-
-  const imgSrc = await page.evaluate(() => {
-    const image = document.querySelector('img#imgCaptcha, img[src*="captcha"], img[src*="Captcha"]');
-    return image ? image.src || image.getAttribute('src') : null;
-  });
-  if (!imgSrc) {
-    throw new Error('No CAPTCHA image found for OCR');
-  }
-  const imageUrl = new URL(imgSrc, page.url()).href;
-  const buffer = await fetchResourceBytes(context, imageUrl);
-  const result = await Tesseract.recognize(buffer);
-  return result.data.text.replace(/\s/g, '').toUpperCase().slice(0, 8);
-}
-
 async function scrapeOfficialGstSite(gstinUpper) {
-  const headless = isHeadless();
-  const browser = await chromium.launch({
-    headless,
-    args: [
-      '--no-sandbox','--disable-setuid-sandbox',
-      '--disable-dev-shm-usage','--disable-gpu',
-      '--disable-blink-features=AutomationControlled',
-    ],
-  });
-  const context = await browser.newContext({
-    locale: 'en-IN',
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  });
-  await context.addInitScript(() => {
-    Object.defineProperty(navigator, 'webdriver', { get: () => false });
-  });
-  const page = await context.newPage();
-
-  try {
-    console.log(`[gst.service] Opening official GST search page for ${gstinUpper} headless=${headless}`);
-    await page.goto('https://services.gst.gov.in/services/searchtp', { waitUntil: 'domcontentloaded', timeout: 45000 });
-
-    const gstInput = 'input#for_gstin[name="for_gstin"]';
-    await page.waitForSelector(gstInput, { timeout: 20000 });
-    await page.click(gstInput, { clickCount: 3 });
-    await page.fill(gstInput, '');
-    await page.waitForTimeout(300);
-    for (const char of gstinUpper) {
-      await page.keyboard.type(char);
-      await page.waitForTimeout(80);
-    }
-
-    const captchaInput = 'input[id*="captcha"], input[name*="captcha"], input[placeholder*="Characters"]';
-    await page.waitForSelector(captchaInput, { timeout: 20000 });
-
-    let captchaValue = null;
-    const audioSrc = await page.evaluate(() => {
-      const audio = document.querySelector('audio#audioCap, audio[autoplay], audio');
-      if (!audio) return null;
-      return audio.currentSrc || audio.src || audio.querySelector('source')?.src || null;
-    });
-
-    if (audioSrc) {
-      try {
-        const audioUrl = new URL(audioSrc, page.url()).href;
-        const audioBuffer = await fetchResourceBytes(context, audioUrl);
-        const recognized = await recognizeAudioCaptchaBuffer(audioBuffer);
-        if (recognized) {
-          captchaValue = recognized.replace(/\s/g, '').toUpperCase();
-          console.log(`[gst.service] Audio CAPTCHA recognized: ${captchaValue}`);
-        }
-      } catch (err) {
-        console.warn('[gst.service] Audio CAPTCHA recognition failed:', err.message);
-      }
-    }
-
-    if (!captchaValue) {
-      try {
-        captchaValue = await recognizeImageCaptcha(context, page);
-        console.log(`[gst.service] OCR CAPTCHA fallback: ${captchaValue}`);
-      } catch (err) {
-        console.warn('[gst.service] Image CAPTCHA fallback failed:', err.message);
-      }
-    }
-
-    if (!captchaValue) {
-      throw new Error('Could not solve CAPTCHA automatically. Set ASSEMBLYAI_API_KEY for audio or install tesseract.js for OCR fallback.');
-    }
-
-    await page.fill(captchaInput, captchaValue);
-
-    const searchButton = await page.$('#lotsearch, button[type="submit"], button:has-text("Search")');
-    if (!searchButton) {
-      throw new Error('Search button not found on official GST page');
-    }
-
-    await Promise.all([
-      searchButton.click(),
-      page.waitForSelector('#lottable, .searchresult, div.tbl-format, .err, .alert', { timeout: 30000 }),
-    ]);
-
-    await page.waitForTimeout(800);
-
-    const result = await extractOfficialPageData(page);
-
-    if (!result || Object.keys(result.kvData).length === 0) {
-      throw new Error('Official GST page returned no usable data');
-    }
-    console.log(`[gst.service] Official GST page scraped ${gstinUpper}: keys=${Object.keys(result.kvData).length} rows=${result.hsnRows.length}`);
-    return parseSearchPageData(result.kvData, result.hsnRows);
-  } finally {
-    await browser.close();
-  }
+  // The official GST portal requires a human to solve the CAPTCHA. We intentionally avoid
+  // any voice/OCR auto-solver here to keep the flow stable, fast, and compatible with low-speed networks.
+  // The public UI uses the assisted/manual captcha flow that opens the official GST page,
+  // shows the captcha image, and waits for the user to submit it.
+  throw new Error(`Official GST verification for ${gstinUpper} requires manual captcha entry via the assisted flow.`);
 }
 
 async function doScrape(gstinUpper) {
@@ -1320,8 +1150,12 @@ async function getGstRecord(gstin) {
       if (typeof rec.dealing_in === 'string') {
         try { rec.dealing_in = JSON.parse(rec.dealing_in); } catch { rec.dealing_in = []; }
       }
-      if (typeof rec.raw === 'string') {
+      if (typeof rec.raw_data === 'string') {
+        try { rec.raw = JSON.parse(rec.raw_data); } catch { rec.raw = {}; }
+      } else if (typeof rec.raw === 'string') {
         try { rec.raw = JSON.parse(rec.raw); } catch { rec.raw = {}; }
+      } else {
+        rec.raw = rec.raw_data || rec.raw || {};
       }
       return rec;
     }
@@ -1388,7 +1222,9 @@ async function saveGstData(gstinLookupResult, metadata = {}) {
   const source = gstinLookupResult.source || 'official';
   const rawData = (gstinLookupResult.rawData && Object.keys(gstinLookupResult.rawData).length)
     ? gstinLookupResult.rawData
-    : (gstinLookupResult.raw || {});
+    : ((gstinLookupResult.raw_data && Object.keys(gstinLookupResult.raw_data).length)
+      ? gstinLookupResult.raw_data
+      : (gstinLookupResult.raw || {}));
 
   if (!gstin) {
     throw new Error('saveGstData requires gstin');
@@ -1404,15 +1240,16 @@ async function saveGstData(gstinLookupResult, metadata = {}) {
     await db.$executeRaw`
       INSERT INTO central_gst_records (
         gstin, pan,
-        company_name, legalname, tradename,
+        company_name, legal_name, trade_name,
         state, state_code,
-        status, regdate, cancel_date,
-        type, constitutionofbusiness,
-        state_juri, center_juri, center_code,
+        gst_status, gst_reg_date, cancellation_date,
+        taxpayer_type, constitution,
+        state_jurisdiction, centre_jurisdiction, centre_code,
         pincode, district, branch_no, branch_name, flat_no, street, location,
         business_nature, dealing_in,
-        raw, data_source,
-        last_verified_at, created_at, updated_at
+        raw_data, data_source,
+        verification_status, lookup_error_message,
+        last_verified_at, created_at
       ) VALUES (
         ${gstin}, ${pan || null},
         ${legalName || tradeName || null}, ${legalName || null}, ${tradeName || null},
@@ -1431,35 +1268,37 @@ async function saveGstData(gstinLookupResult, metadata = {}) {
         ${JSON.stringify(dealingIn)},
         ${JSON.stringify(rawData)},
         ${source},
-        NOW(), NOW(), NOW()
+        'verified', NULL,
+        NOW(), NOW()
       )
-      ON DUPLICATE KEY UPDATE
-        pan                    = VALUES(pan),
-        company_name           = VALUES(company_name),
-        legalname              = VALUES(legalname),
-        tradename              = VALUES(tradename),
-        state                  = VALUES(state),
-        status                 = VALUES(status),
-        regdate                = VALUES(regdate),
-        cancel_date            = VALUES(cancel_date),
-        type                   = VALUES(type),
-        constitutionofbusiness = VALUES(constitutionofbusiness),
-        state_juri             = VALUES(state_juri),
-        center_juri            = VALUES(center_juri),
-        center_code            = VALUES(center_code),
-        pincode                = VALUES(pincode),
-        district               = VALUES(district),
-        branch_no              = VALUES(branch_no),
-        branch_name            = VALUES(branch_name),
-        flat_no                = VALUES(flat_no),
-        street                 = VALUES(street),
-        location               = VALUES(location),
-        business_nature        = VALUES(business_nature),
-        dealing_in             = VALUES(dealing_in),
-        raw                    = VALUES(raw),
-        data_source            = VALUES(data_source),
-        last_verified_at       = NOW(),
-        updated_at             = NOW()
+      ON CONFLICT (gstin) DO UPDATE SET
+        pan                    = EXCLUDED.pan,
+        company_name           = EXCLUDED.company_name,
+        legal_name             = EXCLUDED.legal_name,
+        trade_name             = EXCLUDED.trade_name,
+        state                  = EXCLUDED.state,
+        gst_status             = EXCLUDED.gst_status,
+        gst_reg_date           = EXCLUDED.gst_reg_date,
+        cancellation_date      = EXCLUDED.cancellation_date,
+        taxpayer_type          = EXCLUDED.taxpayer_type,
+        constitution           = EXCLUDED.constitution,
+        state_jurisdiction     = EXCLUDED.state_jurisdiction,
+        centre_jurisdiction    = EXCLUDED.centre_jurisdiction,
+        centre_code            = EXCLUDED.centre_code,
+        pincode                = EXCLUDED.pincode,
+        district               = EXCLUDED.district,
+        branch_no              = EXCLUDED.branch_no,
+        branch_name            = EXCLUDED.branch_name,
+        flat_no                = EXCLUDED.flat_no,
+        street                 = EXCLUDED.street,
+        location               = EXCLUDED.location,
+        business_nature        = EXCLUDED.business_nature,
+        dealing_in             = EXCLUDED.dealing_in,
+        raw_data               = EXCLUDED.raw_data,
+        data_source            = EXCLUDED.data_source,
+        verification_status    = 'verified',
+        lookup_error_message   = NULL,
+        last_verified_at       = NOW()
     `;
 
     console.log(`[GST.DB] Saved GSTIN ${gstin} to database`);
