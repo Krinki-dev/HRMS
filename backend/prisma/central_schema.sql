@@ -264,6 +264,51 @@ CREATE TABLE IF NOT EXISTS central_gst_records (
 
 CREATE INDEX IF NOT EXISTS idx_central_gst_gstin ON central_gst_records (gstin);
 
+CREATE TABLE IF NOT EXISTS backup_config (
+  id                          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id                  UUID NOT NULL UNIQUE REFERENCES tenants(id) ON DELETE CASCADE,
+  enabled                     BOOLEAN NOT NULL DEFAULT FALSE,
+  provider                    TEXT NOT NULL DEFAULT 'none',
+  schedule                    TEXT NOT NULL DEFAULT 'daily',
+  schedule_time               TEXT NOT NULL DEFAULT '02:00',
+  retention_days              INTEGER NOT NULL DEFAULT 30,
+  include_files               BOOLEAN NOT NULL DEFAULT FALSE,
+  gdrive_client_id_enc        TEXT,
+  gdrive_client_secret_enc    TEXT,
+  gdrive_refresh_token_enc    TEXT,
+  gdrive_folder_id            TEXT,
+  gdrive_folder_name          TEXT,
+  onedrive_client_id_enc      TEXT,
+  onedrive_tenant_id          TEXT,
+  onedrive_client_secret_enc  TEXT,
+  onedrive_folder_path        TEXT,
+  last_backup_at              TIMESTAMPTZ,
+  last_backup_status          TEXT,
+  last_backup_size_bytes      BIGINT,
+  last_backup_file_url        TEXT,
+  last_error                  TEXT,
+  created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS tenant_db_config (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id        UUID NOT NULL UNIQUE REFERENCES tenants(id) ON DELETE CASCADE,
+  db_mode           TEXT NOT NULL DEFAULT 'cloud',
+  local_db_type     TEXT,
+  local_db_host     TEXT,
+  local_db_port     INTEGER,
+  local_db_name     TEXT,
+  local_db_user     TEXT,
+  local_db_pass     TEXT,
+  cloud_db_url      TEXT,
+  sync_interval_min INTEGER NOT NULL DEFAULT 5,
+  sync_last_at      TIMESTAMPTZ,
+  sync_status       TEXT,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ================================================================
 -- TABLE 7: platform_settings
 -- Stores global configuration for the entire platform.

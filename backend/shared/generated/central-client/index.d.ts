@@ -19,6 +19,16 @@ export type PrismaPromise<T> = $Public.PrismaPromise<T>
  */
 export type tenants = $Result.DefaultSelection<Prisma.$tenantsPayload>
 /**
+ * Model backup_config
+ * 
+ */
+export type backup_config = $Result.DefaultSelection<Prisma.$backup_configPayload>
+/**
+ * Model tenant_db_config
+ * 
+ */
+export type tenant_db_config = $Result.DefaultSelection<Prisma.$tenant_db_configPayload>
+/**
  * Model tenant_modules
  * 
  */
@@ -191,6 +201,26 @@ export class PrismaClient<
     * ```
     */
   get tenants(): Prisma.tenantsDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.backup_config`: Exposes CRUD operations for the **backup_config** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Backup_configs
+    * const backup_configs = await prisma.backup_config.findMany()
+    * ```
+    */
+  get backup_config(): Prisma.backup_configDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.tenant_db_config`: Exposes CRUD operations for the **tenant_db_config** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Tenant_db_configs
+    * const tenant_db_configs = await prisma.tenant_db_config.findMany()
+    * ```
+    */
+  get tenant_db_config(): Prisma.tenant_db_configDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.tenant_modules`: Exposes CRUD operations for the **tenant_modules** model.
@@ -723,6 +753,8 @@ export namespace Prisma {
 
   export const ModelName: {
     tenants: 'tenants',
+    backup_config: 'backup_config',
+    tenant_db_config: 'tenant_db_config',
     tenant_modules: 'tenant_modules',
     central_user_index: 'central_user_index',
     tenant_branch_links: 'tenant_branch_links',
@@ -750,7 +782,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "tenants" | "tenant_modules" | "central_user_index" | "tenant_branch_links" | "central_kyc_records" | "central_gst_records" | "platform_settings" | "tenant_pricing_configs" | "invoices" | "billing_events"
+      modelProps: "tenants" | "backup_config" | "tenant_db_config" | "tenant_modules" | "central_user_index" | "tenant_branch_links" | "central_kyc_records" | "central_gst_records" | "platform_settings" | "tenant_pricing_configs" | "invoices" | "billing_events"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -825,6 +857,154 @@ export namespace Prisma {
           count: {
             args: Prisma.tenantsCountArgs<ExtArgs>
             result: $Utils.Optional<TenantsCountAggregateOutputType> | number
+          }
+        }
+      }
+      backup_config: {
+        payload: Prisma.$backup_configPayload<ExtArgs>
+        fields: Prisma.backup_configFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.backup_configFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$backup_configPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.backup_configFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$backup_configPayload>
+          }
+          findFirst: {
+            args: Prisma.backup_configFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$backup_configPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.backup_configFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$backup_configPayload>
+          }
+          findMany: {
+            args: Prisma.backup_configFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$backup_configPayload>[]
+          }
+          create: {
+            args: Prisma.backup_configCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$backup_configPayload>
+          }
+          createMany: {
+            args: Prisma.backup_configCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.backup_configCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$backup_configPayload>[]
+          }
+          delete: {
+            args: Prisma.backup_configDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$backup_configPayload>
+          }
+          update: {
+            args: Prisma.backup_configUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$backup_configPayload>
+          }
+          deleteMany: {
+            args: Prisma.backup_configDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.backup_configUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.backup_configUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$backup_configPayload>[]
+          }
+          upsert: {
+            args: Prisma.backup_configUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$backup_configPayload>
+          }
+          aggregate: {
+            args: Prisma.Backup_configAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateBackup_config>
+          }
+          groupBy: {
+            args: Prisma.backup_configGroupByArgs<ExtArgs>
+            result: $Utils.Optional<Backup_configGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.backup_configCountArgs<ExtArgs>
+            result: $Utils.Optional<Backup_configCountAggregateOutputType> | number
+          }
+        }
+      }
+      tenant_db_config: {
+        payload: Prisma.$tenant_db_configPayload<ExtArgs>
+        fields: Prisma.tenant_db_configFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.tenant_db_configFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tenant_db_configPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.tenant_db_configFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tenant_db_configPayload>
+          }
+          findFirst: {
+            args: Prisma.tenant_db_configFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tenant_db_configPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.tenant_db_configFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tenant_db_configPayload>
+          }
+          findMany: {
+            args: Prisma.tenant_db_configFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tenant_db_configPayload>[]
+          }
+          create: {
+            args: Prisma.tenant_db_configCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tenant_db_configPayload>
+          }
+          createMany: {
+            args: Prisma.tenant_db_configCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.tenant_db_configCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tenant_db_configPayload>[]
+          }
+          delete: {
+            args: Prisma.tenant_db_configDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tenant_db_configPayload>
+          }
+          update: {
+            args: Prisma.tenant_db_configUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tenant_db_configPayload>
+          }
+          deleteMany: {
+            args: Prisma.tenant_db_configDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.tenant_db_configUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.tenant_db_configUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tenant_db_configPayload>[]
+          }
+          upsert: {
+            args: Prisma.tenant_db_configUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tenant_db_configPayload>
+          }
+          aggregate: {
+            args: Prisma.Tenant_db_configAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateTenant_db_config>
+          }
+          groupBy: {
+            args: Prisma.tenant_db_configGroupByArgs<ExtArgs>
+            result: $Utils.Optional<Tenant_db_configGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.tenant_db_configCountArgs<ExtArgs>
+            result: $Utils.Optional<Tenant_db_configCountAggregateOutputType> | number
           }
         }
       }
@@ -1591,6 +1771,8 @@ export namespace Prisma {
   }
   export type GlobalOmitConfig = {
     tenants?: tenantsOmit
+    backup_config?: backup_configOmit
+    tenant_db_config?: tenant_db_configOmit
     tenant_modules?: tenant_modulesOmit
     central_user_index?: central_user_indexOmit
     tenant_branch_links?: tenant_branch_linksOmit
@@ -3519,6 +3701,2449 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: tenantsInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model backup_config
+   */
+
+  export type AggregateBackup_config = {
+    _count: Backup_configCountAggregateOutputType | null
+    _avg: Backup_configAvgAggregateOutputType | null
+    _sum: Backup_configSumAggregateOutputType | null
+    _min: Backup_configMinAggregateOutputType | null
+    _max: Backup_configMaxAggregateOutputType | null
+  }
+
+  export type Backup_configAvgAggregateOutputType = {
+    retention_days: number | null
+    last_backup_size_bytes: number | null
+  }
+
+  export type Backup_configSumAggregateOutputType = {
+    retention_days: number | null
+    last_backup_size_bytes: bigint | null
+  }
+
+  export type Backup_configMinAggregateOutputType = {
+    id: string | null
+    company_id: string | null
+    enabled: boolean | null
+    provider: string | null
+    schedule: string | null
+    schedule_time: string | null
+    retention_days: number | null
+    include_files: boolean | null
+    gdrive_client_id_enc: string | null
+    gdrive_client_secret_enc: string | null
+    gdrive_refresh_token_enc: string | null
+    gdrive_folder_id: string | null
+    gdrive_folder_name: string | null
+    onedrive_client_id_enc: string | null
+    onedrive_tenant_id: string | null
+    onedrive_client_secret_enc: string | null
+    onedrive_folder_path: string | null
+    last_backup_at: Date | null
+    last_backup_status: string | null
+    last_backup_size_bytes: bigint | null
+    last_backup_file_url: string | null
+    last_error: string | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Backup_configMaxAggregateOutputType = {
+    id: string | null
+    company_id: string | null
+    enabled: boolean | null
+    provider: string | null
+    schedule: string | null
+    schedule_time: string | null
+    retention_days: number | null
+    include_files: boolean | null
+    gdrive_client_id_enc: string | null
+    gdrive_client_secret_enc: string | null
+    gdrive_refresh_token_enc: string | null
+    gdrive_folder_id: string | null
+    gdrive_folder_name: string | null
+    onedrive_client_id_enc: string | null
+    onedrive_tenant_id: string | null
+    onedrive_client_secret_enc: string | null
+    onedrive_folder_path: string | null
+    last_backup_at: Date | null
+    last_backup_status: string | null
+    last_backup_size_bytes: bigint | null
+    last_backup_file_url: string | null
+    last_error: string | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Backup_configCountAggregateOutputType = {
+    id: number
+    company_id: number
+    enabled: number
+    provider: number
+    schedule: number
+    schedule_time: number
+    retention_days: number
+    include_files: number
+    gdrive_client_id_enc: number
+    gdrive_client_secret_enc: number
+    gdrive_refresh_token_enc: number
+    gdrive_folder_id: number
+    gdrive_folder_name: number
+    onedrive_client_id_enc: number
+    onedrive_tenant_id: number
+    onedrive_client_secret_enc: number
+    onedrive_folder_path: number
+    last_backup_at: number
+    last_backup_status: number
+    last_backup_size_bytes: number
+    last_backup_file_url: number
+    last_error: number
+    created_at: number
+    updated_at: number
+    _all: number
+  }
+
+
+  export type Backup_configAvgAggregateInputType = {
+    retention_days?: true
+    last_backup_size_bytes?: true
+  }
+
+  export type Backup_configSumAggregateInputType = {
+    retention_days?: true
+    last_backup_size_bytes?: true
+  }
+
+  export type Backup_configMinAggregateInputType = {
+    id?: true
+    company_id?: true
+    enabled?: true
+    provider?: true
+    schedule?: true
+    schedule_time?: true
+    retention_days?: true
+    include_files?: true
+    gdrive_client_id_enc?: true
+    gdrive_client_secret_enc?: true
+    gdrive_refresh_token_enc?: true
+    gdrive_folder_id?: true
+    gdrive_folder_name?: true
+    onedrive_client_id_enc?: true
+    onedrive_tenant_id?: true
+    onedrive_client_secret_enc?: true
+    onedrive_folder_path?: true
+    last_backup_at?: true
+    last_backup_status?: true
+    last_backup_size_bytes?: true
+    last_backup_file_url?: true
+    last_error?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Backup_configMaxAggregateInputType = {
+    id?: true
+    company_id?: true
+    enabled?: true
+    provider?: true
+    schedule?: true
+    schedule_time?: true
+    retention_days?: true
+    include_files?: true
+    gdrive_client_id_enc?: true
+    gdrive_client_secret_enc?: true
+    gdrive_refresh_token_enc?: true
+    gdrive_folder_id?: true
+    gdrive_folder_name?: true
+    onedrive_client_id_enc?: true
+    onedrive_tenant_id?: true
+    onedrive_client_secret_enc?: true
+    onedrive_folder_path?: true
+    last_backup_at?: true
+    last_backup_status?: true
+    last_backup_size_bytes?: true
+    last_backup_file_url?: true
+    last_error?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Backup_configCountAggregateInputType = {
+    id?: true
+    company_id?: true
+    enabled?: true
+    provider?: true
+    schedule?: true
+    schedule_time?: true
+    retention_days?: true
+    include_files?: true
+    gdrive_client_id_enc?: true
+    gdrive_client_secret_enc?: true
+    gdrive_refresh_token_enc?: true
+    gdrive_folder_id?: true
+    gdrive_folder_name?: true
+    onedrive_client_id_enc?: true
+    onedrive_tenant_id?: true
+    onedrive_client_secret_enc?: true
+    onedrive_folder_path?: true
+    last_backup_at?: true
+    last_backup_status?: true
+    last_backup_size_bytes?: true
+    last_backup_file_url?: true
+    last_error?: true
+    created_at?: true
+    updated_at?: true
+    _all?: true
+  }
+
+  export type Backup_configAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which backup_config to aggregate.
+     */
+    where?: backup_configWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of backup_configs to fetch.
+     */
+    orderBy?: backup_configOrderByWithRelationInput | backup_configOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: backup_configWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` backup_configs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` backup_configs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned backup_configs
+    **/
+    _count?: true | Backup_configCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: Backup_configAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: Backup_configSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: Backup_configMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: Backup_configMaxAggregateInputType
+  }
+
+  export type GetBackup_configAggregateType<T extends Backup_configAggregateArgs> = {
+        [P in keyof T & keyof AggregateBackup_config]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateBackup_config[P]>
+      : GetScalarType<T[P], AggregateBackup_config[P]>
+  }
+
+
+
+
+  export type backup_configGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: backup_configWhereInput
+    orderBy?: backup_configOrderByWithAggregationInput | backup_configOrderByWithAggregationInput[]
+    by: Backup_configScalarFieldEnum[] | Backup_configScalarFieldEnum
+    having?: backup_configScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: Backup_configCountAggregateInputType | true
+    _avg?: Backup_configAvgAggregateInputType
+    _sum?: Backup_configSumAggregateInputType
+    _min?: Backup_configMinAggregateInputType
+    _max?: Backup_configMaxAggregateInputType
+  }
+
+  export type Backup_configGroupByOutputType = {
+    id: string
+    company_id: string
+    enabled: boolean
+    provider: string
+    schedule: string
+    schedule_time: string
+    retention_days: number
+    include_files: boolean
+    gdrive_client_id_enc: string | null
+    gdrive_client_secret_enc: string | null
+    gdrive_refresh_token_enc: string | null
+    gdrive_folder_id: string | null
+    gdrive_folder_name: string | null
+    onedrive_client_id_enc: string | null
+    onedrive_tenant_id: string | null
+    onedrive_client_secret_enc: string | null
+    onedrive_folder_path: string | null
+    last_backup_at: Date | null
+    last_backup_status: string | null
+    last_backup_size_bytes: bigint | null
+    last_backup_file_url: string | null
+    last_error: string | null
+    created_at: Date
+    updated_at: Date
+    _count: Backup_configCountAggregateOutputType | null
+    _avg: Backup_configAvgAggregateOutputType | null
+    _sum: Backup_configSumAggregateOutputType | null
+    _min: Backup_configMinAggregateOutputType | null
+    _max: Backup_configMaxAggregateOutputType | null
+  }
+
+  type GetBackup_configGroupByPayload<T extends backup_configGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<Backup_configGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof Backup_configGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], Backup_configGroupByOutputType[P]>
+            : GetScalarType<T[P], Backup_configGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type backup_configSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    company_id?: boolean
+    enabled?: boolean
+    provider?: boolean
+    schedule?: boolean
+    schedule_time?: boolean
+    retention_days?: boolean
+    include_files?: boolean
+    gdrive_client_id_enc?: boolean
+    gdrive_client_secret_enc?: boolean
+    gdrive_refresh_token_enc?: boolean
+    gdrive_folder_id?: boolean
+    gdrive_folder_name?: boolean
+    onedrive_client_id_enc?: boolean
+    onedrive_tenant_id?: boolean
+    onedrive_client_secret_enc?: boolean
+    onedrive_folder_path?: boolean
+    last_backup_at?: boolean
+    last_backup_status?: boolean
+    last_backup_size_bytes?: boolean
+    last_backup_file_url?: boolean
+    last_error?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }, ExtArgs["result"]["backup_config"]>
+
+  export type backup_configSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    company_id?: boolean
+    enabled?: boolean
+    provider?: boolean
+    schedule?: boolean
+    schedule_time?: boolean
+    retention_days?: boolean
+    include_files?: boolean
+    gdrive_client_id_enc?: boolean
+    gdrive_client_secret_enc?: boolean
+    gdrive_refresh_token_enc?: boolean
+    gdrive_folder_id?: boolean
+    gdrive_folder_name?: boolean
+    onedrive_client_id_enc?: boolean
+    onedrive_tenant_id?: boolean
+    onedrive_client_secret_enc?: boolean
+    onedrive_folder_path?: boolean
+    last_backup_at?: boolean
+    last_backup_status?: boolean
+    last_backup_size_bytes?: boolean
+    last_backup_file_url?: boolean
+    last_error?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }, ExtArgs["result"]["backup_config"]>
+
+  export type backup_configSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    company_id?: boolean
+    enabled?: boolean
+    provider?: boolean
+    schedule?: boolean
+    schedule_time?: boolean
+    retention_days?: boolean
+    include_files?: boolean
+    gdrive_client_id_enc?: boolean
+    gdrive_client_secret_enc?: boolean
+    gdrive_refresh_token_enc?: boolean
+    gdrive_folder_id?: boolean
+    gdrive_folder_name?: boolean
+    onedrive_client_id_enc?: boolean
+    onedrive_tenant_id?: boolean
+    onedrive_client_secret_enc?: boolean
+    onedrive_folder_path?: boolean
+    last_backup_at?: boolean
+    last_backup_status?: boolean
+    last_backup_size_bytes?: boolean
+    last_backup_file_url?: boolean
+    last_error?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }, ExtArgs["result"]["backup_config"]>
+
+  export type backup_configSelectScalar = {
+    id?: boolean
+    company_id?: boolean
+    enabled?: boolean
+    provider?: boolean
+    schedule?: boolean
+    schedule_time?: boolean
+    retention_days?: boolean
+    include_files?: boolean
+    gdrive_client_id_enc?: boolean
+    gdrive_client_secret_enc?: boolean
+    gdrive_refresh_token_enc?: boolean
+    gdrive_folder_id?: boolean
+    gdrive_folder_name?: boolean
+    onedrive_client_id_enc?: boolean
+    onedrive_tenant_id?: boolean
+    onedrive_client_secret_enc?: boolean
+    onedrive_folder_path?: boolean
+    last_backup_at?: boolean
+    last_backup_status?: boolean
+    last_backup_size_bytes?: boolean
+    last_backup_file_url?: boolean
+    last_error?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }
+
+  export type backup_configOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "company_id" | "enabled" | "provider" | "schedule" | "schedule_time" | "retention_days" | "include_files" | "gdrive_client_id_enc" | "gdrive_client_secret_enc" | "gdrive_refresh_token_enc" | "gdrive_folder_id" | "gdrive_folder_name" | "onedrive_client_id_enc" | "onedrive_tenant_id" | "onedrive_client_secret_enc" | "onedrive_folder_path" | "last_backup_at" | "last_backup_status" | "last_backup_size_bytes" | "last_backup_file_url" | "last_error" | "created_at" | "updated_at", ExtArgs["result"]["backup_config"]>
+
+  export type $backup_configPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "backup_config"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      company_id: string
+      enabled: boolean
+      provider: string
+      schedule: string
+      schedule_time: string
+      retention_days: number
+      include_files: boolean
+      gdrive_client_id_enc: string | null
+      gdrive_client_secret_enc: string | null
+      gdrive_refresh_token_enc: string | null
+      gdrive_folder_id: string | null
+      gdrive_folder_name: string | null
+      onedrive_client_id_enc: string | null
+      onedrive_tenant_id: string | null
+      onedrive_client_secret_enc: string | null
+      onedrive_folder_path: string | null
+      last_backup_at: Date | null
+      last_backup_status: string | null
+      last_backup_size_bytes: bigint | null
+      last_backup_file_url: string | null
+      last_error: string | null
+      created_at: Date
+      updated_at: Date
+    }, ExtArgs["result"]["backup_config"]>
+    composites: {}
+  }
+
+  type backup_configGetPayload<S extends boolean | null | undefined | backup_configDefaultArgs> = $Result.GetResult<Prisma.$backup_configPayload, S>
+
+  type backup_configCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<backup_configFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: Backup_configCountAggregateInputType | true
+    }
+
+  export interface backup_configDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['backup_config'], meta: { name: 'backup_config' } }
+    /**
+     * Find zero or one Backup_config that matches the filter.
+     * @param {backup_configFindUniqueArgs} args - Arguments to find a Backup_config
+     * @example
+     * // Get one Backup_config
+     * const backup_config = await prisma.backup_config.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends backup_configFindUniqueArgs>(args: SelectSubset<T, backup_configFindUniqueArgs<ExtArgs>>): Prisma__backup_configClient<$Result.GetResult<Prisma.$backup_configPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Backup_config that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {backup_configFindUniqueOrThrowArgs} args - Arguments to find a Backup_config
+     * @example
+     * // Get one Backup_config
+     * const backup_config = await prisma.backup_config.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends backup_configFindUniqueOrThrowArgs>(args: SelectSubset<T, backup_configFindUniqueOrThrowArgs<ExtArgs>>): Prisma__backup_configClient<$Result.GetResult<Prisma.$backup_configPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Backup_config that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {backup_configFindFirstArgs} args - Arguments to find a Backup_config
+     * @example
+     * // Get one Backup_config
+     * const backup_config = await prisma.backup_config.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends backup_configFindFirstArgs>(args?: SelectSubset<T, backup_configFindFirstArgs<ExtArgs>>): Prisma__backup_configClient<$Result.GetResult<Prisma.$backup_configPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Backup_config that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {backup_configFindFirstOrThrowArgs} args - Arguments to find a Backup_config
+     * @example
+     * // Get one Backup_config
+     * const backup_config = await prisma.backup_config.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends backup_configFindFirstOrThrowArgs>(args?: SelectSubset<T, backup_configFindFirstOrThrowArgs<ExtArgs>>): Prisma__backup_configClient<$Result.GetResult<Prisma.$backup_configPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Backup_configs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {backup_configFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Backup_configs
+     * const backup_configs = await prisma.backup_config.findMany()
+     * 
+     * // Get first 10 Backup_configs
+     * const backup_configs = await prisma.backup_config.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const backup_configWithIdOnly = await prisma.backup_config.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends backup_configFindManyArgs>(args?: SelectSubset<T, backup_configFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$backup_configPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Backup_config.
+     * @param {backup_configCreateArgs} args - Arguments to create a Backup_config.
+     * @example
+     * // Create one Backup_config
+     * const Backup_config = await prisma.backup_config.create({
+     *   data: {
+     *     // ... data to create a Backup_config
+     *   }
+     * })
+     * 
+     */
+    create<T extends backup_configCreateArgs>(args: SelectSubset<T, backup_configCreateArgs<ExtArgs>>): Prisma__backup_configClient<$Result.GetResult<Prisma.$backup_configPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Backup_configs.
+     * @param {backup_configCreateManyArgs} args - Arguments to create many Backup_configs.
+     * @example
+     * // Create many Backup_configs
+     * const backup_config = await prisma.backup_config.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends backup_configCreateManyArgs>(args?: SelectSubset<T, backup_configCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Backup_configs and returns the data saved in the database.
+     * @param {backup_configCreateManyAndReturnArgs} args - Arguments to create many Backup_configs.
+     * @example
+     * // Create many Backup_configs
+     * const backup_config = await prisma.backup_config.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Backup_configs and only return the `id`
+     * const backup_configWithIdOnly = await prisma.backup_config.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends backup_configCreateManyAndReturnArgs>(args?: SelectSubset<T, backup_configCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$backup_configPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Backup_config.
+     * @param {backup_configDeleteArgs} args - Arguments to delete one Backup_config.
+     * @example
+     * // Delete one Backup_config
+     * const Backup_config = await prisma.backup_config.delete({
+     *   where: {
+     *     // ... filter to delete one Backup_config
+     *   }
+     * })
+     * 
+     */
+    delete<T extends backup_configDeleteArgs>(args: SelectSubset<T, backup_configDeleteArgs<ExtArgs>>): Prisma__backup_configClient<$Result.GetResult<Prisma.$backup_configPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Backup_config.
+     * @param {backup_configUpdateArgs} args - Arguments to update one Backup_config.
+     * @example
+     * // Update one Backup_config
+     * const backup_config = await prisma.backup_config.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends backup_configUpdateArgs>(args: SelectSubset<T, backup_configUpdateArgs<ExtArgs>>): Prisma__backup_configClient<$Result.GetResult<Prisma.$backup_configPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Backup_configs.
+     * @param {backup_configDeleteManyArgs} args - Arguments to filter Backup_configs to delete.
+     * @example
+     * // Delete a few Backup_configs
+     * const { count } = await prisma.backup_config.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends backup_configDeleteManyArgs>(args?: SelectSubset<T, backup_configDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Backup_configs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {backup_configUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Backup_configs
+     * const backup_config = await prisma.backup_config.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends backup_configUpdateManyArgs>(args: SelectSubset<T, backup_configUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Backup_configs and returns the data updated in the database.
+     * @param {backup_configUpdateManyAndReturnArgs} args - Arguments to update many Backup_configs.
+     * @example
+     * // Update many Backup_configs
+     * const backup_config = await prisma.backup_config.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Backup_configs and only return the `id`
+     * const backup_configWithIdOnly = await prisma.backup_config.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends backup_configUpdateManyAndReturnArgs>(args: SelectSubset<T, backup_configUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$backup_configPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Backup_config.
+     * @param {backup_configUpsertArgs} args - Arguments to update or create a Backup_config.
+     * @example
+     * // Update or create a Backup_config
+     * const backup_config = await prisma.backup_config.upsert({
+     *   create: {
+     *     // ... data to create a Backup_config
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Backup_config we want to update
+     *   }
+     * })
+     */
+    upsert<T extends backup_configUpsertArgs>(args: SelectSubset<T, backup_configUpsertArgs<ExtArgs>>): Prisma__backup_configClient<$Result.GetResult<Prisma.$backup_configPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Backup_configs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {backup_configCountArgs} args - Arguments to filter Backup_configs to count.
+     * @example
+     * // Count the number of Backup_configs
+     * const count = await prisma.backup_config.count({
+     *   where: {
+     *     // ... the filter for the Backup_configs we want to count
+     *   }
+     * })
+    **/
+    count<T extends backup_configCountArgs>(
+      args?: Subset<T, backup_configCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], Backup_configCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Backup_config.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {Backup_configAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends Backup_configAggregateArgs>(args: Subset<T, Backup_configAggregateArgs>): Prisma.PrismaPromise<GetBackup_configAggregateType<T>>
+
+    /**
+     * Group by Backup_config.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {backup_configGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends backup_configGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: backup_configGroupByArgs['orderBy'] }
+        : { orderBy?: backup_configGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, backup_configGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetBackup_configGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the backup_config model
+   */
+  readonly fields: backup_configFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for backup_config.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__backup_configClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the backup_config model
+   */
+  interface backup_configFieldRefs {
+    readonly id: FieldRef<"backup_config", 'String'>
+    readonly company_id: FieldRef<"backup_config", 'String'>
+    readonly enabled: FieldRef<"backup_config", 'Boolean'>
+    readonly provider: FieldRef<"backup_config", 'String'>
+    readonly schedule: FieldRef<"backup_config", 'String'>
+    readonly schedule_time: FieldRef<"backup_config", 'String'>
+    readonly retention_days: FieldRef<"backup_config", 'Int'>
+    readonly include_files: FieldRef<"backup_config", 'Boolean'>
+    readonly gdrive_client_id_enc: FieldRef<"backup_config", 'String'>
+    readonly gdrive_client_secret_enc: FieldRef<"backup_config", 'String'>
+    readonly gdrive_refresh_token_enc: FieldRef<"backup_config", 'String'>
+    readonly gdrive_folder_id: FieldRef<"backup_config", 'String'>
+    readonly gdrive_folder_name: FieldRef<"backup_config", 'String'>
+    readonly onedrive_client_id_enc: FieldRef<"backup_config", 'String'>
+    readonly onedrive_tenant_id: FieldRef<"backup_config", 'String'>
+    readonly onedrive_client_secret_enc: FieldRef<"backup_config", 'String'>
+    readonly onedrive_folder_path: FieldRef<"backup_config", 'String'>
+    readonly last_backup_at: FieldRef<"backup_config", 'DateTime'>
+    readonly last_backup_status: FieldRef<"backup_config", 'String'>
+    readonly last_backup_size_bytes: FieldRef<"backup_config", 'BigInt'>
+    readonly last_backup_file_url: FieldRef<"backup_config", 'String'>
+    readonly last_error: FieldRef<"backup_config", 'String'>
+    readonly created_at: FieldRef<"backup_config", 'DateTime'>
+    readonly updated_at: FieldRef<"backup_config", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * backup_config findUnique
+   */
+  export type backup_configFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the backup_config
+     */
+    select?: backup_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the backup_config
+     */
+    omit?: backup_configOmit<ExtArgs> | null
+    /**
+     * Filter, which backup_config to fetch.
+     */
+    where: backup_configWhereUniqueInput
+  }
+
+  /**
+   * backup_config findUniqueOrThrow
+   */
+  export type backup_configFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the backup_config
+     */
+    select?: backup_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the backup_config
+     */
+    omit?: backup_configOmit<ExtArgs> | null
+    /**
+     * Filter, which backup_config to fetch.
+     */
+    where: backup_configWhereUniqueInput
+  }
+
+  /**
+   * backup_config findFirst
+   */
+  export type backup_configFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the backup_config
+     */
+    select?: backup_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the backup_config
+     */
+    omit?: backup_configOmit<ExtArgs> | null
+    /**
+     * Filter, which backup_config to fetch.
+     */
+    where?: backup_configWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of backup_configs to fetch.
+     */
+    orderBy?: backup_configOrderByWithRelationInput | backup_configOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for backup_configs.
+     */
+    cursor?: backup_configWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` backup_configs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` backup_configs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of backup_configs.
+     */
+    distinct?: Backup_configScalarFieldEnum | Backup_configScalarFieldEnum[]
+  }
+
+  /**
+   * backup_config findFirstOrThrow
+   */
+  export type backup_configFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the backup_config
+     */
+    select?: backup_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the backup_config
+     */
+    omit?: backup_configOmit<ExtArgs> | null
+    /**
+     * Filter, which backup_config to fetch.
+     */
+    where?: backup_configWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of backup_configs to fetch.
+     */
+    orderBy?: backup_configOrderByWithRelationInput | backup_configOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for backup_configs.
+     */
+    cursor?: backup_configWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` backup_configs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` backup_configs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of backup_configs.
+     */
+    distinct?: Backup_configScalarFieldEnum | Backup_configScalarFieldEnum[]
+  }
+
+  /**
+   * backup_config findMany
+   */
+  export type backup_configFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the backup_config
+     */
+    select?: backup_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the backup_config
+     */
+    omit?: backup_configOmit<ExtArgs> | null
+    /**
+     * Filter, which backup_configs to fetch.
+     */
+    where?: backup_configWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of backup_configs to fetch.
+     */
+    orderBy?: backup_configOrderByWithRelationInput | backup_configOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing backup_configs.
+     */
+    cursor?: backup_configWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` backup_configs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` backup_configs.
+     */
+    skip?: number
+    distinct?: Backup_configScalarFieldEnum | Backup_configScalarFieldEnum[]
+  }
+
+  /**
+   * backup_config create
+   */
+  export type backup_configCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the backup_config
+     */
+    select?: backup_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the backup_config
+     */
+    omit?: backup_configOmit<ExtArgs> | null
+    /**
+     * The data needed to create a backup_config.
+     */
+    data: XOR<backup_configCreateInput, backup_configUncheckedCreateInput>
+  }
+
+  /**
+   * backup_config createMany
+   */
+  export type backup_configCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many backup_configs.
+     */
+    data: backup_configCreateManyInput | backup_configCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * backup_config createManyAndReturn
+   */
+  export type backup_configCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the backup_config
+     */
+    select?: backup_configSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the backup_config
+     */
+    omit?: backup_configOmit<ExtArgs> | null
+    /**
+     * The data used to create many backup_configs.
+     */
+    data: backup_configCreateManyInput | backup_configCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * backup_config update
+   */
+  export type backup_configUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the backup_config
+     */
+    select?: backup_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the backup_config
+     */
+    omit?: backup_configOmit<ExtArgs> | null
+    /**
+     * The data needed to update a backup_config.
+     */
+    data: XOR<backup_configUpdateInput, backup_configUncheckedUpdateInput>
+    /**
+     * Choose, which backup_config to update.
+     */
+    where: backup_configWhereUniqueInput
+  }
+
+  /**
+   * backup_config updateMany
+   */
+  export type backup_configUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update backup_configs.
+     */
+    data: XOR<backup_configUpdateManyMutationInput, backup_configUncheckedUpdateManyInput>
+    /**
+     * Filter which backup_configs to update
+     */
+    where?: backup_configWhereInput
+    /**
+     * Limit how many backup_configs to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * backup_config updateManyAndReturn
+   */
+  export type backup_configUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the backup_config
+     */
+    select?: backup_configSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the backup_config
+     */
+    omit?: backup_configOmit<ExtArgs> | null
+    /**
+     * The data used to update backup_configs.
+     */
+    data: XOR<backup_configUpdateManyMutationInput, backup_configUncheckedUpdateManyInput>
+    /**
+     * Filter which backup_configs to update
+     */
+    where?: backup_configWhereInput
+    /**
+     * Limit how many backup_configs to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * backup_config upsert
+   */
+  export type backup_configUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the backup_config
+     */
+    select?: backup_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the backup_config
+     */
+    omit?: backup_configOmit<ExtArgs> | null
+    /**
+     * The filter to search for the backup_config to update in case it exists.
+     */
+    where: backup_configWhereUniqueInput
+    /**
+     * In case the backup_config found by the `where` argument doesn't exist, create a new backup_config with this data.
+     */
+    create: XOR<backup_configCreateInput, backup_configUncheckedCreateInput>
+    /**
+     * In case the backup_config was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<backup_configUpdateInput, backup_configUncheckedUpdateInput>
+  }
+
+  /**
+   * backup_config delete
+   */
+  export type backup_configDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the backup_config
+     */
+    select?: backup_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the backup_config
+     */
+    omit?: backup_configOmit<ExtArgs> | null
+    /**
+     * Filter which backup_config to delete.
+     */
+    where: backup_configWhereUniqueInput
+  }
+
+  /**
+   * backup_config deleteMany
+   */
+  export type backup_configDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which backup_configs to delete
+     */
+    where?: backup_configWhereInput
+    /**
+     * Limit how many backup_configs to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * backup_config without action
+   */
+  export type backup_configDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the backup_config
+     */
+    select?: backup_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the backup_config
+     */
+    omit?: backup_configOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model tenant_db_config
+   */
+
+  export type AggregateTenant_db_config = {
+    _count: Tenant_db_configCountAggregateOutputType | null
+    _avg: Tenant_db_configAvgAggregateOutputType | null
+    _sum: Tenant_db_configSumAggregateOutputType | null
+    _min: Tenant_db_configMinAggregateOutputType | null
+    _max: Tenant_db_configMaxAggregateOutputType | null
+  }
+
+  export type Tenant_db_configAvgAggregateOutputType = {
+    local_db_port: number | null
+    sync_interval_min: number | null
+  }
+
+  export type Tenant_db_configSumAggregateOutputType = {
+    local_db_port: number | null
+    sync_interval_min: number | null
+  }
+
+  export type Tenant_db_configMinAggregateOutputType = {
+    id: string | null
+    company_id: string | null
+    db_mode: string | null
+    local_db_type: string | null
+    local_db_host: string | null
+    local_db_port: number | null
+    local_db_name: string | null
+    local_db_user: string | null
+    local_db_pass: string | null
+    cloud_db_url: string | null
+    sync_interval_min: number | null
+    sync_last_at: Date | null
+    sync_status: string | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Tenant_db_configMaxAggregateOutputType = {
+    id: string | null
+    company_id: string | null
+    db_mode: string | null
+    local_db_type: string | null
+    local_db_host: string | null
+    local_db_port: number | null
+    local_db_name: string | null
+    local_db_user: string | null
+    local_db_pass: string | null
+    cloud_db_url: string | null
+    sync_interval_min: number | null
+    sync_last_at: Date | null
+    sync_status: string | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Tenant_db_configCountAggregateOutputType = {
+    id: number
+    company_id: number
+    db_mode: number
+    local_db_type: number
+    local_db_host: number
+    local_db_port: number
+    local_db_name: number
+    local_db_user: number
+    local_db_pass: number
+    cloud_db_url: number
+    sync_interval_min: number
+    sync_last_at: number
+    sync_status: number
+    created_at: number
+    updated_at: number
+    _all: number
+  }
+
+
+  export type Tenant_db_configAvgAggregateInputType = {
+    local_db_port?: true
+    sync_interval_min?: true
+  }
+
+  export type Tenant_db_configSumAggregateInputType = {
+    local_db_port?: true
+    sync_interval_min?: true
+  }
+
+  export type Tenant_db_configMinAggregateInputType = {
+    id?: true
+    company_id?: true
+    db_mode?: true
+    local_db_type?: true
+    local_db_host?: true
+    local_db_port?: true
+    local_db_name?: true
+    local_db_user?: true
+    local_db_pass?: true
+    cloud_db_url?: true
+    sync_interval_min?: true
+    sync_last_at?: true
+    sync_status?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Tenant_db_configMaxAggregateInputType = {
+    id?: true
+    company_id?: true
+    db_mode?: true
+    local_db_type?: true
+    local_db_host?: true
+    local_db_port?: true
+    local_db_name?: true
+    local_db_user?: true
+    local_db_pass?: true
+    cloud_db_url?: true
+    sync_interval_min?: true
+    sync_last_at?: true
+    sync_status?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Tenant_db_configCountAggregateInputType = {
+    id?: true
+    company_id?: true
+    db_mode?: true
+    local_db_type?: true
+    local_db_host?: true
+    local_db_port?: true
+    local_db_name?: true
+    local_db_user?: true
+    local_db_pass?: true
+    cloud_db_url?: true
+    sync_interval_min?: true
+    sync_last_at?: true
+    sync_status?: true
+    created_at?: true
+    updated_at?: true
+    _all?: true
+  }
+
+  export type Tenant_db_configAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which tenant_db_config to aggregate.
+     */
+    where?: tenant_db_configWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of tenant_db_configs to fetch.
+     */
+    orderBy?: tenant_db_configOrderByWithRelationInput | tenant_db_configOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: tenant_db_configWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` tenant_db_configs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` tenant_db_configs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned tenant_db_configs
+    **/
+    _count?: true | Tenant_db_configCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: Tenant_db_configAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: Tenant_db_configSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: Tenant_db_configMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: Tenant_db_configMaxAggregateInputType
+  }
+
+  export type GetTenant_db_configAggregateType<T extends Tenant_db_configAggregateArgs> = {
+        [P in keyof T & keyof AggregateTenant_db_config]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateTenant_db_config[P]>
+      : GetScalarType<T[P], AggregateTenant_db_config[P]>
+  }
+
+
+
+
+  export type tenant_db_configGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: tenant_db_configWhereInput
+    orderBy?: tenant_db_configOrderByWithAggregationInput | tenant_db_configOrderByWithAggregationInput[]
+    by: Tenant_db_configScalarFieldEnum[] | Tenant_db_configScalarFieldEnum
+    having?: tenant_db_configScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: Tenant_db_configCountAggregateInputType | true
+    _avg?: Tenant_db_configAvgAggregateInputType
+    _sum?: Tenant_db_configSumAggregateInputType
+    _min?: Tenant_db_configMinAggregateInputType
+    _max?: Tenant_db_configMaxAggregateInputType
+  }
+
+  export type Tenant_db_configGroupByOutputType = {
+    id: string
+    company_id: string
+    db_mode: string
+    local_db_type: string | null
+    local_db_host: string | null
+    local_db_port: number | null
+    local_db_name: string | null
+    local_db_user: string | null
+    local_db_pass: string | null
+    cloud_db_url: string | null
+    sync_interval_min: number
+    sync_last_at: Date | null
+    sync_status: string | null
+    created_at: Date
+    updated_at: Date
+    _count: Tenant_db_configCountAggregateOutputType | null
+    _avg: Tenant_db_configAvgAggregateOutputType | null
+    _sum: Tenant_db_configSumAggregateOutputType | null
+    _min: Tenant_db_configMinAggregateOutputType | null
+    _max: Tenant_db_configMaxAggregateOutputType | null
+  }
+
+  type GetTenant_db_configGroupByPayload<T extends tenant_db_configGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<Tenant_db_configGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof Tenant_db_configGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], Tenant_db_configGroupByOutputType[P]>
+            : GetScalarType<T[P], Tenant_db_configGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type tenant_db_configSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    company_id?: boolean
+    db_mode?: boolean
+    local_db_type?: boolean
+    local_db_host?: boolean
+    local_db_port?: boolean
+    local_db_name?: boolean
+    local_db_user?: boolean
+    local_db_pass?: boolean
+    cloud_db_url?: boolean
+    sync_interval_min?: boolean
+    sync_last_at?: boolean
+    sync_status?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }, ExtArgs["result"]["tenant_db_config"]>
+
+  export type tenant_db_configSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    company_id?: boolean
+    db_mode?: boolean
+    local_db_type?: boolean
+    local_db_host?: boolean
+    local_db_port?: boolean
+    local_db_name?: boolean
+    local_db_user?: boolean
+    local_db_pass?: boolean
+    cloud_db_url?: boolean
+    sync_interval_min?: boolean
+    sync_last_at?: boolean
+    sync_status?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }, ExtArgs["result"]["tenant_db_config"]>
+
+  export type tenant_db_configSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    company_id?: boolean
+    db_mode?: boolean
+    local_db_type?: boolean
+    local_db_host?: boolean
+    local_db_port?: boolean
+    local_db_name?: boolean
+    local_db_user?: boolean
+    local_db_pass?: boolean
+    cloud_db_url?: boolean
+    sync_interval_min?: boolean
+    sync_last_at?: boolean
+    sync_status?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }, ExtArgs["result"]["tenant_db_config"]>
+
+  export type tenant_db_configSelectScalar = {
+    id?: boolean
+    company_id?: boolean
+    db_mode?: boolean
+    local_db_type?: boolean
+    local_db_host?: boolean
+    local_db_port?: boolean
+    local_db_name?: boolean
+    local_db_user?: boolean
+    local_db_pass?: boolean
+    cloud_db_url?: boolean
+    sync_interval_min?: boolean
+    sync_last_at?: boolean
+    sync_status?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }
+
+  export type tenant_db_configOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "company_id" | "db_mode" | "local_db_type" | "local_db_host" | "local_db_port" | "local_db_name" | "local_db_user" | "local_db_pass" | "cloud_db_url" | "sync_interval_min" | "sync_last_at" | "sync_status" | "created_at" | "updated_at", ExtArgs["result"]["tenant_db_config"]>
+
+  export type $tenant_db_configPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "tenant_db_config"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      company_id: string
+      db_mode: string
+      local_db_type: string | null
+      local_db_host: string | null
+      local_db_port: number | null
+      local_db_name: string | null
+      local_db_user: string | null
+      local_db_pass: string | null
+      cloud_db_url: string | null
+      sync_interval_min: number
+      sync_last_at: Date | null
+      sync_status: string | null
+      created_at: Date
+      updated_at: Date
+    }, ExtArgs["result"]["tenant_db_config"]>
+    composites: {}
+  }
+
+  type tenant_db_configGetPayload<S extends boolean | null | undefined | tenant_db_configDefaultArgs> = $Result.GetResult<Prisma.$tenant_db_configPayload, S>
+
+  type tenant_db_configCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<tenant_db_configFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: Tenant_db_configCountAggregateInputType | true
+    }
+
+  export interface tenant_db_configDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['tenant_db_config'], meta: { name: 'tenant_db_config' } }
+    /**
+     * Find zero or one Tenant_db_config that matches the filter.
+     * @param {tenant_db_configFindUniqueArgs} args - Arguments to find a Tenant_db_config
+     * @example
+     * // Get one Tenant_db_config
+     * const tenant_db_config = await prisma.tenant_db_config.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends tenant_db_configFindUniqueArgs>(args: SelectSubset<T, tenant_db_configFindUniqueArgs<ExtArgs>>): Prisma__tenant_db_configClient<$Result.GetResult<Prisma.$tenant_db_configPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Tenant_db_config that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {tenant_db_configFindUniqueOrThrowArgs} args - Arguments to find a Tenant_db_config
+     * @example
+     * // Get one Tenant_db_config
+     * const tenant_db_config = await prisma.tenant_db_config.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends tenant_db_configFindUniqueOrThrowArgs>(args: SelectSubset<T, tenant_db_configFindUniqueOrThrowArgs<ExtArgs>>): Prisma__tenant_db_configClient<$Result.GetResult<Prisma.$tenant_db_configPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Tenant_db_config that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {tenant_db_configFindFirstArgs} args - Arguments to find a Tenant_db_config
+     * @example
+     * // Get one Tenant_db_config
+     * const tenant_db_config = await prisma.tenant_db_config.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends tenant_db_configFindFirstArgs>(args?: SelectSubset<T, tenant_db_configFindFirstArgs<ExtArgs>>): Prisma__tenant_db_configClient<$Result.GetResult<Prisma.$tenant_db_configPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Tenant_db_config that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {tenant_db_configFindFirstOrThrowArgs} args - Arguments to find a Tenant_db_config
+     * @example
+     * // Get one Tenant_db_config
+     * const tenant_db_config = await prisma.tenant_db_config.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends tenant_db_configFindFirstOrThrowArgs>(args?: SelectSubset<T, tenant_db_configFindFirstOrThrowArgs<ExtArgs>>): Prisma__tenant_db_configClient<$Result.GetResult<Prisma.$tenant_db_configPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Tenant_db_configs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {tenant_db_configFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Tenant_db_configs
+     * const tenant_db_configs = await prisma.tenant_db_config.findMany()
+     * 
+     * // Get first 10 Tenant_db_configs
+     * const tenant_db_configs = await prisma.tenant_db_config.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const tenant_db_configWithIdOnly = await prisma.tenant_db_config.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends tenant_db_configFindManyArgs>(args?: SelectSubset<T, tenant_db_configFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$tenant_db_configPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Tenant_db_config.
+     * @param {tenant_db_configCreateArgs} args - Arguments to create a Tenant_db_config.
+     * @example
+     * // Create one Tenant_db_config
+     * const Tenant_db_config = await prisma.tenant_db_config.create({
+     *   data: {
+     *     // ... data to create a Tenant_db_config
+     *   }
+     * })
+     * 
+     */
+    create<T extends tenant_db_configCreateArgs>(args: SelectSubset<T, tenant_db_configCreateArgs<ExtArgs>>): Prisma__tenant_db_configClient<$Result.GetResult<Prisma.$tenant_db_configPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Tenant_db_configs.
+     * @param {tenant_db_configCreateManyArgs} args - Arguments to create many Tenant_db_configs.
+     * @example
+     * // Create many Tenant_db_configs
+     * const tenant_db_config = await prisma.tenant_db_config.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends tenant_db_configCreateManyArgs>(args?: SelectSubset<T, tenant_db_configCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Tenant_db_configs and returns the data saved in the database.
+     * @param {tenant_db_configCreateManyAndReturnArgs} args - Arguments to create many Tenant_db_configs.
+     * @example
+     * // Create many Tenant_db_configs
+     * const tenant_db_config = await prisma.tenant_db_config.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Tenant_db_configs and only return the `id`
+     * const tenant_db_configWithIdOnly = await prisma.tenant_db_config.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends tenant_db_configCreateManyAndReturnArgs>(args?: SelectSubset<T, tenant_db_configCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$tenant_db_configPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Tenant_db_config.
+     * @param {tenant_db_configDeleteArgs} args - Arguments to delete one Tenant_db_config.
+     * @example
+     * // Delete one Tenant_db_config
+     * const Tenant_db_config = await prisma.tenant_db_config.delete({
+     *   where: {
+     *     // ... filter to delete one Tenant_db_config
+     *   }
+     * })
+     * 
+     */
+    delete<T extends tenant_db_configDeleteArgs>(args: SelectSubset<T, tenant_db_configDeleteArgs<ExtArgs>>): Prisma__tenant_db_configClient<$Result.GetResult<Prisma.$tenant_db_configPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Tenant_db_config.
+     * @param {tenant_db_configUpdateArgs} args - Arguments to update one Tenant_db_config.
+     * @example
+     * // Update one Tenant_db_config
+     * const tenant_db_config = await prisma.tenant_db_config.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends tenant_db_configUpdateArgs>(args: SelectSubset<T, tenant_db_configUpdateArgs<ExtArgs>>): Prisma__tenant_db_configClient<$Result.GetResult<Prisma.$tenant_db_configPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Tenant_db_configs.
+     * @param {tenant_db_configDeleteManyArgs} args - Arguments to filter Tenant_db_configs to delete.
+     * @example
+     * // Delete a few Tenant_db_configs
+     * const { count } = await prisma.tenant_db_config.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends tenant_db_configDeleteManyArgs>(args?: SelectSubset<T, tenant_db_configDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Tenant_db_configs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {tenant_db_configUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Tenant_db_configs
+     * const tenant_db_config = await prisma.tenant_db_config.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends tenant_db_configUpdateManyArgs>(args: SelectSubset<T, tenant_db_configUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Tenant_db_configs and returns the data updated in the database.
+     * @param {tenant_db_configUpdateManyAndReturnArgs} args - Arguments to update many Tenant_db_configs.
+     * @example
+     * // Update many Tenant_db_configs
+     * const tenant_db_config = await prisma.tenant_db_config.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Tenant_db_configs and only return the `id`
+     * const tenant_db_configWithIdOnly = await prisma.tenant_db_config.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends tenant_db_configUpdateManyAndReturnArgs>(args: SelectSubset<T, tenant_db_configUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$tenant_db_configPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Tenant_db_config.
+     * @param {tenant_db_configUpsertArgs} args - Arguments to update or create a Tenant_db_config.
+     * @example
+     * // Update or create a Tenant_db_config
+     * const tenant_db_config = await prisma.tenant_db_config.upsert({
+     *   create: {
+     *     // ... data to create a Tenant_db_config
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Tenant_db_config we want to update
+     *   }
+     * })
+     */
+    upsert<T extends tenant_db_configUpsertArgs>(args: SelectSubset<T, tenant_db_configUpsertArgs<ExtArgs>>): Prisma__tenant_db_configClient<$Result.GetResult<Prisma.$tenant_db_configPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Tenant_db_configs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {tenant_db_configCountArgs} args - Arguments to filter Tenant_db_configs to count.
+     * @example
+     * // Count the number of Tenant_db_configs
+     * const count = await prisma.tenant_db_config.count({
+     *   where: {
+     *     // ... the filter for the Tenant_db_configs we want to count
+     *   }
+     * })
+    **/
+    count<T extends tenant_db_configCountArgs>(
+      args?: Subset<T, tenant_db_configCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], Tenant_db_configCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Tenant_db_config.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {Tenant_db_configAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends Tenant_db_configAggregateArgs>(args: Subset<T, Tenant_db_configAggregateArgs>): Prisma.PrismaPromise<GetTenant_db_configAggregateType<T>>
+
+    /**
+     * Group by Tenant_db_config.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {tenant_db_configGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends tenant_db_configGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: tenant_db_configGroupByArgs['orderBy'] }
+        : { orderBy?: tenant_db_configGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, tenant_db_configGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetTenant_db_configGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the tenant_db_config model
+   */
+  readonly fields: tenant_db_configFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for tenant_db_config.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__tenant_db_configClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the tenant_db_config model
+   */
+  interface tenant_db_configFieldRefs {
+    readonly id: FieldRef<"tenant_db_config", 'String'>
+    readonly company_id: FieldRef<"tenant_db_config", 'String'>
+    readonly db_mode: FieldRef<"tenant_db_config", 'String'>
+    readonly local_db_type: FieldRef<"tenant_db_config", 'String'>
+    readonly local_db_host: FieldRef<"tenant_db_config", 'String'>
+    readonly local_db_port: FieldRef<"tenant_db_config", 'Int'>
+    readonly local_db_name: FieldRef<"tenant_db_config", 'String'>
+    readonly local_db_user: FieldRef<"tenant_db_config", 'String'>
+    readonly local_db_pass: FieldRef<"tenant_db_config", 'String'>
+    readonly cloud_db_url: FieldRef<"tenant_db_config", 'String'>
+    readonly sync_interval_min: FieldRef<"tenant_db_config", 'Int'>
+    readonly sync_last_at: FieldRef<"tenant_db_config", 'DateTime'>
+    readonly sync_status: FieldRef<"tenant_db_config", 'String'>
+    readonly created_at: FieldRef<"tenant_db_config", 'DateTime'>
+    readonly updated_at: FieldRef<"tenant_db_config", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * tenant_db_config findUnique
+   */
+  export type tenant_db_configFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tenant_db_config
+     */
+    select?: tenant_db_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tenant_db_config
+     */
+    omit?: tenant_db_configOmit<ExtArgs> | null
+    /**
+     * Filter, which tenant_db_config to fetch.
+     */
+    where: tenant_db_configWhereUniqueInput
+  }
+
+  /**
+   * tenant_db_config findUniqueOrThrow
+   */
+  export type tenant_db_configFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tenant_db_config
+     */
+    select?: tenant_db_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tenant_db_config
+     */
+    omit?: tenant_db_configOmit<ExtArgs> | null
+    /**
+     * Filter, which tenant_db_config to fetch.
+     */
+    where: tenant_db_configWhereUniqueInput
+  }
+
+  /**
+   * tenant_db_config findFirst
+   */
+  export type tenant_db_configFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tenant_db_config
+     */
+    select?: tenant_db_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tenant_db_config
+     */
+    omit?: tenant_db_configOmit<ExtArgs> | null
+    /**
+     * Filter, which tenant_db_config to fetch.
+     */
+    where?: tenant_db_configWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of tenant_db_configs to fetch.
+     */
+    orderBy?: tenant_db_configOrderByWithRelationInput | tenant_db_configOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for tenant_db_configs.
+     */
+    cursor?: tenant_db_configWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` tenant_db_configs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` tenant_db_configs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of tenant_db_configs.
+     */
+    distinct?: Tenant_db_configScalarFieldEnum | Tenant_db_configScalarFieldEnum[]
+  }
+
+  /**
+   * tenant_db_config findFirstOrThrow
+   */
+  export type tenant_db_configFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tenant_db_config
+     */
+    select?: tenant_db_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tenant_db_config
+     */
+    omit?: tenant_db_configOmit<ExtArgs> | null
+    /**
+     * Filter, which tenant_db_config to fetch.
+     */
+    where?: tenant_db_configWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of tenant_db_configs to fetch.
+     */
+    orderBy?: tenant_db_configOrderByWithRelationInput | tenant_db_configOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for tenant_db_configs.
+     */
+    cursor?: tenant_db_configWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` tenant_db_configs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` tenant_db_configs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of tenant_db_configs.
+     */
+    distinct?: Tenant_db_configScalarFieldEnum | Tenant_db_configScalarFieldEnum[]
+  }
+
+  /**
+   * tenant_db_config findMany
+   */
+  export type tenant_db_configFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tenant_db_config
+     */
+    select?: tenant_db_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tenant_db_config
+     */
+    omit?: tenant_db_configOmit<ExtArgs> | null
+    /**
+     * Filter, which tenant_db_configs to fetch.
+     */
+    where?: tenant_db_configWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of tenant_db_configs to fetch.
+     */
+    orderBy?: tenant_db_configOrderByWithRelationInput | tenant_db_configOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing tenant_db_configs.
+     */
+    cursor?: tenant_db_configWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` tenant_db_configs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` tenant_db_configs.
+     */
+    skip?: number
+    distinct?: Tenant_db_configScalarFieldEnum | Tenant_db_configScalarFieldEnum[]
+  }
+
+  /**
+   * tenant_db_config create
+   */
+  export type tenant_db_configCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tenant_db_config
+     */
+    select?: tenant_db_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tenant_db_config
+     */
+    omit?: tenant_db_configOmit<ExtArgs> | null
+    /**
+     * The data needed to create a tenant_db_config.
+     */
+    data: XOR<tenant_db_configCreateInput, tenant_db_configUncheckedCreateInput>
+  }
+
+  /**
+   * tenant_db_config createMany
+   */
+  export type tenant_db_configCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many tenant_db_configs.
+     */
+    data: tenant_db_configCreateManyInput | tenant_db_configCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * tenant_db_config createManyAndReturn
+   */
+  export type tenant_db_configCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tenant_db_config
+     */
+    select?: tenant_db_configSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the tenant_db_config
+     */
+    omit?: tenant_db_configOmit<ExtArgs> | null
+    /**
+     * The data used to create many tenant_db_configs.
+     */
+    data: tenant_db_configCreateManyInput | tenant_db_configCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * tenant_db_config update
+   */
+  export type tenant_db_configUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tenant_db_config
+     */
+    select?: tenant_db_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tenant_db_config
+     */
+    omit?: tenant_db_configOmit<ExtArgs> | null
+    /**
+     * The data needed to update a tenant_db_config.
+     */
+    data: XOR<tenant_db_configUpdateInput, tenant_db_configUncheckedUpdateInput>
+    /**
+     * Choose, which tenant_db_config to update.
+     */
+    where: tenant_db_configWhereUniqueInput
+  }
+
+  /**
+   * tenant_db_config updateMany
+   */
+  export type tenant_db_configUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update tenant_db_configs.
+     */
+    data: XOR<tenant_db_configUpdateManyMutationInput, tenant_db_configUncheckedUpdateManyInput>
+    /**
+     * Filter which tenant_db_configs to update
+     */
+    where?: tenant_db_configWhereInput
+    /**
+     * Limit how many tenant_db_configs to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * tenant_db_config updateManyAndReturn
+   */
+  export type tenant_db_configUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tenant_db_config
+     */
+    select?: tenant_db_configSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the tenant_db_config
+     */
+    omit?: tenant_db_configOmit<ExtArgs> | null
+    /**
+     * The data used to update tenant_db_configs.
+     */
+    data: XOR<tenant_db_configUpdateManyMutationInput, tenant_db_configUncheckedUpdateManyInput>
+    /**
+     * Filter which tenant_db_configs to update
+     */
+    where?: tenant_db_configWhereInput
+    /**
+     * Limit how many tenant_db_configs to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * tenant_db_config upsert
+   */
+  export type tenant_db_configUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tenant_db_config
+     */
+    select?: tenant_db_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tenant_db_config
+     */
+    omit?: tenant_db_configOmit<ExtArgs> | null
+    /**
+     * The filter to search for the tenant_db_config to update in case it exists.
+     */
+    where: tenant_db_configWhereUniqueInput
+    /**
+     * In case the tenant_db_config found by the `where` argument doesn't exist, create a new tenant_db_config with this data.
+     */
+    create: XOR<tenant_db_configCreateInput, tenant_db_configUncheckedCreateInput>
+    /**
+     * In case the tenant_db_config was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<tenant_db_configUpdateInput, tenant_db_configUncheckedUpdateInput>
+  }
+
+  /**
+   * tenant_db_config delete
+   */
+  export type tenant_db_configDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tenant_db_config
+     */
+    select?: tenant_db_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tenant_db_config
+     */
+    omit?: tenant_db_configOmit<ExtArgs> | null
+    /**
+     * Filter which tenant_db_config to delete.
+     */
+    where: tenant_db_configWhereUniqueInput
+  }
+
+  /**
+   * tenant_db_config deleteMany
+   */
+  export type tenant_db_configDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which tenant_db_configs to delete
+     */
+    where?: tenant_db_configWhereInput
+    /**
+     * Limit how many tenant_db_configs to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * tenant_db_config without action
+   */
+  export type tenant_db_configDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tenant_db_config
+     */
+    select?: tenant_db_configSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tenant_db_config
+     */
+    omit?: tenant_db_configOmit<ExtArgs> | null
   }
 
 
@@ -8191,6 +10816,9 @@ export namespace Prisma {
     state_jurisdiction: string | null
     cancellation_date: string | null
     data_source: string | null
+    verification_status: string | null
+    lookup_error_message: string | null
+    last_verified_at: Date | null
     created_at: Date | null
   }
 
@@ -8221,6 +10849,9 @@ export namespace Prisma {
     state_jurisdiction: string | null
     cancellation_date: string | null
     data_source: string | null
+    verification_status: string | null
+    lookup_error_message: string | null
+    last_verified_at: Date | null
     created_at: Date | null
   }
 
@@ -8253,7 +10884,10 @@ export namespace Prisma {
     state_jurisdiction: number
     cancellation_date: number
     data_source: number
-    raw: number
+    raw_data: number
+    verification_status: number
+    lookup_error_message: number
+    last_verified_at: number
     created_at: number
     _all: number
   }
@@ -8286,6 +10920,9 @@ export namespace Prisma {
     state_jurisdiction?: true
     cancellation_date?: true
     data_source?: true
+    verification_status?: true
+    lookup_error_message?: true
+    last_verified_at?: true
     created_at?: true
   }
 
@@ -8316,6 +10953,9 @@ export namespace Prisma {
     state_jurisdiction?: true
     cancellation_date?: true
     data_source?: true
+    verification_status?: true
+    lookup_error_message?: true
+    last_verified_at?: true
     created_at?: true
   }
 
@@ -8348,7 +10988,10 @@ export namespace Prisma {
     state_jurisdiction?: true
     cancellation_date?: true
     data_source?: true
-    raw?: true
+    raw_data?: true
+    verification_status?: true
+    lookup_error_message?: true
+    last_verified_at?: true
     created_at?: true
     _all?: true
   }
@@ -8454,7 +11097,10 @@ export namespace Prisma {
     state_jurisdiction: string | null
     cancellation_date: string | null
     data_source: string | null
-    raw: JsonValue | null
+    raw_data: JsonValue | null
+    verification_status: string | null
+    lookup_error_message: string | null
+    last_verified_at: Date | null
     created_at: Date
     _count: Central_gst_recordsCountAggregateOutputType | null
     _min: Central_gst_recordsMinAggregateOutputType | null
@@ -8504,7 +11150,10 @@ export namespace Prisma {
     state_jurisdiction?: boolean
     cancellation_date?: boolean
     data_source?: boolean
-    raw?: boolean
+    raw_data?: boolean
+    verification_status?: boolean
+    lookup_error_message?: boolean
+    last_verified_at?: boolean
     created_at?: boolean
   }, ExtArgs["result"]["central_gst_records"]>
 
@@ -8537,7 +11186,10 @@ export namespace Prisma {
     state_jurisdiction?: boolean
     cancellation_date?: boolean
     data_source?: boolean
-    raw?: boolean
+    raw_data?: boolean
+    verification_status?: boolean
+    lookup_error_message?: boolean
+    last_verified_at?: boolean
     created_at?: boolean
   }, ExtArgs["result"]["central_gst_records"]>
 
@@ -8570,7 +11222,10 @@ export namespace Prisma {
     state_jurisdiction?: boolean
     cancellation_date?: boolean
     data_source?: boolean
-    raw?: boolean
+    raw_data?: boolean
+    verification_status?: boolean
+    lookup_error_message?: boolean
+    last_verified_at?: boolean
     created_at?: boolean
   }, ExtArgs["result"]["central_gst_records"]>
 
@@ -8603,11 +11258,14 @@ export namespace Prisma {
     state_jurisdiction?: boolean
     cancellation_date?: boolean
     data_source?: boolean
-    raw?: boolean
+    raw_data?: boolean
+    verification_status?: boolean
+    lookup_error_message?: boolean
+    last_verified_at?: boolean
     created_at?: boolean
   }
 
-  export type central_gst_recordsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "gstin" | "pan" | "company_name" | "legal_name" | "trade_name" | "state" | "state_code" | "gst_status" | "gst_reg_date" | "taxpayer_type" | "constitution" | "business_nature" | "dealing_in" | "address" | "city" | "pincode" | "location" | "district" | "branch_no" | "branch_name" | "flat_no" | "street" | "centre_jurisdiction" | "centre_code" | "state_jurisdiction" | "cancellation_date" | "data_source" | "raw" | "created_at", ExtArgs["result"]["central_gst_records"]>
+  export type central_gst_recordsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "gstin" | "pan" | "company_name" | "legal_name" | "trade_name" | "state" | "state_code" | "gst_status" | "gst_reg_date" | "taxpayer_type" | "constitution" | "business_nature" | "dealing_in" | "address" | "city" | "pincode" | "location" | "district" | "branch_no" | "branch_name" | "flat_no" | "street" | "centre_jurisdiction" | "centre_code" | "state_jurisdiction" | "cancellation_date" | "data_source" | "raw_data" | "verification_status" | "lookup_error_message" | "last_verified_at" | "created_at", ExtArgs["result"]["central_gst_records"]>
 
   export type $central_gst_recordsPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "central_gst_records"
@@ -8641,7 +11299,10 @@ export namespace Prisma {
       state_jurisdiction: string | null
       cancellation_date: string | null
       data_source: string | null
-      raw: Prisma.JsonValue | null
+      raw_data: Prisma.JsonValue | null
+      verification_status: string | null
+      lookup_error_message: string | null
+      last_verified_at: Date | null
       created_at: Date
     }, ExtArgs["result"]["central_gst_records"]>
     composites: {}
@@ -9094,7 +11755,10 @@ export namespace Prisma {
     readonly state_jurisdiction: FieldRef<"central_gst_records", 'String'>
     readonly cancellation_date: FieldRef<"central_gst_records", 'String'>
     readonly data_source: FieldRef<"central_gst_records", 'String'>
-    readonly raw: FieldRef<"central_gst_records", 'Json'>
+    readonly raw_data: FieldRef<"central_gst_records", 'Json'>
+    readonly verification_status: FieldRef<"central_gst_records", 'String'>
+    readonly lookup_error_message: FieldRef<"central_gst_records", 'String'>
+    readonly last_verified_at: FieldRef<"central_gst_records", 'DateTime'>
     readonly created_at: FieldRef<"central_gst_records", 'DateTime'>
   }
     
@@ -14261,6 +16925,57 @@ export namespace Prisma {
   export type TenantsScalarFieldEnum = (typeof TenantsScalarFieldEnum)[keyof typeof TenantsScalarFieldEnum]
 
 
+  export const Backup_configScalarFieldEnum: {
+    id: 'id',
+    company_id: 'company_id',
+    enabled: 'enabled',
+    provider: 'provider',
+    schedule: 'schedule',
+    schedule_time: 'schedule_time',
+    retention_days: 'retention_days',
+    include_files: 'include_files',
+    gdrive_client_id_enc: 'gdrive_client_id_enc',
+    gdrive_client_secret_enc: 'gdrive_client_secret_enc',
+    gdrive_refresh_token_enc: 'gdrive_refresh_token_enc',
+    gdrive_folder_id: 'gdrive_folder_id',
+    gdrive_folder_name: 'gdrive_folder_name',
+    onedrive_client_id_enc: 'onedrive_client_id_enc',
+    onedrive_tenant_id: 'onedrive_tenant_id',
+    onedrive_client_secret_enc: 'onedrive_client_secret_enc',
+    onedrive_folder_path: 'onedrive_folder_path',
+    last_backup_at: 'last_backup_at',
+    last_backup_status: 'last_backup_status',
+    last_backup_size_bytes: 'last_backup_size_bytes',
+    last_backup_file_url: 'last_backup_file_url',
+    last_error: 'last_error',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+  };
+
+  export type Backup_configScalarFieldEnum = (typeof Backup_configScalarFieldEnum)[keyof typeof Backup_configScalarFieldEnum]
+
+
+  export const Tenant_db_configScalarFieldEnum: {
+    id: 'id',
+    company_id: 'company_id',
+    db_mode: 'db_mode',
+    local_db_type: 'local_db_type',
+    local_db_host: 'local_db_host',
+    local_db_port: 'local_db_port',
+    local_db_name: 'local_db_name',
+    local_db_user: 'local_db_user',
+    local_db_pass: 'local_db_pass',
+    cloud_db_url: 'cloud_db_url',
+    sync_interval_min: 'sync_interval_min',
+    sync_last_at: 'sync_last_at',
+    sync_status: 'sync_status',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+  };
+
+  export type Tenant_db_configScalarFieldEnum = (typeof Tenant_db_configScalarFieldEnum)[keyof typeof Tenant_db_configScalarFieldEnum]
+
+
   export const Tenant_modulesScalarFieldEnum: {
     id: 'id',
     tenant_id: 'tenant_id',
@@ -14367,7 +17082,10 @@ export namespace Prisma {
     state_jurisdiction: 'state_jurisdiction',
     cancellation_date: 'cancellation_date',
     data_source: 'data_source',
-    raw: 'raw',
+    raw_data: 'raw_data',
+    verification_status: 'verification_status',
+    lookup_error_message: 'lookup_error_message',
+    last_verified_at: 'last_verified_at',
     created_at: 'created_at'
   };
 
@@ -14562,6 +17280,20 @@ export namespace Prisma {
    * Reference to a field of type 'QueryMode'
    */
   export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+  /**
+   * Reference to a field of type 'BigInt'
+   */
+  export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
+    
+
+
+  /**
+   * Reference to a field of type 'BigInt[]'
+   */
+  export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt[]'>
     
 
 
@@ -14871,6 +17603,259 @@ export namespace Prisma {
     created_at?: DateTimeWithAggregatesFilter<"tenants"> | Date | string
     updated_at?: DateTimeWithAggregatesFilter<"tenants"> | Date | string
     deleted_at?: DateTimeNullableWithAggregatesFilter<"tenants"> | Date | string | null
+  }
+
+  export type backup_configWhereInput = {
+    AND?: backup_configWhereInput | backup_configWhereInput[]
+    OR?: backup_configWhereInput[]
+    NOT?: backup_configWhereInput | backup_configWhereInput[]
+    id?: StringFilter<"backup_config"> | string
+    company_id?: UuidFilter<"backup_config"> | string
+    enabled?: BoolFilter<"backup_config"> | boolean
+    provider?: StringFilter<"backup_config"> | string
+    schedule?: StringFilter<"backup_config"> | string
+    schedule_time?: StringFilter<"backup_config"> | string
+    retention_days?: IntFilter<"backup_config"> | number
+    include_files?: BoolFilter<"backup_config"> | boolean
+    gdrive_client_id_enc?: StringNullableFilter<"backup_config"> | string | null
+    gdrive_client_secret_enc?: StringNullableFilter<"backup_config"> | string | null
+    gdrive_refresh_token_enc?: StringNullableFilter<"backup_config"> | string | null
+    gdrive_folder_id?: StringNullableFilter<"backup_config"> | string | null
+    gdrive_folder_name?: StringNullableFilter<"backup_config"> | string | null
+    onedrive_client_id_enc?: StringNullableFilter<"backup_config"> | string | null
+    onedrive_tenant_id?: StringNullableFilter<"backup_config"> | string | null
+    onedrive_client_secret_enc?: StringNullableFilter<"backup_config"> | string | null
+    onedrive_folder_path?: StringNullableFilter<"backup_config"> | string | null
+    last_backup_at?: DateTimeNullableFilter<"backup_config"> | Date | string | null
+    last_backup_status?: StringNullableFilter<"backup_config"> | string | null
+    last_backup_size_bytes?: BigIntNullableFilter<"backup_config"> | bigint | number | null
+    last_backup_file_url?: StringNullableFilter<"backup_config"> | string | null
+    last_error?: StringNullableFilter<"backup_config"> | string | null
+    created_at?: DateTimeFilter<"backup_config"> | Date | string
+    updated_at?: DateTimeFilter<"backup_config"> | Date | string
+  }
+
+  export type backup_configOrderByWithRelationInput = {
+    id?: SortOrder
+    company_id?: SortOrder
+    enabled?: SortOrder
+    provider?: SortOrder
+    schedule?: SortOrder
+    schedule_time?: SortOrder
+    retention_days?: SortOrder
+    include_files?: SortOrder
+    gdrive_client_id_enc?: SortOrderInput | SortOrder
+    gdrive_client_secret_enc?: SortOrderInput | SortOrder
+    gdrive_refresh_token_enc?: SortOrderInput | SortOrder
+    gdrive_folder_id?: SortOrderInput | SortOrder
+    gdrive_folder_name?: SortOrderInput | SortOrder
+    onedrive_client_id_enc?: SortOrderInput | SortOrder
+    onedrive_tenant_id?: SortOrderInput | SortOrder
+    onedrive_client_secret_enc?: SortOrderInput | SortOrder
+    onedrive_folder_path?: SortOrderInput | SortOrder
+    last_backup_at?: SortOrderInput | SortOrder
+    last_backup_status?: SortOrderInput | SortOrder
+    last_backup_size_bytes?: SortOrderInput | SortOrder
+    last_backup_file_url?: SortOrderInput | SortOrder
+    last_error?: SortOrderInput | SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type backup_configWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    company_id?: string
+    AND?: backup_configWhereInput | backup_configWhereInput[]
+    OR?: backup_configWhereInput[]
+    NOT?: backup_configWhereInput | backup_configWhereInput[]
+    enabled?: BoolFilter<"backup_config"> | boolean
+    provider?: StringFilter<"backup_config"> | string
+    schedule?: StringFilter<"backup_config"> | string
+    schedule_time?: StringFilter<"backup_config"> | string
+    retention_days?: IntFilter<"backup_config"> | number
+    include_files?: BoolFilter<"backup_config"> | boolean
+    gdrive_client_id_enc?: StringNullableFilter<"backup_config"> | string | null
+    gdrive_client_secret_enc?: StringNullableFilter<"backup_config"> | string | null
+    gdrive_refresh_token_enc?: StringNullableFilter<"backup_config"> | string | null
+    gdrive_folder_id?: StringNullableFilter<"backup_config"> | string | null
+    gdrive_folder_name?: StringNullableFilter<"backup_config"> | string | null
+    onedrive_client_id_enc?: StringNullableFilter<"backup_config"> | string | null
+    onedrive_tenant_id?: StringNullableFilter<"backup_config"> | string | null
+    onedrive_client_secret_enc?: StringNullableFilter<"backup_config"> | string | null
+    onedrive_folder_path?: StringNullableFilter<"backup_config"> | string | null
+    last_backup_at?: DateTimeNullableFilter<"backup_config"> | Date | string | null
+    last_backup_status?: StringNullableFilter<"backup_config"> | string | null
+    last_backup_size_bytes?: BigIntNullableFilter<"backup_config"> | bigint | number | null
+    last_backup_file_url?: StringNullableFilter<"backup_config"> | string | null
+    last_error?: StringNullableFilter<"backup_config"> | string | null
+    created_at?: DateTimeFilter<"backup_config"> | Date | string
+    updated_at?: DateTimeFilter<"backup_config"> | Date | string
+  }, "id" | "company_id">
+
+  export type backup_configOrderByWithAggregationInput = {
+    id?: SortOrder
+    company_id?: SortOrder
+    enabled?: SortOrder
+    provider?: SortOrder
+    schedule?: SortOrder
+    schedule_time?: SortOrder
+    retention_days?: SortOrder
+    include_files?: SortOrder
+    gdrive_client_id_enc?: SortOrderInput | SortOrder
+    gdrive_client_secret_enc?: SortOrderInput | SortOrder
+    gdrive_refresh_token_enc?: SortOrderInput | SortOrder
+    gdrive_folder_id?: SortOrderInput | SortOrder
+    gdrive_folder_name?: SortOrderInput | SortOrder
+    onedrive_client_id_enc?: SortOrderInput | SortOrder
+    onedrive_tenant_id?: SortOrderInput | SortOrder
+    onedrive_client_secret_enc?: SortOrderInput | SortOrder
+    onedrive_folder_path?: SortOrderInput | SortOrder
+    last_backup_at?: SortOrderInput | SortOrder
+    last_backup_status?: SortOrderInput | SortOrder
+    last_backup_size_bytes?: SortOrderInput | SortOrder
+    last_backup_file_url?: SortOrderInput | SortOrder
+    last_error?: SortOrderInput | SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+    _count?: backup_configCountOrderByAggregateInput
+    _avg?: backup_configAvgOrderByAggregateInput
+    _max?: backup_configMaxOrderByAggregateInput
+    _min?: backup_configMinOrderByAggregateInput
+    _sum?: backup_configSumOrderByAggregateInput
+  }
+
+  export type backup_configScalarWhereWithAggregatesInput = {
+    AND?: backup_configScalarWhereWithAggregatesInput | backup_configScalarWhereWithAggregatesInput[]
+    OR?: backup_configScalarWhereWithAggregatesInput[]
+    NOT?: backup_configScalarWhereWithAggregatesInput | backup_configScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"backup_config"> | string
+    company_id?: UuidWithAggregatesFilter<"backup_config"> | string
+    enabled?: BoolWithAggregatesFilter<"backup_config"> | boolean
+    provider?: StringWithAggregatesFilter<"backup_config"> | string
+    schedule?: StringWithAggregatesFilter<"backup_config"> | string
+    schedule_time?: StringWithAggregatesFilter<"backup_config"> | string
+    retention_days?: IntWithAggregatesFilter<"backup_config"> | number
+    include_files?: BoolWithAggregatesFilter<"backup_config"> | boolean
+    gdrive_client_id_enc?: StringNullableWithAggregatesFilter<"backup_config"> | string | null
+    gdrive_client_secret_enc?: StringNullableWithAggregatesFilter<"backup_config"> | string | null
+    gdrive_refresh_token_enc?: StringNullableWithAggregatesFilter<"backup_config"> | string | null
+    gdrive_folder_id?: StringNullableWithAggregatesFilter<"backup_config"> | string | null
+    gdrive_folder_name?: StringNullableWithAggregatesFilter<"backup_config"> | string | null
+    onedrive_client_id_enc?: StringNullableWithAggregatesFilter<"backup_config"> | string | null
+    onedrive_tenant_id?: StringNullableWithAggregatesFilter<"backup_config"> | string | null
+    onedrive_client_secret_enc?: StringNullableWithAggregatesFilter<"backup_config"> | string | null
+    onedrive_folder_path?: StringNullableWithAggregatesFilter<"backup_config"> | string | null
+    last_backup_at?: DateTimeNullableWithAggregatesFilter<"backup_config"> | Date | string | null
+    last_backup_status?: StringNullableWithAggregatesFilter<"backup_config"> | string | null
+    last_backup_size_bytes?: BigIntNullableWithAggregatesFilter<"backup_config"> | bigint | number | null
+    last_backup_file_url?: StringNullableWithAggregatesFilter<"backup_config"> | string | null
+    last_error?: StringNullableWithAggregatesFilter<"backup_config"> | string | null
+    created_at?: DateTimeWithAggregatesFilter<"backup_config"> | Date | string
+    updated_at?: DateTimeWithAggregatesFilter<"backup_config"> | Date | string
+  }
+
+  export type tenant_db_configWhereInput = {
+    AND?: tenant_db_configWhereInput | tenant_db_configWhereInput[]
+    OR?: tenant_db_configWhereInput[]
+    NOT?: tenant_db_configWhereInput | tenant_db_configWhereInput[]
+    id?: StringFilter<"tenant_db_config"> | string
+    company_id?: UuidFilter<"tenant_db_config"> | string
+    db_mode?: StringFilter<"tenant_db_config"> | string
+    local_db_type?: StringNullableFilter<"tenant_db_config"> | string | null
+    local_db_host?: StringNullableFilter<"tenant_db_config"> | string | null
+    local_db_port?: IntNullableFilter<"tenant_db_config"> | number | null
+    local_db_name?: StringNullableFilter<"tenant_db_config"> | string | null
+    local_db_user?: StringNullableFilter<"tenant_db_config"> | string | null
+    local_db_pass?: StringNullableFilter<"tenant_db_config"> | string | null
+    cloud_db_url?: StringNullableFilter<"tenant_db_config"> | string | null
+    sync_interval_min?: IntFilter<"tenant_db_config"> | number
+    sync_last_at?: DateTimeNullableFilter<"tenant_db_config"> | Date | string | null
+    sync_status?: StringNullableFilter<"tenant_db_config"> | string | null
+    created_at?: DateTimeFilter<"tenant_db_config"> | Date | string
+    updated_at?: DateTimeFilter<"tenant_db_config"> | Date | string
+  }
+
+  export type tenant_db_configOrderByWithRelationInput = {
+    id?: SortOrder
+    company_id?: SortOrder
+    db_mode?: SortOrder
+    local_db_type?: SortOrderInput | SortOrder
+    local_db_host?: SortOrderInput | SortOrder
+    local_db_port?: SortOrderInput | SortOrder
+    local_db_name?: SortOrderInput | SortOrder
+    local_db_user?: SortOrderInput | SortOrder
+    local_db_pass?: SortOrderInput | SortOrder
+    cloud_db_url?: SortOrderInput | SortOrder
+    sync_interval_min?: SortOrder
+    sync_last_at?: SortOrderInput | SortOrder
+    sync_status?: SortOrderInput | SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type tenant_db_configWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    company_id?: string
+    AND?: tenant_db_configWhereInput | tenant_db_configWhereInput[]
+    OR?: tenant_db_configWhereInput[]
+    NOT?: tenant_db_configWhereInput | tenant_db_configWhereInput[]
+    db_mode?: StringFilter<"tenant_db_config"> | string
+    local_db_type?: StringNullableFilter<"tenant_db_config"> | string | null
+    local_db_host?: StringNullableFilter<"tenant_db_config"> | string | null
+    local_db_port?: IntNullableFilter<"tenant_db_config"> | number | null
+    local_db_name?: StringNullableFilter<"tenant_db_config"> | string | null
+    local_db_user?: StringNullableFilter<"tenant_db_config"> | string | null
+    local_db_pass?: StringNullableFilter<"tenant_db_config"> | string | null
+    cloud_db_url?: StringNullableFilter<"tenant_db_config"> | string | null
+    sync_interval_min?: IntFilter<"tenant_db_config"> | number
+    sync_last_at?: DateTimeNullableFilter<"tenant_db_config"> | Date | string | null
+    sync_status?: StringNullableFilter<"tenant_db_config"> | string | null
+    created_at?: DateTimeFilter<"tenant_db_config"> | Date | string
+    updated_at?: DateTimeFilter<"tenant_db_config"> | Date | string
+  }, "id" | "company_id">
+
+  export type tenant_db_configOrderByWithAggregationInput = {
+    id?: SortOrder
+    company_id?: SortOrder
+    db_mode?: SortOrder
+    local_db_type?: SortOrderInput | SortOrder
+    local_db_host?: SortOrderInput | SortOrder
+    local_db_port?: SortOrderInput | SortOrder
+    local_db_name?: SortOrderInput | SortOrder
+    local_db_user?: SortOrderInput | SortOrder
+    local_db_pass?: SortOrderInput | SortOrder
+    cloud_db_url?: SortOrderInput | SortOrder
+    sync_interval_min?: SortOrder
+    sync_last_at?: SortOrderInput | SortOrder
+    sync_status?: SortOrderInput | SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+    _count?: tenant_db_configCountOrderByAggregateInput
+    _avg?: tenant_db_configAvgOrderByAggregateInput
+    _max?: tenant_db_configMaxOrderByAggregateInput
+    _min?: tenant_db_configMinOrderByAggregateInput
+    _sum?: tenant_db_configSumOrderByAggregateInput
+  }
+
+  export type tenant_db_configScalarWhereWithAggregatesInput = {
+    AND?: tenant_db_configScalarWhereWithAggregatesInput | tenant_db_configScalarWhereWithAggregatesInput[]
+    OR?: tenant_db_configScalarWhereWithAggregatesInput[]
+    NOT?: tenant_db_configScalarWhereWithAggregatesInput | tenant_db_configScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"tenant_db_config"> | string
+    company_id?: UuidWithAggregatesFilter<"tenant_db_config"> | string
+    db_mode?: StringWithAggregatesFilter<"tenant_db_config"> | string
+    local_db_type?: StringNullableWithAggregatesFilter<"tenant_db_config"> | string | null
+    local_db_host?: StringNullableWithAggregatesFilter<"tenant_db_config"> | string | null
+    local_db_port?: IntNullableWithAggregatesFilter<"tenant_db_config"> | number | null
+    local_db_name?: StringNullableWithAggregatesFilter<"tenant_db_config"> | string | null
+    local_db_user?: StringNullableWithAggregatesFilter<"tenant_db_config"> | string | null
+    local_db_pass?: StringNullableWithAggregatesFilter<"tenant_db_config"> | string | null
+    cloud_db_url?: StringNullableWithAggregatesFilter<"tenant_db_config"> | string | null
+    sync_interval_min?: IntWithAggregatesFilter<"tenant_db_config"> | number
+    sync_last_at?: DateTimeNullableWithAggregatesFilter<"tenant_db_config"> | Date | string | null
+    sync_status?: StringNullableWithAggregatesFilter<"tenant_db_config"> | string | null
+    created_at?: DateTimeWithAggregatesFilter<"tenant_db_config"> | Date | string
+    updated_at?: DateTimeWithAggregatesFilter<"tenant_db_config"> | Date | string
   }
 
   export type tenant_modulesWhereInput = {
@@ -15291,7 +18276,10 @@ export namespace Prisma {
     state_jurisdiction?: StringNullableFilter<"central_gst_records"> | string | null
     cancellation_date?: StringNullableFilter<"central_gst_records"> | string | null
     data_source?: StringNullableFilter<"central_gst_records"> | string | null
-    raw?: JsonNullableFilter<"central_gst_records">
+    raw_data?: JsonNullableFilter<"central_gst_records">
+    verification_status?: StringNullableFilter<"central_gst_records"> | string | null
+    lookup_error_message?: StringNullableFilter<"central_gst_records"> | string | null
+    last_verified_at?: DateTimeNullableFilter<"central_gst_records"> | Date | string | null
     created_at?: DateTimeFilter<"central_gst_records"> | Date | string
   }
 
@@ -15324,7 +18312,10 @@ export namespace Prisma {
     state_jurisdiction?: SortOrderInput | SortOrder
     cancellation_date?: SortOrderInput | SortOrder
     data_source?: SortOrderInput | SortOrder
-    raw?: SortOrderInput | SortOrder
+    raw_data?: SortOrderInput | SortOrder
+    verification_status?: SortOrderInput | SortOrder
+    lookup_error_message?: SortOrderInput | SortOrder
+    last_verified_at?: SortOrderInput | SortOrder
     created_at?: SortOrder
   }
 
@@ -15360,7 +18351,10 @@ export namespace Prisma {
     state_jurisdiction?: StringNullableFilter<"central_gst_records"> | string | null
     cancellation_date?: StringNullableFilter<"central_gst_records"> | string | null
     data_source?: StringNullableFilter<"central_gst_records"> | string | null
-    raw?: JsonNullableFilter<"central_gst_records">
+    raw_data?: JsonNullableFilter<"central_gst_records">
+    verification_status?: StringNullableFilter<"central_gst_records"> | string | null
+    lookup_error_message?: StringNullableFilter<"central_gst_records"> | string | null
+    last_verified_at?: DateTimeNullableFilter<"central_gst_records"> | Date | string | null
     created_at?: DateTimeFilter<"central_gst_records"> | Date | string
   }, "id" | "gstin">
 
@@ -15393,7 +18387,10 @@ export namespace Prisma {
     state_jurisdiction?: SortOrderInput | SortOrder
     cancellation_date?: SortOrderInput | SortOrder
     data_source?: SortOrderInput | SortOrder
-    raw?: SortOrderInput | SortOrder
+    raw_data?: SortOrderInput | SortOrder
+    verification_status?: SortOrderInput | SortOrder
+    lookup_error_message?: SortOrderInput | SortOrder
+    last_verified_at?: SortOrderInput | SortOrder
     created_at?: SortOrder
     _count?: central_gst_recordsCountOrderByAggregateInput
     _max?: central_gst_recordsMaxOrderByAggregateInput
@@ -15432,7 +18429,10 @@ export namespace Prisma {
     state_jurisdiction?: StringNullableWithAggregatesFilter<"central_gst_records"> | string | null
     cancellation_date?: StringNullableWithAggregatesFilter<"central_gst_records"> | string | null
     data_source?: StringNullableWithAggregatesFilter<"central_gst_records"> | string | null
-    raw?: JsonNullableWithAggregatesFilter<"central_gst_records">
+    raw_data?: JsonNullableWithAggregatesFilter<"central_gst_records">
+    verification_status?: StringNullableWithAggregatesFilter<"central_gst_records"> | string | null
+    lookup_error_message?: StringNullableWithAggregatesFilter<"central_gst_records"> | string | null
+    last_verified_at?: DateTimeNullableWithAggregatesFilter<"central_gst_records"> | Date | string | null
     created_at?: DateTimeWithAggregatesFilter<"central_gst_records"> | Date | string
   }
 
@@ -16181,6 +19181,321 @@ export namespace Prisma {
     deleted_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
+  export type backup_configCreateInput = {
+    id?: string
+    company_id: string
+    enabled?: boolean
+    provider?: string
+    schedule?: string
+    schedule_time?: string
+    retention_days?: number
+    include_files?: boolean
+    gdrive_client_id_enc?: string | null
+    gdrive_client_secret_enc?: string | null
+    gdrive_refresh_token_enc?: string | null
+    gdrive_folder_id?: string | null
+    gdrive_folder_name?: string | null
+    onedrive_client_id_enc?: string | null
+    onedrive_tenant_id?: string | null
+    onedrive_client_secret_enc?: string | null
+    onedrive_folder_path?: string | null
+    last_backup_at?: Date | string | null
+    last_backup_status?: string | null
+    last_backup_size_bytes?: bigint | number | null
+    last_backup_file_url?: string | null
+    last_error?: string | null
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type backup_configUncheckedCreateInput = {
+    id?: string
+    company_id: string
+    enabled?: boolean
+    provider?: string
+    schedule?: string
+    schedule_time?: string
+    retention_days?: number
+    include_files?: boolean
+    gdrive_client_id_enc?: string | null
+    gdrive_client_secret_enc?: string | null
+    gdrive_refresh_token_enc?: string | null
+    gdrive_folder_id?: string | null
+    gdrive_folder_name?: string | null
+    onedrive_client_id_enc?: string | null
+    onedrive_tenant_id?: string | null
+    onedrive_client_secret_enc?: string | null
+    onedrive_folder_path?: string | null
+    last_backup_at?: Date | string | null
+    last_backup_status?: string | null
+    last_backup_size_bytes?: bigint | number | null
+    last_backup_file_url?: string | null
+    last_error?: string | null
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type backup_configUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    company_id?: StringFieldUpdateOperationsInput | string
+    enabled?: BoolFieldUpdateOperationsInput | boolean
+    provider?: StringFieldUpdateOperationsInput | string
+    schedule?: StringFieldUpdateOperationsInput | string
+    schedule_time?: StringFieldUpdateOperationsInput | string
+    retention_days?: IntFieldUpdateOperationsInput | number
+    include_files?: BoolFieldUpdateOperationsInput | boolean
+    gdrive_client_id_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    gdrive_client_secret_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    gdrive_refresh_token_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    gdrive_folder_id?: NullableStringFieldUpdateOperationsInput | string | null
+    gdrive_folder_name?: NullableStringFieldUpdateOperationsInput | string | null
+    onedrive_client_id_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    onedrive_tenant_id?: NullableStringFieldUpdateOperationsInput | string | null
+    onedrive_client_secret_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    onedrive_folder_path?: NullableStringFieldUpdateOperationsInput | string | null
+    last_backup_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    last_backup_status?: NullableStringFieldUpdateOperationsInput | string | null
+    last_backup_size_bytes?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    last_backup_file_url?: NullableStringFieldUpdateOperationsInput | string | null
+    last_error?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type backup_configUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    company_id?: StringFieldUpdateOperationsInput | string
+    enabled?: BoolFieldUpdateOperationsInput | boolean
+    provider?: StringFieldUpdateOperationsInput | string
+    schedule?: StringFieldUpdateOperationsInput | string
+    schedule_time?: StringFieldUpdateOperationsInput | string
+    retention_days?: IntFieldUpdateOperationsInput | number
+    include_files?: BoolFieldUpdateOperationsInput | boolean
+    gdrive_client_id_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    gdrive_client_secret_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    gdrive_refresh_token_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    gdrive_folder_id?: NullableStringFieldUpdateOperationsInput | string | null
+    gdrive_folder_name?: NullableStringFieldUpdateOperationsInput | string | null
+    onedrive_client_id_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    onedrive_tenant_id?: NullableStringFieldUpdateOperationsInput | string | null
+    onedrive_client_secret_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    onedrive_folder_path?: NullableStringFieldUpdateOperationsInput | string | null
+    last_backup_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    last_backup_status?: NullableStringFieldUpdateOperationsInput | string | null
+    last_backup_size_bytes?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    last_backup_file_url?: NullableStringFieldUpdateOperationsInput | string | null
+    last_error?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type backup_configCreateManyInput = {
+    id?: string
+    company_id: string
+    enabled?: boolean
+    provider?: string
+    schedule?: string
+    schedule_time?: string
+    retention_days?: number
+    include_files?: boolean
+    gdrive_client_id_enc?: string | null
+    gdrive_client_secret_enc?: string | null
+    gdrive_refresh_token_enc?: string | null
+    gdrive_folder_id?: string | null
+    gdrive_folder_name?: string | null
+    onedrive_client_id_enc?: string | null
+    onedrive_tenant_id?: string | null
+    onedrive_client_secret_enc?: string | null
+    onedrive_folder_path?: string | null
+    last_backup_at?: Date | string | null
+    last_backup_status?: string | null
+    last_backup_size_bytes?: bigint | number | null
+    last_backup_file_url?: string | null
+    last_error?: string | null
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type backup_configUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    company_id?: StringFieldUpdateOperationsInput | string
+    enabled?: BoolFieldUpdateOperationsInput | boolean
+    provider?: StringFieldUpdateOperationsInput | string
+    schedule?: StringFieldUpdateOperationsInput | string
+    schedule_time?: StringFieldUpdateOperationsInput | string
+    retention_days?: IntFieldUpdateOperationsInput | number
+    include_files?: BoolFieldUpdateOperationsInput | boolean
+    gdrive_client_id_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    gdrive_client_secret_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    gdrive_refresh_token_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    gdrive_folder_id?: NullableStringFieldUpdateOperationsInput | string | null
+    gdrive_folder_name?: NullableStringFieldUpdateOperationsInput | string | null
+    onedrive_client_id_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    onedrive_tenant_id?: NullableStringFieldUpdateOperationsInput | string | null
+    onedrive_client_secret_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    onedrive_folder_path?: NullableStringFieldUpdateOperationsInput | string | null
+    last_backup_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    last_backup_status?: NullableStringFieldUpdateOperationsInput | string | null
+    last_backup_size_bytes?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    last_backup_file_url?: NullableStringFieldUpdateOperationsInput | string | null
+    last_error?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type backup_configUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    company_id?: StringFieldUpdateOperationsInput | string
+    enabled?: BoolFieldUpdateOperationsInput | boolean
+    provider?: StringFieldUpdateOperationsInput | string
+    schedule?: StringFieldUpdateOperationsInput | string
+    schedule_time?: StringFieldUpdateOperationsInput | string
+    retention_days?: IntFieldUpdateOperationsInput | number
+    include_files?: BoolFieldUpdateOperationsInput | boolean
+    gdrive_client_id_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    gdrive_client_secret_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    gdrive_refresh_token_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    gdrive_folder_id?: NullableStringFieldUpdateOperationsInput | string | null
+    gdrive_folder_name?: NullableStringFieldUpdateOperationsInput | string | null
+    onedrive_client_id_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    onedrive_tenant_id?: NullableStringFieldUpdateOperationsInput | string | null
+    onedrive_client_secret_enc?: NullableStringFieldUpdateOperationsInput | string | null
+    onedrive_folder_path?: NullableStringFieldUpdateOperationsInput | string | null
+    last_backup_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    last_backup_status?: NullableStringFieldUpdateOperationsInput | string | null
+    last_backup_size_bytes?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    last_backup_file_url?: NullableStringFieldUpdateOperationsInput | string | null
+    last_error?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type tenant_db_configCreateInput = {
+    id?: string
+    company_id: string
+    db_mode?: string
+    local_db_type?: string | null
+    local_db_host?: string | null
+    local_db_port?: number | null
+    local_db_name?: string | null
+    local_db_user?: string | null
+    local_db_pass?: string | null
+    cloud_db_url?: string | null
+    sync_interval_min?: number
+    sync_last_at?: Date | string | null
+    sync_status?: string | null
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type tenant_db_configUncheckedCreateInput = {
+    id?: string
+    company_id: string
+    db_mode?: string
+    local_db_type?: string | null
+    local_db_host?: string | null
+    local_db_port?: number | null
+    local_db_name?: string | null
+    local_db_user?: string | null
+    local_db_pass?: string | null
+    cloud_db_url?: string | null
+    sync_interval_min?: number
+    sync_last_at?: Date | string | null
+    sync_status?: string | null
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type tenant_db_configUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    company_id?: StringFieldUpdateOperationsInput | string
+    db_mode?: StringFieldUpdateOperationsInput | string
+    local_db_type?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_host?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_port?: NullableIntFieldUpdateOperationsInput | number | null
+    local_db_name?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_user?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_pass?: NullableStringFieldUpdateOperationsInput | string | null
+    cloud_db_url?: NullableStringFieldUpdateOperationsInput | string | null
+    sync_interval_min?: IntFieldUpdateOperationsInput | number
+    sync_last_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sync_status?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type tenant_db_configUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    company_id?: StringFieldUpdateOperationsInput | string
+    db_mode?: StringFieldUpdateOperationsInput | string
+    local_db_type?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_host?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_port?: NullableIntFieldUpdateOperationsInput | number | null
+    local_db_name?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_user?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_pass?: NullableStringFieldUpdateOperationsInput | string | null
+    cloud_db_url?: NullableStringFieldUpdateOperationsInput | string | null
+    sync_interval_min?: IntFieldUpdateOperationsInput | number
+    sync_last_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sync_status?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type tenant_db_configCreateManyInput = {
+    id?: string
+    company_id: string
+    db_mode?: string
+    local_db_type?: string | null
+    local_db_host?: string | null
+    local_db_port?: number | null
+    local_db_name?: string | null
+    local_db_user?: string | null
+    local_db_pass?: string | null
+    cloud_db_url?: string | null
+    sync_interval_min?: number
+    sync_last_at?: Date | string | null
+    sync_status?: string | null
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type tenant_db_configUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    company_id?: StringFieldUpdateOperationsInput | string
+    db_mode?: StringFieldUpdateOperationsInput | string
+    local_db_type?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_host?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_port?: NullableIntFieldUpdateOperationsInput | number | null
+    local_db_name?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_user?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_pass?: NullableStringFieldUpdateOperationsInput | string | null
+    cloud_db_url?: NullableStringFieldUpdateOperationsInput | string | null
+    sync_interval_min?: IntFieldUpdateOperationsInput | number
+    sync_last_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sync_status?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type tenant_db_configUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    company_id?: StringFieldUpdateOperationsInput | string
+    db_mode?: StringFieldUpdateOperationsInput | string
+    local_db_type?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_host?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_port?: NullableIntFieldUpdateOperationsInput | number | null
+    local_db_name?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_user?: NullableStringFieldUpdateOperationsInput | string | null
+    local_db_pass?: NullableStringFieldUpdateOperationsInput | string | null
+    cloud_db_url?: NullableStringFieldUpdateOperationsInput | string | null
+    sync_interval_min?: IntFieldUpdateOperationsInput | number
+    sync_last_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sync_status?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type tenant_modulesCreateInput = {
     id?: string
     module_name: string
@@ -16662,7 +19977,10 @@ export namespace Prisma {
     state_jurisdiction?: string | null
     cancellation_date?: string | null
     data_source?: string | null
-    raw?: NullableJsonNullValueInput | InputJsonValue
+    raw_data?: NullableJsonNullValueInput | InputJsonValue
+    verification_status?: string | null
+    lookup_error_message?: string | null
+    last_verified_at?: Date | string | null
     created_at?: Date | string
   }
 
@@ -16695,7 +20013,10 @@ export namespace Prisma {
     state_jurisdiction?: string | null
     cancellation_date?: string | null
     data_source?: string | null
-    raw?: NullableJsonNullValueInput | InputJsonValue
+    raw_data?: NullableJsonNullValueInput | InputJsonValue
+    verification_status?: string | null
+    lookup_error_message?: string | null
+    last_verified_at?: Date | string | null
     created_at?: Date | string
   }
 
@@ -16728,7 +20049,10 @@ export namespace Prisma {
     state_jurisdiction?: NullableStringFieldUpdateOperationsInput | string | null
     cancellation_date?: NullableStringFieldUpdateOperationsInput | string | null
     data_source?: NullableStringFieldUpdateOperationsInput | string | null
-    raw?: NullableJsonNullValueInput | InputJsonValue
+    raw_data?: NullableJsonNullValueInput | InputJsonValue
+    verification_status?: NullableStringFieldUpdateOperationsInput | string | null
+    lookup_error_message?: NullableStringFieldUpdateOperationsInput | string | null
+    last_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -16761,7 +20085,10 @@ export namespace Prisma {
     state_jurisdiction?: NullableStringFieldUpdateOperationsInput | string | null
     cancellation_date?: NullableStringFieldUpdateOperationsInput | string | null
     data_source?: NullableStringFieldUpdateOperationsInput | string | null
-    raw?: NullableJsonNullValueInput | InputJsonValue
+    raw_data?: NullableJsonNullValueInput | InputJsonValue
+    verification_status?: NullableStringFieldUpdateOperationsInput | string | null
+    lookup_error_message?: NullableStringFieldUpdateOperationsInput | string | null
+    last_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -16794,7 +20121,10 @@ export namespace Prisma {
     state_jurisdiction?: string | null
     cancellation_date?: string | null
     data_source?: string | null
-    raw?: NullableJsonNullValueInput | InputJsonValue
+    raw_data?: NullableJsonNullValueInput | InputJsonValue
+    verification_status?: string | null
+    lookup_error_message?: string | null
+    last_verified_at?: Date | string | null
     created_at?: Date | string
   }
 
@@ -16827,7 +20157,10 @@ export namespace Prisma {
     state_jurisdiction?: NullableStringFieldUpdateOperationsInput | string | null
     cancellation_date?: NullableStringFieldUpdateOperationsInput | string | null
     data_source?: NullableStringFieldUpdateOperationsInput | string | null
-    raw?: NullableJsonNullValueInput | InputJsonValue
+    raw_data?: NullableJsonNullValueInput | InputJsonValue
+    verification_status?: NullableStringFieldUpdateOperationsInput | string | null
+    lookup_error_message?: NullableStringFieldUpdateOperationsInput | string | null
+    last_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -16860,7 +20193,10 @@ export namespace Prisma {
     state_jurisdiction?: NullableStringFieldUpdateOperationsInput | string | null
     cancellation_date?: NullableStringFieldUpdateOperationsInput | string | null
     data_source?: NullableStringFieldUpdateOperationsInput | string | null
-    raw?: NullableJsonNullValueInput | InputJsonValue
+    raw_data?: NullableJsonNullValueInput | InputJsonValue
+    verification_status?: NullableStringFieldUpdateOperationsInput | string | null
+    lookup_error_message?: NullableStringFieldUpdateOperationsInput | string | null
+    last_verified_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -17791,6 +21127,188 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type BigIntNullableFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel> | null
+    in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel> | null
+    notIn?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel> | null
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntNullableFilter<$PrismaModel> | bigint | number | null
+  }
+
+  export type backup_configCountOrderByAggregateInput = {
+    id?: SortOrder
+    company_id?: SortOrder
+    enabled?: SortOrder
+    provider?: SortOrder
+    schedule?: SortOrder
+    schedule_time?: SortOrder
+    retention_days?: SortOrder
+    include_files?: SortOrder
+    gdrive_client_id_enc?: SortOrder
+    gdrive_client_secret_enc?: SortOrder
+    gdrive_refresh_token_enc?: SortOrder
+    gdrive_folder_id?: SortOrder
+    gdrive_folder_name?: SortOrder
+    onedrive_client_id_enc?: SortOrder
+    onedrive_tenant_id?: SortOrder
+    onedrive_client_secret_enc?: SortOrder
+    onedrive_folder_path?: SortOrder
+    last_backup_at?: SortOrder
+    last_backup_status?: SortOrder
+    last_backup_size_bytes?: SortOrder
+    last_backup_file_url?: SortOrder
+    last_error?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type backup_configAvgOrderByAggregateInput = {
+    retention_days?: SortOrder
+    last_backup_size_bytes?: SortOrder
+  }
+
+  export type backup_configMaxOrderByAggregateInput = {
+    id?: SortOrder
+    company_id?: SortOrder
+    enabled?: SortOrder
+    provider?: SortOrder
+    schedule?: SortOrder
+    schedule_time?: SortOrder
+    retention_days?: SortOrder
+    include_files?: SortOrder
+    gdrive_client_id_enc?: SortOrder
+    gdrive_client_secret_enc?: SortOrder
+    gdrive_refresh_token_enc?: SortOrder
+    gdrive_folder_id?: SortOrder
+    gdrive_folder_name?: SortOrder
+    onedrive_client_id_enc?: SortOrder
+    onedrive_tenant_id?: SortOrder
+    onedrive_client_secret_enc?: SortOrder
+    onedrive_folder_path?: SortOrder
+    last_backup_at?: SortOrder
+    last_backup_status?: SortOrder
+    last_backup_size_bytes?: SortOrder
+    last_backup_file_url?: SortOrder
+    last_error?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type backup_configMinOrderByAggregateInput = {
+    id?: SortOrder
+    company_id?: SortOrder
+    enabled?: SortOrder
+    provider?: SortOrder
+    schedule?: SortOrder
+    schedule_time?: SortOrder
+    retention_days?: SortOrder
+    include_files?: SortOrder
+    gdrive_client_id_enc?: SortOrder
+    gdrive_client_secret_enc?: SortOrder
+    gdrive_refresh_token_enc?: SortOrder
+    gdrive_folder_id?: SortOrder
+    gdrive_folder_name?: SortOrder
+    onedrive_client_id_enc?: SortOrder
+    onedrive_tenant_id?: SortOrder
+    onedrive_client_secret_enc?: SortOrder
+    onedrive_folder_path?: SortOrder
+    last_backup_at?: SortOrder
+    last_backup_status?: SortOrder
+    last_backup_size_bytes?: SortOrder
+    last_backup_file_url?: SortOrder
+    last_error?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type backup_configSumOrderByAggregateInput = {
+    retention_days?: SortOrder
+    last_backup_size_bytes?: SortOrder
+  }
+
+  export type BigIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel> | null
+    in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel> | null
+    notIn?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel> | null
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntNullableWithAggregatesFilter<$PrismaModel> | bigint | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedBigIntNullableFilter<$PrismaModel>
+    _min?: NestedBigIntNullableFilter<$PrismaModel>
+    _max?: NestedBigIntNullableFilter<$PrismaModel>
+  }
+
+  export type tenant_db_configCountOrderByAggregateInput = {
+    id?: SortOrder
+    company_id?: SortOrder
+    db_mode?: SortOrder
+    local_db_type?: SortOrder
+    local_db_host?: SortOrder
+    local_db_port?: SortOrder
+    local_db_name?: SortOrder
+    local_db_user?: SortOrder
+    local_db_pass?: SortOrder
+    cloud_db_url?: SortOrder
+    sync_interval_min?: SortOrder
+    sync_last_at?: SortOrder
+    sync_status?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type tenant_db_configAvgOrderByAggregateInput = {
+    local_db_port?: SortOrder
+    sync_interval_min?: SortOrder
+  }
+
+  export type tenant_db_configMaxOrderByAggregateInput = {
+    id?: SortOrder
+    company_id?: SortOrder
+    db_mode?: SortOrder
+    local_db_type?: SortOrder
+    local_db_host?: SortOrder
+    local_db_port?: SortOrder
+    local_db_name?: SortOrder
+    local_db_user?: SortOrder
+    local_db_pass?: SortOrder
+    cloud_db_url?: SortOrder
+    sync_interval_min?: SortOrder
+    sync_last_at?: SortOrder
+    sync_status?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type tenant_db_configMinOrderByAggregateInput = {
+    id?: SortOrder
+    company_id?: SortOrder
+    db_mode?: SortOrder
+    local_db_type?: SortOrder
+    local_db_host?: SortOrder
+    local_db_port?: SortOrder
+    local_db_name?: SortOrder
+    local_db_user?: SortOrder
+    local_db_pass?: SortOrder
+    cloud_db_url?: SortOrder
+    sync_interval_min?: SortOrder
+    sync_last_at?: SortOrder
+    sync_status?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type tenant_db_configSumOrderByAggregateInput = {
+    local_db_port?: SortOrder
+    sync_interval_min?: SortOrder
+  }
+
   export type TenantsScalarRelationFilter = {
     is?: tenantsWhereInput
     isNot?: tenantsWhereInput
@@ -18065,7 +21583,10 @@ export namespace Prisma {
     state_jurisdiction?: SortOrder
     cancellation_date?: SortOrder
     data_source?: SortOrder
-    raw?: SortOrder
+    raw_data?: SortOrder
+    verification_status?: SortOrder
+    lookup_error_message?: SortOrder
+    last_verified_at?: SortOrder
     created_at?: SortOrder
   }
 
@@ -18096,6 +21617,9 @@ export namespace Prisma {
     state_jurisdiction?: SortOrder
     cancellation_date?: SortOrder
     data_source?: SortOrder
+    verification_status?: SortOrder
+    lookup_error_message?: SortOrder
+    last_verified_at?: SortOrder
     created_at?: SortOrder
   }
 
@@ -18126,6 +21650,9 @@ export namespace Prisma {
     state_jurisdiction?: SortOrder
     cancellation_date?: SortOrder
     data_source?: SortOrder
+    verification_status?: SortOrder
+    lookup_error_message?: SortOrder
+    last_verified_at?: SortOrder
     created_at?: SortOrder
   }
   export type JsonFilter<$PrismaModel = never> =
@@ -18725,6 +22252,14 @@ export namespace Prisma {
     deleteMany?: billing_eventsScalarWhereInput | billing_eventsScalarWhereInput[]
   }
 
+  export type NullableBigIntFieldUpdateOperationsInput = {
+    set?: bigint | number | null
+    increment?: bigint | number
+    decrement?: bigint | number
+    multiply?: bigint | number
+    divide?: bigint | number
+  }
+
   export type tenantsCreateNestedOneWithoutTenant_modulesInput = {
     create?: XOR<tenantsCreateWithoutTenant_modulesInput, tenantsUncheckedCreateWithoutTenant_modulesInput>
     connectOrCreate?: tenantsCreateOrConnectWithoutTenant_modulesInput
@@ -19079,6 +22614,33 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedDateTimeFilter<$PrismaModel>
     _max?: NestedDateTimeFilter<$PrismaModel>
+  }
+
+  export type NestedBigIntNullableFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel> | null
+    in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel> | null
+    notIn?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel> | null
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntNullableFilter<$PrismaModel> | bigint | number | null
+  }
+
+  export type NestedBigIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel> | null
+    in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel> | null
+    notIn?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel> | null
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntNullableWithAggregatesFilter<$PrismaModel> | bigint | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedBigIntNullableFilter<$PrismaModel>
+    _min?: NestedBigIntNullableFilter<$PrismaModel>
+    _max?: NestedBigIntNullableFilter<$PrismaModel>
   }
 
   export type NestedUuidNullableFilter<$PrismaModel = never> = {

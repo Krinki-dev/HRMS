@@ -65,6 +65,55 @@ model tenants {
   billing_events         billing_events[]
 }
 
+model backup_config {
+  id                         String    @id @default(uuid())
+  company_id                String    @unique @db.Uuid
+  enabled                   Boolean   @default(false)
+  provider                  String    @default("none")
+  schedule                  String    @default("daily")
+  schedule_time             String    @default("02:00")
+  retention_days            Int       @default(30)
+  include_files             Boolean   @default(false)
+  gdrive_client_id_enc      String?
+  gdrive_client_secret_enc  String?
+  gdrive_refresh_token_enc  String?
+  gdrive_folder_id          String?
+  gdrive_folder_name        String?
+  onedrive_client_id_enc    String?
+  onedrive_tenant_id        String?
+  onedrive_client_secret_enc String?
+  onedrive_folder_path      String?
+  last_backup_at            DateTime? @db.Timestamptz
+  last_backup_status        String?
+  last_backup_size_bytes    BigInt?
+  last_backup_file_url      String?
+  last_error                String?
+  created_at                DateTime  @default(now()) @db.Timestamptz
+  updated_at                DateTime  @default(now()) @db.Timestamptz
+
+  @@index([company_id])
+}
+
+model tenant_db_config {
+  id                String    @id @default(uuid())
+  company_id        String    @unique @db.Uuid
+  db_mode           String    @default("cloud")
+  local_db_type     String?
+  local_db_host     String?
+  local_db_port     Int?
+  local_db_name     String?
+  local_db_user     String?
+  local_db_pass     String?
+  cloud_db_url      String?
+  sync_interval_min Int       @default(5)
+  sync_last_at      DateTime? @db.Timestamptz
+  sync_status       String?
+  created_at        DateTime  @default(now()) @db.Timestamptz
+  updated_at        DateTime  @default(now()) @db.Timestamptz
+
+  @@index([company_id])
+}
+
 model tenant_modules {
   id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id          String    @db.Uuid

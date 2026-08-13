@@ -301,10 +301,15 @@ async function runBackup(db, companyId) {
       },
     });
 
-    const company = await db.companies.findFirst({ where: { id: companyId } });
-    if (company?.email) {
+    const company = db.companies
+      ? await db.companies.findFirst({ where: { id: companyId } })
+      : db.tenants
+        ? await db.tenants.findUnique({ where: { id: companyId }, select: { admin_email: true } })
+        : null;
+    const companyEmail = company?.email || company?.admin_email;
+    if (companyEmail) {
       await emailService.sendBackupNotification(db, companyId, {
-        email:     company.email,
+        email:     companyEmail,
         status:    'success',
         provider:  config.provider,
         sizeBytes,

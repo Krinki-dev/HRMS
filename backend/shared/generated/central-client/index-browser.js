@@ -170,6 +170,51 @@ exports.Prisma.TenantsScalarFieldEnum = {
   deleted_at: 'deleted_at'
 };
 
+exports.Prisma.Backup_configScalarFieldEnum = {
+  id: 'id',
+  company_id: 'company_id',
+  enabled: 'enabled',
+  provider: 'provider',
+  schedule: 'schedule',
+  schedule_time: 'schedule_time',
+  retention_days: 'retention_days',
+  include_files: 'include_files',
+  gdrive_client_id_enc: 'gdrive_client_id_enc',
+  gdrive_client_secret_enc: 'gdrive_client_secret_enc',
+  gdrive_refresh_token_enc: 'gdrive_refresh_token_enc',
+  gdrive_folder_id: 'gdrive_folder_id',
+  gdrive_folder_name: 'gdrive_folder_name',
+  onedrive_client_id_enc: 'onedrive_client_id_enc',
+  onedrive_tenant_id: 'onedrive_tenant_id',
+  onedrive_client_secret_enc: 'onedrive_client_secret_enc',
+  onedrive_folder_path: 'onedrive_folder_path',
+  last_backup_at: 'last_backup_at',
+  last_backup_status: 'last_backup_status',
+  last_backup_size_bytes: 'last_backup_size_bytes',
+  last_backup_file_url: 'last_backup_file_url',
+  last_error: 'last_error',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
+exports.Prisma.Tenant_db_configScalarFieldEnum = {
+  id: 'id',
+  company_id: 'company_id',
+  db_mode: 'db_mode',
+  local_db_type: 'local_db_type',
+  local_db_host: 'local_db_host',
+  local_db_port: 'local_db_port',
+  local_db_name: 'local_db_name',
+  local_db_user: 'local_db_user',
+  local_db_pass: 'local_db_pass',
+  cloud_db_url: 'cloud_db_url',
+  sync_interval_min: 'sync_interval_min',
+  sync_last_at: 'sync_last_at',
+  sync_status: 'sync_status',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
 exports.Prisma.Tenant_modulesScalarFieldEnum = {
   id: 'id',
   tenant_id: 'tenant_id',
@@ -264,7 +309,10 @@ exports.Prisma.Central_gst_recordsScalarFieldEnum = {
   state_jurisdiction: 'state_jurisdiction',
   cancellation_date: 'cancellation_date',
   data_source: 'data_source',
-  raw: 'raw',
+  raw_data: 'raw_data',
+  verification_status: 'verification_status',
+  lookup_error_message: 'lookup_error_message',
+  last_verified_at: 'last_verified_at',
   created_at: 'created_at'
 };
 
@@ -364,6 +412,8 @@ exports.Prisma.NullsOrder = {
 
 exports.Prisma.ModelName = {
   tenants: 'tenants',
+  backup_config: 'backup_config',
+  tenant_db_config: 'tenant_db_config',
   tenant_modules: 'tenant_modules',
   central_user_index: 'central_user_index',
   tenant_branch_links: 'tenant_branch_links',
