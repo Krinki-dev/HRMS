@@ -4,7 +4,7 @@
     "buildCommand": "cd backend && npm install && npx prisma generate --schema=prisma/schema.prisma"
   },
   "deploy": {
-    "startCommand": "cd backend && node server.js",
+    "startCommand": "cd backend && node scripts/apply_canonical_schema_migration.js && node server.js",
     "restartPolicyType": "ON_FAILURE"
   }
 }
