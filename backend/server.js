@@ -24,6 +24,8 @@ const app  = express();
 const PORT = process.env.PORT || 5001;
 
 app.use(helmet());
+// Railway supplies the client address through one trusted reverse proxy.
+app.set('trust proxy', 1);
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100, message: "Too many requests, please try again later." }));
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
