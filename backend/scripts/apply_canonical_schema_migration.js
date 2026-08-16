@@ -22,8 +22,10 @@ async function run() {
 
 run()
   .catch((error) => {
-    console.error('[Migration] Canonical schema migration failed:', error.message);
-    process.exitCode = 1;
+    // Non-fatal: this migration is idempotent (IF NOT EXISTS) and re-runs on every
+    // deploy, so a transient DB connectivity issue here must not block server startup
+    // (startCommand chains this script with `&& node server.js`).
+    console.error('[Migration] Canonical schema migration failed (continuing to start server):', error.message);
   })
   .finally(async () => {
     await centralPrisma.$disconnect();
