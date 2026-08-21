@@ -207,6 +207,44 @@ Super admin delete: Protected by SUPER_ADMIN_DELETE_PASSWORD env var
 
 ---
 
+## ✅ ROW-LEVEL SECURITY (RLS) — REQUIRED PATTERN — FROZEN
+
+```
+Validated 2026-08-21 against a real Postgres instance (see backend/test/rls-tenant-isolation.test.js).
+
+RULE: Never issue `SET LOCAL app.current_tenant` / `SET LOCAL "jwt.claims.*"` as a bare
+      statement (e.g. from middleware, or as its own await before a separate query call).
+      Postgres discards a SET LOCAL issued outside an explicit transaction block as soon
+      as that statement's own implicit transaction ends — the very next query no longer
+      has it set. This fails CLOSED (empty results), it does not leak between requests,
+      but it silently breaks the query instead of isolating it.
+
+REQUIRED:  Always set the session variable and run the protected query inside the SAME
+           `$transaction`, via backend/shared/utils/rlsContext.js:
+             withTenantRLS(centralPrisma, tenantId, (tx) => tx.someTable.findMany(...))
+             withPlatformAdminRLS(centralPrisma, (tx) => tx.someTable.findMany(...))
+           Use this for every new route handler/service call that touches an RLS-guarded
+           CENTRAL DB table: tenant_modules, tenant_pricing_configs, invoices,
+           tenant_branch_links, tenants, central_user_index, central_kyc_records,
+           central_gst_records, platform_settings.
+
+SCOPE:     RLS in this codebase only applies to CENTRAL DB tables (see
+           backend/db-migrations/20260606_rls_and_function_fix.sql). Tenant-DB business
+           tables (employees, attendance, payroll, etc.) have NO RLS policies — tenant
+           isolation for those is achieved by connecting to a separate database/schema
+           per tenant (shared/middleware/tenant.js resolveTenantDB), not by RLS.
+           shared/middleware/tenantSession.js is a documented no-op for this reason.
+
+CAVEAT:    Postgres table owners/superusers bypass RLS by default. If the app's DB role
+           for CENTRAL_DATABASE_URL is the table owner (common default for a Supabase
+           "postgres" connection string), these policies provide NO protection at all
+           regardless of session variables, until either a non-owner role is used or
+           `ALTER TABLE ... FORCE ROW LEVEL SECURITY` is applied. Verify the connecting
+           role in production before relying on these policies as the isolation boundary.
+```
+
+---
+
 ## ✅ DATABASE RULES — FROZEN
 
 ```

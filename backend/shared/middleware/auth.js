@@ -1,7 +1,6 @@
 ﻿const jwt = require('jsonwebtoken');
 const { sendError, ERROR_CODES } = require('../utils/response');
 const { PrismaClient } = require('@prisma/client');
-const { centralPrisma } = require('../utils/centralPrisma');
 
 // ── Singleton Prisma client for the central (platform-level) database ─────────
 function getCentralClient() {
@@ -60,17 +59,14 @@ const authMiddleware = async (req, res, next) => {
       is_platform_admin: isPlatformAdmin,   // ← sourced from central DB, not JWT
     };
 
-    // Set JWT claims as Postgres session settings on central connection so
-    // RLS policies that rely on current_setting('jwt.claims.*') can work.
-    try {
-      await centralPrisma.$executeRaw(`SET LOCAL "jwt.claims.is_platform_admin" = '${req.user.is_platform_admin ? 'true' : 'false'}'`);
-      await centralPrisma.$executeRaw(`SET LOCAL "jwt.claims.sub" = '${req.user.id}'`);
-      if (req.user.tenantId) {
-        await centralPrisma.$executeRaw(`SET LOCAL "jwt.claims.tenantId" = '${req.user.tenantId}'`);
-      }
-    } catch (e) {
-      console.warn('[Auth] Could not set jwt.claims.* settings on central DB:', e.message);
-    }
+    // NOTE: RLS session variables (app.current_tenant / jwt.claims.is_platform_admin)
+    // are intentionally NOT set here. A bare `SET LOCAL` issued in middleware is
+    // discarded by Postgres as soon as its own implicit transaction ends, so it
+    // has no effect on the queries route handlers run afterwards (verified in
+    // backend/test/rls-tenant-isolation.test.js). Route handlers/services that
+    // query RLS-guarded central tables must use
+    // shared/utils/rlsContext.js (withTenantRLS / withPlatformAdminRLS), which
+    // sets the session variable and runs the query in the same $transaction.
 
     next();
 

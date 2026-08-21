@@ -1,34 +1,31 @@
-const logger = require('../utils/logger');
-const { THEME } = require('../utils/uiConstants');
-
 /**
- * Middleware to set session variables on the tenant DB connection used by Prisma.
- * This attempts to set `app.current_tenant` so DB RLS policies can rely on it.
- * Note: Prisma uses a connection pool; calling this on each request improves
- * the odds the session variable is present for subsequent queries in that
- * request. It's not a full-proof per-connection guarantee for pooled clients,
- * but is a pragmatic improvement.
+ * NOTE: This middleware is currently a no-op with respect to Row-Level Security.
+ *
+ * Two separate reasons:
+ *   1. A bare `SET LOCAL` issued here, outside an explicit transaction, is
+ *      discarded by Postgres as soon as this middleware's own implicit
+ *      transaction ends — it has no effect on the queries route handlers run
+ *      afterwards. Verified in backend/test/rls-tenant-isolation.test.js.
+ *   2. Even if it were transaction-scoped, `req.db` is the tenant-specific
+ *      database connection (see shared/middleware/tenant.js resolveTenantDB).
+ *      None of the RLS policies in
+ *      backend/db-migrations/20260606_rls_and_function_fix.sql that reference
+ *      `app.current_tenant` are defined on tenant-DB tables — they're all on
+ *      CENTRAL DB tables (tenant_modules, tenant_pricing_configs, invoices,
+ *      tenant_branch_links), which are queried via `centralPrisma`, not `req.db`.
+ *      Tenant isolation for tenant-DB tables is achieved by connecting to a
+ *      separate database/schema per tenant (resolveTenantDB), not by RLS.
+ *
+ * Route handlers/services that query the central-DB RLS-guarded tables must
+ * use shared/utils/rlsContext.js (withTenantRLS / withPlatformAdminRLS), which
+ * sets the session variable and runs the query in the same `$transaction`.
+ * This middleware is kept only so a request-scoped `req.tenant` is always
+ * available; it is intentionally left as a no-op below rather than removed,
+ * to avoid silently reintroducing a broken SET LOCAL call here in the future.
  */
 const tenantSessionMiddleware = async (req, res, next) => {
-  try {
-    if (!req.tenant || !req.tenant.id || !req.db) return next();
-
-    // Use SET LOCAL to scope to current transaction when used inside a transaction.
-    // Prisma may not run all queries in the same session, but this helps most cases.
-    try {
-      // Some PostgreSQL drivers do not support parameter binding in SET statements.
-      // Use the unsafe variant with a properly quoted value to ensure the session
-      // variable is set reliably.
-      await req.db.$executeRawUnsafe(`SET LOCAL app.current_tenant = '${req.tenant.id}'`);
-    } catch (err) {
-      logger.warn(`${THEME.ICONS.WARNING} [tenantSession] Could not set app.current_tenant: ${err.message}`);
-    }
-
-    return next();
-  } catch (err) {
-    logger.warn(`${THEME.ICONS.WARNING} [tenantSession] Unexpected: ${err.message}`);
-    return next();
-  }
+  return next();
 };
 
 module.exports = { tenantSessionMiddleware };
+

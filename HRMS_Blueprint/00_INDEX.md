@@ -108,7 +108,7 @@ Backend port:       5001 (PORT env var)
 Frontend port:      5173 (Vite dev)
 API base:           /api/v1/
 Health check:       GET /health
-WebSocket:          ws://host:5001/ws?token=<JWT>
+WebSocket:          ws://host:5001/ws?ticket=<UUID> (via POST /api/v1/auth/ws-ticket)
 Central DB:         CENTRAL_DATABASE_URL
 Tenant DB (dev):    DEV_TENANT_DATABASE_URL
 Product name:       PRODUCT_NAME env var (never hardcoded)

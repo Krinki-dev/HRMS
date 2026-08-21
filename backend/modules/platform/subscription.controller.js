@@ -4,6 +4,7 @@ const { sendSuccess, sendError, ERROR_CODES } = require('../../shared/utils/resp
 const { THEME } = require('../../shared/utils/uiConstants');
 const logger = require('../../shared/utils/logger');
 const { generateInvoicePDF } = require('../../shared/utils/pdf.service');
+const { withTenantRLS, withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 
 /**
  * Fetches the pricing configuration and current subscription status for a tenant.
@@ -12,11 +13,13 @@ exports.getTenantPricing = async (req, res) => {
   try {
     const { tenantId } = req.params;
 
-    const [config, modules, tenant] = await Promise.all([
-      centralPrisma.tenant_pricing_configs.findUnique({ where: { tenant_id: tenantId } }),
-      centralPrisma.tenant_modules.findMany({ where: { tenant_id: tenantId, is_active: true } }),
-      centralPrisma.tenants.findUnique({ where: { id: tenantId }, select: { max_employees: true } })
-    ]);
+    // SET LOCAL app.current_tenant must be issued and consumed inside the
+    // SAME transaction as the queries it protects — see shared/utils/rlsContext.js.
+    const [config, modules, tenant] = await withTenantRLS(centralPrisma, tenantId, (tx) => Promise.all([
+      tx.tenant_pricing_configs.findUnique({ where: { tenant_id: tenantId } }),
+      tx.tenant_modules.findMany({ where: { tenant_id: tenantId, is_active: true } }),
+      tx.tenants.findUnique({ where: { id: tenantId }, select: { max_employees: true } })
+    ]));
 
     if (!config) {
       return sendError(res, ERROR_CODES.NOT_FOUND, 'Pricing configuration not found.', 404);
@@ -69,10 +72,10 @@ exports.updateTenantPricing = async (req, res) => {
     // Remove undefined fields
     Object.keys(formattedData).forEach(key => formattedData[key] === undefined && delete formattedData[key]);
 
-    const updated = await centralPrisma.tenant_pricing_configs.update({
+    const updated = await withTenantRLS(centralPrisma, tenantId, (tx) => tx.tenant_pricing_configs.update({
       where: { tenant_id: tenantId },
       data: formattedData
-    });
+    }));
 
     logger.info(`${THEME.ICONS.SUCCESS} Updated pricing for tenant ${tenantId}`);
     return sendSuccess(res, updated, 'Pricing configuration updated successfully.');
@@ -121,11 +124,11 @@ exports.getTenantInvoices = async (req, res) => {
   try {
     const { tenantId } = req.params;
 
-    const invoices = await centralPrisma.invoices.findMany({
+    const invoices = await withTenantRLS(centralPrisma, tenantId, (tx) => tx.invoices.findMany({
       where: { tenant_id: tenantId },
       orderBy: { period_start: 'desc' },
       take: 24 // Last 2 years
-    });
+    }));
 
     return sendSuccess(res, invoices, 'Invoice history retrieved.');
   } catch (error) {
@@ -141,10 +144,10 @@ exports.downloadInvoicePDF = async (req, res) => {
   try {
     const { tenantId, invoiceId } = req.params;
 
-    const [invoice, tenant] = await Promise.all([
-      centralPrisma.invoices.findFirst({ where: { id: invoiceId, tenant_id: tenantId } }),
-      centralPrisma.tenants.findUnique({ where: { id: tenantId } })
-    ]);
+    const [invoice, tenant] = await withTenantRLS(centralPrisma, tenantId, (tx) => Promise.all([
+      tx.invoices.findFirst({ where: { id: invoiceId, tenant_id: tenantId } }),
+      tx.tenants.findUnique({ where: { id: tenantId } })
+    ]));
 
     if (!invoice || !tenant) {
       return sendError(res, ERROR_CODES.NOT_FOUND, 'Invoice or Tenant not found.', 404);
@@ -191,7 +194,7 @@ exports.activateTrial = async (req, res) => {
 
     if (jwtTenantId) {
       try {
-        const maybe = await centralPrisma.tenants.findUnique({ where: { id: jwtTenantId }, select: { id: true } });
+        const maybe = await withTenantRLS(centralPrisma, jwtTenantId, (tx) => tx.tenants.findUnique({ where: { id: jwtTenantId }, select: { id: true } }));
         if (maybe) resolvedTenantId = maybe.id;
         else logger.warn(`${THEME.ICONS.WARNING} [activateTrial] JWT tenantId present but not found in central DB: ${jwtTenantId}`);
       } catch (e) {
@@ -207,7 +210,9 @@ exports.activateTrial = async (req, res) => {
       const subdomain = req.headers['x-tenant-subdomain'] || req.headers['x-tenant'];
       if (subdomain) {
         try {
-          const t = await centralPrisma.tenants.findFirst({ where: { subdomain } });
+          // No tenant is known yet (that's what we're resolving), so this runs
+          // under the platform-admin RLS predicate.
+          const t = await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.findFirst({ where: { subdomain } }));
           if (t) resolvedTenantId = t.id;
         } catch (e) {
           logger.warn(`${THEME.ICONS.WARNING} [activateTrial] central DB lookup for subdomain failed: ${e.message}`);
@@ -222,10 +227,10 @@ exports.activateTrial = async (req, res) => {
 
     let tenant;
     try {
-      tenant = await centralPrisma.tenants.findUnique({
+      tenant = await withTenantRLS(centralPrisma, resolvedTenantId, (tx) => tx.tenants.findUnique({
         where: { id: resolvedTenantId },
         select: { id: true, plan: true, db_mode: true }
-      });
+      }));
     } catch (err) {
       logger.warn(`${THEME.ICONS.WARNING} [activateTrial] central DB lookup failed: ${err.message}`);
       // In development, allow onboarding to continue even if central DB is unreachable.
@@ -256,12 +261,12 @@ exports.activateTrial = async (req, res) => {
     expiryDate.setDate(expiryDate.getDate() + trialDays);
 
     try {
-      await centralPrisma.$transaction([
-        centralPrisma.tenants.update({
+      await withTenantRLS(centralPrisma, resolvedTenantId, async (tx) => {
+        await tx.tenants.update({
           where: { id: resolvedTenantId },
           data: { plan: 'trial', plan_expires_at: expiryDate }
-        }),
-        centralPrisma.tenant_pricing_configs.upsert({
+        });
+        await tx.tenant_pricing_configs.upsert({
           where: { tenant_id: resolvedTenantId },
           update: { offer_expiry_date: expiryDate },
           create: {
@@ -270,8 +275,8 @@ exports.activateTrial = async (req, res) => {
             employee_cap: 25,
             offer_expiry_date: expiryDate
           }
-        })
-      ]);
+        });
+      });
     } catch (err) {
       logger.warn(`${THEME.ICONS.WARNING} [activateTrial] central DB transaction failed: ${err.message}`);
       if (process.env.NODE_ENV === 'development') {

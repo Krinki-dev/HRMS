@@ -120,7 +120,7 @@ backend/
 │   ├── prisma.js                        ← Default PrismaClient (tenant DB, legacy)
 │   ├── middleware/
 │   │   ├── tenant.js                    ← Multi-tenant resolver (req.db + req.tenant)
-│   │   ├── tenantSession.js             ← Session-level tenant cookie handling
+│   │   ├── tenantSession.js             ← No-op placeholder (see 07_FROZEN_DECISIONS.md RLS pattern)
 │   │   ├── auth.js                      ← JWT verification → req.user
 │   │   └── permission.js                ← RBAC: requirePermission(module, action)
 │   ├── utils/
@@ -258,7 +258,7 @@ ALL  /api/v1/automation/...
 6. CSRF check                  ← Validates X-CSRF-Token for POST/PUT/PATCH/DELETE
 7. Request logger              ← Winston HTTP logging (method, path, status, ms)
 8. tenantMiddleware            ← Resolves req.db + req.tenant (per-route)
-9. tenantSessionMiddleware     ← Session cookie for tenant context
+9. tenantSessionMiddleware     ← No-op (RLS is applied per-call-site via shared/utils/rlsContext.js, see 07_FROZEN_DECISIONS.md)
 10. [route-level]
     authMiddleware             ← Validates JWT Bearer → req.user
     requireSetupComplete       ← Ensures tenant setup wizard is done
@@ -334,13 +334,17 @@ Tenant DB (per client):
 ## 📡 WebSocket Server
 
 ```
-Endpoint: ws://localhost:5001/ws?token=<JWT>
-Auth:     JWT verified on upgrade handshake — rejected if invalid/expired
+Ticket:   POST /api/v1/auth/ws-ticket (Bearer auth) → { ticket }  — one-time, 15s TTL
+Endpoint: ws://localhost:5001/ws?ticket=<UUID>
+Auth:     Ticket consumed on upgrade handshake — rejected if missing/expired/reused
 Events:
   Server → Client:  { type: 'connected', message: '...' }
   Server → Client:  { type: 'notification', payload: { title, body, url } }
 Use:      Real-time push for notifications, payroll completion, automation status
 ```
+
+> Legacy `?token=<JWT>` upgrades (raw JWT in the URL) are no longer accepted — removed to avoid
+> leaking access tokens into server access logs and browser history.
 
 ---
 

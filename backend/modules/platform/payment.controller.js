@@ -10,6 +10,7 @@ const { Parser } = require('json2csv');
 const billingEmailer = require('../../shared/utils/billingEmailer');
 const plansService = require('./plans.service');
 const billingLogger = require('../../shared/services/billingLogger');
+const { withTenantRLS, withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
   // Only warn if not in test/dev mode or if we expect payments to work
@@ -57,7 +58,9 @@ async function resolveTenantId(req) {
   const subdomain = req.headers['x-tenant-subdomain'] || req.headers['x-tenant'];
   if (subdomain) {
     try {
-      const t = await centralPrisma.tenants.findFirst({ where: { subdomain } });
+      // No tenant is known yet (that's what we're resolving), so this runs under
+      // the platform-admin RLS predicate — see shared/utils/rlsContext.js.
+      const t = await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.findFirst({ where: { subdomain } }));
       if (t) return t.id;
     } catch (err) {
       logger.warn(`${THEME.ICONS.WARNING} [resolveTenantId] centralPrisma lookup failed: ${err.message}`);
@@ -70,6 +73,14 @@ async function resolveTenantId(req) {
 async function resolveTargetTenantId(req, requestedTenantId) {
   if (requestedTenantId && req.user?.is_platform_admin) return requestedTenantId;
   return resolveTenantId(req);
+}
+
+// Platform admins operate across all tenants; everyone else is scoped to their
+// own tenant. Mirrors the `!req.user.is_platform_admin` checks already used
+// throughout this file for app-level authorization.
+function withBillingRLS(req, tenantId, fn) {
+  if (req.user?.is_platform_admin) return withPlatformAdminRLS(centralPrisma, fn);
+  return withTenantRLS(centralPrisma, tenantId, fn);
 }
 
 function normalizeRenewalMode(mode) {
@@ -88,15 +99,15 @@ function toBillingCycleLabel(months) {
 exports.createOrder = async (req, res) => {
   try {
     const { invoiceId } = req.params;
-    const invoice = await centralPrisma.invoices.findUnique({
+    const resolvedTenant = await resolveTenantId(req);
+    const invoice = await withBillingRLS(req, resolvedTenant, (tx) => tx.invoices.findUnique({
       where: { id: invoiceId },
       include: { tenant: true }
-    });
+    }));
 
     if (!invoice) return sendError(res, ERROR_CODES.NOT_FOUND, 'Invoice not found', 404);
-    
+
     // Security: Ensure user belongs to the tenant or is a platform admin
-    const resolvedTenant = await resolveTenantId(req);
     if (invoice.tenant_id !== resolvedTenant && !req.user.is_platform_admin) {
       return sendError(res, ERROR_CODES.FORBIDDEN, 'Unauthorized to pay this invoice', 403);
     }
@@ -172,7 +183,7 @@ exports.verifyPayment = async (req, res) => {
     const resolvedPaymentId = razorpay_payment_id || razorpayPaymentId;
     const resolvedSignature = razorpay_signature || razorpaySignature;
 
-    const invoice = await centralPrisma.invoices.findUnique({ where: { id: invoiceId } });
+    const invoice = await withBillingRLS(req, tenantId, (tx) => tx.invoices.findUnique({ where: { id: invoiceId } }));
     if (!invoice) return sendError(res, ERROR_CODES.NOT_FOUND, 'Invoice not found', 404);
     if (invoice.tenant_id !== tenantId && !req.user.is_platform_admin) {
       return sendError(res, ERROR_CODES.FORBIDDEN, 'Unauthorized to verify this invoice', 403);
@@ -192,14 +203,14 @@ exports.verifyPayment = async (req, res) => {
       }
     }
 
-    await centralPrisma.invoices.update({
+    await withBillingRLS(req, tenantId, (tx) => tx.invoices.update({
       where: { id: invoiceId },
       data: {
         status: 'paid',
         payment_id: resolvedPaymentId || (mock ? `MOCK-${invoiceId}` : null),
         updated_at: new Date()
       }
-    });
+    }));
 
     return sendSuccess(res, null, "Payment successful and verified.");
   } catch (error) {
@@ -216,10 +227,10 @@ exports.createPhonePeOrder = async (req, res) => {
     const { invoiceId } = req.params;
     const tenantId = await resolveTenantId(req);
 
-    const invoice = await centralPrisma.invoices.findUnique({
+    const invoice = await withBillingRLS(req, tenantId, (tx) => tx.invoices.findUnique({
       where: { id: invoiceId },
       include: { tenant: true }
-    });
+    }));
 
     if (!invoice) return sendError(res, ERROR_CODES.NOT_FOUND, 'Invoice not found', 404);
     if (invoice.tenant_id !== tenantId && !req.user.is_platform_admin) {
@@ -300,10 +311,10 @@ exports.handlePhonePeWebhook = async (req, res) => {
       const transactionId = decodedResponse.data.transactionId;
 
       if (invoiceId) {
-        await centralPrisma.invoices.update({
+        await withPlatformAdminRLS(centralPrisma, (tx) => tx.invoices.update({
           where: { id: invoiceId },
           data: { status: 'paid', payment_id: transactionId, updated_at: new Date() }
-        });
+        }));
         logger.info(`${THEME.ICONS.SUCCESS} [PhonePe Webhook] Invoice ${invoiceId} marked as PAID via webhook`);
         await billingLogger.log({
           gateway: 'phonepe',
@@ -331,10 +342,10 @@ exports.createJioPayOrder = async (req, res) => {
     const { invoiceId } = req.params;
     const tenantId = await resolveTenantId(req);
 
-    const invoice = await centralPrisma.invoices.findUnique({
+    const invoice = await withBillingRLS(req, tenantId, (tx) => tx.invoices.findUnique({
       where: { id: invoiceId },
       include: { tenant: true }
-    });
+    }));
 
     if (!invoice) return sendError(res, ERROR_CODES.NOT_FOUND, 'Invoice not found', 404);
     if (invoice.tenant_id !== tenantId && !req.user.is_platform_admin) {
@@ -401,19 +412,19 @@ exports.handleJioPayWebhook = async (req, res) => {
     if (status === 'SUCCESS') {
       // Extract invoice ID from metadata or transaction ID mapping
       const invoiceNo = transactionId.split('-')[1]; // Example parsing
-      const invoice = await centralPrisma.invoices.findFirst({
+      const invoice = await withPlatformAdminRLS(centralPrisma, (tx) => tx.invoices.findFirst({
         where: { invoice_no: invoiceNo }
-      });
+      }));
 
       if (invoice) {
-        await centralPrisma.invoices.update({
+        await withPlatformAdminRLS(centralPrisma, (tx) => tx.invoices.update({
           where: { id: invoice.id },
           data: { 
             status: 'paid', 
             payment_id: transactionId,
             updated_at: new Date()
           }
-        });
+        }));
         logger.info(`${THEME.ICONS.SUCCESS} [JioPay Webhook] Invoice ${invoice.id} PAID`);
         await billingLogger.log({
           gateway: 'jiopay',
@@ -472,10 +483,10 @@ exports.initiatePayout = async (req, res) => {
     const { runId, employees } = req.body; 
     const tenantId = await resolveTenantId(req);
 
-    const tenant = await centralPrisma.tenants.findUnique({
+    const tenant = await withBillingRLS(req, tenantId, (tx) => tx.tenants.findUnique({
       where: { id: tenantId },
       select: { payout_config_enc: true }
-    });
+    }));
 
     if (!tenant?.payout_config_enc) {
       return sendError(res, ERROR_CODES.VALIDATION, 'Payout gateway not configured for this company.', 400);
@@ -507,10 +518,10 @@ exports.getBankTransferFile = async (req, res) => {
     
     // We pull from the invoices table which stores the generated payslip snapshots
     const tenantId = await resolveTenantId(req);
-    const payslips = await centralPrisma.invoices.findMany({
+    const payslips = await withBillingRLS(req, tenantId, (tx) => tx.invoices.findMany({
       where: { tenant_id: tenantId, breakdown: { path: ['runId'], equals: runId } },
       include: { tenant: { include: { bank_accounts: true } } }
-    });
+    }));
 
     // Format data for standard NEFT CSV
     const csvData = payslips.map(p => {
@@ -630,7 +641,7 @@ exports.handleWebhook = async (req, res) => {
       const invoiceId = notes.invoiceId;
 
       if (invoiceId) {
-        const updated = await centralPrisma.invoices.update({
+        const updated = await withPlatformAdminRLS(centralPrisma, (tx) => tx.invoices.update({
           where: { id: invoiceId },
           data: {
             status: 'paid',
@@ -638,7 +649,7 @@ exports.handleWebhook = async (req, res) => {
             updated_at: new Date()
           },
           include: { tenant: true }
-        });
+        }));
 
         // Send receipt
         try {
@@ -741,10 +752,10 @@ exports.createSubscriptionOrder = async (req, res) => {
       });
     }
 
-    const tenant = await centralPrisma.tenants.findUnique({
+    const tenant = await withBillingRLS(req, tenantId, (tx) => tx.tenants.findUnique({
       where: { id: tenantId },
       select: { name: true, admin_email: true, admin_name: true, admin_phone: true },
-    });
+    }));
 
     // ── Razorpay ─────────────────────────────────────────────────────────
     if (method === 'razorpay') {
@@ -934,7 +945,7 @@ exports.verifySubscription = async (req, res) => {
         } catch (err) {
           logger.error(`[JioPay Status Query] Failed for TID ${transactionId}:`, err.message);
           // If the status API is unreachable, we fallback to checking if a webhook already updated it
-          const alreadyPaid = await centralPrisma.tenants.findUnique({ where: { id: tenantId }, select: { plan: true } });
+          const alreadyPaid = await withBillingRLS(req, tenantId, (tx) => tx.tenants.findUnique({ where: { id: tenantId }, select: { plan: true } }));
           if (alreadyPaid.plan === 'starter' || alreadyPaid.plan === 'pro') {
             return sendSuccess(res, null, "Subscription already activated via webhook.");
           }
@@ -970,7 +981,7 @@ exports.verifySubscription = async (req, res) => {
       100
     );
 
-    const existingConfig = await centralPrisma.tenant_pricing_configs.findUnique({ where: { tenant_id: tenantId } });
+    const existingConfig = await withBillingRLS(req, tenantId, (tx) => tx.tenant_pricing_configs.findUnique({ where: { tenant_id: tenantId } }));
     const existingModuleDiscounts = (existingConfig?.discount_module_pct && typeof existingConfig.discount_module_pct === 'object')
       ? existingConfig.discount_module_pct
       : {};
@@ -988,16 +999,16 @@ exports.verifySubscription = async (req, res) => {
     const offerExpiry = expiryDate;
     const billingCycle = toBillingCycleLabel(normalizedBillingMonths);
 
-    await centralPrisma.$transaction([
-      centralPrisma.tenants.update({
+    await withBillingRLS(req, tenantId, async (tx) => {
+      await tx.tenants.update({
         where: { id: tenantId },
         data: {
           plan: normalizedPlan,
           plan_expires_at: expiryDate,
           max_employees: maxEmployees
         }
-      }),
-      centralPrisma.tenant_pricing_configs.upsert({
+      });
+      await tx.tenant_pricing_configs.upsert({
         where: { tenant_id: tenantId },
         update: {
           billing_cycle: billingCycle,
@@ -1016,14 +1027,16 @@ exports.verifySubscription = async (req, res) => {
           tenure_months: normalizedBillingMonths,
           discount_module_pct: discountModuleMeta,
         }
-      }),
+      });
       // Update enabled modules based on selection
-      ...normalizedAddons.map(mod => centralPrisma.tenant_modules.upsert({
-        where: { tenant_id_module_name: { tenant_id: tenantId, module_name: String(mod).toLowerCase() } },
-        update: { is_active: true, enabled_at: new Date() },
-        create: { tenant_id: tenantId, module_name: String(mod).toLowerCase(), is_active: true, enabled_at: new Date() }
-      }))
-    ]);
+      for (const mod of normalizedAddons) {
+        await tx.tenant_modules.upsert({
+          where: { tenant_id_module_name: { tenant_id: tenantId, module_name: String(mod).toLowerCase() } },
+          update: { is_active: true, enabled_at: new Date() },
+          create: { tenant_id: tenantId, module_name: String(mod).toLowerCase(), is_active: true, enabled_at: new Date() }
+        });
+      }
+    });
 
     // Save plan selection to tenant_pricing_configs (feeds billing cron)
     if (calculatedPrice) {
@@ -1035,7 +1048,7 @@ exports.verifySubscription = async (req, res) => {
     }
 
     // Create a paid invoice snapshot for this successful subscription purchase.
-    const tenant = await centralPrisma.tenants.findUnique({ where: { id: tenantId }, select: { subdomain: true } });
+    const tenant = await withBillingRLS(req, tenantId, (tx) => tx.tenants.findUnique({ where: { id: tenantId }, select: { subdomain: true } }));
     const now = new Date();
     const invNo = `SUB-${String((tenant?.subdomain || 'TENANT')).toUpperCase()}-${now.getTime()}`;
 
@@ -1052,7 +1065,7 @@ exports.verifySubscription = async (req, res) => {
     const gstPaise = breakdown.gst_paise ?? Math.round(grossBeforeTax * 0.18);
     const totalPaise = calculatedPrice?.total_paise ?? (grossBeforeTax + gstPaise);
 
-    await centralPrisma.invoices.create({
+    await withBillingRLS(req, tenantId, (tx) => tx.invoices.create({
       data: {
         tenant_id: tenantId,
         invoice_no: invNo,
@@ -1074,7 +1087,7 @@ exports.verifySubscription = async (req, res) => {
           purchaseType: 'subscription_activation',
         },
       },
-    });
+    }));
 
     return sendSuccess(res, null, "Subscription activated successfully.");
   } catch (error) {
@@ -1100,7 +1113,7 @@ exports.handlePayoutWebhook = async (req, res) => {
     if (!tenantId || !employeeId) return res.status(200).json({ status: 'ignored' });
 
     // Resolve the specific tenant database connection
-    const tenant = await centralPrisma.tenants.findUnique({ where: { id: tenantId } });
+    const tenant = await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.findUnique({ where: { id: tenantId } }));
     const dbUrl = decrypt(tenant.db_url); // Simplified resolution
     const { PrismaClient: TenantClient } = require('@prisma/client');
     const tenantDb = new TenantClient({ datasources: { db: { url: dbUrl } } });

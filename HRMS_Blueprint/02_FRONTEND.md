@@ -225,7 +225,8 @@ api.interceptors.request.use((config) => {
 
 ```javascript
 // Connect on login, disconnect on logout
-const ws = new WebSocket(`wss://${host}/ws?token=${accessToken}`);
+const { ticket } = await api.post('/auth/ws-ticket').then(r => r.data);
+const ws = new WebSocket(`wss://${host}/ws?ticket=${ticket}`);
 ws.onmessage = (event) => {
   const msg = JSON.parse(event.data);
   // msg.type: 'notification' | 'connected' | 'ping'
@@ -233,7 +234,9 @@ ws.onmessage = (event) => {
 };
 ```
 
-> Token must be a valid access JWT — connection rejected if expired or missing.
+> Ticket is a one-time, 15-second-lived UUID obtained via `POST /auth/ws-ticket` (Bearer auth).
+> Raw JWTs are never placed in the WS URL — connection rejected if the ticket is missing, expired, or reused.
+> Not yet wired up on the frontend (no `WebSocket` client exists in `frontend/src` yet).
 
 ---
 

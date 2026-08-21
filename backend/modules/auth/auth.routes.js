@@ -18,6 +18,7 @@ const eventNotifier = require('../notifications/event-notifier.service');
 const { centralPrisma } = require('../../shared/utils/centralPrisma');
 const { resolveTenantDbUrl } = require('../platform/platform.service');
 const { issueTicket } = require('../../shared/utils/wsTicket');
+const { withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 
 const router       = express.Router();
 const lookupRouter = express.Router();
@@ -394,9 +395,12 @@ router.post('/refresh', async (req, res) => {
     let activeDb = req.db;
     let isTemporary = false;
     if (!activeDb) {
-      const userIndex = await centralPrisma.central_user_index.findFirst({
+      // No tenant is known yet at this point, so this lookup runs with the
+      // platform-admin RLS predicate (SET LOCAL scoped to this transaction —
+      // see shared/utils/rlsContext.js) rather than an unprotected bare query.
+      const userIndex = await withPlatformAdminRLS(centralPrisma, (tx) => tx.central_user_index.findFirst({
         where: { user_id: decoded.id, is_active: true }
-      });
+      }));
       if (userIndex?.is_platform_admin) {
         activeDb = centralPrisma;
       } else if (userIndex?.company_id) {

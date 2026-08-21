@@ -3,6 +3,7 @@ const { calculateSubscription } = require('./subscriptionCalculator');
 const logger = require('../../shared/utils/logger');
 const { THEME } = require('../../shared/utils/uiConstants');
 const billingEmailer = require('../../shared/utils/billingEmailer');
+const { withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 
 function getRenewalContext(pricingConfig) {
   const moduleMeta = pricingConfig?.discount_module_pct && typeof pricingConfig.discount_module_pct === 'object'
@@ -31,19 +32,15 @@ async function generateMonthlyInvoices() {
   logger.info(`${THEME.ICONS.PROCESS} Starting monthly invoice generation...`);
 
   try {
-    // Ensure central DB session has platform-admin claim for RLS policies
-    try {
-      await centralPrisma.$executeRawUnsafe(`SET LOCAL "jwt.claims.is_platform_admin" = 'true'`);
-    } catch (e) {
-      logger.warn(`${THEME.ICONS.WARNING} Could not set jwt.claims.is_platform_admin on central DB: ${e.message}`);
-    }
-    const tenants = await centralPrisma.tenants.findMany({
+    // SET LOCAL must be issued and consumed inside the SAME transaction as the
+    // query it protects — see backend/shared/utils/rlsContext.js.
+    const tenants = await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.findMany({
       where: { is_active: true, deleted_at: null },
       include: {
         pricing_config: true,
         modules: { where: { is_active: true } }
       }
-    });
+    }));
 
     const results = { success: 0, failed: 0 };
 
@@ -86,7 +83,7 @@ async function generateMonthlyInvoices() {
           ? date
           : new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-        await centralPrisma.invoices.create({
+        await withPlatformAdminRLS(centralPrisma, (tx) => tx.invoices.create({
           data: {
             tenant_id: tenant.id,
             invoice_no: invoiceNo,
@@ -107,7 +104,7 @@ async function generateMonthlyInvoices() {
             },
             status: invoiceStatus
           }
-        });
+        }));
 
         // Notify Tenant Admin
         const amountFormatted = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(calc.finalPrice / 100);
@@ -136,30 +133,24 @@ async function generateMonthlyInvoices() {
 async function checkOverdueInvoices() {
   logger.info(`${THEME.ICONS.PROCESS} Checking for overdue invoices...`);
   try {
-    // Ensure central DB session has platform-admin claim for RLS policies
-    try {
-      await centralPrisma.$executeRawUnsafe(`SET LOCAL "jwt.claims.is_platform_admin" = 'true'`);
-    } catch (e) {
-      logger.warn(`${THEME.ICONS.WARNING} Could not set jwt.claims.is_platform_admin on central DB: ${e.message}`);
-    }
-    const overdueInvoices = await centralPrisma.invoices.findMany({
+    const overdueInvoices = await withPlatformAdminRLS(centralPrisma, (tx) => tx.invoices.findMany({
       where: {
         status: 'unpaid',
         due_date: { lt: new Date() }
       },
       include: { tenant: true }
-    });
+    }));
 
     for (const inv of overdueInvoices) {
       if (inv.tenant.is_active) {
-        await centralPrisma.tenants.update({
+        await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.update({
           where: { id: inv.tenant_id },
           data: {
             is_active: false,
             suspended_at: new Date(),
             suspension_reason: `Automatic suspension due to unpaid invoice ${inv.invoice_no}`
           }
-        });
+        }));
         logger.warn(`${THEME.ICONS.WARNING} Suspended tenant ${inv.tenant.subdomain} for non-payment of ${inv.invoice_no}`);
       }
     }

@@ -180,30 +180,12 @@ const httpServer = http.createServer(app);
 const wss = new WebSocketServer({ noServer: true });
 const notifSvc = require('./modules/notifications/notifications.service');
 
-// Phase-0: WS upgrade now uses short-lived ticket instead of raw JWT in URL
+// WS upgrade requires a short-lived one-time ticket (see shared/utils/wsTicket.js).
+// Legacy JWT-in-URL upgrades are no longer accepted — raw JWTs in a URL leak into
+// server access logs and browser history. Clients must call POST /auth/ws-ticket first.
 httpServer.on('upgrade', (request, socket, head) => {
   const { query } = url.parse(request.url, true);
-
-  // Support both legacy ?token=JWT (for backward compat) and new ?ticket=UUID
-  // TODO: remove legacy token support after frontend migrates to ws-ticket flow
-  const ticket = query.ticket;
-  const legacyToken = query.token;
-
-  let userId = null;
-
-  if (ticket) {
-    // New secure path: consume one-time ticket
-    userId = consumeTicket(ticket);
-  } else if (legacyToken) {
-    // Legacy path: verify JWT directly — still works but logs a deprecation warning
-    try {
-      const decoded = jwt.verify(legacyToken, process.env.JWT_ACCESS_SECRET);
-      userId = decoded.id || decoded.sub;
-      logger.warn('[WS] Legacy JWT-in-URL upgrade — migrate to POST /auth/ws-ticket flow');
-    } catch {
-      /* invalid token falls through to rejection below */
-    }
-  }
+  const userId = consumeTicket(query.ticket);
 
   if (!userId) {
     socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
