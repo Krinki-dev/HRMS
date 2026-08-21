@@ -58,7 +58,7 @@ const DEFAULT_COMPONENTS = [
 const STEPS = [
   { key: 'plan',        label: 'Choose plan',     icon: '🚀' },
   { key: 'org',         label: 'Organisation',    icon: '🏢' },
-  { key: 'branding', label: 'Branding',        icon: 'U0001F3A8' },
+  { key: 'branding', label: 'Branding',        icon: '🎨' },
   { key: 'work',        label: 'Work settings',   icon: '⏰' },
   { key: 'payroll',     label: 'Payroll',         icon: '₹' },
   { key: 'email',       label: 'Email',           icon: '✉' },

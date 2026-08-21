@@ -10,7 +10,7 @@
     "studio": "npx prisma studio",
     "seed": "node prisma/seed.js",
     "test": "node --test",
-    "postinstall": "npx prisma generate --schema=prisma/schema.prisma && npx prisma generate --schema=prisma/central.prisma"
+    "postinstall": "npx prisma generate --schema=prisma/schema.prisma && npx prisma generate --schema=prisma/central.prisma && npx playwright install chromium"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
