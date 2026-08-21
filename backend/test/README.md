@@ -63,7 +63,6 @@ docker rm -f hrms-rls-test
 `auth-middleware.test.js` runs the real `shared/middleware/auth.js` against a
 real Postgres `central_user_index` table. Skipped automatically unless
 `AUTH_TEST_CENTRAL_DATABASE_URL` is set.
-
 ## One-time local setup
 
 ```bash
@@ -94,5 +93,43 @@ AUTH_TEST_CENTRAL_DATABASE_URL="postgresql://postgres:test@localhost:55433/auth_
 
 ```bash
 docker rm -f hrms-auth-test
+```
+
+# Payroll integration test
+
+`payroll-integration.test.js` runs the real `modules/payroll/payroll.service.js`
+against a real Postgres tenant-schema database. It covers salary proration by
+attendance, the statutory PF wage ceiling and ESI eligibility ceiling, that a
+payroll run for one company never picks up another company's employees within
+the same tenant database (`company_id` is the only isolation boundary at this
+level — there is no per-company RLS), and the run lifecycle guards
+(lock/publish/delete). Skipped automatically unless
+`PAYROLL_TEST_TENANT_DATABASE_URL` is set.
+
+## One-time local setup
+
+```bash
+docker run -d --name hrms-payroll-test -e POSTGRES_PASSWORD=test \
+  -e POSTGRES_DB=payroll_test -p 55434:5432 postgres:16-alpine
+
+DEV_TENANT_DATABASE_URL="postgresql://postgres:test@localhost:55434/payroll_test" \
+DEV_TENANT_DIRECT_URL="postgresql://postgres:test@localhost:55434/payroll_test" \
+  npx prisma db push --schema=prisma/schema.prisma --skip-generate --accept-data-loss
+```
+
+The test seeds and cleans up its own companies/employees/salaries/attendance —
+no manual seeding needed beyond the schema push above.
+
+## Run
+
+```bash
+PAYROLL_TEST_TENANT_DATABASE_URL="postgresql://postgres:test@localhost:55434/payroll_test" \
+  node --test test/payroll-integration.test.js
+```
+
+## Teardown
+
+```bash
+docker rm -f hrms-payroll-test
 ```
 

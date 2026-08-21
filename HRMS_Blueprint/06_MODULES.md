@@ -207,6 +207,7 @@
 **DB Tables:** salary_structures, employee_salaries, payroll_runs, payslips
 **Depends on:** Employee Management, Attendance, Leave
 **Required by:** Compliance, Accounting
+**Test coverage:** backend/test/payroll-integration.test.js (proration, PF/ESI statutory ceilings, multi-company isolation within one tenant DB, run lifecycle guards)
 
 ---
 

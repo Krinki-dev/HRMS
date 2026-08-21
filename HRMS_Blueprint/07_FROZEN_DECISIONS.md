@@ -245,6 +245,32 @@ CAVEAT:    Postgres table owners/superusers bypass RLS by default. If the app's 
 
 ---
 
+## ✅ BACKEND INTEGRATION TEST COVERAGE — FROZEN
+
+```
+Framework: Node built-in `node:test` (no Jest/Mocha) — run via `npm test` in backend/.
+Location:  backend/test/ — each file documents its own Docker/Postgres setup and is
+           SKIPPED AUTOMATICALLY when its required env var isn't set, so `npm test`
+           always passes in an environment without the throwaway databases.
+
+Covered (all run against a real disposable Postgres, not mocked):
+  - rls-tenant-isolation.test.js   → RLS session-variable scoping under Prisma pooling
+  - auth-middleware.test.js        → JWT verification + central DB is_platform_admin lookup
+  - payroll-integration.test.js    → salary proration, PF/ESI statutory ceilings,
+                                      multi-company isolation within one tenant DB,
+                                      payroll run lifecycle (lock/publish/delete guards)
+
+NOT YET covered (candidates for the next test to add):
+  - Payments (Razorpay/PhonePe/JioPay order creation, webhook signature verification)
+  - Compliance (PF ECR, ESI challan, PT, TDS Form 16 generation)
+  - Frontend end-to-end flows (login, onboarding, employees, payroll, leave, billing)
+
+See backend/test/README.md for exact setup commands for each test.
+```
+
+
+---
+
 ## ✅ DATABASE RULES — FROZEN
 
 ```
