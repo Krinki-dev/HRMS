@@ -248,6 +248,9 @@
 **DB Tables:** compliance_filings, tds_declarations
 **Depends on:** Payroll
 **Required by:** Accounting, Reports
+**Test coverage:** backend/test/compliance-integration.test.js — regression test for a fixed
+cross-company/cross-tenant PF/ESI/PT/TDS data leak (payroll-run lookups previously had no
+`company_id` filter; see HRMS_Blueprint/07_FROZEN_DECISIONS.md)
 
 ---
 

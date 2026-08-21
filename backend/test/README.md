@@ -133,3 +133,38 @@ PAYROLL_TEST_TENANT_DATABASE_URL="postgresql://postgres:test@localhost:55434/pay
 docker rm -f hrms-payroll-test
 ```
 
+# Compliance integration test
+
+`compliance-integration.test.js` runs the real
+`modules/compliance/compliance.service.js` against a real Postgres
+tenant-schema database. It is a regression test for a real cross-company
+(and, for tenants in shared "cloud" db_mode, cross-tenant) data leak: every
+summary function looked up the payroll run for a month/year with no
+`company_id` filter, so it could return another company's PF/ESI/PT/TDS data
+including real PAN/UAN numbers. Skipped automatically unless
+`COMPLIANCE_TEST_TENANT_DATABASE_URL` is set.
+
+## One-time local setup
+
+```bash
+docker run -d --name hrms-compliance-test -e POSTGRES_PASSWORD=test \
+  -e POSTGRES_DB=compliance_test -p 55435:5432 postgres:16-alpine
+
+DEV_TENANT_DATABASE_URL="postgresql://postgres:test@localhost:55435/compliance_test" \
+DEV_TENANT_DIRECT_URL="postgresql://postgres:test@localhost:55435/compliance_test" \
+  npx prisma db push --schema=prisma/schema.prisma --skip-generate --accept-data-loss
+```
+
+## Run
+
+```bash
+COMPLIANCE_TEST_TENANT_DATABASE_URL="postgresql://postgres:test@localhost:55435/compliance_test" \
+  node --test test/compliance-integration.test.js
+```
+
+## Teardown
+
+```bash
+docker rm -f hrms-compliance-test
+```
+

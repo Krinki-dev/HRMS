@@ -245,6 +245,30 @@ CAVEAT:    Postgres table owners/superusers bypass RLS by default. If the app's 
 
 ---
 
+## ✅ COMPANY_ID SCOPING WITHIN A TENANT DATABASE — FROZEN
+
+```
+Found + fixed 2026-08-21 in backend/modules/compliance/compliance.service.js (see
+backend/test/compliance-integration.test.js) — confirmed as a REAL bug by reverting the
+fix and watching the test fail: querying as Company A returned Company B's actual PAN
+number and payroll totals.
+
+RULE: Tenant-DB tables shared by multiple companies (payroll_runs, employees, payslips,
+      attendance, etc.) have NO row-level security. The ONLY isolation boundary is an
+      explicit `company_id: companyId` filter in every query — there is no fallback safety
+      net. This matters even for single-company tenants, because tenants running in shared
+      "cloud" db_mode (shared/middleware/tenant.js resolveTenantDB) can have MULTIPLE
+      DIFFERENT SAAS TENANTS sharing one physical database, distinguished only by this
+      column. A missing filter is a real cross-tenant data leak, not a theoretical one.
+
+REQUIRED: Any new query against a tenant-DB table that has a `company_id` column MUST
+          include it in `where`. Do not rely on `orderBy` + `findFirst` to "probably" get
+          the right row — this is exactly the pattern that leaked data (see the fixed
+          bug: `payroll_runs.findFirst({ where: { month, year } })` with no company_id).
+```
+
+---
+
 ## ✅ BACKEND INTEGRATION TEST COVERAGE — FROZEN
 
 ```
@@ -259,6 +283,7 @@ Covered (all run against a real disposable Postgres, not mocked):
   - payroll-integration.test.js    → salary proration, PF/ESI statutory ceilings,
                                       multi-company isolation within one tenant DB,
                                       payroll run lifecycle (lock/publish/delete guards)
+  - compliance-integration.test.js → regression test for the company_id data-leak fix above
 
 NOT YET covered (candidates for the next test to add):
   - Payments (Razorpay/PhonePe/JioPay order creation, webhook signature verification)

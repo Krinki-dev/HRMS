@@ -87,7 +87,7 @@ const complianceService = {
     const filed     = formatted.filter(f => f.status === 'filed');
 
     const payrollRun = await db.payroll_runs.findFirst({
-      where:   { month, year },
+      where:   { company_id: companyId, month, year },
       orderBy: { created_at: 'desc' },
     });
 
@@ -180,7 +180,7 @@ const complianceService = {
     const y = year  || currentYear();
 
     const run = await db.payroll_runs.findFirst({
-      where:   { month: m, year: y },
+      where:   { company_id: companyId, month: m, year: y },
       orderBy: { created_at: 'desc' },
     });
 
@@ -298,7 +298,7 @@ const complianceService = {
     const y = year  || currentYear();
 
     const run = await db.payroll_runs.findFirst({
-      where:   { month: m, year: y },
+      where:   { company_id: companyId, month: m, year: y },
       orderBy: { created_at: 'desc' },
     });
 
@@ -368,7 +368,7 @@ const complianceService = {
     const y = year  || currentYear();
 
     const run = await db.payroll_runs.findFirst({
-      where:   { month: m, year: y },
+      where:   { company_id: companyId, month: m, year: y },
       orderBy: { created_at: 'desc' },
     });
 
@@ -423,7 +423,7 @@ const complianceService = {
     const y = year  || currentYear();
 
     const run = await db.payroll_runs.findFirst({
-      where:   { month: m, year: y },
+      where:   { company_id: companyId, month: m, year: y },
       orderBy: { created_at: 'desc' },
     });
 
@@ -560,7 +560,7 @@ const complianceService = {
     const y = year  || currentYear();
 
     const run = await db.payroll_runs.findFirst({
-      where:   { month: m, year: y },
+      where:   { company_id: companyId, month: m, year: y },
       orderBy: { created_at: 'desc' },
     });
 
