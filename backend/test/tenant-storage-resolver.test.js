@@ -88,3 +88,9 @@ test('rejects schema-tier mismatch instead of selecting another schema',()=>{
     schema_name:'tenant_wrong',
   }),{cloudDatabaseUrl:cloudUrl}),/Shared storage must use/);
 });
+
+test('rejects another tenant schema even when it has a valid identifier',()=>{
+  assert.throws(()=>resolveTenantStorageTarget(tenant({
+    schema_name:'tenant_other',
+  }),{cloudDatabaseUrl:cloudUrl}),/immutable tenant UUID/);
+});
