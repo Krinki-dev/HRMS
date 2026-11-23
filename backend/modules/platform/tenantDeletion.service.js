@@ -191,6 +191,10 @@ async function permanentlyDeleteTenant({
 
   const tenant = tenantRows[0];
   const deletionTarget = getSafeDeletionTarget(tenant);
+  // No automated restore test or independent approval workflow exists yet.
+  // Fail closed before connecting to the tenant DB or running a backup.
+  throw appError('RESTORE_VERIFICATION_REQUIRED',
+    'Permanent deletion is disabled until an independently verified restore and approval workflow is implemented.', 409);
   const dbUrl = resolveTenantDbUrl(tenant.db_mode, tenant);
   if (!dbUrl) {
     throw appError('DB_URL_UNRESOLVED', 'Tenant database URL could not be resolved. Deletion cannot proceed.', 500);
