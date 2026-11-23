@@ -279,11 +279,22 @@ async function runBackup(db, companyId) {
     return { skipped: true };
   }
 
+  // Never dump an entire multi-tenant database as a tenant-specific backup.
+  // Legacy and shared storage need their own audited backup/restore implementation.
+  const tenant = await db.tenants.findUnique({
+    where: { id: companyId },
+    select: { id: true, db_mode: true, db_url: true, schema_name: true, storage_tier: true, storage_status: true },
+  });
+  const { getSafeBackupTarget } = require('./tenantBackupTarget');
+  const schemaName = getSafeBackupTarget(tenant);
   const tenantCfg = await db.tenant_db_config.findUnique({ where: { company_id: companyId } });
-  const dbUrl = tenantCfg?.cloud_db_url
+  const configuredUrl = tenantCfg?.cloud_db_url
     ? tryDecrypt(tenantCfg.cloud_db_url)
-    : process.env.DEV_TENANT_DATABASE_URL;
-  if (!dbUrl) throw new Error('No PostgreSQL URL is configured for this tenant backup.');
+    : (tenant?.db_url ? tryDecrypt(tenant.db_url) : process.env.CLOUD_TENANT_DATABASE_URL);
+  if (!configuredUrl) throw new Error('No PostgreSQL URL is configured for this tenant backup.');
+  const parsedUrl = new URL(configuredUrl);
+  parsedUrl.searchParams.set('schema', schemaName);
+  const dbUrl = parsedUrl.toString();
 
   const dbType = 'postgres';
 
