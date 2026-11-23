@@ -37,7 +37,7 @@
 
 ### 4. CI
 - Added a GitHub Actions workflow to install backend dependencies, explicitly generate both Prisma clients, and run `npm test` on the working branch and relevant pull requests.
-- A test run was observed starting for the latest changes; final success/failure has not yet been confirmed.
+- GitHub Actions backend test runs #19 and #20 completed successfully, including dependency installation, generation of both Prisma clients, and `npm test`.
 
 ### 5. Registration activation gate (partial)
 - New tenant rows are inserted inactive.
@@ -73,3 +73,11 @@ No database migration, live schema change, customer-data deletion, backup execut
 - Added explicit Prisma client generation to CI because dependency installation uses `--ignore-scripts`.
 - Confirmed the storage resolver remains intentionally unwired to tenant request routing. Existing tenant rows are still unclassified in the live central database, and the live lifecycle migration has not been applied.
 - Confirmed the current schema-cloning helper is incomplete for production-grade cloning: it does not fully reproduce foreign keys, triggers, views, functions, policies, and other schema objects. It must be replaced or formally constrained before it can be trusted to mark a tenant provisioned.
+
+
+## Verified CI result
+- Workflow: **Backend Tests**
+- Runs: **#19 and #20**
+- Result: **success**
+- Successful steps: checkout, Node.js setup, `npm ci --ignore-scripts`, generation of tenant and central Prisma clients, and `npm test`.
+- This validates the source state at commits `32cd598` and `669e939`. Documentation-only follow-up is newer; it does not change executable code.
