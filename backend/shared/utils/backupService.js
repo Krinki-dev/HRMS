@@ -1,11 +1,11 @@
-﻿﻿const { execSync, exec } = require('child_process');
-const { promisify }      = require('util');
-const execAsync          = promisify(exec);
+﻿const { spawn }          = require('child_process');
+const { pipeline }       = require('stream/promises');
 const fs                 = require('fs');
 const path               = require('path');
 const crypto             = require('crypto');
 const logger             = require('./logger');
-const zlib               = require('zlib');
+const { createGzip }    = require('zlib');
+const { createWriteStream } = require('fs');
 const { decrypt, encrypt } = require('./encryption');
 const emailService       = require('./emailService');
 const { centralPrisma }  = require('./centralPrisma');
@@ -21,62 +21,83 @@ function tmpPath(filename) {
 
 function parseDbUrl(url) {
   try {
-    const u = new URL(url.replace('postgresql://', 'http://').replace('postgres://', 'http://'));
+    const parsed = new URL(url);
+    if (!['postgres:', 'postgresql:'].includes(parsed.protocol)) {
+      throw new Error('Only PostgreSQL backups are supported.');
+    }
+    if (!parsed.hostname || !parsed.pathname || parsed.pathname === '/') {
+      throw new Error('Database URL must include a host and database name.');
+    }
     return {
-      protocol: url.split(':')[0],
-      host: u.hostname,
-      port: u.port || '5432',
-      user: u.username,
-      pass: decodeURIComponent(u.password),
-      name: u.pathname.replace('/', ''),
-      fullUrl: url
+      host: parsed.hostname,
+      port: parsed.port || '5432',
+      user: decodeURIComponent(parsed.username),
+      pass: decodeURIComponent(parsed.password),
+      name: decodeURIComponent(parsed.pathname.replace(/^\\//, '')),
+      schema: parsed.searchParams.get('schema'),
     };
-  } catch {
-    return null;
+  } catch (error) {
+    if (error.message.includes('Only PostgreSQL') || error.message.includes('must include')) throw error;
+    throw new Error('Cannot parse PostgreSQL database URL for backup.');
   }
 }
 
 async function createDump(dbUrl, companyId, dbType = 'postgres') {
-  const timestamp  = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const filename   = `backup_${companyId.slice(0, 8)}_${timestamp}.sql.gz`;
-  const filePath   = tmpPath(filename);
-  const parsed     = parseDbUrl(dbUrl);
+  if (dbType !== 'postgres' && dbType !== 'postgresql') {
+    throw new Error('Only PostgreSQL backups are supported by the tenant storage architecture.');
+  }
 
-  if (!parsed) throw new Error('Cannot parse database URL for backup');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const filename = `backup_${companyId.slice(0, 8)}_${timestamp}.sql.gz`;
+  const filePath = tmpPath(filename);
+  const parsed = parseDbUrl(dbUrl);
+  const args = [
+    '--no-password',
+    '--format=plain',
+    '--host', parsed.host,
+    '--port', parsed.port,
+    '--username', parsed.user,
+    '--dbname', parsed.name,
+  ];
+  if (parsed.schema) args.push('--schema', parsed.schema);
+
+  const child = spawn('pg_dump', args, {
+    env: { ...process.env, PGPASSWORD: parsed.pass },
+    stdio: ['ignore', 'pipe', 'pipe'],
+    windowsHide: true,
+  });
+
+  let stderr = '';
+  child.stderr.setEncoding('utf8');
+  child.stderr.on('data', (chunk) => { stderr += chunk; });
+
+  const exitPromise = new Promise((resolve, reject) => {
+    child.once('error', (error) => reject(new Error(`pg_dump could not start: ${error.message}`)));
+    child.once('close', (code, signal) => {
+      if (code === 0) resolve();
+      else reject(new Error(`pg_dump failed (code=${code}, signal=${signal || 'none'}): ${stderr.trim()}`));
+    });
+  });
 
   try {
-    if (dbType === 'mysql' || parsed.protocol.includes('mysql')) {
-      // MySQL Adapter
-      await execAsync(
-        `mysqldump -h ${parsed.host} -P ${parsed.port} -u ${parsed.user} -p"${parsed.pass}" ${parsed.name} | gzip > "${filePath}"`
-      );
-    } else {
-      // PostgreSQL Adapter (Default)
-      const env = { ...process.env, PGPASSWORD: parsed.pass };
-      await execAsync(
-        `pg_dump -h ${parsed.host} -p ${parsed.port} -U ${parsed.user} -d ${parsed.name} | gzip > "${filePath}"`,
-        { env }
-      );
-    }
+    await Promise.all([
+      pipeline(child.stdout, createGzip(), createWriteStream(filePath, { flags: 'wx' })),
+      exitPromise,
+    ]);
 
     const stats = fs.statSync(filePath);
+    if (!stats.size) throw new Error('pg_dump produced an empty backup artifact.');
+    const header = Buffer.alloc(2);
+    const fd = fs.openSync(filePath, 'r');
+    try { fs.readSync(fd, header, 0, 2, 0); } finally { fs.closeSync(fd); }
+    if (header[0] !== 0x1f || header[1] !== 0x8b) {
+      throw new Error('Backup artifact failed gzip format validation.');
+    }
     return { filePath, filename, sizeBytes: stats.size };
-  } catch (pgDumpErr) {
-    logger.warn(`[Backup] Native dump tools not found for ${dbType}, using Node fallback:`, pgDumpErr.message);
-    
-    // Cross-platform Fallback (using zlib instead of gzip command)
-    const jsonFile = filePath.replace('.sql.gz', '.json.gz');
-    const rawData = JSON.stringify({
-      note: 'pg_dump not available — install postgresql-client for full backups',
-      timestamp: new Date().toISOString(),
-      company_id: companyId,
-    });
-
-    const compressed = zlib.gzipSync(Buffer.from(rawData));
-    fs.writeFileSync(jsonFile, compressed);
-
-    const stats = fs.statSync(jsonFile);
-    return { filePath: jsonFile, filename: filename.replace('.sql.gz', '.json.gz'), sizeBytes: stats.size };
+  } catch (error) {
+    if (!child.killed) child.kill();
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    throw error;
   }
 }
 
@@ -258,9 +279,9 @@ async function runBackup(db, companyId) {
   const dbUrl = tenantCfg?.cloud_db_url
     ? tryDecrypt(tenantCfg.cloud_db_url)
     : process.env.DEV_TENANT_DATABASE_URL;
+  if (!dbUrl) throw new Error('No PostgreSQL URL is configured for this tenant backup.');
 
-  // Determine DB type from config or URL
-  const dbType = tenantCfg?.db_type || (dbUrl.includes('mysql') ? 'mysql' : 'postgres');
+  const dbType = 'postgres';
 
   await db.backup_config.update({
     where: { company_id: companyId },
