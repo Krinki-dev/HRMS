@@ -920,6 +920,10 @@ exports.verifySubscription = async (req, res) => {
       
       // 2. PHONEPE STATUS CHECK (Server-to-Server)
       else if (method === 'phonepe') {
+        if (!transactionId) return sendError(res, ERROR_CODES.VALIDATION, 'PhonePe transaction ID is required.', 400);
+        if (!phonePeMerchantId || !phonePeSaltKey || !phonePeSaltIndex) {
+          return sendError(res, ERROR_CODES.SERVER, 'PhonePe verification is not configured.', 500);
+        }
         const xVerify = crypto.createHash('sha256').update(`/pg/v1/status/${phonePeMerchantId}/${transactionId}` + phonePeSaltKey).digest('hex') + '###' + phonePeSaltIndex;
         const response = await axios.get(`${phonePeBaseUrl}/pg/v1/status/${phonePeMerchantId}/${transactionId}`, {
           headers: { 'Content-Type': 'application/json', 'X-VERIFY': xVerify, 'X-MERCHANT-ID': phonePeMerchantId }
@@ -932,6 +936,7 @@ exports.verifySubscription = async (req, res) => {
 
       // 3. JIOPAY STATUS CHECK (Server-to-Server)
       else if (method === 'jiopay') {
+        if (!transactionId) return sendError(res, ERROR_CODES.VALIDATION, 'JioPay transaction ID is required.', 400);
         if (!jioPayMerchantId || !jioPaySalt) return sendError(res, ERROR_CODES.SERVER, 'JioPay misconfigured', 500);
         
         // JioPay Status logic based on docs.jiopay.in
