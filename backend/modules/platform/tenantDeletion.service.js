@@ -156,19 +156,14 @@ async function runMandatoryBackup(centralDb, tenantId, backupConfigInput) {
   return { provider, fileUrl: result.fileUrl || null };
 }
 
-async function wipeTenantDatabase(dbUrl, schemaName) {
-  if (!dbUrl) return;
-
-  const tenantDb = new PrismaClient({ datasources: { db: { url: dbUrl } } });
-  try {
-    if (schemaName) {
-      await tenantDb.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
-    } else {
-      await tenantDb.$executeRawUnsafe('DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public');
-    }
-  } finally {
-    await tenantDb.$disconnect();
-  }
+// Physical schema deletion is disabled until a verified restore drill and
+// tenant-ownership audit can be enforced by the service.
+async function wipeTenantDatabase() {
+  throw appError(
+    'RESTORE_VALIDATION_REQUIRED',
+    'Permanent deletion is disabled until a verified restore and schema-ownership audit are implemented.',
+    409
+  );
 }
 
 async function permanentlyDeleteTenant({
@@ -208,7 +203,8 @@ async function permanentlyDeleteTenant({
     );
   }
 
-  const backup = await runMandatoryBackup(centralDb, tenant.id, backupConfig);
+  // A completed backup is not proof that it can be restored. Block before
+  // deleting tenant data or central metadata until a restore-validation gate exists.
   await wipeTenantDatabase(dbUrl, deletionTarget.schemaName);
 
   await centralDb.$executeRaw`DELETE FROM tenant_modules WHERE tenant_id = ${tenant.id}::uuid`;
@@ -221,8 +217,8 @@ async function permanentlyDeleteTenant({
   return {
     tenantName: tenant.name,
     subdomain: tenant.subdomain,
-    backupProvider: backup.provider,
-    backupUrl: backup.fileUrl,
+    backupProvider: null,
+    backupUrl: null,
     reason,
     deletedBy: actorEmail || null,
   };
