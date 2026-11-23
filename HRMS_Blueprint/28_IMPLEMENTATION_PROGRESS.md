@@ -6,6 +6,7 @@
 ## Implemented in source (runtime validation pending)
 
 ### 1. Fail-closed permanent deletion guard
+- Physical deletion is now disabled entirely until a verified restore drill and tenant-ownership audit are enforced. A successful upload/backup alone cannot authorize data destruction.
 - Permanent deletion now requires storage status `ready` and tier `dedicated_schema`.
 - Shared schemas are explicitly blocked from schema-drop deletion.
 - Legacy/unclassified, pending, provisioning, failed, and malformed storage metadata are blocked.
@@ -35,7 +36,8 @@
 **Remaining payment work:** server-created order/payment records, amount/currency/tenant/plan binding, webhook idempotency, and atomic activation remain to be implemented.
 
 ### 4. CI
-- Added a GitHub Actions workflow to install backend dependencies and run `npm test` on the working branch and relevant pull requests.
+- Added a GitHub Actions workflow to install backend dependencies, explicitly generate both Prisma clients, and run `npm test` on the working branch and relevant pull requests.
+- A test run was observed starting for the latest changes; final success/failure has not yet been confirmed.
 
 ### 5. Registration activation gate (partial)
 - New tenant rows are inserted inactive.
@@ -63,3 +65,11 @@
 
 ## Safety
 No database migration, live schema change, customer-data deletion, backup execution, or payment transaction was performed as part of these commits. GitHub source writes do not constitute runtime validation.
+
+
+## 2026-11-24 follow-on corrections
+- Corrected the read-only inventory to check the exact lifecycle columns defined by the migration: `storage_verified_at` and `storage_error_code`.
+- Removed the now-unused Prisma client import from the deletion service after disabling physical deletion.
+- Added explicit Prisma client generation to CI because dependency installation uses `--ignore-scripts`.
+- Confirmed the storage resolver remains intentionally unwired to tenant request routing. Existing tenant rows are still unclassified in the live central database, and the live lifecycle migration has not been applied.
+- Confirmed the current schema-cloning helper is incomplete for production-grade cloning: it does not fully reproduce foreign keys, triggers, views, functions, policies, and other schema objects. It must be replaced or formally constrained before it can be trusted to mark a tenant provisioned.
