@@ -28,14 +28,23 @@
 - A request-supplied `mock` value now receives an authorization error.
 - Payment verification no longer skips gateway verification based on client input.
 - Invoice payment references no longer synthesize a mock payment ID.
+- Razorpay verification now requires order/payment/signature values and a configured server secret.
+- PhonePe and JioPay require transaction IDs and their server-side verification credentials.
+- Unsupported payment methods are rejected.
 
 **Remaining payment work:** server-created order/payment records, amount/currency/tenant/plan binding, webhook idempotency, and atomic activation remain to be implemented.
 
 ### 4. CI
 - Added a GitHub Actions workflow to install backend dependencies and run `npm test` on the working branch and relevant pull requests.
 
+### 5. Registration activation gate (partial)
+- New tenant rows are inserted inactive.
+- Cloud/external-cloud registration must complete schema cloning and admin seeding before the tenant is activated and marked setup-complete.
+- Missing database target, clone failure, or seed failure leaves the tenant inactive and returns a provisioning error.
+- Legacy schema naming remains temporarily in this path until the central lifecycle migration and tenant classification are ready; this is not yet the final shared-versus-dedicated allocator.
+
 ## Not yet implemented / not approved for production
-- Registration provisioning state machine and compensation/retry.
+- Full registration provisioning state machine, retry/compensation, and UUID-based schema allocation.
 - Storage lifecycle migration alignment and application.
 - Tenant resolver integration into request middleware.
 - Existing-tenant classification and schema collision remediation.
