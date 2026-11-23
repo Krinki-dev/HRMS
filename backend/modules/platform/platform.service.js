@@ -277,7 +277,7 @@ const registerTenant = async (req, res) => {
           ${admin.name.trim()}, ${cleanEmail}, ${cleanPhone},
           ${company.gstin || null}, ${company.pan || null},
           ${company.city || null}, ${company.state || null}, '#2563eb', '#f8fafc', NULL, NULL,
-          true, false, NOW(), NOW()
+          false, false, NOW(), NOW()
         )
       `;
 
@@ -327,13 +327,15 @@ const registerTenant = async (req, res) => {
     // After central DB entry, handle schema creation for managed databases.
     // If we have a managed database (cloud mode), we create a schema
     const baseTenantDbUrl = resolveTenantDbUrl(dbMode, localDb, externalDbUrl); // Get base URL
-    const actualSchemaName = `tenant_${cleanSubdomain}`; // Always derive schema name consistently
+    const actualSchemaName = `tenant_${cleanSubdomain}`; // Legacy naming retained until storage lifecycle migration is applied.
+    let schemaProvisioned = !['cloud', 'external_cloud'].includes(dbMode);
 
     if (dbMode === 'cloud' || dbMode === 'external_cloud') {
       if (baseTenantDbUrl) {
         try {
           const sourceSchema = process.env.TENANT_TEMPLATE_SCHEMA || 'public';
           await cloneSchema(baseTenantDbUrl, sourceSchema, actualSchemaName); // Pass base URL
+          schemaProvisioned = true;
         } catch (cloneErr) {
           logger.error(`[registerTenant] Schema cloning failed for ${cleanSubdomain}:`, cloneErr);
         }
@@ -407,6 +409,16 @@ const registerTenant = async (req, res) => {
         await tenantPrisma.$disconnect();
       }
     }
+
+    if (!schemaProvisioned || !seedSucceeded) {
+      logger.error(`[registerTenant] Provisioning incomplete for ${cleanSubdomain}; tenant remains inactive.`);
+      return sendError(res, ERROR_CODES.SERVER, 'Tenant workspace provisioning failed. The account is not active; support must complete provisioning before login.', 503);
+    }
+
+    await centralPrisma.$executeRaw`
+      UPDATE tenants SET is_active = true, is_setup_complete = true, updated_at = NOW()
+      WHERE id = ${tenantId}::uuid
+    `;
 
     const portalUrl = cleanCustomDomain ? `https://${cleanCustomDomain}` : `https://${cleanSubdomain}.syntern.in`;
     const loginUrl = `${portalUrl}/login`;
