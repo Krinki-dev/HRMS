@@ -76,6 +76,7 @@ function buildStorageDescriptor({ tenantId, plan, dbMode='cloud', dbUrl=null, re
   if (tier===STORAGE_TIERS.SHARED) schemaName='shared_tenants';
   else if (tier===STORAGE_TIERS.DEDICATED_SCHEMA) schemaName=deriveTenantSchemaName(tenantId);
   if (parsedUrl && schemaName) parsedUrl.searchParams.set('schema',schemaName);
+  if (parsedUrl && tier===STORAGE_TIERS.DEDICATED_DATABASE) parsedUrl.searchParams.delete('schema');
   return Object.freeze({
     engine:'postgresql',
     dbMode,
