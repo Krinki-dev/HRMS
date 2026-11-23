@@ -23,6 +23,11 @@ model tenants {
   plan              String    @default("free")
   plan_expires_at   DateTime? @db.Timestamptz
   max_employees     Int       @default(50)
+  storage_tier          String    @default("legacy_unclassified")
+  storage_status        String    @default("legacy_unclassified")
+  storage_provisioned_at DateTime? @db.Timestamptz
+  storage_verified_at   DateTime? @db.Timestamptz
+  storage_error_code    String?
   db_mode           String    @default("cloud")
   db_url            String?
   schema_name       String?
