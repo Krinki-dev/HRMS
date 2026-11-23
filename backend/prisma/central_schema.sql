@@ -43,6 +43,13 @@ CREATE TABLE IF NOT EXISTS tenants (
   plan_expires_at     TIMESTAMPTZ,
   max_employees       INT           NOT NULL DEFAULT 50,
 
+  -- Storage lifecycle (new allocations only; legacy rows stay unclassified)
+  storage_tier           TEXT          NOT NULL DEFAULT 'legacy_unclassified',
+  storage_status         TEXT          NOT NULL DEFAULT 'legacy_unclassified',
+  storage_provisioned_at TIMESTAMPTZ,
+  storage_verified_at    TIMESTAMPTZ,
+  storage_error_code     TEXT,
+
   -- Database configuration
   -- db_mode controls which connection fields are used:
   --   cloud         → Syntern provisions DB (db_url set by ops)
