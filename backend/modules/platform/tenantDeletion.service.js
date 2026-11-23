@@ -1,6 +1,5 @@
 'use strict';
 
-const { PrismaClient } = require('@prisma/client');
 const { encrypt } = require('../../shared/utils/encryption');
 const { runBackup } = require('../../shared/utils/backupService');
 const { resolveTenantDbUrl } = require('./platform.service');
