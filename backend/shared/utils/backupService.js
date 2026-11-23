@@ -80,10 +80,14 @@ async function createDump(dbUrl, companyId, dbType = 'postgres') {
   });
 
   try {
-    await Promise.all([
-      pipeline(child.stdout, createGzip(), createWriteStream(filePath, { flags: 'wx' })),
-      exitPromise,
-    ]);
+    const streamPromise = pipeline(child.stdout, createGzip(), createWriteStream(filePath, { flags: 'wx' }));
+    const outcomes = await Promise.allSettled([streamPromise, exitPromise]);
+    const failed = outcomes.find((outcome) => outcome.status === 'rejected');
+    if (failed) {
+      if (!child.killed) child.kill();
+      await streamPromise.catch(() => {});
+      throw failed.reason;
+    }
 
     const stats = fs.statSync(filePath);
     if (!stats.size) throw new Error('pg_dump produced an empty backup artifact.');
