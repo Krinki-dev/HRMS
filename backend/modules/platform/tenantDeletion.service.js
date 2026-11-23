@@ -46,7 +46,7 @@ function hasStoredCredentials(cfg, provider) {
 
 async function getDeletionReadiness(centralDb, tenantId) {
   const rows = await centralDb.$queryRaw`
-    SELECT id, db_mode, schema_name, storage_tier, storage_status, deleted_at
+    SELECT id, db_mode, schema_name, deleted_at
     FROM tenants
     WHERE id = ${tenantId}::uuid
     LIMIT 1
@@ -65,8 +65,6 @@ async function getDeletionReadiness(centralDb, tenantId) {
       id: tenant.id,
       dbMode: tenant.db_mode,
       hasSchema: !!tenant.schema_name,
-      storageTier: tenant.storage_tier || 'legacy_unclassified',
-      storageStatus: tenant.storage_status || 'legacy_unclassified',
       requiresExternalDeleteConfirmation: ['external_cloud', 'local', 'hybrid'].includes(tenant.db_mode),
     },
     backup: {
