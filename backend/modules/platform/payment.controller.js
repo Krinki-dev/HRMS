@@ -908,8 +908,12 @@ exports.verifySubscription = async (req, res) => {
     {
       // 1. RAZORPAY SIGNATURE VERIFICATION
       if (method === 'razorpay') {
+        if (!resolvedOrderId || !resolvedPaymentId || !resolvedSignature) {
+          return sendError(res, ERROR_CODES.VALIDATION, 'Razorpay order, payment, and signature are required.', 400);
+        }
         const sign = `${resolvedOrderId}|${resolvedPaymentId}`;
         const secret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
+        if (!secret) return sendError(res, ERROR_CODES.SERVER, 'Razorpay verification is not configured.', 500);
         const expectedSign = crypto.createHmac("sha256", secret).update(sign.toString()).digest("hex");
         if (resolvedSignature !== expectedSign) return sendError(res, ERROR_CODES.UNAUTHORIZED, "Invalid signature", 400);
       } 
@@ -955,6 +959,8 @@ exports.verifySubscription = async (req, res) => {
           }
           return sendError(res, ERROR_CODES.SERVER, 'Could not reach JioPay to verify status.', 500);
         }
+      } else {
+        return sendError(res, ERROR_CODES.VALIDATION, 'Unsupported payment method for subscription verification.', 400);
       }
     }
 
