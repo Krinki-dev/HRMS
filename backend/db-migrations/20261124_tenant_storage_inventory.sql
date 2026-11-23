@@ -4,7 +4,7 @@
 -- Credentials and connection strings are never selected.
 BEGIN TRANSACTION READ ONLY;
 
-\\echo '0) Storage lifecycle schema readiness'
+SELECT '0) Storage lifecycle schema readiness' AS inventory_section;
 SELECT
   COUNT(*) FILTER (WHERE column_name = 'storage_tier') > 0 AS has_storage_tier,
   COUNT(*) FILTER (WHERE column_name = 'storage_status') > 0 AS has_storage_status,
@@ -13,7 +13,7 @@ SELECT
 FROM information_schema.columns
 WHERE table_schema = 'public' AND table_name = 'tenants';
 
-\\echo '1) Aggregate tenant inventory (legacy rows are explicitly unclassified)'
+SELECT '1) Aggregate tenant inventory (legacy rows are explicitly unclassified)' AS inventory_section;
 SELECT
   COALESCE(plan, '<null>') AS plan,
   COALESCE(db_mode, '<null>') AS db_mode,
@@ -28,7 +28,7 @@ WHERE deleted_at IS NULL
 GROUP BY plan, db_mode
 ORDER BY plan, db_mode;
 
-\\echo '2) Per-tenant routing metadata (no connection strings or credentials)'
+SELECT '2) Per-tenant routing metadata (no connection strings or credentials)' AS inventory_section;
 SELECT
   id AS tenant_id,
   subdomain,
@@ -50,7 +50,7 @@ FROM public.tenants
 WHERE deleted_at IS NULL
 ORDER BY created_at, subdomain;
 
-\\echo '3) Duplicate non-empty schema assignments (review; duplicates are not automatically errors)'
+SELECT '3) Duplicate non-empty schema assignments (review; duplicates are not automatically errors)' AS inventory_section;
 SELECT
   db_mode,
   schema_name,
@@ -64,7 +64,7 @@ GROUP BY db_mode, schema_name
 HAVING COUNT(*) > 1
 ORDER BY tenant_count DESC, db_mode, schema_name;
 
-\\echo '4) Potentially unsafe or incomplete legacy routing records'
+SELECT '4) Potentially unsafe or incomplete legacy routing records' AS inventory_section;
 SELECT
   id AS tenant_id,
   subdomain,
