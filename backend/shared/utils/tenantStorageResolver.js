@@ -8,6 +8,7 @@ const {
   STORAGE_TIERS,
   STORAGE_STATUSES,
   assertSchemaName,
+  deriveTenantSchemaName,
   validatePostgresUrl,
 } = require('./tenantStorageConfig');
 
@@ -69,8 +70,8 @@ function resolveTenantStorageTarget(tenant, {
     if (tier === STORAGE_TIERS.SHARED && schemaName !== 'shared_tenants') {
       throw new Error('Shared storage must use the shared_tenants schema.');
     }
-    if (tier === STORAGE_TIERS.DEDICATED_SCHEMA && schemaName === 'shared_tenants') {
-      throw new Error('Dedicated-schema tenants cannot resolve to the shared_tenants schema.');
+    if (tier === STORAGE_TIERS.DEDICATED_SCHEMA && schemaName !== deriveTenantSchemaName(tenant.id)) {
+      throw new Error('Dedicated schema must match the immutable tenant UUID.');
     }
     parsed.searchParams.set('schema', schemaName);
   } else if (tier === STORAGE_TIERS.DEDICATED_DATABASE) {
