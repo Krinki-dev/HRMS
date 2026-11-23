@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS tenants (
   deleted_at          TIMESTAMPTZ                                      -- soft delete
 );
 
-DO $
+DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='tenants_storage_tier_check' AND conrelid='public.tenants'::regclass) THEN
     ALTER TABLE public.tenants ADD CONSTRAINT tenants_storage_tier_check
@@ -109,7 +109,7 @@ BEGIN
     ALTER TABLE public.tenants ADD CONSTRAINT tenants_storage_status_check
       CHECK (storage_status IN ('pending','provisioning','ready','failed','legacy_unclassified'));
   END IF;
-END $;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_tenants_storage_lifecycle
   ON public.tenants (storage_tier, storage_status)
