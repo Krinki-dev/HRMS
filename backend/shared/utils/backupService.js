@@ -1,4 +1,4 @@
-﻿const { spawn }          = require('child_process');
+const { spawn }          = require('child_process');
 const { pipeline }       = require('stream/promises');
 const fs                 = require('fs');
 const path               = require('path');
@@ -33,7 +33,7 @@ function parseDbUrl(url) {
       port: parsed.port || '5432',
       user: decodeURIComponent(parsed.username),
       pass: decodeURIComponent(parsed.password),
-      name: decodeURIComponent(parsed.pathname.replace(/^\\//, '')),
+      name: decodeURIComponent(parsed.pathname.slice(1)),
       schema: parsed.searchParams.get('schema'),
     };
   } catch (error) {
