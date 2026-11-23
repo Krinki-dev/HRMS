@@ -99,6 +99,16 @@ CREATE TABLE IF NOT EXISTS tenants (
   deleted_at          TIMESTAMPTZ                                      -- soft delete
 );
 
+ALTER TABLE public.tenants
+  ADD CONSTRAINT tenants_storage_tier_check
+    CHECK (storage_tier IN ('shared','dedicated_schema','dedicated_database','legacy_unclassified')),
+  ADD CONSTRAINT tenants_storage_status_check
+    CHECK (storage_status IN ('pending','provisioning','ready','failed','legacy_unclassified'));
+
+CREATE INDEX IF NOT EXISTS idx_tenants_storage_lifecycle
+  ON public.tenants (storage_tier, storage_status)
+  WHERE deleted_at IS NULL;
+
 -- Indexes for hot-path queries (tenant middleware runs on every request)
 CREATE INDEX IF NOT EXISTS idx_tenants_subdomain      ON tenants (subdomain)    WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_tenants_custom_domain  ON tenants (custom_domain) WHERE deleted_at IS NULL AND custom_domain IS NOT NULL;
