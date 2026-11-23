@@ -901,7 +901,11 @@ exports.verifySubscription = async (req, res) => {
     if (!selectedPlanSlug) return sendError(res, ERROR_CODES.VALIDATION, 'Invalid plan selected', 400);
     if (period && !validPeriods.includes(period)) return sendError(res, ERROR_CODES.VALIDATION, 'Invalid billing period', 400);
 
-    if (!mock) {
+    if (mock) {
+      return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Mock payment verification is disabled. A verified payment is required.', 403);
+    }
+
+    {
       // 1. RAZORPAY SIGNATURE VERIFICATION
       if (method === 'razorpay') {
         const sign = `${resolvedOrderId}|${resolvedPaymentId}`;
@@ -1079,7 +1083,7 @@ exports.verifySubscription = async (req, res) => {
         tax_amount_paise: gstPaise,
         total_paise: totalPaise,
         status: 'paid',
-        payment_id: resolvedPaymentId || transactionId || (mock ? `MOCK-SUB-${tenantId}` : null),
+        payment_id: resolvedPaymentId || transactionId || null,
         breakdown: {
           ...(calculatedPrice || {}),
           renewalMode: normalizedRenewalMode,
