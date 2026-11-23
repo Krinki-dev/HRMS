@@ -9,7 +9,7 @@ SELECT
   COUNT(*) FILTER (WHERE column_name = 'storage_tier') > 0 AS has_storage_tier,
   COUNT(*) FILTER (WHERE column_name = 'storage_status') > 0 AS has_storage_status,
   COUNT(*) FILTER (WHERE column_name = 'storage_provisioned_at') > 0 AS has_storage_provisioned_at,
-  COUNT(*) FILTER (WHERE column_name = 'storage_last_error') > 0 AS has_storage_last_error
+  COUNT(*) FILTER (WHERE column_name = 'storage_error_code') > 0 AS has_storage_error_code
 FROM information_schema.columns
 WHERE table_schema = 'public' AND table_name = 'tenants';
 
