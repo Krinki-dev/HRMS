@@ -43,12 +43,21 @@
 - Missing database target, clone failure, or seed failure leaves the tenant inactive and returns a provisioning error.
 - Legacy schema naming remains temporarily in this path until the central lifecycle migration and tenant classification are ready; this is not yet the final shared-versus-dedicated allocator.
 
+### 6. Stage 2: storage isolation and migration alignment
+- Fixed the central schema's PostgreSQL `DO $ ... END $;` block.
+- Aligned read-only inventory checks with `storage_error_code`, the lifecycle column in both Prisma and SQL.
+- Classified dedicated-schema routing now requires a UUID-derived schema name, not just a syntactically valid name.
+- Tenant-specific backup is restricted to ready, UUID-owned dedicated schemas; shared and legacy tenants fail closed until a separate audited backup implementation exists.
+- Permanent deletion now fails with `RESTORE_VERIFICATION_REQUIRED` before attempting a backup or schema drop. This intentional stop remains until an independently verified restore-and-approval workflow is implemented.
+- Added tests for backup targeting and schema ownership.
+- GitHub Actions has reported successful runs on earlier branch commits; newest commits require their own completed run.
+
 ## Not yet implemented / not approved for production
 - Full registration provisioning state machine, retry/compensation, and UUID-based schema allocation.
 - Storage lifecycle migration alignment and application.
 - Tenant resolver integration into request middleware.
 - Existing-tenant classification and schema collision remediation.
-- Restore-validation workflow and deletion approval gate.
+- Restore-validation workflow and deletion approval gate (permanent deletion currently intentionally disabled).
 - Payment idempotency and server-side order validation.
 - Full PostgreSQL integration and tenant-isolation end-to-end tests.
 
