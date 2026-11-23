@@ -4,6 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const { encrypt } = require('../../shared/utils/encryption');
 const { runBackup } = require('../../shared/utils/backupService');
 const { resolveTenantDbUrl } = require('./platform.service');
+const { getSafeDeletionTarget } = require('./tenantDeletionGuard');
 
 function appError(code, message, status = 400) {
   const err = new Error(message);
@@ -45,7 +46,7 @@ function hasStoredCredentials(cfg, provider) {
 
 async function getDeletionReadiness(centralDb, tenantId) {
   const rows = await centralDb.$queryRaw`
-    SELECT id, db_mode, schema_name, deleted_at
+    SELECT id, db_mode, schema_name, storage_tier, storage_status, deleted_at
     FROM tenants
     WHERE id = ${tenantId}::uuid
     LIMIT 1
@@ -64,6 +65,8 @@ async function getDeletionReadiness(centralDb, tenantId) {
       id: tenant.id,
       dbMode: tenant.db_mode,
       hasSchema: !!tenant.schema_name,
+      storageTier: tenant.storage_tier || 'legacy_unclassified',
+      storageStatus: tenant.storage_status || 'legacy_unclassified',
       requiresExternalDeleteConfirmation: ['external_cloud', 'local', 'hybrid'].includes(tenant.db_mode),
     },
     backup: {
@@ -189,6 +192,7 @@ async function permanentlyDeleteTenant({
   }
 
   const tenant = tenantRows[0];
+  const deletionTarget = getSafeDeletionTarget(tenant);
   const dbUrl = resolveTenantDbUrl(tenant.db_mode, tenant);
   if (!dbUrl) {
     throw appError('DB_URL_UNRESOLVED', 'Tenant database URL could not be resolved. Deletion cannot proceed.', 500);
@@ -203,7 +207,7 @@ async function permanentlyDeleteTenant({
   }
 
   const backup = await runMandatoryBackup(centralDb, tenant.id, backupConfig);
-  await wipeTenantDatabase(dbUrl, tenant.schema_name);
+  await wipeTenantDatabase(dbUrl, deletionTarget.schemaName);
 
   await centralDb.$executeRaw`DELETE FROM tenant_modules WHERE tenant_id = ${tenant.id}::uuid`;
   await centralDb.$executeRaw`DELETE FROM central_user_index WHERE company_id = ${tenant.id}::uuid`;
