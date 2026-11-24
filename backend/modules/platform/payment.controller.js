@@ -538,7 +538,10 @@ exports.createSubscriptionOrder = async (req, res) => {
       return sendError(res, ERROR_CODES.VALIDATION, 'One or more selected add-ons are not available for this plan.', 400);
     }
     if (!req.db?.employees?.count) return sendError(res, ERROR_CODES.SERVER, 'Employee count could not be verified for pricing.', 503);
-    const employeeCount = await req.db.employees.count();
+    // Subscription pricing is based on the current active workforce, not soft-deleted or inactive records.
+    const employeeCount = await req.db.employees.count({
+      where: { deleted_at: null, status: 'active' },
+    });
     const price = await plansService.calculatePrice({
       planSlug, selectedAddons: addons, billingMonths: Number(billingMonths),
       employeeCount, promoCode: promoCode ? String(promoCode).trim() : undefined,
