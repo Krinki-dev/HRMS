@@ -268,3 +268,10 @@ The next onboarding slice has been implemented on the working branch:
 - Backend GitHub Actions completed successfully on the preceding commit 23d112f6 and on later commits through b64cd112. The backend run for commit 651bc7e6 was still in progress at the time of this note.
 - Added custom-domain validation on both the admin form and backend tenant update route; invalid hostnames, URLs, ports and paths are rejected. DNS/SSL are explicitly shown as unverified until deployment-level checks exist.
 - The admin platform menus have code-level integrations and responsive styling, but this does not certify a production rollout. Live DB/API tests, DNS/SSL provisioning verification, browser/accessibility QA and deployment remain outstanding.
+## Marketing editor completion (2026-11-24)
+
+- Replaced the Marketing Features read-only placeholder with editable feature cards (icon, title and description), with server-side field limits and public landing-page rendering.
+- Replaced the Testimonials placeholder with an editor for genuine customer quotes, author, role and company. The public landing page displays only saved entries; no testimonials are fabricated or prefilled.
+- Extended the public marketing endpoint to return only sanitized feature/testimonial fields in addition to the hero fields.
+- The frontend production build passed on commit 76ba47da7171995b2b402a830250d64d416ff300. The corresponding backend test workflow was still running when this note was written; earlier backend test runs through commit b7c7481b completed successfully.
+- The CTA tab still contains reference rows for fixed site links; the Hero CTA is the editable live CTA. Pricing changes are handled in the separate Pricing & Plans menu.
