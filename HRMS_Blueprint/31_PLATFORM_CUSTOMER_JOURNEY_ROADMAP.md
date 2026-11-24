@@ -9,6 +9,9 @@
 - Razorpay is the only enabled customer billing gateway for launch.
 - PhonePe, JioPay, and other payment methods are deferred and must be displayed as **Coming soon** where payment methods are shown. They must remain blocked server-side.
 - Payroll payouts are not customer subscription payments. Automated payouts remain disabled until a real provider integration and reconciliation flow exist.
+- Company identity capture must support GSTIN for GST-registered businesses and PAN for businesses without GST registration. Prefer authorised, direct access to official GST-system data; do not make an unverified third-party lookup service the source of truth. GST portal CAPTCHA must never be bypassed. If an authorised machine-to-machine integration is unavailable or the official portal requires CAPTCHA, present a user-assisted official verification step in the signup flow and let the user complete the CAPTCHA. Store the source, verification timestamp, and result status; treat prefilled details as unverified until confirmed.
+- PostgreSQL is the only database engine in the current product scope. Deployment mode is a separate choice: Syntern-managed cloud, customer-managed cloud/server, or offline/self-hosted. Do not imply every mode is self-serve today: expose only modes with a tested provisioning/install path, and label the rest as assisted setup. Keep credentials out of browser storage and logs.
+- Trial signup must be deliberately short. Collect only the minimum needed to create and secure the workspace (company identity/name, one verified admin contact, login credential, required consent, and GSTIN or PAN only when applicable/needed). Defer optional profile fields, branches, departments, payroll configuration, document uploads, branding, SMTP, and backup setup until after the first successful login. Ask only for information necessary for the next action (progressive profiling).
 - Do not expand secondary HRMS modules ahead of a reliable customer acquisition and onboarding journey.
 
 ## Current code observations (branch audit)
@@ -31,7 +34,18 @@
 
 ### Phase 1 — Signup and identity
 
-- Public signup form with company legal/trade name, admin contact, email, phone, subdomain, password, consent, and applicable business identifiers.
+**Fast-start principle:** keep trial registration to the minimum required fields and defer optional setup. Use progressive profiling after the customer reaches the workspace; do not make a trial user complete the full implementation checklist before seeing the product.
+
+**Business identity lookup:**
+- Ask whether the business is GST-registered. If yes, collect GSTIN; otherwise offer PAN as the alternative identifier.
+- Prefer an authorised official GST portal/API integration for GSTIN lookup and prefill. Confirm current portal/API terms and permitted access before implementation; do not automate around or defeat CAPTCHA.
+- If official lookup requires CAPTCHA or no permitted API is available, embed/redirect to an official user-assisted verification step where feasible, or show a clear CAPTCHA/manual verification step in the registration journey. The customer solves it; the system then validates and records the returned details/status.
+- Use PAN-based lookup only through an authorised source and only for fields legally available. Do not promise a complete PAN profile where official access does not provide one.
+- Let the user review and correct fetched details. Record verification source, time, and status, and distinguish `prefilled` from `verified` data.
+
+- Short public trial signup: company name, one admin identity/contact, login credential, mandatory consent, and the applicable GSTIN or PAN identifier. Collect only fields proven necessary by backend provisioning and legal requirements.
+- Keep optional fields out of the initial trial gate. Ask for legal address, branches, departments, designations, shifts, payroll details, documents, branding, SMTP, and backup configuration progressively after first login, when the customer reaches the relevant feature.
+- Provide a GSTIN path for GST-registered businesses and a PAN path for businesses without GST registration, following the official-source/CAPTCHA rules above.
 - Validate fields on both client and server; normalize email, phone, GSTIN, PAN, and subdomain consistently.
 - Add email/phone verification and safe retry/resend behavior before granting normal workspace access.
 - Prevent duplicate signup races with database uniqueness constraints and idempotent registration handling.
@@ -42,6 +56,8 @@
 **Acceptance:** one customer signup creates one tenant, one initial admin identity, and one auditable provisioning lifecycle; duplicate/retried submissions cannot create duplicate workspaces.
 
 ### Phase 2 — Tenant provisioning and account activation
+
+**Database engine and deployment model:** PostgreSQL only for this release. During signup, default to Syntern-managed cloud for the fastest trial. Offer customer-managed cloud/server and offline/self-hosted PostgreSQL as deployment choices only where installation, connectivity, backup, upgrade, and support procedures are documented and tested; otherwise route them to assisted setup rather than presenting an unimplemented self-service wizard. Cloud, customer-hosted, and offline are deployment modes—not separate database engines.
 
 - Use one explicit provisioning state machine, e.g. `pending_verification`, `provisioning`, `active`, `provisioning_failed`, `suspended`.
 - Persist each stage and error code safely; support idempotent retries for schema creation, template cloning, and seed operations.
@@ -100,6 +116,8 @@
 
 | Priority | Workstream | Required result |
 |---|---|---|
+| P0 | Fast trial signup and business identity | Minimal required fields; GSTIN/PAN path; official-source lookup with user-assisted CAPTCHA where required |
+| P0 | PostgreSQL deployment modes | Managed cloud default; customer cloud/server and offline/self-hosted modes accurately gated by tested install paths |
 | P0 | Registration/provisioning audit and repair | Safe, idempotent signup and recoverable tenant creation |
 | P0 | Onboarding persistence/completion | Real save-step persistence and a working completion endpoint |
 | P0 | Plan/subscription correctness | One trial lifecycle; Razorpay-only paid activation; reliable entitlement |
@@ -120,9 +138,11 @@
 
 ## Immediate next engineering tasks
 
-1. Trace the frontend registration form to the backend `/platform/register` request and verify the exact payload and post-registration login/session behavior.
-2. Trace platform route mounts and confirm whether `/platform/onboarding/complete` is actually registered; implement a backend completion route only after identifying the intended required-step rules.
-3. Replace the acknowledgement-only behavior in `/platform/onboarding/save-step` with real persistence for supported steps; add a persisted onboarding progress model/table if no safe existing store exists.
-4. Define and implement the tenant document data model and private upload storage integration after checking the existing MinIO/file-upload infrastructure.
-5. Unify trial activation so registration and the trial endpoint cannot reset or diverge the trial period.
-6. Add automated tests and run the full suite before claiming the journey complete.
+1. Trace the frontend registration form to the backend `/platform/register` request; simplify trial signup to minimum required fields and verify post-registration login/session behavior.
+2. Audit official GST portal integration options and terms. Implement direct authorised lookup if available; otherwise design a user-assisted official CAPTCHA/verification handoff. Add PAN as the non-GST alternative without relying on an unverified third-party data source.
+3. Audit PostgreSQL deployment modes separately from database engine support; default trials to managed cloud and expose customer-hosted/offline choices only when their provisioning paths are tested.
+4. Trace platform route mounts and confirm whether `/platform/onboarding/complete` is actually registered; implement a backend completion route only after identifying the intended required-step rules.
+5. Replace the acknowledgement-only behavior in `/platform/onboarding/save-step` with real persistence for supported steps; add a persisted onboarding progress model/table if no safe existing store exists.
+6. Define and implement the tenant document data model and private upload storage integration after checking the existing MinIO/file-upload infrastructure.
+7. Unify trial activation so registration and the trial endpoint cannot reset or diverge the trial period.
+8. Add automated tests and run the full suite before claiming the journey complete.
