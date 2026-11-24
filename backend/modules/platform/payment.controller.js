@@ -636,7 +636,7 @@ exports.verifySubscription = async (req, res) => {
     const expiry = new Date();
     expiry.setMonth(expiry.getMonth() + Number(snapshot.billingMonths));
     await withPlatformAdminRLS(centralPrisma, async (tx) => {
-      await tx.$executeRaw`SELECT set_config('app.current_tenant', ${tenantId}, true)`;
+      await tx.$queryRaw`SELECT set_config('app.current_tenant', ${tenantId}, true)`;
       const claimed = await tx.payment_orders.updateMany({
         where: { id: stored.id, tenant_id: tenantId, status: 'created', gateway_payment_id: null },
         data: { gateway_payment_id: paymentId, status: 'captured', updated_at: new Date() },
