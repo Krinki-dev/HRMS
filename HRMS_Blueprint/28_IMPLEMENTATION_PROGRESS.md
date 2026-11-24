@@ -114,3 +114,7 @@ No database migration, live schema change, customer-data deletion, backup execut
 - Reconfirmed that the dedicated plans router is mounted before the platform admin router and provides the plan CRUD, module pricing, discounts and promo endpoints used by PricingManager.
 - GitHub Actions **Backend Tests** and **Frontend Build** both completed successfully for branch head `ed90236b58b1d43b4fa5cff6410e336f859a3b57`.
 - These CI checks do not validate database migrations, live Razorpay transactions, document storage/ClamAV infrastructure, or browser-level end-to-end flows. Migrations and deployment remain pending a supervised staging run.
+
+- Completed the Marketing menu's previously static CTA panel: platform admins can now edit the bottom landing-page headline, supporting copy and three internal navigation actions; public output is allowlisted, length-limited and rejects protocol-relative/external destinations.
+- The public landing page now renders the configured bottom CTA content rather than hardcoded button labels and destinations.
+- CI for the CTA changes is running on the current branch head; final result will be recorded after completion.
