@@ -136,39 +136,7 @@ export default function OnboardingWizard({ onComplete }) {
     onError: (e) => toast.error(e.response?.data?.message || 'Failed'),
   });
 
-  // Complete PhonePe v2 checkout after the provider redirects back to onboarding.
-  const [phonePeReturnHandled, setPhonePeReturnHandled] = useState(false);
-  useEffect(() => {
-    if (phonePeReturnHandled ||
-        searchParams.get('status') !== 'verify' ||
-        searchParams.get('method') !== 'phonepe') return;
-    const transactionId = searchParams.get('transactionId');
-    const encodedSelection = searchParams.get('selection');
-    if (!transactionId || !encodedSelection) {
-      setPhonePeReturnHandled(true);
-      toast.error('Payment return details are incomplete. Please contact support.');
-      navigate('/onboarding', { replace: true });
-      return;
-    }
-    setPhonePeReturnHandled(true);
-    (async () => {
-      try {
-        const normalized = encodedSelection.replace(/-/g, '+').replace(/_/g, '/');
-        const selection = JSON.parse(atob(normalized));
-        await api.post('/platform/subscribe/verify', {
-          ...selection,
-          transactionId,
-          method: 'phonepe',
-        });
-        toast.success('Payment successful! Plan activated.');
-        setStep(STEPS.findIndex(s => s.key === 'org'));
-      } catch (error) {
-        toast.error(error.response?.data?.message || 'PhonePe payment could not be verified. Contact support if money was deducted.');
-      } finally {
-        navigate('/onboarding', { replace: true });
-      }
-    })();
-  }, [searchParams, phonePeReturnHandled, navigate]);
+  // PhonePe is a deferred provider. The launch onboarding flow accepts Razorpay only.
 
   async function handlePlanNext({ planSlug, selectedAddons, billingMonths, renewalMode = 'manual', promoCode, priceResult, startTrial, method }) {
     try {
@@ -279,8 +247,8 @@ export default function OnboardingWizard({ onComplete }) {
   async function saveOrg() {
     setSavingOrg(true);
     try {
-      for (const name of depts) await settingsApi.createDept({ name }).catch(() => {});
-      for (const name of desigs) await settingsApi.createDesig({ name }).catch(() => {});
+      for (const name of depts) await settingsApi.createDept({ name });
+      for (const name of desigs) await settingsApi.createDesig({ name });
       await api.post('/platform/onboarding/save-step', { step: 'org' });
       toast.success('Organisation saved');
       setStep(s => s + 1);
@@ -309,8 +277,9 @@ export default function OnboardingWizard({ onComplete }) {
           name: comp.label, code: comp.key.toUpperCase(), type: comp.type,
           calculation_type: comp.pct ? 'percentage' : 'fixed',
           value: comp.pct || comp.fixed || 0, is_taxable: comp.type === 'earning', is_active: true,
-        }).catch(() => {});
+        });
       }
+      await api.post('/platform/onboarding/save-step', { step: 'payroll' });
       toast.success(`${selected.length} salary components configured`);
       setStep(s => s + 1);
     } catch (e) { toast.error('Failed to save payroll settings'); }
@@ -318,10 +287,15 @@ export default function OnboardingWizard({ onComplete }) {
   }
 
   async function saveEmail() {
-    if (skipEmail) { setStep(s => s + 1); return; }
+    if (skipEmail) {
+      await api.post('/platform/onboarding/save-step', { step: 'email', skipped: true });
+      setStep(s => s + 1);
+      return;
+    }
     setBusy(true);
     try {
       await settingsApi.saveNotifications(smtp);
+      await api.post('/platform/onboarding/save-step', { step: 'email' });
       toast.success('Email settings saved');
       setStep(s => s + 1);
     } catch (e) { toast.error(e.response?.data?.message || 'Failed to save email'); }
@@ -341,10 +315,10 @@ export default function OnboardingWizard({ onComplete }) {
   async function saveCompliance() {
     setBusy(true);
     try {
-      if (!skipCompliance && (pf.username || esi.username)) {
-        await api.post('/platform/onboarding/save-step', { step: 'compliance', data: { pf, esi } });
-      }
-      toast.success(skipCompliance ? 'Skipped' : 'Compliance saved');
+      // Portal credentials are not stored by the onboarding progress endpoint.
+      // Mark this step deferred; configure PF/ESI credentials later in the secure settings area.
+      await api.post('/platform/onboarding/save-step', { step: 'compliance', skipped: true });
+      toast.success('Compliance setup can be completed later in Settings');
       setStep(s => s + 1);
     } finally { setBusy(false); }
   }
@@ -366,7 +340,10 @@ export default function OnboardingWizard({ onComplete }) {
           },
         });
       }
-      toast.success(skipBackupSetup ? 'Backup setup skipped for now' : 'Backup settings saved');
+      if (skipBackupSetup || !backupProvider) {
+        await api.post('/platform/onboarding/save-step', { step: 'backup', skipped: true });
+      }
+      toast.success(skipBackupSetup || !backupProvider ? 'Backup setup skipped for now' : 'Backup settings saved');
       setStep(s => s + 1);
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to save backup settings');
@@ -645,7 +622,11 @@ export default function OnboardingWizard({ onComplete }) {
             }</WizBtn>
           )}
           {(currentStep.key === 'org' || currentStep.key === 'work') && (
-            <WizBtn variant="ghost" onClick={() => setStep(s => s + 1)}>Skip</WizBtn>
+            <WizBtn variant="ghost" onClick={async () => {
+              const key = currentStep.key;
+              await api.post('/platform/onboarding/save-step', { step: key, skipped: true });
+              setStep(s => s + 1);
+            }}>Skip</WizBtn>
           )}
           {currentStep.key === 'backup' && (
             <WizBtn variant="ghost" onClick={() => setStep(s => s + 1)}>Skip</WizBtn>
