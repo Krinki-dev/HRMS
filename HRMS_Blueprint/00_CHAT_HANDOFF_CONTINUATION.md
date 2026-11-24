@@ -398,3 +398,13 @@ Priority after renewal:
 5. Run security, tenant-isolation, browser E2E, backup/restore and deployment gates.
 
 User should not be asked to repeat technical decisions. Ask for their involvement only when staging/DB access, secrets configuration, legal/business policy confirmation, or production approval is genuinely required.
+
+
+## 11. 2026-11-25 — HRMS module execution resumed
+
+- A critical entitlement gap was found: `checkModuleEnabled` was a no-op and was not used on the primary module routers. Server-side module plan gating has now been implemented and mounted on Employees, Attendance, Leave, Payroll, Compliance, Recruitment, Performance, Training, Assets, Expenses and Reports.
+- The gate trusts only `req.tenant.enabledModules` populated by tenant middleware; it does not trust client-supplied module lists or ordinary tenant-admin roles. Missing entitlement metadata fails closed. Platform-level admin can bypass for support/administration.
+- Regression tests were added but not executed in this environment.
+- Current audit shows the main HRMS modules already have substantial backend routes/controllers/services. Payroll and Compliance have integration tests requiring PostgreSQL. Their existing "Live" blueprint labels are not proof of end-to-end readiness.
+- Immediate module task: audit Employees frontend + backend service/controller + database schema + ESS permissions + document storage; then trace Attendance and Leave into Payroll and Compliance. Check each workflow end-to-end rather than adding broad features blindly.
+- Review remaining module routers and permission coverage, especially self-service Attendance/Leave, Automation, Notifications, Settings and Roles. Plan gating and per-user authorization are separate requirements.
