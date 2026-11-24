@@ -29,7 +29,7 @@ export default function AdminMarketing() {
   const [copied, setCopied]   = useState(false);
 
   // 1. Fetch current marketing settings from DB
-  const { data: marketingRes, isLoading } = useQuery({
+  const { data: marketingRes, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-marketing'],
     queryFn: () => api.get('/platform/admin/settings').then(res => res.data?.data?.Marketing || {}),
   });
@@ -77,7 +77,8 @@ export default function AdminMarketing() {
     });
   }
 
-  if (isLoading) return <div className="p-10 text-center text-gray-400">Loading landing page content...</div>;
+  if (isLoading) return <div className="admin-empty-state">Loading landing page content…</div>;
+  if (isError) return <div className="admin-alert admin-alert--warning">Could not load saved marketing content. Nothing has been changed. <button className="btn-sm" onClick={() => refetch()}>Retry</button></div>;
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 14 }}>
