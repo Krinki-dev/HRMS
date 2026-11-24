@@ -70,10 +70,9 @@ const INDIA_STATES = [
 ];
 
 const DB_MODES = [
-  { id:'cloud',          title:'Syntern Cloud (recommended)', desc:'We host your database. Zero setup, always accessible.',      badge:'Easiest',      badgeColor:C.green,   creds:null },
-  { id:'local',          title:'Your own server (online or offline)', desc:'Use PostgreSQL on your own server or local network. Installation may require assistance.', badge:'Self-hosted', badgeColor:C.amber, creds:'local' },
-  { id:'external_cloud', title:'Your own cloud database', desc:'Connect a PostgreSQL database hosted in your cloud account. Assisted setup may be required.', badge:'Bring your cloud', badgeColor:'#60A5FA', creds:'url' },
-  { id:'external_cloud', title:'Bring your own cloud DB',     desc:'Supabase, Neon, PlanetScale, Railway, or any Postgres URL.', badge:'Advanced',     badgeColor:'#60A5FA', creds:'url' },
+  { id:'cloud', title:'Syntern Cloud (recommended)', desc:'We host and manage PostgreSQL. Fastest way to start your trial.', badge:'Easiest', badgeColor:C.green, creds:null },
+  { id:'local', title:'Your own server (online or offline)', desc:'Use PostgreSQL on your own server or local network. Installation may require assistance.', badge:'Self-hosted', badgeColor:C.amber, creds:'local' },
+  { id:'external_cloud', title:'Your own cloud database', desc:'Connect a PostgreSQL database in your cloud account. Assisted setup may be required.', badge:'Bring your cloud', badgeColor:'#60A5FA', creds:'url' },
 ];
 
 function Field({ label, required, hint, locked, editable, children }) {
@@ -151,13 +150,8 @@ function LocalDbFields({ localDb, setLocalDb }) {
     <div style={S.credBox}>
       <div style={{fontSize:12,fontWeight:700,color:'#94A3CE',marginBottom:12,textTransform:'uppercase',letterSpacing:'0.4px'}}>Local database connection</div>
       <div style={{...S.row2,marginBottom:14}}>
-        <Field label="Database type">
-          <select value={localDb.type} onChange={e=>setLocalDb(d=>({...d,type:e.target.value,port:e.target.value==='mysql'?'3306':e.target.value==='mssql'?'1433':'5432'}))} style={S.select}>
-            <option value="postgres">PostgreSQL</option>
-            <option value="mysql">MySQL / MariaDB</option>
-            <option value="mssql">SQL Server (MSSQL)</option>
-            <option value="sqlite">SQLite (dev only)</option>
-          </select>
+        <Field label="Database engine">
+          <div style={{...S.inputRO,cursor:'default'}}>PostgreSQL only</div>
         </Field>
         <Field label="Port"><Input value={localDb.port} onChange={v=>setLocalDb(d=>({...d,port:v.replace(/\D/g,'')}))} placeholder="5432" maxLength={5}/></Field>
       </div>
@@ -175,7 +169,7 @@ function CloudUrlField({ value, onChange, label='Cloud database URL', placeholde
   return (
     <div style={S.credBox}>
       <div style={{fontSize:12,fontWeight:700,color:'#94A3CE',marginBottom:12,textTransform:'uppercase',letterSpacing:'0.4px'}}>{label}</div>
-      <Field label="Connection URL" required hint="Use a PostgreSQL connection URL. Credentials are handled by the server.">
+      <Field label="Connection URL" required hint="PostgreSQL connection URL only. Credentials are handled by the server.">
         <Input value={value} onChange={onChange} placeholder={placeholder}/>
       </Field>
     </div>
