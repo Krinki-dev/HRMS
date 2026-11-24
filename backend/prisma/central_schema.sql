@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS tenants (
   -- Status
   is_active           BOOLEAN       NOT NULL DEFAULT TRUE,
   is_setup_complete   BOOLEAN       NOT NULL DEFAULT FALSE,
+  onboarding_progress JSONB         NOT NULL DEFAULT '{}'::jsonb,
   suspended_at        TIMESTAMPTZ,
   suspension_reason   TEXT,
   payout_config_enc   TEXT,                            -- Encrypted JSON: { provider, key, secret, account_no }
