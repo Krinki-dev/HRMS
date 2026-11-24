@@ -548,7 +548,10 @@ export default function CompanyRegisterPage() {
     setError('');
     if (step===1) {
       if (!company.name.trim())  { setError('Company name is required.');  return false; }
-      if (!company.email.trim()) { setError('Company email is required.'); return false; }
+      if (company.gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(company.gstin)) { setError('Enter a valid 15-character GSTIN.'); return false; }
+      if (!company.pan && !company.gstin) { setError('Enter your GSTIN or PAN to identify your business.'); return false; }
+      if (company.pan && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(company.pan)) { setError('Enter a valid 10-character PAN.'); return false; }
+      if (company.gstin && company.pan && company.gstin.substring(2, 12) !== company.pan) { setError('PAN must match the PAN contained in your GSTIN.'); return false; }
       return true;
     }
     if (step===2) {
@@ -602,7 +605,7 @@ export default function CompanyRegisterPage() {
         localDb:        dbMode==='local' ? {...localDb,type:'postgres'} : undefined,
         externalDbUrl:  dbMode==='external_cloud' ? cloudUrl : undefined,
         admin:{name:admin.name,email:admin.email,phone:admin.phone,password:admin.password},
-        consent:true,
+        consent,
       };
       const res = await api.post('/platform/register', payload);
       return res.data;
@@ -802,7 +805,7 @@ export default function CompanyRegisterPage() {
 
                 <div style={S.secHead}>📧 Contact Details</div>
                 <div style={S.row2}>
-                  <Field label="Company email" required>
+                  <Field label="Company email" hint="Optional — admin email will be used if left blank">
                     <SI iref={emailRef} value={company.email} onChange={v=>setCompany(c=>({...c,email:fmt.email(v)}))} type="email" placeholder="hr@company.com"/>
                   </Field>
                   <Field label="Phone">
