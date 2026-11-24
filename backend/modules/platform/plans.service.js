@@ -175,7 +175,7 @@ async function savePlan(planData) {
 }
 
 async function deletePlan(id) {
-  const data  = await _read(KEY.PLANS);
+  const data  = await _readForWrite(KEY.PLANS);
   const plans = (data?.plans || DEFAULT_PLANS).filter(p => p.id !== id);
   await _write(KEY.PLANS, { plans });
 }
