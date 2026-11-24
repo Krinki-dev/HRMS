@@ -1,161 +1,197 @@
-
-/* ============================================
-   HRMS Theme System - Central CSS Variables
-   All components MUST use these tokens only.
-   ============================================ */
-
-/* === DARK THEME (default) === */
-[data-theme=dark] {
-  /* Backgrounds */
-  --bg-primary:     #0f1117;
-  --bg-secondary:   #161b22;
-  --bg-tertiary:    #1c2128;
-  --bg-card:        #1c2128;
-  --bg-hover:       #21262d;
-  --bg-active:      #388bfd1a;
-  --surface-raised: #1c2128;
-  --surface-muted:  #161b22;
-  --surface-subtle: #21262d;
-  --surface-border: #30363d;
-
-  /* Text */
-  --text-primary:   #e6edf3;
-  --text-secondary: #8b949e;
-  --text-muted:     #6e7681;
-  --text-inverse:   #0d1117;
-  --text-on-accent: #f0f6fc;
-
-  /* Brand / Accent */
-  --color-primary:  #388bfd;
-  --color-primary-hover: #58a6ff;
-  --color-success:  #3fb950;
-  --color-warning:  #d29922;
-  --color-danger:   #f85149;
-  --color-info:     #79c0ff;
-  --accent-soft:    #388bfd1a;
-  --success-soft:   #3fb9501a;
-  --warning-soft:   #d299221a;
-  --danger-soft:    #f851491a;
-  --info-soft:      #79c0ff1a;
-
-  /* Borders */
-  --border-color:   #30363d;
-  --border-focus:   #388bfd;
-
-  /* Sidebar */
-  --sidebar-bg:     #161b22;
-  --sidebar-width:  240px;
-  --sidebar-text:   #8b949e;
-  --sidebar-active: #388bfd;
-  --sidebar-active-bg: #388bfd1a;
-
-  /* Topbar */
-  --topbar-bg:      #161b22;
-  --topbar-height:  60px;
-  --topbar-border:  #30363d;
-
-  /* Cards */
-  --card-shadow:    0 1px 3px rgba(0,0,0,0.4);
-  --shadow-card:    0 1px 3px rgba(0,0,0,0.4);
-  --card-radius:    8px;
-  --radius-lg:      16px;
-  --radius-md:      10px;
-
-  /* Toggle */
-  --toggle-bg:      #30363d;
-  --toggle-thumb:   #e6edf3;
-
-  /* Scrollbar */
-  --scrollbar-bg:   #161b22;
-  --scrollbar-thumb: #30363d;
+/* Syntern HRMS design system
+   Change shared tokens here; screens should consume these variables.
+   Visual direction: macOS-inspired, calm surfaces, clear hierarchy, accessible contrast.
+*/
+:root {
+  color-scheme: light;
+  --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  --font-size-xs: 0.8125rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 0.9375rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.375rem;
+  --font-size-2xl: 1.75rem;
+  --font-size-3xl: 2rem;
+  --line-height-base: 1.55;
+  --line-height-tight: 1.25;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-xs: var(--space-1);
+  --space-sm: var(--space-2);
+  --space-md: var(--space-3);
+  --space-lg: var(--space-4);
+  --space-xl: var(--space-6);
+  --radius-xs: 6px;
+  --radius-sm: 9px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 999px;
+  --sidebar-width: 248px;
+  --topbar-height: 64px;
+  --transition-fast: 140ms ease;
+  --transition-base: 200ms ease;
 }
 
-/* === LIGHT THEME === */
-[data-theme=light] {
-  /* Backgrounds */
-  --bg-primary:     #ffffff;
-  --bg-secondary:   #f6f8fa;
-  --bg-tertiary:    #eaeef2;
-  --bg-card:        #ffffff;
-  --bg-hover:       #f3f4f6;
-  --bg-active:      #dbeafe;
+/* macOS-inspired light appearance: default */
+[data-theme="light"], :root:not([data-theme]) {
+  color-scheme: light;
+  --bg-primary: #f5f6f8;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #eef0f3;
+  --bg-card: #ffffff;
+  --bg-hover: #edf1f7;
+  --bg-active: #e5efff;
+  --bg-soft: #f6f7f9;
+  --bg-input: #ffffff;
   --surface-raised: #ffffff;
-  --surface-muted:  #f8fafc;
-  --surface-subtle: #f3f4f6;
-  --surface-border: #d0d7de;
-
-  /* Text */
-  --text-primary:   #1f2328;
-  --text-secondary: #656d76;
-  --text-muted:     #9198a1;
-  --text-inverse:   #ffffff;
+  --surface-muted: #f6f7f9;
+  --surface-subtle: #eef1f5;
+  --surface-border: #dfe3e9;
+  --text-primary: #20242c;
+  --text-heading: #171a21;
+  --text-secondary: #555e6d;
+  --text-muted: #687386;
+  --text-inverse: #ffffff;
   --text-on-accent: #ffffff;
-
-  /* Brand / Accent */
-  --color-primary:  #0969da;
-  --color-primary-hover: #0550ae;
-  --color-success:  #1a7f37;
-  --color-warning:  #9a6700;
-  --color-danger:   #cf222e;
-  --color-info:     #0550ae;
-  --accent-soft:    #dbeafe;
-  --success-soft:   #dcfce7;
-  --warning-soft:   #fef3c7;
-  --danger-soft:    #fee2e2;
-  --info-soft:      #e0f2fe;
-
-  /* Borders */
-  --border-color:   #d0d7de;
-  --border-focus:   #0969da;
-
-  /* Sidebar */
-  --sidebar-bg:     #f6f8fa;
-  --sidebar-width:  240px;
-  --sidebar-text:   #656d76;
-  --sidebar-active: #0969da;
-  --sidebar-active-bg: #dbeafe;
-
-  /* Topbar */
-  --topbar-bg:      #ffffff;
-  --topbar-height:  60px;
-  --topbar-border:  #d0d7de;
-
-  /* Cards */
-  --card-shadow:    0 1px 3px rgba(0,0,0,0.1);
-  --shadow-card:    0 1px 3px rgba(0,0,0,0.1);
-  --card-radius:    8px;
-  --radius-lg:      16px;
-  --radius-md:      10px;
-
-  /* Toggle */
-  --toggle-bg:      #d0d7de;
-  --toggle-thumb:   #1f2328;
-
-  /* Scrollbar */
-  --scrollbar-bg:   #f6f8fa;
-  --scrollbar-thumb: #d0d7de;
-}
-:root,
-[data-theme="dark"],
-[data-theme="light"] {
-  --bg-app: var(--bg-primary);
-  --bg-input: var(--bg-secondary);
-  --text-link: var(--color-primary);
-  --font-size-base: 14px;
-  --line-height-base: 1.5;
-  --radius-sm: 8px;
-  --header-height: var(--topbar-height);
-  --shadow-md: var(--card-shadow);
+  --text-on-primary: #ffffff;
+  --color-primary: #2463d3;
+  --color-primary-hover: #174fb5;
+  --color-success: #18794e;
+  --color-warning: #946200;
+  --color-danger: #c43d43;
+  --color-info: #1769aa;
+  --accent-soft: #e7efff;
+  --success-soft: #e5f5ec;
+  --warning-soft: #fff3d8;
+  --danger-soft: #fde9e9;
+  --info-soft: #e6f3fc;
+  --border-color: #dfe3e9;
+  --border-strong: #cbd2dc;
+  --border-focus: #2463d3;
+  --sidebar-bg: #fbfbfc;
+  --sidebar-text: #586273;
+  --sidebar-active: #205fc9;
+  --sidebar-active-bg: #e9f0ff;
+  --topbar-bg: rgba(255,255,255,0.94);
+  --topbar-border: #e4e7ec;
+  --card-shadow: 0 1px 2px rgba(22,34,51,0.04), 0 8px 24px rgba(22,34,51,0.045);
+  --shadow-card: var(--card-shadow);
+  --shadow-sm: 0 1px 2px rgba(22,34,51,0.06);
+  --shadow-md: 0 8px 24px rgba(22,34,51,0.08);
+  --card-radius: 14px;
+  --toggle-bg: #d7dce4;
+  --toggle-thumb: #ffffff;
+  --scrollbar-bg: #f1f2f5;
+  --scrollbar-thumb: #c7ced8;
   --primary: var(--color-primary);
+  --primary-hover: var(--color-primary-hover);
   --primary-light: var(--accent-soft);
-  --transition-base: 0.2s ease;
-  --space-sm: 8px;
-  --space-md: 12px;
+  --success: var(--color-success);
+  --success-light: var(--success-soft);
+  --danger: var(--color-danger);
+  --danger-light: var(--danger-soft);
+  --warning: var(--color-warning);
+  --warning-light: var(--warning-soft);
+  --info: var(--color-info);
+  --info-light: var(--info-soft);
+  --violet: #7054c8;
+  --violet-light: #f0ebff;
+  --text-link: var(--color-primary);
+  --text-on-primary: #ffffff;
+}
 
+/* Optional dark appearance remains available from the theme toggle. */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-primary: #17191f;
+  --bg-secondary: #20232b;
+  --bg-tertiary: #292d37;
+  --bg-card: #222630;
+  --bg-hover: #2b303b;
+  --bg-active: #263a5b;
+  --bg-soft: #20242d;
+  --bg-input: #20232b;
+  --surface-raised: #252a34;
+  --surface-muted: #20232b;
+  --surface-subtle: #2b303b;
+  --surface-border: #3a414e;
+  --text-primary: #edf0f5;
+  --text-heading: #ffffff;
+  --text-secondary: #c0c7d2;
+  --text-muted: #9aa4b3;
+  --text-inverse: #17191f;
+  --text-on-accent: #ffffff;
+  --text-on-primary: #ffffff;
+  --color-primary: #78a9ff;
+  --color-primary-hover: #9bbfff;
+  --color-success: #62c995;
+  --color-warning: #f0c36b;
+  --color-danger: #ff8585;
+  --color-info: #82c8f5;
+  --accent-soft: #263a5b;
+  --success-soft: #1d3b30;
+  --warning-soft: #44371f;
+  --danger-soft: #48282d;
+  --info-soft: #1e394a;
+  --border-color: #3a414e;
+  --border-strong: #505968;
+  --border-focus: #78a9ff;
+  --sidebar-bg: #1d2028;
+  --sidebar-text: #c0c7d2;
+  --sidebar-active: #9bbfff;
+  --sidebar-active-bg: #263a5b;
+  --topbar-bg: rgba(29,32,40,0.96);
+  --topbar-border: #343b47;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.22), 0 8px 24px rgba(0,0,0,0.12);
+  --shadow-card: var(--card-shadow);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.22);
+  --shadow-md: 0 8px 24px rgba(0,0,0,0.25);
+  --card-radius: 14px;
+  --toggle-bg: #454d5a;
+  --toggle-thumb: #edf0f5;
+  --scrollbar-bg: #20232b;
+  --scrollbar-thumb: #505968;
+  --primary: var(--color-primary);
+  --primary-hover: var(--color-primary-hover);
+  --primary-light: var(--accent-soft);
+  --success: var(--color-success);
+  --success-light: var(--success-soft);
+  --danger: var(--color-danger);
+  --danger-light: var(--danger-soft);
+  --warning: var(--color-warning);
+  --warning-light: var(--warning-soft);
+  --info: var(--color-info);
+  --info-light: var(--info-soft);
+  --violet: #b5a0ff;
+  --violet-light: #352b50;
+  --text-link: var(--color-primary);
+  --text-on-primary: #17191f;
+}
+
+/* Compatibility aliases for existing screens while they are migrated to tokens. */
+:root, [data-theme="light"], [data-theme="dark"] {
+  --bg-app: var(--bg-primary);
+  --header-height: var(--topbar-height);
+  --radius-xs: 6px;
+  --radius-sm: 9px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+  --shadow-md: var(--card-shadow);
   --app-text-muted: var(--text-muted);
   --app-radius-sm: var(--radius-sm);
   --app-danger: var(--color-danger);
-
   --admin-surface: var(--bg-card);
   --admin-surface-muted: var(--bg-secondary);
   --admin-border: var(--border-color);
