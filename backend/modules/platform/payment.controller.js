@@ -973,7 +973,7 @@ exports.verifySubscription = async (req, res) => {
     }
 
     const resolvedOrderId = razorpay_order_id || razorpayOrderId;
-    const resolvedPaymentId = razorpay_payment_id || razorpayPaymentId || transactionId;
+    let resolvedPaymentId = razorpay_payment_id || razorpayPaymentId || transactionId;
     const resolvedSignature = razorpay_signature || razorpaySignature;
 
     const validPeriods = ['monthly', 'yearly', 'quarterly'];
