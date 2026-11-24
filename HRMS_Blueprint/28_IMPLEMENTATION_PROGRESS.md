@@ -92,3 +92,14 @@ No database migration, live schema change, customer-data deletion, backup execut
 - Added unit tests for signature validation and invoice/payment matching.
 - This does not yet complete the billing workflow: server-side order persistence, webhook idempotency, atomic invoice state transitions, and equivalent verified flows for PhonePe/JioPay remain outstanding.
 - GitHub Actions validation for these newest commits is pending; no live payment was attempted.
+
+
+## Razorpay order ledger and retry/idempotency hardening — 2026-11-24
+- Added a central `payment_orders` model and a pending SQL migration to persist the tenant, invoice, gateway order ID, amount, currency, payment ID, and lifecycle status.
+- Razorpay order creation now validates the gateway response against the invoice before recording it.
+- Retries reuse an existing pending Razorpay order for the same invoice instead of creating another order.
+- Added a database partial unique index to enforce at most one open Razorpay order per invoice.
+- Verification now requires a matching persisted order belonging to the same tenant and invoice.
+- Invoice payment and order capture are recorded in one RLS-scoped database transaction; invoice update is conditional so concurrent verification cannot mark the same invoice paid twice.
+- Migration is committed but **not applied**. Central Prisma client generation and backend CI must pass before runtime rollout.
+- Remaining: webhook idempotency and reconciliation, explicit order expiry/failure handling, provider-neutral ledger use for PhonePe/JioPay, subscription activation tied to verified invoice state, and integration tests against PostgreSQL.
