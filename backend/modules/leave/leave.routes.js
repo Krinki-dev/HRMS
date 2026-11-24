@@ -3,9 +3,10 @@ const router  = express.Router();
 const ctrl    = require('./leave.controller');
 const auth    = require('../../shared/middleware/auth');
 const requireSetupComplete = require('../../shared/middleware/requireSetupComplete');
-const { checkPermission }  = require('../../shared/middleware/permission');
+const { checkPermission, checkModuleEnabled }  = require('../../shared/middleware/permission');
 
 router.use(auth);
+router.use(checkModuleEnabled('leave'));
 
 router.get('/dashboard',                  ctrl.dashboard);
 router.get('/calendar',                   ctrl.calendar);
