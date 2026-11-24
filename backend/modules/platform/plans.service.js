@@ -127,6 +127,17 @@ async function _read(key) {
   }
 }
 
+/**
+ * Read-modify-write operations must not fall back to defaults when the database
+ * is unavailable. Doing so could replace a live catalog with defaults.
+ */
+async function _readForWrite(key) {
+  const rows = await centralPrisma.$queryRaw`
+    SELECT values FROM platform_settings WHERE id = ${key} LIMIT 1
+  `;
+  return rows[0]?.values || null;
+}
+
 async function _write(key, payload) {
   const json = JSON.stringify(payload);
   await centralPrisma.$executeRaw`
@@ -140,7 +151,7 @@ async function _write(key, payload) {
 
 // ── Plans ─────────────────────────────────────────────────────────────────────
 async function getPlans({ includeInactive = false } = {}) {
-  const data  = await _read(KEY.PLANS);
+  const data  = await _readForWrite(KEY.PLANS);
   let plans   = data?.plans || DEFAULT_PLANS;
   if (!includeInactive) plans = plans.filter(p => p.is_active);
   return plans.sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
@@ -198,7 +209,7 @@ async function getPromoCodes() {
 }
 
 async function savePromoCode(code) {
-  const data  = await _read(KEY.PROMOS);
+  const data  = await _readForWrite(KEY.PROMOS);
   let codes   = data?.codes || [];
   const isNew = !codes.find(c => c.code === code.code);
   if (isNew) { code.created_at = new Date().toISOString(); codes.push(code); }
@@ -208,7 +219,7 @@ async function savePromoCode(code) {
 }
 
 async function deletePromoCode(code) {
-  const data  = await _read(KEY.PROMOS);
+  const data  = await _readForWrite(KEY.PROMOS);
   const codes = (data?.codes || []).filter(c => c.code !== code);
   await _write(KEY.PROMOS, { codes });
 }
