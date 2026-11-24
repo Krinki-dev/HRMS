@@ -54,3 +54,22 @@ CREATE POLICY company_documents_update ON public.company_documents
     tenant_id::text = current_setting('app.current_tenant', true)
     OR current_setting('jwt.claims.is_platform_admin', true) = 'true'
   );
+
+-- Append-only reviewer audit history; latest status also remains on company_documents.
+CREATE TABLE IF NOT EXISTS public.company_document_reviews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  document_id UUID NOT NULL REFERENCES public.company_documents(id) ON DELETE CASCADE,
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  reviewer_id UUID,
+  from_status TEXT,
+  to_status TEXT NOT NULL,
+  reviewer_note TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_company_document_reviews_document
+  ON public.company_document_reviews (document_id, created_at DESC);
+ALTER TABLE public.company_document_reviews ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS company_document_reviews_admin ON public.company_document_reviews;
+CREATE POLICY company_document_reviews_admin ON public.company_document_reviews
+  FOR ALL USING (current_setting('jwt.claims.is_platform_admin', true) = 'true')
+  WITH CHECK (current_setting('jwt.claims.is_platform_admin', true) = 'true');
