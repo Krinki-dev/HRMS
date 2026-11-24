@@ -28,7 +28,7 @@ app.use(helmet());
 app.set('trust proxy', 1);
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100, message: "Too many requests, please try again later." }));
 app.use(cookieParser());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '10mb', verify: (req, _res, buffer) => {\n  if (req.originalUrl && req.originalUrl.startsWith('/api/v1/platform/subscribe/razorpay-webhook')) {\n    req.rawBody = Buffer.from(buffer);\n  }\n} }));
 app.use(express.urlencoded({ extended: true }));
 
 const rawAllowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:5173')
