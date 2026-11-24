@@ -5,6 +5,8 @@ const { THEME } = require('../../shared/utils/uiConstants');
 const logger = require('../../shared/utils/logger');
 const { generateInvoicePDF } = require('../../shared/utils/pdf.service');
 const { withTenantRLS, withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
+const plansService = require('./plans.service');
+const { buildFreePlanEntitlements } = require('./subscriptionEntitlements');
 
 /**
  * Fetches the pricing configuration and current subscription status for a tenant.
@@ -181,6 +183,90 @@ exports.getMyInvoices = async (req, res) => {
   // Identify tenant from the auth token
   req.params.tenantId = req.user.tenantId;
   return exports.getTenantInvoices(req, res);
+};
+
+/**
+ * Activates the catalog's permanent Free plan for a newly registered tenant.
+ * Registration starts a trial by default; selecting Free during onboarding
+ * must explicitly replace that temporary trial with permanent Free entitlements.
+ * This path never creates a payment order or invoice.
+ */
+exports.activateFreePlan = async (req, res) => {
+  const tenantId = req.user?.tenantId || req.user?.company_id;
+  if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Tenant session required', 401);
+
+  try {
+    const plans = await plansService.getPlans();
+    const freePlan = plans.find((plan) => plan.slug === 'free');
+    let entitlements;
+    try {
+      entitlements = buildFreePlanEntitlements(freePlan);
+    } catch (error) {
+      logger.error('[activateFreePlan] Free plan catalog is invalid:', error);
+      return sendError(res, ERROR_CODES.SERVER, 'The Free plan is not configured correctly. Please contact support.', 503);
+    }
+
+    await withPlatformAdminRLS(centralPrisma, async (tx) => {
+      await tx.$queryRaw`SELECT set_config('app.current_tenant', ${tenantId}, true)`;
+      const tenant = await tx.tenants.findUnique({
+        where: { id: tenantId },
+        select: { id: true, plan: true, is_active: true },
+      });
+      if (!tenant || !tenant.is_active) throw new Error('FREE_PLAN_TENANT_NOT_ACTIVE');
+      if (!['free', 'trial'].includes(tenant.plan)) throw new Error('FREE_PLAN_TRANSITION_NOT_ALLOWED');
+
+      // A captured subscription payment is an irreversible billing fact.
+      // Never let the onboarding Free action downgrade a paid subscription.
+      const capturedOrder = await tx.payment_orders.findFirst({
+        where: { tenant_id: tenantId, purpose: 'subscription', status: 'captured' },
+        select: { id: true },
+      });
+      if (capturedOrder) throw new Error('FREE_PLAN_PAID_SUBSCRIPTION_EXISTS');
+
+      await tx.tenants.update({
+        where: { id: tenantId },
+        data: {
+          plan: 'free',
+          plan_expires_at: null,
+          max_employees: entitlements.employeeCap ?? 999999,
+        },
+      });
+
+      for (const moduleName of entitlements.modules) {
+        await tx.tenant_modules.upsert({
+          where: { uq_tenant_module: { tenant_id: tenantId, module_name: moduleName } },
+          update: { is_active: true, disabled_at: null, enabled_at: new Date() },
+          create: { tenant_id: tenantId, module_name: moduleName, is_active: true },
+        });
+      }
+      await tx.tenant_modules.updateMany({
+        where: { tenant_id: tenantId, module_name: { notIn: entitlements.modules } },
+        data: { is_active: false, disabled_at: new Date() },
+      });
+
+      await tx.tenant_pricing_configs.upsert({
+        where: { tenant_id: tenantId },
+        update: entitlements.pricingConfig,
+        create: { tenant_id: tenantId, ...entitlements.pricingConfig },
+      });
+    });
+
+    return sendSuccess(res, {
+      plan: 'free',
+      expiresAt: null,
+      employeeCap: entitlements.employeeCap,
+      modules: entitlements.modules,
+    }, 'Free plan activated successfully.');
+  } catch (error) {
+    if (error.message === 'FREE_PLAN_TENANT_NOT_ACTIVE') {
+      return sendError(res, ERROR_CODES.NOT_FOUND, 'Active company account not found.', 404);
+    }
+    if (error.message === 'FREE_PLAN_TRANSITION_NOT_ALLOWED' || error.message === 'FREE_PLAN_PAID_SUBSCRIPTION_EXISTS') {
+      return sendError(res, ERROR_CODES.VALIDATION, 'This account already has a paid or non-onboarding subscription. The Free plan cannot replace it.', 409);
+    }
+    logger.error('[activateFreePlan] Failed:', error);
+    return sendError(res, ERROR_CODES.SERVER, 'Could not activate the Free plan. No plan change was confirmed.', 500);
+  }
 };
 
 /**
