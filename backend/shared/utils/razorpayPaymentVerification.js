@@ -3,7 +3,7 @@
 const crypto = require('crypto');
 
 function verifyRazorpaySignature({ orderId, paymentId, signature, secret } = {}) {
-  if (![orderId, paymentId, signature, secret].every((value) => typeof value === 'string' && value.length > 0)) {
+  if (![orderId, paymentId, secret].every((value) => typeof value === 'string' && value.length > 0) ||\n      typeof signature !== 'string' || !/^[a-f0-9]{64}$/i.test(signature)) {
     return false;
   }
   const expected = crypto
