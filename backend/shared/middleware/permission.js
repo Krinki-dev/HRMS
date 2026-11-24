@@ -33,11 +33,25 @@ const checkPermission = (module, action) => {
   };
 };
 
+function isModuleEnabled(enabledModules, moduleName) {
+  if (!Array.isArray(enabledModules) || typeof moduleName !== 'string' || !moduleName.trim()) return false;
+  const normalized = new Set(enabledModules.filter((item) => typeof item === 'string').map((item) => item.trim().toLowerCase()));
+  return normalized.has(moduleName.trim().toLowerCase());
+}
+
 const checkModuleEnabled = (moduleName) => {
   return (req, res, next) => {
-    next();
+    // Only a platform-level operator can bypass a tenant plan entitlement.
+    // Tenant admins and HR admins remain subject to the purchased module set.
+    if (req.user?.is_platform_admin === true) return next();
+    if (!isModuleEnabled(req.tenant?.enabledModules, moduleName)) {
+      logger.warn(`${THEME.ICONS.LOCK} Module entitlement denied: tenant=${req.tenant?.id || 'unknown'} module=${moduleName}`);
+      return sendError(res, ERROR_CODES.FORBIDDEN,
+        `The ${moduleName} module is not enabled for this company plan. Upgrade the plan or contact support.`, 403);
+    }
+    return next();
   };
 };
 
-module.exports = { checkPermission, checkModuleEnabled };
+module.exports = { checkPermission, checkModuleEnabled, isModuleEnabled };
 
