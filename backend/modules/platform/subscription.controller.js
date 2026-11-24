@@ -6,7 +6,7 @@ const logger = require('../../shared/utils/logger');
 const { generateInvoicePDF } = require('../../shared/utils/pdf.service');
 const { withTenantRLS, withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 const plansService = require('./plans.service');
-const { buildFreePlanEntitlements } = require('./subscriptionEntitlements');
+const { buildFreePlanEntitlements, buildTrialPlanEntitlements } = require('./subscriptionEntitlements');
 
 /**
  * Fetches the pricing configuration and current subscription status for a tenant.
@@ -270,100 +270,88 @@ exports.activateFreePlan = async (req, res) => {
 };
 
 /**
- * Activates the free trial for a tenant during onboarding.
+ * Applies the selected eligible plan to the registration trial already granted
+ * by registerTenant. Registration controls the trial duration (90 days for
+ * managed cloud, 14 days for self-hosted); this endpoint does not extend it.
  */
 exports.activateTrial = async (req, res) => {
+  const tenantId = req.user?.tenantId || req.user?.company_id;
+  if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Tenant session required', 401);
+
   try {
-    // Resolve tenant id: attempt JWT first but validate it exists in central DB.
-    let resolvedTenantId = null;
-    const jwtTenantId = req.user?.tenantId;
-
-    if (jwtTenantId) {
-      try {
-        const maybe = await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.findUnique({ where: { id: jwtTenantId }, select: { id: true } }));
-        if (maybe) resolvedTenantId = maybe.id;
-        else logger.warn(`${THEME.ICONS.WARNING} [activateTrial] JWT tenantId present but not found in central DB: ${jwtTenantId}`);
-      } catch (e) {
-        logger.warn(`${THEME.ICONS.WARNING} [activateTrial] central DB lookup for jwtTenantId failed: ${e.message}`);
-      }
+    const { planSlug, selectedAddons = [] } = req.body || {};
+    if (typeof planSlug !== 'string' || !planSlug.trim() ||
+        !Array.isArray(selectedAddons) || selectedAddons.length > 20 ||
+        selectedAddons.some((module) => typeof module !== 'string')) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'A valid trial plan and add-on selection are required.', 400);
     }
 
-    // Next, prefer req.tenant set by tenantMiddleware (dev fallback or resolved tenant)
-    if (!resolvedTenantId && req.tenant?.id) resolvedTenantId = req.tenant.id;
-
-    // Finally, attempt to resolve from header subdomain
-    if (!resolvedTenantId) {
-      const subdomain = req.headers['x-tenant-subdomain'] || req.headers['x-tenant'];
-      if (subdomain) {
-        try {
-          // No tenant is known yet (that's what we're resolving), so this runs
-          // under the platform-admin RLS predicate.
-          const t = await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.findFirst({ where: { subdomain } }));
-          if (t) resolvedTenantId = t.id;
-        } catch (e) {
-          logger.warn(`${THEME.ICONS.WARNING} [activateTrial] central DB lookup for subdomain failed: ${e.message}`);
-        }
-      }
-    }
-
-    if (!resolvedTenantId) {
-      logger.warn(`${THEME.ICONS.WARNING} [activateTrial] Tenant resolution failed: no tenantId in JWT, req.tenant or X-Tenant-Subdomain`);
-      return sendError(res, ERROR_CODES.NOT_FOUND, 'Tenant not resolved. Ensure you are calling from a tenant context or include X-Tenant-Subdomain header.', 404);
-    }
-
-    let tenant;
+    const plans = await plansService.getPlans();
+    const plan = plans.find((item) => item.slug === planSlug);
+    let entitlements;
     try {
-      tenant = await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.findUnique({
-        where: { id: resolvedTenantId },
-        select: { id: true, plan: true, plan_expires_at: true, db_mode: true }
-      }));
-    } catch (err) {
-      logger.warn(`${THEME.ICONS.WARNING} [activateTrial] central DB lookup failed: ${err.message}`);
-      return sendError(res, ERROR_CODES.SERVER, 'Central database unavailable. Trial was not activated; try again later.', 503);
+      entitlements = buildTrialPlanEntitlements(plan, selectedAddons);
+    } catch (error) {
+      return sendError(res, ERROR_CODES.VALIDATION, error.message, 400);
     }
 
-    if (!tenant) {
-      logger.warn(`${THEME.ICONS.WARNING} [activateTrial] Tenant not found in central DB: ${resolvedTenantId}`);
-      return sendError(res, ERROR_CODES.NOT_FOUND, 'Tenant not found in central database.', 404);
-    }
-
-    if (tenant.plan !== 'free' || (tenant.plan_expires_at && new Date(tenant.plan_expires_at) > new Date())) {
-      return sendError(res, ERROR_CODES.VALIDATION, 'A trial or paid plan has already been activated for this company.', 409);
-    }
-
-    const trialDays = tenant.db_mode === 'cloud' ? 90 : 14;
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + trialDays);
-
-    try {
-      await withPlatformAdminRLS(centralPrisma, async (tx) => {
-        await tx.$queryRawUnsafe("SELECT set_config($1, $2, true)", 'app.current_tenant', resolvedTenantId);
-        const activated = await tx.tenants.updateMany({
-          where: { id: resolvedTenantId, plan: 'free', OR: [{ plan_expires_at: null }, { plan_expires_at: { lte: new Date() } }] },
-          data: { plan: 'trial', plan_expires_at: expiryDate }
-        });
-        if (activated.count !== 1) throw new Error('TRIAL_ALREADY_ACTIVATED');
-        await tx.tenant_pricing_configs.upsert({
-          where: { tenant_id: resolvedTenantId },
-          update: { offer_expiry_date: expiryDate },
-          create: {
-            tenant_id: resolvedTenantId,
-            base_price_paise: 149900,
-            employee_cap: 25,
-            offer_expiry_date: expiryDate
-          }
-        });
+    let expiryDate = null;
+    await withPlatformAdminRLS(centralPrisma, async (tx) => {
+      await tx.$queryRaw`SELECT set_config('app.current_tenant', ${tenantId}, true)`;
+      const tenant = await tx.tenants.findUnique({
+        where: { id: tenantId },
+        select: { id: true, plan: true, plan_expires_at: true, is_active: true },
       });
-    } catch (err) {
-      logger.warn(`${THEME.ICONS.WARNING} [activateTrial] central DB transaction failed: ${err.message}`);
-      if (err.message === 'TRIAL_ALREADY_ACTIVATED') return sendError(res, ERROR_CODES.VALIDATION, 'A trial or paid plan has already been activated for this company.', 409);
-      return sendError(res, ERROR_CODES.SERVER, 'Failed to activate trial. No trial was activated.', 500);
-    }
+      if (!tenant || !tenant.is_active) throw new Error('TRIAL_TENANT_NOT_ACTIVE');
+      if (tenant.plan !== 'trial' || !tenant.plan_expires_at || new Date(tenant.plan_expires_at) <= new Date()) {
+        throw new Error('REGISTRATION_TRIAL_NOT_ACTIVE');
+      }
 
-    return sendSuccess(res, { expiryDate }, 'Trial activated successfully.');
+      const capturedOrder = await tx.payment_orders.findFirst({
+        where: { tenant_id: tenantId, purpose: 'subscription', status: 'captured' },
+        select: { id: true },
+      });
+      if (capturedOrder) throw new Error('TRIAL_PAID_SUBSCRIPTION_EXISTS');
+
+      expiryDate = tenant.plan_expires_at;
+      await tx.tenants.update({
+        where: { id: tenantId },
+        data: { max_employees: entitlements.employeeCap ?? 999999 },
+      });
+
+      for (const moduleName of entitlements.modules) {
+        await tx.tenant_modules.upsert({
+          where: { uq_tenant_module: { tenant_id: tenantId, module_name: moduleName } },
+          update: { is_active: true, disabled_at: null, enabled_at: new Date() },
+          create: { tenant_id: tenantId, module_name: moduleName, is_active: true },
+        });
+      }
+      await tx.tenant_modules.updateMany({
+        where: { tenant_id: tenantId, module_name: { notIn: entitlements.modules } },
+        data: { is_active: false, disabled_at: new Date() },
+      });
+      await tx.tenant_pricing_configs.upsert({
+        where: { tenant_id: tenantId },
+        update: entitlements.pricingConfig,
+        create: { tenant_id: tenantId, ...entitlements.pricingConfig },
+      });
+    });
+
+    return sendSuccess(res, {
+      plan: 'trial',
+      selectedPlan: plan.slug,
+      expiresAt: expiryDate,
+      employeeCap: entitlements.employeeCap,
+      modules: entitlements.modules,
+    }, 'Your selected plan is enabled for the existing registration trial.');
   } catch (error) {
-    logger.error(`${THEME.ICONS.ERROR} [activateTrial] Failed:`, error);
-    return sendError(res, ERROR_CODES.SERVER, 'Failed to activate trial.', 500);
+    if (error.message === 'TRIAL_TENANT_NOT_ACTIVE') {
+      return sendError(res, ERROR_CODES.NOT_FOUND, 'Active company account not found.', 404);
+    }
+    if (error.message === 'REGISTRATION_TRIAL_NOT_ACTIVE' || error.message === 'TRIAL_PAID_SUBSCRIPTION_EXISTS') {
+      return sendError(res, ERROR_CODES.VALIDATION, 'The registration trial is no longer available for this account.', 409);
+    }
+    logger.error('[activateTrial] Failed:', error);
+    return sendError(res, ERROR_CODES.SERVER, 'Could not apply the selected trial plan. No plan change was confirmed.', 500);
   }
 };
-
