@@ -229,3 +229,13 @@ The next onboarding slice has been implemented on the working branch:
 - Added review actions for the supported state machine: submitted → under review / approved / rejected / resubmission required; rejected or resubmission-required → under review; approved remains terminal.
 - The queue refreshes periodically and can be refreshed manually. Reviewer notes are limited to 2,000 characters in the UI and backend.
 - This is a code implementation only. Frontend build, browser workflow, role/permission checks against a running environment, object-storage access, and database migration remain unverified.
+
+
+## Global frontend design system (2026-11-24)
+
+- Reworked `frontend/src/styles/theme.css` as the central source for typography, font weights, spacing, radii, layout dimensions, surfaces, text, borders, shadows, and semantic status colours.
+- Set a macOS-inspired light appearance as the default for new preferences, retaining the dark appearance through the existing theme toggle.
+- Increased the root text scale to 16px and set the base UI font size to 15px for improved readability.
+- Added shared focus-visible, reduced-motion, disabled-control, and text-selection defaults.
+- Existing screen-specific CSS still needs a systematic token migration and visual QA; central tokens are now available, but this does not mean every legacy hard-coded colour has already been removed.
+- Frontend build and cross-screen accessibility/contrast checks have not yet been run.
