@@ -6,7 +6,8 @@ const ctrl = require('./expenses.controller');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.use(auth);   
+router.use(auth);
+router.use(perm.checkModuleEnabled('expenses'));   
 const can = (a) => perm.checkPermission('expenses', a);
 
 router.get ('/claims',             can('view'),   ctrl.listClaims);
