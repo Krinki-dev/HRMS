@@ -8,6 +8,7 @@ const perm   = require('../../shared/middleware/permission');
 const ctrl   = require('./recruitment.controller');
 
 router.use(auth);
+router.use(perm.checkModuleEnabled('recruitment'));
 const can = (action) => perm.checkPermission('recruitment', action);
 
 router.get ('/requisitions',             can('view'),   ctrl.listRequisitions);
