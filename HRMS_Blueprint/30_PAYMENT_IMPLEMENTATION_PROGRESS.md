@@ -98,3 +98,23 @@ The SQL migration has **not** been applied to the live central database. No real
 
 - Subscription activation now claims the payment order conditionally, updates the tenant plan and entitlements, writes the subscription pricing configuration using the same Prisma transaction client, and creates the paid subscription invoice snapshot in that same transaction. A failure in these writes rolls back the transaction.
 - A durable Razorpay webhook inbox now records provider event ID (or raw-payload hash fallback), event type, payload hash, processing status, and retryable failure state. Duplicate deliveries are acknowledged without reapplying business effects; failed inbox events can be retried.
+
+## Release decision — single payment gateway for initial production
+
+**Product decision:** Razorpay is the only payment gateway enabled for the initial production release. The application must not offer or accept PhonePe, JioPay, or another gateway as an active checkout option. Those providers are deferred and should be presented in the product as **Coming soon** only where a payment-method list is shown.
+
+- Backend subscription order creation and verification now reject every provider except Razorpay. This is enforced server-side; hiding a provider in the UI alone is not sufficient.
+- Razorpay remains the sole supported gateway for invoice checkout and subscription checkout.
+- PhonePe Standard Checkout v2 code is retained for a later phase but is not part of the launch payment path. Do not configure or enable it for production yet.
+- JioPay remains disabled. No unverified provider flow may create orders, verify payments, or change invoice/subscription state.
+- Payout initiation is not a customer payment gateway and is not production-ready; it remains out of this launch scope.
+
+**Important production-readiness distinction:** selecting Razorpay as the sole launch gateway does not, by itself, certify the payment module as production-ready. Before enabling live payments, complete and verify the Razorpay release gates below:
+
+1. Run the full backend test suite and Prisma client generation against the exact release commit.
+2. Run PostgreSQL-backed integration tests for invoice/subscription ledger writes, duplicate verification, concurrency, and transaction rollback.
+3. Complete Razorpay sandbox end-to-end tests for both invoice and subscription checkout, including webhook delivery, retries, duplicate events, and customer browser-return failure.
+4. Verify deployment secrets, webhook URL/secret, TLS, allowed origins, monitoring, and operational reconciliation procedures.
+5. Obtain an explicit production deployment approval before switching to live Razorpay credentials.
+
+Until those gates pass, describe Razorpay as the **only enabled/launch payment method**, not as independently certified production-ready. Other payment providers are deferred so engineering can focus on the remaining HRMS modules after the Razorpay launch path is validated.
