@@ -2,6 +2,9 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+// The pricing helper is pure; provide a syntactically valid datasource URL so
+// importing the service does not require a configured CI database.
+process.env.CENTRAL_DATABASE_URL ||= 'postgresql://test:test@127.0.0.1:5432/hrms_test';
 const { calculatePriceFromCatalog } = require('../modules/platform/plans.service');
 
 const catalog = () => ({
