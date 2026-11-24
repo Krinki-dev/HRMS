@@ -874,7 +874,15 @@ exports.createSubscriptionOrder = async (req, res) => {
     // ── PhonePe Standard Checkout v2 ──────────────────────────────────────
     if (method === 'phonepe') {
       const merchantOrderId = `SUB-${String(tenantId).replace(/-/g, '').substring(0, 12)}-${Date.now()}`;
-      const redirectUrl = `${process.env.FRONTEND_URL}/onboarding?step=plan&status=verify&method=phonepe&transactionId=${encodeURIComponent(merchantOrderId)}`;
+      const returnSelection = Buffer.from(JSON.stringify({
+        planSlug: resolvedPlanId,
+        selectedAddons: subscriptionSnapshot.selectedAddons,
+        billingMonths: subscriptionSnapshot.billingMonths,
+        employeeCount: subscriptionSnapshot.employeeCount,
+        promoCode: subscriptionSnapshot.promoCode,
+        renewalMode: subscriptionSnapshot.renewalMode,
+      })).toString('base64url');
+      const redirectUrl = `${process.env.FRONTEND_URL}/onboarding?step=plan&status=verify&method=phonepe&transactionId=${encodeURIComponent(merchantOrderId)}&selection=${returnSelection}`;
       const checkout = await createPhonePePayment({
         merchantOrderId,
         amount: finalAmount,
