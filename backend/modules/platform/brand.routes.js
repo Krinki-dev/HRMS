@@ -5,6 +5,8 @@
 const express = require('express');
 const multer = require('multer');
 const crypto = require('crypto');
+const { scanBuffer } = require('../../shared/utils/clamavScanner');
+const { withTenantRLS, withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 const minio = require('../../shared/utils/minio');
 const router = express.Router();
 const { sendSuccess, sendError, ERROR_CODES } = require('../../shared/utils/response');
@@ -249,7 +251,8 @@ function validDocumentSignature(file) {
 
 function documentStorageReady() {
   return Boolean(process.env.MINIO_ENDPOINT && process.env.MINIO_ACCESS_KEY &&
-    process.env.MINIO_SECRET_KEY && (process.env.NODE_ENV !== 'production' || process.env.MINIO_USE_SSL === 'true'));
+    process.env.MINIO_SECRET_KEY && minio.isStorageReady() && process.env.CLAMAV_HOST &&
+    (process.env.NODE_ENV !== 'production' || process.env.MINIO_USE_SSL === 'true'));
 }
 
 router.post('/company-documents', auth, (req, res, next) => {
@@ -270,21 +273,24 @@ router.post('/company-documents', auth, (req, res, next) => {
     const documentType = String(req.body.documentType || '');
     if (!allowedTypes.has(documentType)) return sendError(res, ERROR_CODES.VALIDATION, 'Select a valid company document type.', 400);
 
+    await scanBuffer(req.file.buffer);
     const originalName = String(req.file.originalname || 'document').replace(/[\\/\x00-\x1f]/g, '_').slice(0, 180);
     const sha256 = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
     objectKey = await minio.uploadFile(tenantId, 'company-documents', req.file.buffer, originalName, req.file.mimetype);
-    const rows = await centralPrisma.$queryRaw`
+    const rows = await withTenantRLS(centralPrisma, tenantId, (tx) => tx.$queryRaw`
       INSERT INTO company_documents
         (tenant_id, document_type, file_name, object_key, mime_type, size_bytes, sha256, uploaded_by)
       VALUES
         (${tenantId}::uuid, ${documentType}, ${originalName}, ${objectKey},
          ${req.file.mimetype}, ${req.file.size}, ${sha256}, ${req.user?.id || null}::uuid)
       RETURNING id, document_type, file_name, mime_type, size_bytes, status, created_at
-    `;
+    `);
     return sendSuccess(res, rows[0], 'Company document submitted for review.', 201);
   } catch (err) {
     if (objectKey) await minio.deleteFile(objectKey).catch(() => {});
     logger.error('[company-documents/upload]', err);
+    if (err.message === 'MALWARE_SCANNER_NOT_CONFIGURED') return sendError(res, ERROR_CODES.SERVER, 'Secure malware scanning is not configured; upload is disabled.', 503);
+    if (err.message === 'MALWARE_DETECTED') return sendError(res, ERROR_CODES.VALIDATION, 'The uploaded file was rejected by malware scanning.', 400);
     return sendError(res, ERROR_CODES.SERVER, 'Document upload failed. Please retry.', 500);
   }
 });
@@ -293,12 +299,12 @@ router.get('/company-documents', auth, async (req, res) => {
   try {
     const tenantId = req.user?.tenantId || req.user?.company_id;
     if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Company session required', 401);
-    const rows = await centralPrisma.$queryRaw`
+    const rows = await withTenantRLS(centralPrisma, tenantId, (tx) => tx.$queryRaw`
       SELECT id, document_type, file_name, mime_type, size_bytes, status,
              reviewer_note, reviewed_at, created_at, updated_at
       FROM company_documents WHERE tenant_id = ${tenantId}::uuid
       ORDER BY created_at DESC
-    `;
+    `);
     return sendSuccess(res, rows);
   } catch (err) {
     logger.error('[company-documents/list]', err);
@@ -310,10 +316,10 @@ router.get('/company-documents/:id/download', auth, async (req, res) => {
   try {
     const tenantId = req.user?.tenantId || req.user?.company_id;
     if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Company session required', 401);
-    const rows = await centralPrisma.$queryRaw`
+    const rows = await withTenantRLS(centralPrisma, tenantId, (tx) => tx.$queryRaw`
       SELECT object_key, file_name FROM company_documents
       WHERE id = ${req.params.id}::uuid AND tenant_id = ${tenantId}::uuid LIMIT 1
-    `;
+    `);
     if (!rows.length) return sendError(res, ERROR_CODES.NOT_FOUND, 'Document not found.', 404);
     if (!documentStorageReady()) return sendError(res, ERROR_CODES.SERVER, 'Private document storage is unavailable.', 503);
     const url = await minio.getPresignedUrl(rows[0].object_key, 300);
@@ -334,13 +340,13 @@ router.patch('/company-documents/:id/review', auth, async (req, res) => {
     if (!allowed.has(status) || String(reviewerNote).length > 2000) {
       return sendError(res, ERROR_CODES.VALIDATION, 'Invalid review status or note.', 400);
     }
-    const rows = await centralPrisma.$queryRaw`
+    const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
       UPDATE company_documents
       SET status = ${status}, reviewer_id = ${req.user?.id || null}::uuid,
           reviewer_note = ${String(reviewerNote)}, reviewed_at = NOW(), updated_at = NOW()
       WHERE id = ${req.params.id}::uuid
       RETURNING id, tenant_id, status, reviewer_note, reviewed_at
-    `;
+    `);
     if (!rows.length) return sendError(res, ERROR_CODES.NOT_FOUND, 'Company document not found.', 404);
     return sendSuccess(res, rows[0], 'Document review status updated.');
   } catch (err) {
