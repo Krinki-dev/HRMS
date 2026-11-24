@@ -330,25 +330,94 @@ router.get('/company-documents/:id/download', auth, async (req, res) => {
   }
 });
 
+
+function requireDocumentReviewer(req, res) {
+  if (!req.user?.is_platform_admin && req.user?.role !== 'super_admin') {
+    sendError(res, ERROR_CODES.FORBIDDEN, 'Platform reviewer access required.', 403);
+    return false;
+  }
+  return true;
+}
+
+router.get('/company-documents/review-queue', auth, async (req, res) => {
+  try {
+    if (!requireDocumentReviewer(req, res)) return;
+    const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
+      SELECT d.id, d.tenant_id, t.name AS company_name, t.subdomain,
+             d.document_type, d.file_name, d.mime_type, d.size_bytes,
+             d.status, d.created_at
+      FROM company_documents d
+      JOIN tenants t ON t.id = d.tenant_id
+      WHERE d.status IN ('submitted', 'under_review', 'resubmission_required')
+      ORDER BY d.created_at ASC
+      LIMIT 200
+    `);
+    return sendSuccess(res, rows);
+  } catch (err) {
+    logger.error('[company-documents/review-queue]', err);
+    return sendError(res, ERROR_CODES.SERVER, 'Could not load document review queue.', 500);
+  }
+});
+
+router.get('/company-documents/:id/review-download', auth, async (req, res) => {
+  try {
+    if (!requireDocumentReviewer(req, res)) return;
+    if (!documentStorageReady()) return sendError(res, ERROR_CODES.SERVER, 'Private document storage is unavailable.', 503);
+    const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
+      SELECT object_key, file_name FROM company_documents WHERE id = ${req.params.id}::uuid LIMIT 1
+    `);
+    if (!rows.length) return sendError(res, ERROR_CODES.NOT_FOUND, 'Company document not found.', 404);
+    const url = await minio.getPresignedUrl(rows[0].object_key, 300);
+    return sendSuccess(res, { url, expiresInSeconds: 300, fileName: rows[0].file_name });
+  } catch (err) {
+    logger.error('[company-documents/review-download]', err);
+    return sendError(res, ERROR_CODES.SERVER, 'Could not create review download link.', 500);
+  }
+});
+
+router.get('/company-documents/:id/reviews', auth, async (req, res) => {
+  try {
+    if (!requireDocumentReviewer(req, res)) return;
+    const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
+      SELECT id, document_id, tenant_id, reviewer_id, from_status, to_status, reviewer_note, created_at
+      FROM company_document_reviews WHERE document_id = ${req.params.id}::uuid
+      ORDER BY created_at DESC
+    `);
+    return sendSuccess(res, rows);
+  } catch (err) {
+    logger.error('[company-documents/reviews]', err);
+    return sendError(res, ERROR_CODES.SERVER, 'Could not load document review history.', 500);
+  }
+});
+
 router.patch('/company-documents/:id/review', auth, async (req, res) => {
   try {
-    if (!req.user?.is_platform_admin && req.user?.role !== 'super_admin') {
-      return sendError(res, ERROR_CODES.FORBIDDEN, 'Platform reviewer access required.', 403);
-    }
+    if (!requireDocumentReviewer(req, res)) return;
     const { status, reviewerNote = '' } = req.body || {};
     const allowed = new Set(['under_review', 'approved', 'rejected', 'resubmission_required']);
     if (!allowed.has(status) || String(reviewerNote).length > 2000) {
       return sendError(res, ERROR_CODES.VALIDATION, 'Invalid review status or note.', 400);
     }
-    const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
-      UPDATE company_documents
-      SET status = ${status}, reviewer_id = ${req.user?.id || null}::uuid,
-          reviewer_note = ${String(reviewerNote)}, reviewed_at = NOW(), updated_at = NOW()
-      WHERE id = ${req.params.id}::uuid
-      RETURNING id, tenant_id, status, reviewer_note, reviewed_at
-    `);
-    if (!rows.length) return sendError(res, ERROR_CODES.NOT_FOUND, 'Company document not found.', 404);
-    return sendSuccess(res, rows[0], 'Document review status updated.');
+    const result = await withPlatformAdminRLS(centralPrisma, async (tx) => {
+      const rows = await tx.$queryRaw`
+        UPDATE company_documents
+        SET status = ${status}, reviewer_id = ${req.user?.id || null}::uuid,
+            reviewer_note = ${String(reviewerNote)}, reviewed_at = NOW(), updated_at = NOW()
+        WHERE id = ${req.params.id}::uuid
+        RETURNING id, tenant_id, status, reviewer_note, reviewed_at
+      `;
+      if (!rows.length) return null;
+      await tx.$executeRaw`
+        INSERT INTO company_document_reviews
+          (document_id, tenant_id, reviewer_id, to_status, reviewer_note)
+        VALUES
+          (${rows[0].id}::uuid, ${rows[0].tenant_id}::uuid, ${req.user?.id || null}::uuid,
+           ${status}, ${String(reviewerNote)})
+      `;
+      return rows[0];
+    });
+    if (!result) return sendError(res, ERROR_CODES.NOT_FOUND, 'Company document not found.', 404);
+    return sendSuccess(res, result, 'Document review status updated.');
   } catch (err) {
     logger.error('[company-documents/review]', err);
     return sendError(res, ERROR_CODES.SERVER, 'Could not update document review.', 500);
