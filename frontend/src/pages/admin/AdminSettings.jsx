@@ -103,7 +103,7 @@ export default function AdminSettings() {
 
   const fields = FORM_SCHEMA[active] || [];
 
-  const currentValues = serverData?.[active] || {};
+  const currentValues = serverData?.data?.[active] || serverData?.[active] || {};
 
   function set(key, val) {
     setValues(v => ({ ...v, [key]: val }));
