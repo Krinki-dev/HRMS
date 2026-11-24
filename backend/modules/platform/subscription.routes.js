@@ -22,6 +22,7 @@ router.post('/preview', authMiddleware, subscriptionController.calculatePreview)
 
 // Onboarding & Plan Selection Routes
 router.post('/trial', authMiddleware, subscriptionController.activateTrial);
+router.post('/free', authMiddleware, subscriptionController.activateFreePlan);
 router.post('/order', authMiddleware, paymentController.createSubscriptionOrder);
 router.post('/verify', authMiddleware, paymentController.verifySubscription);
 
