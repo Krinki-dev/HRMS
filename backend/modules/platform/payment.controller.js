@@ -521,7 +521,7 @@ exports.createSubscriptionOrder = async (req, res) => {
     if (!planSlug || !Array.isArray(selectedAddons) || selectedAddons.length > 20 || ![1, 6, 12, 24].includes(Number(billingMonths))) {
       return sendError(res, ERROR_CODES.VALIDATION, 'Invalid plan selection.', 400);
     }
-    const tenant = await withBillingRLS(req, tenantId, (tx) => tx.tenants.findUnique({
+    const tenant = await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.findUnique({
       where: { id: tenantId },
       select: { id: true, name: true, admin_name: true, admin_email: true, is_active: true }
     }));
@@ -537,8 +537,8 @@ exports.createSubscriptionOrder = async (req, res) => {
     if (addons.some((item) => !allowedAddons.has(item))) {
       return sendError(res, ERROR_CODES.VALIDATION, 'One or more selected add-ons are not available for this plan.', 400);
     }
-    if (!req.db?.employee?.count) return sendError(res, ERROR_CODES.SERVER, 'Employee count could not be verified for pricing.', 503);
-    const employeeCount = await req.db.employee.count();
+    if (!req.db?.employees?.count) return sendError(res, ERROR_CODES.SERVER, 'Employee count could not be verified for pricing.', 503);
+    const employeeCount = await req.db.employees.count();
     const price = await plansService.calculatePrice({
       planSlug, selectedAddons: addons, billingMonths: Number(billingMonths),
       employeeCount, promoCode: promoCode ? String(promoCode).trim() : undefined,
@@ -635,7 +635,8 @@ exports.verifySubscription = async (req, res) => {
 
     const expiry = new Date();
     expiry.setMonth(expiry.getMonth() + Number(snapshot.billingMonths));
-    await withBillingRLS(req, tenantId, async (tx) => {
+    await withPlatformAdminRLS(centralPrisma, async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.current_tenant', ${tenantId}, true)`;
       const claimed = await tx.payment_orders.updateMany({
         where: { id: stored.id, tenant_id: tenantId, status: 'created', gateway_payment_id: null },
         data: { gateway_payment_id: paymentId, status: 'captured', updated_at: new Date() },
