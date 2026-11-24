@@ -261,3 +261,10 @@ The next onboarding slice has been implemented on the working branch:
 - GitHub Actions exposed two existing PhonePe unit-test failures caused by expired hard-coded token expiry timestamps in test fixtures. Updated those fixtures to use a future expiry timestamp; this does not enable PhonePe as a payment option.
 - CI was observed running backend tests on these commits. The failing run had 45 passing, 2 failing, and 4 skipped tests; the two failures were the stale PhonePe test fixtures. The corrected commit's result is pending and must be checked before calling the backend suite green.
 - Frontend build, browser QA, and database-backed integration checks remain unverified. Database migrations and deployment remain on hold.
+## Verification update — admin work (2026-11-24)
+
+- Added a dedicated frontend GitHub Actions workflow that installs the locked frontend dependencies and runs the production Vite build on changes to frontend files.
+- The first frontend build exposed a malformed line-break insertion in the new public marketing-content effect. Corrected it immediately; the frontend production build then completed successfully on commit 651bc7e681251f90b28961a2506d4a82988d79bd.
+- Backend GitHub Actions completed successfully on the preceding commit 23d112f6 and on later commits through b64cd112. The backend run for commit 651bc7e6 was still in progress at the time of this note.
+- Added custom-domain validation on both the admin form and backend tenant update route; invalid hostnames, URLs, ports and paths are rejected. DNS/SSL are explicitly shown as unverified until deployment-level checks exist.
+- The admin platform menus have code-level integrations and responsive styling, but this does not certify a production rollout. Live DB/API tests, DNS/SSL provisioning verification, browser/accessibility QA and deployment remain outstanding.
