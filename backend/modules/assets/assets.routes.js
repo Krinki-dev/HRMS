@@ -4,6 +4,7 @@ const perm   = require('../../shared/middleware/permission');
 const ctrl   = require('./assets.controller');
 
 router.use(auth);
+router.use(perm.checkModuleEnabled('assets'));
 const can = (a) => perm.checkPermission('assets', a);
 
 router.get ('/assets',                    can('view'),   ctrl.list);
