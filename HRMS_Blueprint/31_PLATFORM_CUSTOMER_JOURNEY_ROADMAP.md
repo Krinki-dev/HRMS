@@ -239,3 +239,13 @@ The next onboarding slice has been implemented on the working branch:
 - Added shared focus-visible, reduced-motion, disabled-control, and text-selection defaults.
 - Existing screen-specific CSS still needs a systematic token migration and visual QA; central tokens are now available, but this does not mean every legacy hard-coded colour has already been removed.
 - Frontend build and cross-screen accessibility/contrast checks have not yet been run.
+## Platform admin menu integration pass (2026-11-24)
+
+- Repaired the Document Review screen's handling of the standard API response envelope so the queue and review history render returned records instead of appearing empty.
+- Connected Platform Analytics to the existing /platform/admin/stats endpoint rather than a non-existent analytics endpoint; corrected the plan-catalog response parsing.
+- Connected Marketing settings to the existing platform settings API and maps the stored hero heading/subheading fields into the editor.
+- Corrected tenant list, custom-domain list, client-detail, module and notification response parsing to unwrap the API's { success, data } envelope.
+- Corrected Dashboard links so recent sign-ups and account alerts navigate to the actual /admin/clients routes.
+- Made Platform Settings edits section-scoped, prevented masked credentials from being resubmitted as literal secrets, and reloads saved settings after a successful update.
+- The admin top bar now identifies the active section, and the sidebar becomes horizontally navigable on narrow screens.
+- These are source-level integration fixes. No frontend build, live API request, browser QA, automated test or database migration was run during this pass. The remaining work is to complete functional editing for currently informational Marketing subsections, finish legacy theme-token migration, and validate every menu against a running staging environment.
