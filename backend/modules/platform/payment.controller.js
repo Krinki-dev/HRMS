@@ -821,9 +821,6 @@ exports.createSubscriptionOrder = async (req, res) => {
     if (!Number.isSafeInteger(Number(finalAmount)) || Number(finalAmount) <= 0) {
       return sendError(res, ERROR_CODES.VALIDATION, 'A paid checkout requires a positive, valid amount. Use the free-trial flow for zero-price selections.', 400);
     }
-    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-      return sendError(res, ERROR_CODES.SERVER, 'Razorpay checkout is not configured. Contact the administrator.', 503);
-    }
 
     const subscriptionSnapshot = {
       planSlug: resolvedPlanId,
@@ -841,6 +838,9 @@ exports.createSubscriptionOrder = async (req, res) => {
 
     // ── Razorpay ─────────────────────────────────────────────────────────
     if (method === 'razorpay') {
+      if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+        return sendError(res, ERROR_CODES.SERVER, 'Razorpay checkout is not configured. Contact the administrator.', 503);
+      }
       const rp = getRazorpay();
       if (!rp) return sendError(res, ERROR_CODES.SERVER, 'Razorpay credentials missing', 500);
       const order = await rp.orders.create({
