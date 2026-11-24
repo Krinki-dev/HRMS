@@ -375,159 +375,33 @@ exports.createPhonePeOrder = async (req, res) => {
 /**
  * Handles PhonePe Webhooks for asynchronous payment status updates.
  */
-exports.handlePhonePeWebhook = async (req, res) => {
-  try {
-    const { response } = req.body; // PhonePe sends response in a 'response' field
-    const xVerify = req.headers['x-verify'];
-
-    const expectedXVerify = crypto.createHash('sha256').update(response + phonePeSaltKey).digest('hex') + '###' + phonePeSaltIndex;
-
-    if (xVerify !== expectedXVerify) {
-      logger.warn(`${THEME.ICONS.LOCK} [PhonePe Webhook] Invalid signature received`);
-      await billingLogger.logInvalidSignature({ gateway: 'phonepe', req });
-      return res.status(400).send('Invalid signature');
-    }
-
-    const decodedResponse = JSON.parse(Buffer.from(response, 'base64').toString('utf8'));
-    logger.info(`${THEME.ICONS.INFO} [PhonePe Webhook] Received event:`, decodedResponse);
-
-    if (decodedResponse.code === 'PAYMENT_SUCCESS') {
-      const invoiceId = decodedResponse.data.metadata?.invoiceId;
-      const transactionId = decodedResponse.data.transactionId;
-
-      if (invoiceId) {
-        await withPlatformAdminRLS(centralPrisma, (tx) => tx.invoices.update({
-          where: { id: invoiceId },
-          data: { status: 'paid', payment_id: transactionId, updated_at: new Date() }
-        }));
-        logger.info(`${THEME.ICONS.SUCCESS} [PhonePe Webhook] Invoice ${invoiceId} marked as PAID via webhook`);
-        await billingLogger.log({
-          gateway: 'phonepe',
-          eventType: 'invoice_marked_paid',
-          status: 'success',
-          referenceId: invoiceId,
-          message: 'Invoice marked paid via PhonePe webhook',
-          req,
-        });
-      }
-    }
-
-    return res.status(200).json({ success: true, message: 'Webhook received' });
-  } catch (error) {
-    logger.error(`${THEME.ICONS.ERROR} [PhonePe Webhook] Fatal:`, error);
-    return res.status(500).send('Internal Server Error');
-  }
+exports.handlePhonePeWebhook = async (_req, res) => {
+  // Legacy v1 callback payloads are not allowed to mutate invoice/subscription
+  // state. Authenticated checkout verification performs a server-side status
+  // query and checks the persisted payment_orders record instead.
+  return res.status(200).json({
+    success: true,
+    message: 'Callback acknowledged; payment state is confirmed through server-side order verification.',
+  });
 };
 
 /**
  * Creates a JioPay Order for an unpaid invoice.
  */
-exports.createJioPayOrder = async (req, res) => {
-  try {
-    const { invoiceId } = req.params;
-    const tenantId = await resolveTenantId(req);
-
-    const invoice = await withBillingRLS(req, tenantId, (tx) => tx.invoices.findUnique({
-      where: { id: invoiceId },
-      include: { tenant: true }
-    }));
-
-    if (!invoice) return sendError(res, ERROR_CODES.NOT_FOUND, 'Invoice not found', 404);
-    if (invoice.tenant_id !== tenantId && !req.user.is_platform_admin) {
-      return sendError(res, ERROR_CODES.FORBIDDEN, 'Unauthorized', 403);
-    }
-
-    const merchantTransactionId = `JIO-${invoice.invoice_no}-${Date.now()}`;
-    
-    // JioPay standard integration typically requires a checksum/signature
-    const payload = {
-      merchantId: jioPayMerchantId,
-      transactionId: merchantTransactionId,
-      amount: (invoice.total_paise / 100).toFixed(2), // JioPay often expects decimal strings
-      currency: 'INR',
-      customerName: invoice.tenant.admin_name,
-      customerEmail: invoice.tenant.admin_email,
-      callbackUrl: `${process.env.BACKEND_URL}/api/v1/platform/subscribe/jiopay-webhook`,
-      redirectUrl: `${process.env.FRONTEND_URL}/payment-status?invoiceId=${invoice.id}&method=jiopay`
-    };
-
-    // Generate signature (Placeholder logic based on common PG patterns)
-    const signString = `${payload.merchantId}|${payload.transactionId}|${payload.amount}|${jioPaySalt}`;
-    const signature = crypto.createHash('sha256').update(signString).digest('hex');
-
-    // Note: This is a scaffold. Real JioPay integration requires specific API endpoints 
-    // and headers defined in their technical documentation.
-    const response = await axios.post(`${jioPayBaseUrl}/checkout/initiate`, {
-      ...payload,
-      signature
-    }, {
-      headers: { 'Content-Type': 'application/json' }
-    });
-
-    if (response.data.success) {
-      return sendSuccess(res, {
-        redirectUrl: response.data.redirectUrl,
-        transactionId: merchantTransactionId
-      }, 'JioPay session initiated.');
-    }
-    
-    return sendError(res, ERROR_CODES.SERVER, 'JioPay initiation failed', 500);
-  } catch (error) {
-    logger.error(`${THEME.ICONS.ERROR} [createJioPayOrder] Failed:`, error);
-    return sendError(res, ERROR_CODES.SERVER, 'Failed to create JioPay order', 500);
-  }
+exports.createJioPayOrder = async (_req, res) => {
+  return res.status(503).json({
+    success: false,
+    code: 'PAYMENT_PROVIDER_NOT_CONFIGURED',
+    message: 'JioPay checkout is disabled until the official merchant API contract and sandbox integration are verified.',
+  });
 };
 
-/**
- * Handles JioPay Webhooks
- */
-exports.handleJioPayWebhook = async (req, res) => {
-  try {
-    const { transactionId, status, amount, signature, metadata } = req.body;
-
-    // Verify incoming signature
-    const expectedSignString = `${jioPayMerchantId}|${transactionId}|${status}|${jioPaySalt}`;
-    const expectedSignature = crypto.createHash('sha256').update(expectedSignString).digest('hex');
-
-    if (signature !== expectedSignature) {
-      await billingLogger.logInvalidSignature({ gateway: 'jiopay', req });
-      return res.status(400).send('Invalid Signature');
-    }
-
-    if (status === 'SUCCESS') {
-      // Extract invoice ID from metadata or transaction ID mapping
-      const invoiceNo = transactionId.split('-')[1]; // Example parsing
-      const invoice = await withPlatformAdminRLS(centralPrisma, (tx) => tx.invoices.findFirst({
-        where: { invoice_no: invoiceNo }
-      }));
-
-      if (invoice) {
-        await withPlatformAdminRLS(centralPrisma, (tx) => tx.invoices.update({
-          where: { id: invoice.id },
-          data: { 
-            status: 'paid', 
-            payment_id: transactionId,
-            updated_at: new Date()
-          }
-        }));
-        logger.info(`${THEME.ICONS.SUCCESS} [JioPay Webhook] Invoice ${invoice.id} PAID`);
-        await billingLogger.log({
-          gateway: 'jiopay',
-          eventType: 'invoice_marked_paid',
-          status: 'success',
-          referenceId: invoice.id,
-          amountPaise: amount,
-          message: 'Invoice marked paid via JioPay webhook',
-          req,
-        });
-      }
-    }
-
-    return res.status(200).json({ status: 'ok' });
-  } catch (error) {
-    logger.error(`${THEME.ICONS.ERROR} [JioPay Webhook] Failed:`, error);
-    return res.status(500).send('Error');
-  }
+exports.handleJioPayWebhook = async (_req, res) => {
+  return res.status(503).json({
+    success: false,
+    code: 'PAYMENT_PROVIDER_NOT_CONFIGURED',
+    message: 'JioPay callbacks are disabled until the official merchant callback authentication contract is implemented.',
+  });
 };
 
 /**
