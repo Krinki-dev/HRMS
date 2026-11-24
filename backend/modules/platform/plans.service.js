@@ -158,20 +158,52 @@ async function getPlans({ includeInactive = false } = {}) {
 }
 
 async function savePlan(planData) {
-  const data  = await _readForWrite(KEY.PLANS);
-  let plans   = data?.plans || DEFAULT_PLANS;
+  const data = await _readForWrite(KEY.PLANS);
+  const plans = data?.plans || DEFAULT_PLANS;
   const isNew = !planData.id;
+  const existingIndex = isNew ? -1 : plans.findIndex((plan) => plan.id === planData.id);
+  if (!isNew && existingIndex === -1) throw new Error('Plan not found');
 
-  if (isNew) {
-    planData.id = uuidv4();
-    plans.push(planData);
-  } else {
-    const idx = plans.findIndex(p => p.id === planData.id || p.slug === planData.slug);
-    if (idx === -1) throw new Error('Plan not found');
-    plans[idx] = { ...plans[idx], ...planData, id: plans[idx].id };
+  const candidate = isNew
+    ? { ...planData, id: uuidv4() }
+    : { ...plans[existingIndex], ...planData, id: plans[existingIndex].id };
+
+  candidate.name = String(candidate.name || '').trim();
+  candidate.slug = String(candidate.slug || '').trim().toLowerCase();
+  if (!candidate.name || candidate.name.length > 80) throw new Error('Plan name must be 1–80 characters');
+  if (!/^[a-z0-9][a-z0-9-]{0,39}$/.test(candidate.slug)) throw new Error('Plan slug must contain only lowercase letters, numbers, and hyphens');
+  if (plans.some((plan) => plan.slug === candidate.slug && plan.id !== candidate.id)) throw new Error('Plan slug already exists');
+
+  const integerField = (value, label, { nullable = false, min = 0, max = Number.MAX_SAFE_INTEGER } = {}) => {
+    if (nullable && (value === null || value === '')) return null;
+    const number = Number(value);
+    if (!Number.isSafeInteger(number) || number < min || number > max) throw new Error(`${label} must be a whole number between ${min} and ${max}`);
+    return number;
+  };
+  candidate.base_price_paise = integerField(candidate.base_price_paise, 'Base price', { nullable: true });
+  candidate.employee_cap = integerField(candidate.employee_cap, 'Employee cap', { nullable: true, min: 1, max: 10000000 });
+  candidate.per_employee_excess_paise = integerField(candidate.per_employee_excess_paise ?? 5000, 'Employee overage price');
+  candidate.trial_days = integerField(candidate.trial_days ?? 0, 'Trial days', { min: 0, max: 365 });
+  candidate.sort_order = integerField(candidate.sort_order ?? 99, 'Sort order', { min: 0, max: 100000 });
+  const allowedModules = new Set(['employees','attendance','leave','payroll','compliance','reports','automation','recruitment','performance','training','expenses','assets','fieldforce','ai','notifications','settings','documents']);
+  for (const field of ['included_modules', 'addon_modules']) {
+    if (!Array.isArray(candidate[field]) || candidate[field].some((module) => typeof module !== 'string' || !allowedModules.has(module))) {
+      throw new Error(`${field} contains an unsupported module`);
+    }
+    candidate[field] = [...new Set(candidate[field])];
   }
-  await _write(KEY.PLANS, { plans });
-  return planData;
+  if (candidate.included_modules.some((module) => candidate.addon_modules.includes(module))) {
+    throw new Error('A module cannot be both included and an add-on');
+  }
+  candidate.is_active = candidate.is_active !== false;
+  candidate.is_popular = candidate.is_popular === true;
+  candidate.is_trial_eligible = candidate.is_trial_eligible === true;
+
+  const nextPlans = [...plans];
+  if (isNew) nextPlans.push(candidate);
+  else nextPlans[existingIndex] = candidate;
+  await _write(KEY.PLANS, { plans: nextPlans });
+  return candidate;
 }
 
 async function deletePlan(id) {
