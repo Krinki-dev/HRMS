@@ -283,97 +283,141 @@ async function validatePromoCode(code) {
  * @param {string}   [opts.promoCode]     optional promo code
  * @returns {object} Full price breakdown + total_paise
  */
+function calculatePriceFromCatalog({ plans, modulePricing, discounts, promo, planSlug, selectedAddons = [], billingMonths = 1, employeeCount = 0 } = {}) {
+  if (!Array.isArray(plans) || !modulePricing || !discounts) throw new Error('Plan pricing catalog is unavailable');
+  if (typeof planSlug !== 'string' || !planSlug.trim()) throw new Error('A valid plan is required');
+  if (![1, 6, 12, 24].includes(Number(billingMonths))) throw new Error('Billing period must be 1, 6, 12 or 24 months');
+  billingMonths = Number(billingMonths);
+  if (!Number.isSafeInteger(employeeCount) || employeeCount < 0 || employeeCount > 1000000) {
+    throw new Error('Employee count must be a whole number between 0 and 1,000,000');
+  }
+  if (!Array.isArray(selectedAddons) || selectedAddons.length > 20 ||
+      selectedAddons.some((module) => typeof module !== 'string' || !module.trim())) {
+    throw new Error('Selected add-ons must be a list of supported module names');
+  }
+  selectedAddons = [...new Set(selectedAddons)];
+  if (selectedAddons.length !== arguments[0].selectedAddons?.length) {
+    throw new Error('Duplicate add-ons are not allowed');
+  }
+
+  const plan = plans.find((item) => item.slug === planSlug || item.id === planSlug);
+  if (!plan || plan.is_active === false) throw new Error('Selected plan is unavailable');
+  if (plan.base_price_paise === null || plan.base_price_paise === undefined) {
+    return { isCustomQuote: true, plan: plan.name };
+  }
+  if (!Number.isSafeInteger(plan.base_price_paise) || plan.base_price_paise < 0) {
+    throw new Error('Selected plan has an invalid base price');
+  }
+
+  const included = new Set(Array.isArray(plan.included_modules) ? plan.included_modules : []);
+  const allowedAddons = new Set(Array.isArray(plan.addon_modules) ? plan.addon_modules : []);
+  for (const module of selectedAddons) {
+    if (included.has(module)) throw new Error(`Module "${module}" is already included in this plan`);
+    if (!allowedAddons.has(module)) throw new Error(`Module "${module}" is not available as an add-on for this plan`);
+    const price = modulePricing[module];
+    if (!price || !Number.isSafeInteger(price.price_paise) || price.price_paise < 0 ||
+        !['flat', 'per_employee'].includes(price.type)) {
+      throw new Error(`Pricing is not configured correctly for add-on "${module}"`);
+    }
+  }
+
+  const baseUnit = plan.base_price_paise;
+  let excessPaise = 0;
+  if (plan.employee_cap != null && employeeCount > plan.employee_cap) {
+    if (!Number.isSafeInteger(plan.employee_cap) || plan.employee_cap < 1) throw new Error('Selected plan has an invalid employee cap');
+    const overageRate = plan.per_employee_excess_paise ?? 5000;
+    if (!Number.isSafeInteger(overageRate) || overageRate < 0) throw new Error('Selected plan has an invalid employee overage price');
+    excessPaise = (employeeCount - plan.employee_cap) * overageRate;
+  }
+
+  let addonTotalMonthly = 0;
+  const addonDetails = [];
+  for (const module of selectedAddons) {
+    const item = modulePricing[module];
+    const monthlyCost = item.type === 'per_employee'
+      ? item.price_paise * Math.max(employeeCount, 1)
+      : item.price_paise;
+    if (!Number.isSafeInteger(monthlyCost)) throw new Error(`Add-on "${module}" price exceeds the supported amount`);
+    addonDetails.push({ module, label: item.label || module, type: item.type, unit_paise: item.price_paise, monthly_paise: monthlyCost });
+    addonTotalMonthly += monthlyCost;
+  }
+
+  const monthlySubtotal = baseUnit + excessPaise + addonTotalMonthly;
+  if (!Number.isSafeInteger(monthlySubtotal)) throw new Error('Calculated monthly price exceeds the supported amount');
+
+  const tenureRow = discounts.tenure?.find((item) => Number(item.months) === billingMonths);
+  const tenurePct = Number(tenureRow?.pct || 0);
+  const bundleConfig = discounts.bundle || {};
+  const triggerCount = Number(bundleConfig.trigger_count || 3);
+  const bundlePct = selectedAddons.length >= triggerCount ? Number(bundleConfig.pct || 0) : 0;
+  if (![tenurePct, bundlePct].every((pct) => Number.isFinite(pct) && pct >= 0 && pct <= 100) ||
+      !Number.isSafeInteger(triggerCount) || triggerCount < 1) {
+    throw new Error('Discount configuration is invalid');
+  }
+  const totalDiscPct = bundleConfig.is_stackable ? Math.min(100, tenurePct + bundlePct) : Math.max(tenurePct, bundlePct);
+  const gross = monthlySubtotal * billingMonths;
+  if (!Number.isSafeInteger(gross)) throw new Error('Calculated subscription price exceeds the supported amount');
+  const discountAmount = Math.round(gross * totalDiscPct / 100);
+  const afterDiscount = gross - discountAmount;
+
+  let promoInfo = null;
+  let promoDeduction = 0;
+  if (promo) {
+    if (promo.is_active !== true || (promo.expiry && !Number.isFinite(Date.parse(promo.expiry))) ||
+        (promo.expiry && new Date(promo.expiry) <= new Date())) {
+      throw new Error('Promo code is invalid or expired');
+    }
+    if (promo.type === 'flat' && Number.isSafeInteger(promo.value_paise) && promo.value_paise > 0) {
+      promoDeduction = Math.min(afterDiscount, promo.value_paise);
+    } else if (promo.type === 'percent' && Number.isFinite(promo.value_pct) && promo.value_pct > 0 && promo.value_pct <= 100) {
+      promoDeduction = Math.round(afterDiscount * promo.value_pct / 100);
+    } else {
+      throw new Error('Promo code has an invalid discount configuration');
+    }
+    promoInfo = promo;
+  }
+
+  const amountBeforeTax = Math.max(0, afterDiscount - promoDeduction);
+  const gstAmount = Math.round(amountBeforeTax * 0.18);
+  const totalPaise = amountBeforeTax + gstAmount;
+  return {
+    plan: { id: plan.id, slug: plan.slug, name: plan.name },
+    billingMonths,
+    employeeCount,
+    breakdown: {
+      base_monthly_paise: baseUnit,
+      excess_paise: excessPaise,
+      addons: addonDetails,
+      addon_total_monthly: addonTotalMonthly,
+      monthly_subtotal: monthlySubtotal,
+      gross_paise: gross,
+      tenure_discount_pct: tenurePct,
+      bundle_discount_pct: bundlePct,
+      total_discount_pct: totalDiscPct,
+      discount_paise: discountAmount,
+      after_discount_paise: afterDiscount,
+      promo: promoInfo,
+      promo_deduction_paise: promoDeduction,
+      amount_before_tax: amountBeforeTax,
+      gst_rate: 18,
+      gst_paise: gstAmount,
+    },
+    total_paise: totalPaise,
+    total_inr: (totalPaise / 100).toFixed(2),
+  };
+}
+
 async function calculatePrice({ planSlug, selectedAddons = [], billingMonths = 1, employeeCount = 0, promoCode } = {}) {
   const [plans, modulePricing, discounts] = await Promise.all([
     getPlans({ includeInactive: true }),
     getModulePricing(),
     getDiscounts(),
   ]);
-
-  const plan = plans.find(p => p.slug === planSlug || p.id === planSlug);
-  if (!plan)               throw new Error(`Plan "${planSlug}" not found`);
-  if (!plan.base_price_paise) return { isCustomQuote: true, plan: plan.name };
-
-  // 1. Base price (monthly unit cost)
-  const baseUnit = plan.base_price_paise;
-
-  // 2. Excess employee charges
-  let excessPaise = 0;
-  if (plan.employee_cap && employeeCount > plan.employee_cap) {
-    excessPaise = (employeeCount - plan.employee_cap) * (plan.per_employee_excess_paise || 5000);
-  }
-
-  // 3. Addon module costs (monthly)
-  let addonTotalMonthly = 0;
-  const addonDetails = [];
-  for (const mod of selectedAddons) {
-    const mp = modulePricing[mod];
-    if (!mp) continue;
-    const monthlyCost = mp.type === 'per_employee'
-      ? mp.price_paise * Math.max(employeeCount, 1)
-      : mp.price_paise;
-    addonDetails.push({ module: mod, label: mp.label, type: mp.type, unit_paise: mp.price_paise, monthly_paise: monthlyCost });
-    addonTotalMonthly += monthlyCost;
-  }
-
-  const monthlySubtotal = baseUnit + excessPaise + addonTotalMonthly;
-
-  // 4. Tenure discount
-  const tenureRow   = discounts.tenure?.find(t => t.months === billingMonths);
-  const tenurePct   = tenureRow?.pct || 0;
-
-  // 5. Bundle discount
-  const bundlePct   = (selectedAddons.length >= (discounts.bundle?.trigger_count || 3))
-    ? (discounts.bundle?.pct || 0) : 0;
-  const isStackable = discounts.bundle?.is_stackable || false;
-  const totalDiscPct = isStackable ? tenurePct + bundlePct : Math.max(tenurePct, bundlePct);
-
-  // 6. Gross (all months before discounts)
-  const gross          = monthlySubtotal * billingMonths;
-  const discountAmount = Math.round(gross * totalDiscPct / 100);
-  const afterDiscount  = gross - discountAmount;
-
-  // 7. Promo code
-  let promoInfo = null, promoDeduction = 0;
-  if (promoCode) {
-    const promo = await validatePromoCode(promoCode);
-    if (promo) {
-      promoInfo = promo;
-      promoDeduction = promo.type === 'flat'
-        ? promo.value_paise
-        : Math.round(afterDiscount * promo.value_pct / 100);
-    }
-  }
-
-  const amountBeforeTax = Math.max(0, afterDiscount - promoDeduction);
-  const gstAmount       = Math.round(amountBeforeTax * 0.18);
-  const totalPaise      = amountBeforeTax + gstAmount;
-
-  return {
-    plan:              { id: plan.id, slug: plan.slug, name: plan.name },
-    billingMonths,
-    employeeCount,
-    breakdown: {
-      base_monthly_paise:    baseUnit,
-      excess_paise:          excessPaise,
-      addons:                addonDetails,
-      addon_total_monthly:   addonTotalMonthly,
-      monthly_subtotal:      monthlySubtotal,
-      gross_paise:           gross,
-      tenure_discount_pct:   tenurePct,
-      bundle_discount_pct:   bundlePct,
-      total_discount_pct:    totalDiscPct,
-      discount_paise:        discountAmount,
-      after_discount_paise:  afterDiscount,
-      promo:                 promoInfo,
-      promo_deduction_paise: promoDeduction,
-      amount_before_tax:     amountBeforeTax,
-      gst_rate:              18,
-      gst_paise:             gstAmount,
-    },
-    total_paise: totalPaise,
-    total_inr:   (totalPaise / 100).toFixed(2),
-  };
+  const promo = promoCode ? await validatePromoCode(promoCode) : null;
+  if (promoCode && !promo) throw new Error('Promo code is invalid or expired');
+  return calculatePriceFromCatalog({
+    plans, modulePricing, discounts, promo, planSlug, selectedAddons, billingMonths, employeeCount,
+  });
 }
 
 /**
@@ -456,6 +500,7 @@ module.exports = {
   getDiscounts, saveDiscounts,
   getPromoCodes, savePromoCode, deletePromoCode, validatePromoCode,
   calculatePrice,
+  calculatePriceFromCatalog,
   saveSelectionToTenantConfig,
   DEFAULT_MODULE_PRICING,
 };
