@@ -604,9 +604,9 @@ exports.verifySubscription = async (req, res) => {
     if (!stored) return sendError(res, ERROR_CODES.NOT_FOUND, 'Subscription order was not found for this company.', 404);
     if (stored.status === 'captured') {
       if (stored.gateway_payment_id === paymentId) return sendSuccess(res, { verified: true, alreadyProcessed: true }, 'Subscription payment already verified.');
-      return sendError(res, ERROR_CODES.CONFLICT, 'This order has already been processed.', 409);
+      return sendError(res, ERROR_CODES.VALIDATION, 'This order has already been processed.', 409);
     }
-    if (stored.status !== 'created') return sendError(res, ERROR_CODES.CONFLICT, 'This payment order is no longer payable.', 409);
+    if (stored.status !== 'created') return sendError(res, ERROR_CODES.VALIDATION, 'This payment order is no longer payable.', 409);
 
     const snapshot = stored.metadata || {};
     const rp = getRazorpay();
@@ -657,7 +657,7 @@ exports.verifySubscription = async (req, res) => {
     return sendSuccess(res, { verified: true, plan: plan.slug, expiresAt: expiry }, 'Subscription payment verified and plan activated.');
   } catch (error) {
     if (error.message === 'SUBSCRIPTION_ORDER_ALREADY_PROCESSED') {
-      return sendError(res, ERROR_CODES.CONFLICT, 'This subscription payment is already being processed.', 409);
+      return sendError(res, ERROR_CODES.VALIDATION, 'This subscription payment is already being processed.', 409);
     }
     logger.error('[verifySubscription] Failed:', error);
     return sendError(res, ERROR_CODES.SERVER, 'Payment could not be verified or activated. Contact support before retrying.', 500);
