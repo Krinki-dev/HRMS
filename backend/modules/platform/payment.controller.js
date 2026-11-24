@@ -674,65 +674,119 @@ exports.distributeSalaries = async (req, res) => {
  */
 exports.handleWebhook = async (req, res) => {
   try {
-    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const secret = (process.env.RAZORPAY_WEBHOOK_SECRET || '').trim();
     const signature = req.headers['x-razorpay-signature'];
+    const rawBody = req.rawBody;
 
-    // Verify webhook signature
-    const body = JSON.stringify(req.body);
-    const expectedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(body)
-      .digest('hex');
+    if (!secret || !Buffer.isBuffer(rawBody) || !signature) {
+      logger.warn('[Razorpay Webhook] Missing secret, raw body, or signature');
+      return res.status(400).send('Invalid webhook configuration or request');
+    }
 
-    if (signature !== expectedSignature) {
-      logger.warn(`${THEME.ICONS.LOCK} [Webhook] Invalid signature received`);
+    const expected = crypto.createHmac('sha256', secret).update(rawBody).digest();
+    let supplied;
+    try {
+      if (!/^[a-f0-9]{64}$/i.test(String(signature))) throw new Error('bad signature format');
+      supplied = Buffer.from(String(signature), 'hex');
+    } catch (_) {
+      supplied = Buffer.alloc(0);
+    }
+    if (supplied.length !== expected.length || !crypto.timingSafeEqual(expected, supplied)) {
       await billingLogger.logInvalidSignature({ gateway: 'razorpay', req });
       return res.status(400).send('Invalid signature');
     }
 
-    const event = req.body.event;
-    logger.info(`${THEME.ICONS.INFO} [Webhook] Received event: ${event}`);
-
-    // Handle successful payment events
-    if (event === 'order.paid' || event === 'payment.captured') {
-      const payload = req.body.payload.payment?.entity || req.body.payload.order?.entity;
-      const notes = payload.notes || {};
-      const invoiceId = notes.invoiceId;
-
-      if (invoiceId) {
-        const updated = await withPlatformAdminRLS(centralPrisma, (tx) => tx.invoices.update({
-          where: { id: invoiceId },
-          data: {
-            status: 'paid',
-            payment_id: payload.id || payload.payment_id,
-            updated_at: new Date()
-          },
-          include: { tenant: true }
-        }));
-
-        // Send receipt
-        try {
-          await billingEmailer.sendPaymentReceipt(updated.tenant.admin_email, updated.invoice_no, updated.payment_id);
-        } catch (emailErr) {
-          logger.error(`${THEME.ICONS.ERROR} Failed to send payment receipt to ${updated.tenant.admin_email}:`, emailErr);
-        }
-        logger.info(`${THEME.ICONS.SUCCESS} [Webhook] Invoice ${invoiceId} marked as PAID via webhook`);
-        await billingLogger.log({
-          tenantId: updated.tenant_id,
-          gateway: 'razorpay',
-          eventType: 'invoice_marked_paid',
-          status: 'success',
-          referenceId: invoiceId,
-          amountPaise: payload.amount,
-          message: 'Invoice marked paid via Razorpay webhook',
-          req,
-        });
-      }
+    const eventBody = JSON.parse(rawBody.toString('utf8'));
+    const event = eventBody.event;
+    // Only payment.captured contains a payment entity with an order_id and
+    // captured amount. order.paid alone is not used to mark invoices paid.
+    if (event !== 'payment.captured') {
+      return res.status(200).json({ status: 'ignored', event });
     }
 
+    const paymentEntity = eventBody.payload?.payment?.entity;
+    if (!paymentEntity?.id || !paymentEntity?.order_id) {
+      return res.status(400).send('Incomplete payment event');
+    }
+
+    const rp = getRazorpay();
+    if (!rp) return res.status(503).send('Payment gateway unavailable');
+    const [gatewayOrder, gatewayPayment] = await Promise.all([
+      rp.orders.fetch(paymentEntity.order_id),
+      rp.payments.fetch(paymentEntity.id),
+    ]);
+
+    const storedOrder = await withPlatformAdminRLS(centralPrisma, (tx) =>
+      tx.payment_orders.findFirst({
+        where: {
+          gateway: 'razorpay',
+          gateway_order_id: paymentEntity.order_id,
+          status: 'created',
+        },
+      })
+    );
+    if (!storedOrder) {
+      logger.warn('[Razorpay Webhook] Captured payment has no matching pending ledger order');
+      return res.status(200).json({ status: 'unmatched' });
+    }
+
+    const invoice = await withPlatformAdminRLS(centralPrisma, (tx) =>
+      tx.invoices.findFirst({
+        where: { id: storedOrder.invoice_id, tenant_id: storedOrder.tenant_id },
+        include: { tenant: true },
+      })
+    );
+    if (!invoice || !isRazorpayPaymentForInvoice({ order: gatewayOrder, payment: gatewayPayment, invoice }) ||
+        Number(storedOrder.amount_paise) !== Number(invoice.total_paise) ||
+        String(storedOrder.currency).toUpperCase() !== String(invoice.currency).toUpperCase()) {
+      logger.warn('[Razorpay Webhook] Payment does not match its ledger order and invoice');
+      return res.status(200).json({ status: 'mismatch' });
+    }
+
+    const updated = await withPlatformAdminRLS(centralPrisma, async (tx) => {
+      const invoiceUpdate = await tx.invoices.updateMany({
+        where: { id: invoice.id, tenant_id: invoice.tenant_id, status: { not: 'paid' } },
+        data: { status: 'paid', payment_id: gatewayPayment.id, updated_at: new Date() },
+      });
+      if (invoiceUpdate.count !== 1) return null;
+      await tx.payment_orders.update({
+        where: { id: storedOrder.id },
+        data: {
+          gateway_payment_id: gatewayPayment.id,
+          status: 'captured',
+          updated_at: new Date(),
+        },
+      });
+      return tx.invoices.findUnique({
+        where: { id: invoice.id },
+        include: { tenant: true },
+      });
+    });
+
+    if (!updated) {
+      // A verified callback may be retried after the synchronous verify endpoint
+      // has already completed the same payment. This is an idempotent no-op.
+      return res.status(200).json({ status: 'already_processed' });
+    }
+
+    try {
+      await billingEmailer.sendPaymentReceipt(updated.tenant.admin_email, updated.invoice_no, updated.payment_id);
+    } catch (emailErr) {
+      logger.error('[Razorpay Webhook] Receipt email failed:', emailErr.message);
+    }
+    await billingLogger.log({
+      tenantId: updated.tenant_id,
+      gateway: 'razorpay',
+      eventType: 'invoice_marked_paid',
+      status: 'success',
+      referenceId: updated.id,
+      amountPaise: gatewayPayment.amount,
+      message: 'Invoice marked paid after verified Razorpay captured event',
+      req,
+    });
     return res.status(200).json({ status: 'ok' });
   } catch (error) {
-    logger.error(`${THEME.ICONS.ERROR} [Webhook] Fatal:`, error);
+    logger.error('[Razorpay Webhook] Processing failed:', { message: error.message });
     return res.status(500).send('Internal Server Error');
   }
 };
