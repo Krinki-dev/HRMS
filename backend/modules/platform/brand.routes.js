@@ -3,6 +3,9 @@
  * @description Handles dynamic branding lookups for tenants.
  */
 const express = require('express');
+const multer = require('multer');
+const crypto = require('crypto');
+const minio = require('../../shared/utils/minio');
 const router = express.Router();
 const { sendSuccess, sendError, ERROR_CODES } = require('../../shared/utils/response');
 const { centralPrisma } = require('../../shared/utils/centralPrisma');
@@ -223,6 +226,126 @@ router.post('/onboarding/complete', auth, async (req, res) => {
   } catch (err) {
     logger.error('[onboarding/complete]', err);
     return sendError(res, ERROR_CODES.SERVER, 'Could not complete company setup', 500);
+  }
+});
+
+
+const documentUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['application/pdf', 'image/jpeg', 'image/png'];
+    cb(allowed.includes(file.mimetype) ? null : new Error('Only PDF, JPEG, or PNG files are accepted.'), allowed.includes(file.mimetype));
+  },
+});
+
+function validDocumentSignature(file) {
+  if (!file?.buffer) return false;
+  if (file.mimetype === 'application/pdf') return file.buffer.subarray(0, 5).toString() === '%PDF-';
+  if (file.mimetype === 'image/jpeg') return file.buffer[0] === 0xff && file.buffer[1] === 0xd8 && file.buffer[2] === 0xff;
+  if (file.mimetype === 'image/png') return file.buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  return false;
+}
+
+function documentStorageReady() {
+  return Boolean(process.env.MINIO_ENDPOINT && process.env.MINIO_ACCESS_KEY &&
+    process.env.MINIO_SECRET_KEY && (process.env.NODE_ENV !== 'production' || process.env.MINIO_USE_SSL === 'true'));
+}
+
+router.post('/company-documents', auth, (req, res, next) => {
+  documentUpload.single('file')(req, res, (err) => {
+    if (err) return sendError(res, ERROR_CODES.VALIDATION, err.message || 'Upload rejected', 400);
+    next();
+  });
+}, async (req, res) => {
+  let objectKey = null;
+  try {
+    const tenantId = req.user?.tenantId || req.user?.company_id;
+    if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Company session required', 401);
+    if (!documentStorageReady()) return sendError(res, ERROR_CODES.SERVER, 'Private document storage is not configured securely.', 503);
+    if (!req.file || !validDocumentSignature(req.file)) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'File content does not match an accepted PDF/JPEG/PNG format.', 400);
+    }
+    const allowedTypes = new Set(['gst_certificate', 'pan_card', 'incorporation_certificate', 'address_proof', 'bank_proof', 'other']);
+    const documentType = String(req.body.documentType || '');
+    if (!allowedTypes.has(documentType)) return sendError(res, ERROR_CODES.VALIDATION, 'Select a valid company document type.', 400);
+
+    const originalName = String(req.file.originalname || 'document').replace(/[\\/\x00-\x1f]/g, '_').slice(0, 180);
+    const sha256 = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
+    objectKey = await minio.uploadFile(tenantId, 'company-documents', req.file.buffer, originalName, req.file.mimetype);
+    const rows = await centralPrisma.$queryRaw`
+      INSERT INTO company_documents
+        (tenant_id, document_type, file_name, object_key, mime_type, size_bytes, sha256, uploaded_by)
+      VALUES
+        (${tenantId}::uuid, ${documentType}, ${originalName}, ${objectKey},
+         ${req.file.mimetype}, ${req.file.size}, ${sha256}, ${req.user?.id || null}::uuid)
+      RETURNING id, document_type, file_name, mime_type, size_bytes, status, created_at
+    `;
+    return sendSuccess(res, rows[0], 'Company document submitted for review.', 201);
+  } catch (err) {
+    if (objectKey) await minio.deleteFile(objectKey).catch(() => {});
+    logger.error('[company-documents/upload]', err);
+    return sendError(res, ERROR_CODES.SERVER, 'Document upload failed. Please retry.', 500);
+  }
+});
+
+router.get('/company-documents', auth, async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId || req.user?.company_id;
+    if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Company session required', 401);
+    const rows = await centralPrisma.$queryRaw`
+      SELECT id, document_type, file_name, mime_type, size_bytes, status,
+             reviewer_note, reviewed_at, created_at, updated_at
+      FROM company_documents WHERE tenant_id = ${tenantId}::uuid
+      ORDER BY created_at DESC
+    `;
+    return sendSuccess(res, rows);
+  } catch (err) {
+    logger.error('[company-documents/list]', err);
+    return sendError(res, ERROR_CODES.SERVER, 'Could not load company documents.', 500);
+  }
+});
+
+router.get('/company-documents/:id/download', auth, async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId || req.user?.company_id;
+    if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Company session required', 401);
+    const rows = await centralPrisma.$queryRaw`
+      SELECT object_key, file_name FROM company_documents
+      WHERE id = ${req.params.id}::uuid AND tenant_id = ${tenantId}::uuid LIMIT 1
+    `;
+    if (!rows.length) return sendError(res, ERROR_CODES.NOT_FOUND, 'Document not found.', 404);
+    if (!documentStorageReady()) return sendError(res, ERROR_CODES.SERVER, 'Private document storage is unavailable.', 503);
+    const url = await minio.getPresignedUrl(rows[0].object_key, 300);
+    return sendSuccess(res, { url, expiresInSeconds: 300, fileName: rows[0].file_name }, 'Short-lived download link created.');
+  } catch (err) {
+    logger.error('[company-documents/download]', err);
+    return sendError(res, ERROR_CODES.SERVER, 'Could not create document download link.', 500);
+  }
+});
+
+router.patch('/company-documents/:id/review', auth, async (req, res) => {
+  try {
+    if (!req.user?.is_platform_admin && req.user?.role !== 'super_admin') {
+      return sendError(res, ERROR_CODES.FORBIDDEN, 'Platform reviewer access required.', 403);
+    }
+    const { status, reviewerNote = '' } = req.body || {};
+    const allowed = new Set(['under_review', 'approved', 'rejected', 'resubmission_required']);
+    if (!allowed.has(status) || String(reviewerNote).length > 2000) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Invalid review status or note.', 400);
+    }
+    const rows = await centralPrisma.$queryRaw`
+      UPDATE company_documents
+      SET status = ${status}, reviewer_id = ${req.user?.id || null}::uuid,
+          reviewer_note = ${String(reviewerNote)}, reviewed_at = NOW(), updated_at = NOW()
+      WHERE id = ${req.params.id}::uuid
+      RETURNING id, tenant_id, status, reviewer_note, reviewed_at
+    `;
+    if (!rows.length) return sendError(res, ERROR_CODES.NOT_FOUND, 'Company document not found.', 404);
+    return sendSuccess(res, rows[0], 'Document review status updated.');
+  } catch (err) {
+    logger.error('[company-documents/review]', err);
+    return sendError(res, ERROR_CODES.SERVER, 'Could not update document review.', 500);
   }
 });
 
