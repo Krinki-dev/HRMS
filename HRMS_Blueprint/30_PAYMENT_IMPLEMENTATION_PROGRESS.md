@@ -75,6 +75,17 @@ The SQL migration has **not** been applied to the live central database. No real
 - Added `backend/test/subscription-payment-verification.test.js` covering matching selections, add-on order normalization, tampering across each selection field, missing snapshots, invalid amounts, and default renewal mode.
 - Ran the helper's five corresponding Node.js tests in an isolated local test harness: **5 passed, 0 failed**. This is a focused helper test only; it is not a full backend test-suite or CI result.
 
+## PhonePe Standard Checkout v2 subscription integration — continued work
+
+- Added a server-side PhonePe v2 client with OAuth client-credentials token acquisition, expiry-aware token caching, checkout creation, and order-status lookup.
+- The client selects the documented sandbox or production token and checkout API endpoints from `PHONEPE_ENV`; optional `PHONEPE_BASE_URL` supports an explicitly configured gateway base URL.
+- Subscription checkout now creates a v2 `PG_CHECKOUT` order and persists its merchant order ID and server-side subscription snapshot in the payment ledger.
+- Subscription verification now fetches v2 order status from PhonePe and requires order state `COMPLETED`, exact merchant order ID, exact amount, and a completed payment attempt before activating the plan.
+- The onboarding return URL carries the selection snapshot as an encoded value; the backend still compares it against its persisted order snapshot, so browser-provided values cannot change the paid selection.
+- Added PhonePe client tests for environment URLs, required credentials, token caching, v2 checkout request headers/body, order-status URL, and strict completed-payment matching.
+- PhonePe invoice checkout remains disabled; this v2 integration currently covers subscription checkout only. JioPay remains disabled.
+- Merchant credentials and a successful PhonePe UAT run are still required. Do not enable production traffic until UAT, webhook configuration, and failure/reconciliation behavior have been validated.
+
 ## Verification status after focused hardening
 
 - GitHub combined status lookup for commit `bf78bd026b21e2a34d338b9ef4e378cf0535b7fc` returned no status checks; workflow-run lookup returned no runs. CI is therefore **unverified**, not passed.
