@@ -132,7 +132,8 @@ async function provisionDefaultModules(tx, tenantId) {
  */
 const registerTenant = async (req, res) => {
   try {
-    const { company, subdomain, customDomain, dbMode, localDb, externalDbUrl, cloudBackupUrl, admin, consent } = req.body;
+    const { company, subdomain, customDomain, dbMode: requestedDbMode, localDb, externalDbUrl, cloudBackupUrl, admin, consent } = req.body;
+    const dbMode = requestedDbMode || 'cloud';
     
     // 1. Validation
     const missing = [];
@@ -164,7 +165,7 @@ const registerTenant = async (req, res) => {
     const cleanPhone       = admin.phone?.replace(/\s/g, '') || null;
     const cleanCustomDomain = customDomain?.trim().toLowerCase() || null;
 
-    const selectedDbMode = dbMode || 'cloud';
+    const selectedDbMode = dbMode;
     if (!['cloud', 'local', 'external_cloud'].includes(selectedDbMode)) {
       return sendError(res, ERROR_CODES.VALIDATION, 'Choose a supported PostgreSQL deployment mode: managed cloud, own server, or own cloud database.', 400, { field: 'dbMode' });
     }
