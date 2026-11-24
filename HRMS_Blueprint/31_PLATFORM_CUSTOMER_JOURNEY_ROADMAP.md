@@ -16,14 +16,16 @@
 1. `POST /api/v1/platform/register` is public and handled by `registerTenant` in `backend/modules/platform/platform.service.js`.
 2. Registration validates company name, consent, admin email/name/password, and subdomain; it checks duplicate GSTIN, subdomain, custom domain, admin email, and phone.
 3. Registration creates the central tenant and central user index, provisions default modules and pricing configuration, sets an initial trial expiry, then provisions/seeds the tenant database. The tenant is activated only after schema and admin seeding report success.
-4. The registration response returns tenant/portal information and says the customer should use the password chosen during registration. This code path does not itself return an authenticated access token.
+4. The registration response returns tenant/portal information and says the customer should use the password chosen during registration. This code path does not itself return an authenticated access token. The frontend registration page has four steps: Company, Database, Admin, Done.
 5. The current onboarding wizard starts at plan selection, then offers organisation, branding, work settings, payroll, email, compliance credentials, cloud backup, and launch steps.
 6. The plan-selection component submits `method: 'razorpay'`. It now visibly identifies Razorpay as enabled and PhonePe/other providers as coming soon.
-7. The wizard calls `POST /platform/onboarding/save-step`. In `backend/modules/platform/brand.routes.js`, the handler persists the branding logo and backup configuration, but acknowledges other steps without persisting their supplied data itself.
-8. The wizard calls `POST /platform/onboarding/complete`; that route was not found in the inspected platform route file or GitHub code search. Verify route registration and implement it before treating onboarding completion as reliable.
-9. The inspected platform onboarding flow has a logo upload step, but no company-document submission/review flow or tenant document endpoint was found in the inspected route/code search. This is a gap to design and implement, not an assumed existing capability.
-10. The trial activation controller contains development-only fallback success responses when central database reads/writes fail. These must not be mistaken for real persisted trial activation and should be removed or isolated from the customer production path.
-11. The registration service sets up trial state during tenant registration. Trial activation is also a separate subscription controller operation. Define one authoritative lifecycle so trial start/expiry cannot be unintentionally reset or diverge.
+7. The public company-registration page currently exposes cloud, local, hybrid, and external database choices. For a self-serve SaaS launch, managed Syntern Cloud should be the default path; on-premise/BYOD database setup should be an assisted/advanced path until those provisioning modes are fully supported and tested.
+8. The wizard calls `POST /platform/onboarding/save-step`. In `backend/modules/platform/brand.routes.js`, the handler persists the branding logo and backup configuration, but acknowledges other steps without persisting their supplied data itself.
+9. The wizard calls `POST /platform/onboarding/complete`; that route was not found in the inspected platform route file or GitHub code search. Verify route registration and implement it before treating onboarding completion as reliable.
+10. The inspected platform onboarding flow has a logo upload step, but no company-document submission/review flow or tenant document endpoint was found in the inspected route/code search. This is a gap to design and implement, not an assumed existing capability.
+11. The trial activation controller contains development-only fallback success responses when central database reads/writes fail. These must not be mistaken for real persisted trial activation and should be removed or isolated from the customer production path.
+12. The registration service sets up trial state during tenant registration. Trial activation is also a separate subscription controller operation. Define one authoritative lifecycle so trial start/expiry cannot be unintentionally reset or diverge.
+13. Plan selection previously exposed an automatic-renewal choice and described automatic charge attempts, but the inspected billing cron only generates invoices and checks overdue invoices; it does not perform recurring gateway charges. The plan UI now offers manual renewal only until a real recurring-payment mandate/flow is implemented.
 
 ## Target customer journey
 
@@ -58,7 +60,7 @@
 - Verify Razorpay signature and fetch order/payment from Razorpay server-to-server; require exact tenant, amount, currency, order linkage, and captured state.
 - Activate entitlement, pricing configuration, paid invoice, and payment ledger atomically.
 - Handle cancelled, pending, failed, duplicate, delayed-return, and webhook-retry cases without false activation.
-- Do not claim automatic renewal until a supported mandate/recurring-payment agreement is implemented and tested. If no mandate exists, present manual renewal only.
+- Do not claim automatic renewal until a supported mandate/recurring-payment agreement is implemented and tested. The launch plan UI therefore offers manual renewal only.
 
 **Acceptance:** no plan or paid entitlement can be activated from a browser-only success signal or mismatched payment.
 
