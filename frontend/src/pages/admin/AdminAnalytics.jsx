@@ -9,8 +9,8 @@ export default function AdminAnalytics() {
   let growChart, planChart;
 
   const { data: statsRes } = useQuery({
-    queryKey: ['admin-analytics'],
-    queryFn:  () => api.get('/platform/admin/analytics').then(res => res.data),
+    queryKey: ['admin-stats'],
+    queryFn:  () => api.get('/platform/admin/stats').then(res => res.data),
     staleTime: 60_000,
   });
   const stats = statsRes?.data || {};
