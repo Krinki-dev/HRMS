@@ -69,8 +69,10 @@ function buildTrialPlanEntitlements(plan, selectedAddons = []) {
       plan.included_modules.some((module) => typeof module !== 'string' || !module.trim())) {
     throw new Error('The selected trial plan must define included modules');
   }
-  const included = new Set(plan.included_modules);
-  const allowed = new Set(Array.isArray(plan.addon_modules) ? plan.addon_modules : []);
+  const included = new Set(plan.included_modules.map((module) => module.trim()));
+  const allowed = new Set(Array.isArray(plan.addon_modules)
+    ? plan.addon_modules.filter((module) => typeof module === 'string').map((module) => module.trim())
+    : []);
   if (requested.some((module) => included.has(module) || !allowed.has(module))) {
     throw new Error('One or more selected trial add-ons are not available for this plan');
   }
