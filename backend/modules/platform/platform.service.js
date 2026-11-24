@@ -164,6 +164,29 @@ const registerTenant = async (req, res) => {
     const cleanPhone       = admin.phone?.replace(/\s/g, '') || null;
     const cleanCustomDomain = customDomain?.trim().toLowerCase() || null;
 
+    const selectedDbMode = dbMode || 'cloud';
+    if (!['cloud', 'local', 'external_cloud'].includes(selectedDbMode)) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Choose a supported PostgreSQL deployment mode: managed cloud, own server, or own cloud database.', 400, { field: 'dbMode' });
+    }
+    if (selectedDbMode === 'local' && localDb?.type && localDb.type !== 'postgres') {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Only PostgreSQL is supported for new registrations.', 400, { field: 'localDb.type' });
+    }
+    if (selectedDbMode === 'external_cloud' && !/^postgres(?:ql)?:\\/\\//i.test(String(externalDbUrl || '').trim())) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Your cloud database URL must use PostgreSQL (postgres:// or postgresql://).', 400, { field: 'externalDbUrl' });
+    }
+    if (cleanGstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(cleanGstin)) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Enter a valid 15-character GSTIN.', 400, { field: 'gstin' });
+    }
+    if (cleanPan && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(cleanPan)) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Enter a valid 10-character PAN.', 400, { field: 'pan' });
+    }
+    if (cleanGstin && cleanPan && cleanGstin.substring(2, 12) !== cleanPan) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'The PAN must match the PAN contained in the GSTIN.', 400, { field: 'pan' });
+    }
+    if (!cleanGstin && !cleanPan) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Enter your GSTIN or PAN to identify your business.', 400, { field: 'gstin' });
+    }
+
     if (cleanCustomDomain && !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/.test(cleanCustomDomain)) {
       return sendError(res, ERROR_CODES.VALIDATION, 'Custom domain must be a valid hostname', 400);
     }
@@ -179,11 +202,11 @@ const registerTenant = async (req, res) => {
       }
     }
 
-    if ((dbMode === 'local' || dbMode === 'hybrid') && !localDb?.host)
+    if ((selectedDbMode === 'local') && !localDb?.host)
       return sendError(res, ERROR_CODES.VALIDATION, 'Local database host is required', 400);
-    if (dbMode === 'external_cloud' && !externalDbUrl)
+    if (selectedDbMode === 'external_cloud' && !externalDbUrl)
       return sendError(res, ERROR_CODES.VALIDATION, 'Database connection URL is required', 400);
-    if (dbMode === 'hybrid' && !cloudBackupUrl)
+    if (selectedDbMode === 'hybrid' && !cloudBackupUrl)
       return sendError(res, ERROR_CODES.VALIDATION, 'Cloud backup URL is required for hybrid mode', 400);
 
     const existingSubdomain = await centralPrisma.$queryRaw`
