@@ -883,6 +883,15 @@ exports.createSubscriptionOrder = async (req, res) => {
       });
     }
 
+    const subscriptionSnapshot = {
+      planSlug: resolvedPlanId,
+      selectedAddons: Array.isArray(selectedAddons) ? selectedAddons : (Array.isArray(addons) ? addons : []),
+      billingMonths: Number(billingMonths) || (period === 'yearly' ? 12 : 1),
+      employeeCount: Number(req.body.employeeCount) || 0,
+      promoCode: promoCode || null,
+      renewalMode: normalizedRenewalMode,
+    };
+
     const tenant = await withBillingRLS(req, tenantId, (tx) => tx.tenants.findUnique({
       where: { id: tenantId },
       select: { name: true, admin_email: true, admin_name: true, admin_phone: true },
@@ -897,6 +906,21 @@ exports.createSubscriptionOrder = async (req, res) => {
         receipt: `SUB-${String(tenantId||'new').substring(0,8)}-${Date.now()}`,
         notes: { tenantId, planId: resolvedPlanId, billingMonths, renewalMode: normalizedRenewalMode, type: 'subscription', gst_applied: '18%' },
       });
+      if (!order?.id || Number(order.amount) !== Number(finalAmount) || String(order.currency).toUpperCase() !== 'INR') {
+        return sendError(res, ERROR_CODES.SERVER, 'Razorpay returned an invalid subscription order', 502);
+      }
+      await withBillingRLS(req, tenantId, (tx) => tx.payment_orders.create({
+        data: {
+          tenant_id: tenantId,
+          purpose: 'subscription',
+          gateway: 'razorpay',
+          gateway_order_id: order.id,
+          amount_paise: finalAmount,
+          currency: 'INR',
+          status: 'created',
+          metadata: subscriptionSnapshot,
+        },
+      }));
       return sendSuccess(res, {
         method: 'razorpay', orderId: order.id, amount: order.amount,
         currency: order.currency, keyId: process.env.RAZORPAY_KEY_ID,
@@ -934,7 +958,20 @@ exports.createSubscriptionOrder = async (req, res) => {
 
       if (response.data.success) {
         const redirectUrl = response.data.data?.instrumentResponse?.redirectInfo?.url || response.data.data?.instrumentResponse?.url;
-        return sendSuccess(res, { method: 'phonepe', redirectUrl });
+        if (!redirectUrl) return sendError(res, ERROR_CODES.SERVER, 'PhonePe did not return a checkout URL', 502);
+        await withBillingRLS(req, tenantId, (tx) => tx.payment_orders.create({
+          data: {
+            tenant_id: tenantId,
+            purpose: 'subscription',
+            gateway: 'phonepe',
+            gateway_order_id: merchantTransactionId,
+            amount_paise: finalAmount,
+            currency: 'INR',
+            status: 'created',
+            metadata: subscriptionSnapshot,
+          },
+        }));
+        return sendSuccess(res, { method: 'phonepe', redirectUrl, transactionId: merchantTransactionId });
       }
       return sendError(res, ERROR_CODES.SERVER, response.data.message || 'PhonePe initiation failed', 500);
     }
