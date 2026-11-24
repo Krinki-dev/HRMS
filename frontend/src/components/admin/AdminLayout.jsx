@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { getTenantDomain } from '../../utils/tenantDomain';
 import ThemeToggle from '../ThemeToggle';
@@ -51,7 +51,10 @@ function buildCompanyPortalUrl(user) {
 export default function AdminLayout() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
   const companyPortalUrl = buildCompanyPortalUrl(user);
+  const currentNav = NAV_ITEMS.find((item) => location.pathname === item.path || (item.path !== '/admin/dashboard' && location.pathname.startsWith(`${item.path}/`)));
+  const pageTitle = currentNav?.label || 'Dashboard';
 
   const handleLogout = () => {
     logout();
