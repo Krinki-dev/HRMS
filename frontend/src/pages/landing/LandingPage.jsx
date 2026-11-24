@@ -1040,6 +1040,9 @@ export default function LandingPage() {
                 Explore features
               </button>
             </div>
+            {marketing.ctaSub && (
+              <p style={{ color: '#94A3B8', fontSize: 12, margin: '-6px 0 14px' }}>{marketing.ctaSub}</p>
+            )}
 
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               {TRUST_BADGES.map((item) => <span key={item} style={S.badgeSoft}>{item}</span>)}
