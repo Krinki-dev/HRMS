@@ -38,21 +38,26 @@
 ## Remaining work before payment flow can be called complete
 
 ### P0 — Required
-- Move subscription invoice snapshot creation into the same database transaction as subscription activation and payment-order capture. Current invoice creation and some pricing-config writes still occur after the activation transaction and need failure-safe atomicity.
+- Add automated failure-injection tests proving the subscription activation, pricing config, invoice snapshot, and ledger capture all roll back together when any write fails.
 - Add durable webhook-event idempotency records and replay protection, not just idempotent invoice status updates.
 - Add stale-order expiry and reconciliation for orphaned or pending provider orders.
 - Add subscription callback/reconciliation handling so a captured Razorpay subscription payment can be recovered even if the customer browser never returns.
 - Review legacy zero-price/free-plan behavior and ensure it cannot create a paid ledger attempt.
-- Verify all provider response fields against the merchant's enabled PhonePe API version and credentials. The current PhonePe v1-style integration is not a substitute for a fully verified current merchant configuration.
+- Migrate PhonePe to the current Standard Checkout API version only after the merchant supplies the required Client ID, Client Secret, Client Version, and confirms sandbox/production environment. The current code uses the legacy v1 merchant-ID/salt-key contract; current official documentation describes OAuth client-credentials authentication, `/checkout/v2/pay`, and `/checkout/v2/order/{merchantOrderId}/status`.
 - Add tests for ledger persistence, mismatched subscription selections, wrong tenant, amount/currency mismatch, duplicate verification, webhook replay, and transaction rollback.
 - Generate both Prisma clients and confirm CI on the exact latest commit.
 
 ### Provider-specific
 - **Razorpay:** invoice checkout and webhook path are hardened in source; subscription order binding is added. Still requires DB-backed integration tests, webhook event inbox/reconciliation, and full sandbox validation.
-- **PhonePe:** subscription order ledger and server-side status check are added. Legacy webhook is intentionally non-mutating. Confirm current PhonePe merchant API version and callback authentication configuration before enabling production callbacks. Official PhonePe developer portal: https://developer.phonepe.com
+- **PhonePe:** subscription order ledger and legacy v1-style server-side status check are added. Legacy webhook is intentionally non-mutating. Current official Standard Checkout documentation describes v2 OAuth (`client_id`, `client_version`, `client_secret`) and v2 pay/status endpoints; merchant credentials and environment confirmation are required before migrating and enabling production. See https://developer.phonepe.com/payment-gateway/website-integration/standard-checkout/api-integration/api-reference/authorization and https://developer.phonepe.com/payment-gateway/website-integration/standard-checkout/api-integration/api-reference/create-payment.
 - **JioPay:** disabled pending official merchant API specification, merchant credentials, callback authentication details, and sandbox. Do not re-enable placeholder code.
 - **Payouts:** still a separate unfinished workstream; current payout initiation is not a real bank-transfer integration.
 
 ## Deployment boundary
 
 The SQL migration has **not** been applied to the live central database. No real payment was initiated and no subscription/customer data was changed. The latest changes have not yet been confirmed by CI; the available workflow-run lookup did not return a run for the latest commit. Do not claim test or deployment success until CI and PostgreSQL integration tests are confirmed.
+
+## Additional atomicity work
+
+- Subscription activation now claims the payment order conditionally, updates the tenant plan and entitlements, writes the subscription pricing configuration using the same Prisma transaction client, and creates the paid subscription invoice snapshot in that same transaction. A failure in these writes rolls back the transaction.
+- A durable Razorpay webhook inbox now records provider event ID (or raw-payload hash fallback), event type, payload hash, processing status, and retryable failure state. Duplicate deliveries are acknowledged without reapplying business effects; failed inbox events can be retried.
