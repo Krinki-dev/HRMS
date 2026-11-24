@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import api from '../../services/api';
 import { settingsApi } from '../../services/settingsApi';
 import PlanSelectionStep from './PlanSelectionStep';
+import CompanyDocumentsStep from './CompanyDocumentsStep';
 
 // ==================== THEME CONSTANTS ====================
 const C = {
@@ -63,6 +64,7 @@ const STEPS = [
   { key: 'payroll',     label: 'Payroll',         icon: '₹' },
   { key: 'email',       label: 'Email',           icon: '✉' },
   { key: 'compliance',  label: 'Compliance',      icon: '📋' },
+  { key: 'documents',   label: 'Company documents', icon: '📄' },
   { key: 'backup',      label: 'Cloud backup',    icon: '☁️' },
   { key: 'done',        label: 'Launch',          icon: '✅' },
 ];
@@ -126,7 +128,7 @@ export default function OnboardingWizard({ onComplete }) {
     api.get('/platform/onboarding/progress').then((response) => {
       if (!active) return;
       const progress = response.data?.data?.progress || {};
-      const next = ['org', 'branding', 'work', 'payroll', 'email', 'compliance', 'backup']
+      const next = ['org', 'branding', 'work', 'payroll', 'email', 'compliance', 'documents', 'backup']
         .find((key) => progress[key]?.completed !== true);
       if (next) setStep(STEPS.findIndex((item) => item.key === next));
       else if (response.data?.data?.isSetupComplete) navigate('/dashboard', { replace: true });
@@ -531,6 +533,13 @@ export default function OnboardingWizard({ onComplete }) {
               <div style={{ fontSize: 13, color: C.muted, marginBottom: 16 }}>PF/EPFO and ESI/ESIC portal credentials are not collected during initial onboarding. Configure them later in Settings after verifying the secure credential-storage workflow.</div>
               <div style={{ padding: '12px 14px', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 8, fontSize: 12, color: C.amber }}>No portal passwords are saved on this screen. You can continue and configure compliance securely later.</div>
             </div>
+          )}
+
+          {currentStep.key === 'documents' && (
+            <CompanyDocumentsStep
+              onNext={() => setStep(s => s + 1)}
+              onSkip={() => setStep(s => s + 1)}
+            />
           )}
 
           {currentStep.key === 'backup' && (
