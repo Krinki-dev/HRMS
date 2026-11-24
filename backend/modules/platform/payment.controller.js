@@ -573,6 +573,7 @@ exports.distributeSalaries = async (req, res) => {
  * Handles Razorpay Webhooks for asynchronous status updates.
  */
 exports.handleWebhook = async (req, res) => {
+  let webhookEventId = null;
   try {
     const secret = (process.env.RAZORPAY_WEBHOOK_SECRET || '').trim();
     const signature = req.headers['x-razorpay-signature'];
@@ -589,10 +590,31 @@ exports.handleWebhook = async (req, res) => {
     }
 
     const eventBody = JSON.parse(rawBody.toString('utf8'));
-    const event = eventBody.event;
+    const event = String(eventBody.event || 'unknown');
+    webhookEventId = req.headers['x-razorpay-event-id'] || crypto.createHash('sha256').update(rawBody).digest('hex');
+    try {
+      await withPlatformAdminRLS(centralPrisma, (tx) => tx.payment_webhook_events.create({
+        data: {
+          gateway: 'razorpay',
+          gateway_event_id: String(webhookEventId),
+          event_type: event,
+          payload_sha256: crypto.createHash('sha256').update(rawBody).digest('hex'),
+          status: 'received',
+        },
+      }));
+    } catch (inboxError) {
+      if (inboxError.code === 'P2002' || inboxError.code === '23505') {
+        return res.status(200).json({ status: 'duplicate' });
+      }
+      throw inboxError;
+    }
     // Only payment.captured contains a payment entity with an order_id and
     // captured amount. order.paid alone is not used to mark invoices paid.
     if (event !== 'payment.captured') {
+      await withPlatformAdminRLS(centralPrisma, (tx) => tx.payment_webhook_events.update({
+        where: { gateway_gateway_event_id: { gateway: 'razorpay', gateway_event_id: String(webhookEventId) } },
+        data: { status: 'ignored', processed_at: new Date() },
+      }));
       return res.status(200).json({ status: 'ignored', event });
     }
 
@@ -620,6 +642,10 @@ exports.handleWebhook = async (req, res) => {
     );
     if (!storedOrder) {
       logger.warn('[Razorpay Webhook] Captured payment has no matching pending ledger order');
+      await withPlatformAdminRLS(centralPrisma, (tx) => tx.payment_webhook_events.update({
+        where: { gateway_gateway_event_id: { gateway: 'razorpay', gateway_event_id: String(webhookEventId) } },
+        data: { status: 'ignored', processed_at: new Date(), last_error: 'No matching pending invoice ledger order' },
+      }));
       return res.status(200).json({ status: 'unmatched' });
     }
 
@@ -633,6 +659,10 @@ exports.handleWebhook = async (req, res) => {
         Number(storedOrder.amount_paise) !== Number(invoice.total_paise) ||
         String(storedOrder.currency).toUpperCase() !== String(invoice.currency).toUpperCase()) {
       logger.warn('[Razorpay Webhook] Payment does not match its ledger order and invoice');
+      await withPlatformAdminRLS(centralPrisma, (tx) => tx.payment_webhook_events.update({
+        where: { gateway_gateway_event_id: { gateway: 'razorpay', gateway_event_id: String(webhookEventId) } },
+        data: { status: 'ignored', processed_at: new Date(), last_error: 'Provider payment did not match invoice ledger' },
+      }));
       return res.status(200).json({ status: 'mismatch' });
     }
 
@@ -659,6 +689,10 @@ exports.handleWebhook = async (req, res) => {
     if (!updated) {
       // A verified callback may be retried after the synchronous verify endpoint
       // has already completed the same payment. This is an idempotent no-op.
+      await withPlatformAdminRLS(centralPrisma, (tx) => tx.payment_webhook_events.update({
+        where: { gateway_gateway_event_id: { gateway: 'razorpay', gateway_event_id: String(webhookEventId) } },
+        data: { status: 'processed', processed_at: new Date() },
+      }));
       return res.status(200).json({ status: 'already_processed' });
     }
 
@@ -677,8 +711,20 @@ exports.handleWebhook = async (req, res) => {
       message: 'Invoice marked paid after verified Razorpay captured event',
       req,
     });
+    await withPlatformAdminRLS(centralPrisma, (tx) => tx.payment_webhook_events.update({
+      where: { gateway_gateway_event_id: { gateway: 'razorpay', gateway_event_id: String(webhookEventId) } },
+      data: { status: 'processed', processed_at: new Date() },
+    }));
     return res.status(200).json({ status: 'ok' });
   } catch (error) {
+    if (webhookEventId) {
+      try {
+        await withPlatformAdminRLS(centralPrisma, (tx) => tx.payment_webhook_events.update({
+          where: { gateway_gateway_event_id: { gateway: 'razorpay', gateway_event_id: String(webhookEventId) } },
+          data: { status: 'failed', last_error: String(error.message || 'Processing failed').slice(0, 500) },
+        }));
+      } catch (_) {}
+    }
     logger.error('[Razorpay Webhook] Processing failed:', { message: error.message });
     return res.status(500).send('Internal Server Error');
   }
