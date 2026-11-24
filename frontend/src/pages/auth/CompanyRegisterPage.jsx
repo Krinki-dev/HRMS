@@ -71,8 +71,8 @@ const INDIA_STATES = [
 
 const DB_MODES = [
   { id:'cloud',          title:'Syntern Cloud (recommended)', desc:'We host your database. Zero setup, always accessible.',      badge:'Easiest',      badgeColor:C.green,   creds:null },
-  { id:'local',          title:'On-premise / local server',   desc:'Your own PostgreSQL, MySQL or SQL Server on-site.',          badge:'Full control', badgeColor:C.amber,   creds:'local' },
-  { id:'hybrid',         title:'Hybrid (local + cloud sync)', desc:'Local primary; cloud auto-syncs every 5 min as backup.',     badge:'Best of both', badgeColor:'#A78BFA', creds:'both' },
+  { id:'local',          title:'Your own server (online or offline)', desc:'Use PostgreSQL on your own server or local network. Installation may require assistance.', badge:'Self-hosted', badgeColor:C.amber, creds:'local' },
+  { id:'external_cloud', title:'Your own cloud database', desc:'Connect a PostgreSQL database hosted in your cloud account. Assisted setup may be required.', badge:'Bring your cloud', badgeColor:'#60A5FA', creds:'url' },
   { id:'external_cloud', title:'Bring your own cloud DB',     desc:'Supabase, Neon, PlanetScale, Railway, or any Postgres URL.', badge:'Advanced',     badgeColor:'#60A5FA', creds:'url' },
 ];
 
@@ -175,7 +175,7 @@ function CloudUrlField({ value, onChange, label='Cloud database URL', placeholde
   return (
     <div style={S.credBox}>
       <div style={{fontSize:12,fontWeight:700,color:'#94A3CE',marginBottom:12,textTransform:'uppercase',letterSpacing:'0.4px'}}>{label}</div>
-      <Field label="Connection URL" required hint="Works with Supabase, Neon, PlanetScale, Railway, or any PostgreSQL / MySQL URL.">
+      <Field label="Connection URL" required hint="Use a PostgreSQL connection URL. Credentials are handled by the server.">
         <Input value={value} onChange={onChange} placeholder={placeholder}/>
       </Field>
     </div>
@@ -559,12 +559,11 @@ export default function CompanyRegisterPage() {
     }
     if (step===2) {
       const mode = DB_MODES.find(m=>m.id===dbMode);
-      if (mode.creds==='local'||mode.creds==='both') {
+      if (mode.creds==='local') {
         if (!localDb.host) { setError('Database host is required.'); return false; }
         if (!localDb.name) { setError('Database name is required.'); return false; }
         if (!localDb.user) { setError('Database username is required.'); return false; }
       }
-      if (mode.creds==='both'&&!cloudUrl.trim()) { setError('Cloud sync URL is required for hybrid mode.'); return false; }
       if (mode.creds==='url' &&!cloudUrl.trim()) { setError('Database connection URL is required.'); return false; }
       return true;
     }
@@ -606,9 +605,8 @@ export default function CompanyRegisterPage() {
         subdomain,
         customDomain: domainType === 'custom' ? customDomain.trim().toLowerCase() : null,
         dbMode,
-        localDb:        dbMode==='local'||dbMode==='hybrid' ? localDb : undefined,
+        localDb:        dbMode==='local' ? {...localDb,type:'postgres'} : undefined,
         externalDbUrl:  dbMode==='external_cloud' ? cloudUrl : undefined,
-        cloudBackupUrl: dbMode==='hybrid' ? cloudUrl : undefined,
         admin:{name:admin.name,email:admin.email,phone:admin.phone,password:admin.password},
         consent:true,
       };
@@ -850,8 +848,7 @@ export default function CompanyRegisterPage() {
                 ))}
                 {DB_MODES.find(m=>m.id===dbMode)?.creds===null && <div style={S.info}>✓ Syntern provisions a dedicated database automatically. Nothing to configure here.</div>}
                 {(DB_MODES.find(m=>m.id===dbMode)?.creds==='local'||DB_MODES.find(m=>m.id===dbMode)?.creds==='both') && <LocalDbFields localDb={localDb} setLocalDb={setLocalDb}/>}
-                {DB_MODES.find(m=>m.id===dbMode)?.creds==='both' && <CloudUrlField value={cloudUrl} onChange={v=>setCloudUrl(v.trim())} label="Cloud sync URL (backup)" placeholder="postgresql://user:pass@db.supabase.co:5432/postgres"/>}
-                {DB_MODES.find(m=>m.id===dbMode)?.creds==='url' && <CloudUrlField value={cloudUrl} onChange={v=>setCloudUrl(v.trim())}/>}
+                        {DB_MODES.find(m=>m.id===dbMode)?.creds==='url' && <CloudUrlField value={cloudUrl} onChange={v=>setCloudUrl(v.trim())}/>}
                 <div style={{display:'flex',gap:12,marginTop:8}}>
                   <button style={S.btnOut} onClick={back}>← Back</button>
                   <button style={{...S.btn,flex:1}} onClick={next} onMouseEnter={e=>e.target.style.background=C.blueHi} onMouseLeave={e=>e.target.style.background=C.blue}>Continue →</button>
