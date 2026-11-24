@@ -103,3 +103,14 @@ No database migration, live schema change, customer-data deletion, backup execut
 - Invoice payment and order capture are recorded in one RLS-scoped database transaction; invoice update is conditional so concurrent verification cannot mark the same invoice paid twice.
 - Migration is committed but **not applied**. Central Prisma client generation and backend CI must pass before runtime rollout.
 - Remaining: webhook idempotency and reconciliation, explicit order expiry/failure handling, provider-neutral ledger use for PhonePe/JioPay, subscription activation tied to verified invoice state, and integration tests against PostgreSQL.
+
+
+## Platform admin and onboarding follow-through — 2026-11-24
+- Fixed the plan catalog persistence helper to write through the configured central Prisma client; plan, module-pricing, discount, and promo writes previously referenced an undefined database variable.
+- Made plan and promo read-modify-write operations fail closed when the central settings read fails, preventing a transient database error from silently replacing saved catalog data with defaults.
+- Kept public plan reads resilient with the documented default catalog fallback.
+- Connected the landing-page hero subheading to the saved Marketing setting.
+- Corrected the Marketing pricing preview to read the actual platform catalog fields (paise, employee cap, active popularity and badge) instead of obsolete display-only fields; directed price changes to Pricing & Plans.
+- Reconfirmed that the dedicated plans router is mounted before the platform admin router and provides the plan CRUD, module pricing, discounts and promo endpoints used by PricingManager.
+- GitHub Actions **Backend Tests** and **Frontend Build** both completed successfully for branch head `ed90236b58b1d43b4fa5cff6410e336f859a3b57`.
+- These CI checks do not validate database migrations, live Razorpay transactions, document storage/ClamAV infrastructure, or browser-level end-to-end flows. Migrations and deployment remain pending a supervised staging run.
