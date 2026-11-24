@@ -132,10 +132,10 @@ router.get('/onboarding/progress', auth, async (req, res) => {
   try {
     const tenantId = req.user?.tenantId || req.user?.company_id;
     if (!tenantId) return sendError(res, ERROR_CODES.VALIDATION, 'Tenant ID required', 400);
-    const rows = await centralPrisma.$queryRaw`
+    const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
       SELECT onboarding_progress, is_setup_complete
       FROM tenants WHERE id = ${tenantId}::uuid AND deleted_at IS NULL LIMIT 1
-    `;
+    `);
     if (!rows.length) return sendError(res, ERROR_CODES.NOT_FOUND, 'Company account not found', 404);
     return sendSuccess(res, {
       progress: rows[0].onboarding_progress || {},
@@ -177,14 +177,14 @@ router.post('/onboarding/save-step', auth, async (req, res) => {
     // Record only status metadata; never persist passwords, OAuth tokens, SMTP
     // credentials, PF/ESI credentials, or arbitrary client-supplied step data.
     const marker = { completed: true, skipped: Boolean(skipped), updatedAt: new Date().toISOString() };
-    const rows = await centralPrisma.$queryRaw`
+    const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
       UPDATE tenants
       SET onboarding_progress = COALESCE(onboarding_progress, '{}'::jsonb)
             || jsonb_build_object(${step}, ${JSON.stringify(marker)}::jsonb),
           updated_at = NOW()
       WHERE id = ${tenantId}::uuid AND deleted_at IS NULL
       RETURNING id
-    `;
+    `);
     if (!rows.length) return sendError(res, ERROR_CODES.NOT_FOUND, 'Company account not found', 404);
     return sendSuccess(res, { step, ...marker }, 'Onboarding progress saved');
   } catch (err) {
@@ -202,12 +202,12 @@ router.post('/onboarding/complete', auth, async (req, res) => {
     const tenantId = req.user?.tenantId || req.user?.company_id;
     if (!tenantId) return sendError(res, ERROR_CODES.VALIDATION, 'Tenant ID required', 400);
     const requiredSteps = ['org', 'work', 'payroll', 'email', 'compliance', 'backup'];
-    const rows = await centralPrisma.$queryRaw`
+    const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
       SELECT id, is_active, onboarding_progress
       FROM tenants
       WHERE id = ${tenantId}::uuid AND deleted_at IS NULL
       LIMIT 1
-    `;
+    `);
     const tenant = rows[0];
     if (!tenant) return sendError(res, ERROR_CODES.NOT_FOUND, 'Company account not found', 404);
     if (!tenant.is_active) return sendError(res, ERROR_CODES.FORBIDDEN, 'Company account is not active', 403);
@@ -220,10 +220,10 @@ router.post('/onboarding/complete', auth, async (req, res) => {
         409, { missingSteps: missing });
     }
 
-    await centralPrisma.$executeRaw`
+    await withPlatformAdminRLS(centralPrisma, (tx) => tx.$executeRaw`
       UPDATE tenants SET is_setup_complete = true, updated_at = NOW()
       WHERE id = ${tenantId}::uuid AND deleted_at IS NULL
-    `;
+    `);
     return sendSuccess(res, { isSetupComplete: true }, 'Company setup completed');
   } catch (err) {
     logger.error('[onboarding/complete]', err);
