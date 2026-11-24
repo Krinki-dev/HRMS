@@ -9,7 +9,7 @@ const extCtrl = require('./employees.extended.controller');
 const reqCtrl = require('./employees.update-request');
 const auth    = require('../../shared/middleware/auth');
 const requireSetupComplete = require('../../shared/middleware/requireSetupComplete');
-const { checkPermission } = require('../../shared/middleware/permission');
+const { checkPermission, checkModuleEnabled } = require('../../shared/middleware/permission');
 const { sendError }       = require('../../shared/utils/response');
 
 const UPLOAD_DIR = path.join(__dirname, '../../../uploads/employees');
@@ -41,6 +41,7 @@ const photoUpload = multer({
 });
 
 router.use(auth);
+router.use(checkModuleEnabled('employees'));
 
 let extLoaded = true;
 try {
