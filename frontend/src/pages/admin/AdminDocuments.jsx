@@ -32,12 +32,18 @@ export default function AdminDocuments() {
     queryFn: adminApi.getCompanyDocumentReviewQueue,
     refetchInterval: 60_000,
   });
-  const queue = Array.isArray(data) ? data : data?.documents || [];
+  // API responses use the standard { success, data } envelope. Accept both
+  // enveloped and legacy direct arrays so the queue does not silently appear empty.
+  const queuePayload = data?.data ?? data;
+  const queue = Array.isArray(queuePayload) ? queuePayload : queuePayload?.documents || [];
   const history = useQuery({
     queryKey: ['admin-company-document-reviews', selected?.id],
     queryFn: () => adminApi.getCompanyDocumentReviews(selected.id),
     enabled: !!selected?.id,
   });
+  const historyPayload = history.data?.data ?? history.data;
+  const reviewHistory = Array.isArray(historyPayload) ? historyPayload : historyPayload?.reviews || [];
+
   const review = useMutation({
     mutationFn: ({ id, status, reviewerNote }) => adminApi.reviewCompanyDocument(id, { status, reviewerNote }),
     onSuccess: () => {
@@ -110,13 +116,13 @@ export default function AdminDocuments() {
               <strong style={{ fontSize: 12 }}>Review history</strong>
               {history.isLoading && <p style={{ fontSize: 12 }}>Loading history…</p>}
               {history.isError && <p style={{ fontSize: 12 }}>Could not load review history.</p>}
-              {(Array.isArray(history.data) ? history.data : history.data?.reviews || []).map((entry) => (
+              {reviewHistory.map((entry) => (
                 <div key={entry.id} style={{ padding: '7px 0', borderBottom: '1px solid var(--admin-border)', fontSize: 11 }}>
                   <strong>{String(entry.from_status || 'new').replaceAll('_', ' ')} → {String(entry.to_status).replaceAll('_', ' ')}</strong>
                   <div style={{ color: 'var(--admin-text-soft)' }}>{prettyDate(entry.created_at)} · {entry.reviewer_note || 'No note'}</div>
                 </div>
               ))}
-              {!history.isLoading && !history.isError && (Array.isArray(history.data) ? history.data : history.data?.reviews || []).length === 0 && <p style={{ fontSize: 11, color: 'var(--admin-text-soft)' }}>No prior review actions.</p>}
+              {!history.isLoading && !history.isError && reviewHistory.length === 0 && <p style={{ fontSize: 11, color: 'var(--admin-text-soft)' }}>No prior review actions.</p>}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end', marginTop: 18 }}>
               <button className="btn-sm" onClick={() => setSelected(null)} disabled={review.isPending}>Close</button>
