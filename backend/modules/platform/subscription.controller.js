@@ -229,7 +229,7 @@ exports.activateTrial = async (req, res) => {
     try {
       tenant = await withTenantRLS(centralPrisma, resolvedTenantId, (tx) => tx.tenants.findUnique({
         where: { id: resolvedTenantId },
-        select: { id: true, plan: true, db_mode: true }
+        select: { id: true, plan: true, plan_expires_at: true, db_mode: true }
       }));
     } catch (err) {
       logger.warn(`${THEME.ICONS.WARNING} [activateTrial] central DB lookup failed: ${err.message}`);
@@ -239,6 +239,10 @@ exports.activateTrial = async (req, res) => {
     if (!tenant) {
       logger.warn(`${THEME.ICONS.WARNING} [activateTrial] Tenant not found in central DB: ${resolvedTenantId}`);
       return sendError(res, ERROR_CODES.NOT_FOUND, 'Tenant not found in central database.', 404);
+    }
+
+    if (tenant.plan !== 'free' || (tenant.plan_expires_at && new Date(tenant.plan_expires_at) > new Date())) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'A trial or paid plan has already been activated for this company.', 409);
     }
 
     const trialDays = tenant.db_mode === 'cloud' ? 90 : 14;
