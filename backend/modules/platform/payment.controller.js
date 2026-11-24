@@ -769,8 +769,12 @@ exports.createSubscriptionOrder = async (req, res) => {
     if (!tenantId) {
       return sendError(res, ERROR_CODES.VALIDATION, 'Tenant could not be resolved for subscription order', 400);
     }
-    if (method === 'jiopay') {
-      return sendError(res, ERROR_CODES.VALIDATION, 'JioPay checkout is disabled until the official merchant API contract is implemented.', 503);
+    // Razorpay is the sole enabled payment gateway for the initial production release.
+    // Other providers remain unavailable until their full checkout, verification,
+    // webhook/reconciliation, and sandbox certification work is complete.
+    if (method !== 'razorpay') {
+      return sendError(res, ERROR_CODES.VALIDATION,
+        'Only Razorpay is currently enabled. PhonePe and other payment methods are coming soon.', 503);
     }
     const normalizedRenewalMode = normalizeRenewalMode(renewalMode);
 
@@ -976,8 +980,10 @@ exports.verifySubscription = async (req, res) => {
     if (!tenantId) {
       return sendError(res, ERROR_CODES.VALIDATION, 'Tenant could not be resolved for subscription verification', 400);
     }
-    if (method === 'jiopay') {
-      return sendError(res, ERROR_CODES.VALIDATION, 'JioPay verification is disabled until the official merchant API contract is implemented.', 503);
+    // Do not accept verification attempts from providers outside the launch gateway.
+    if (method !== 'razorpay') {
+      return sendError(res, ERROR_CODES.VALIDATION,
+        'Only Razorpay is currently enabled. PhonePe and other payment methods are coming soon.', 503);
     }
 
     const resolvedOrderId = razorpay_order_id || razorpayOrderId;
