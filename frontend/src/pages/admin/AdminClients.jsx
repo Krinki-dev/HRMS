@@ -43,9 +43,10 @@ export default function AdminClients() {
     staleTime: 30_000,
   });
 
-  const tenants = data?.tenants || [];
-  const hasMore = data?.hasMore || false;
-  const nextCursor = data?.cursor || null;
+  const tenantPayload = data?.data ?? data;
+  const tenants = tenantPayload?.tenants || [];
+  const hasMore = tenantPayload?.hasMore || false;
+  const nextCursor = tenantPayload?.cursor || null;
 
   const { data: deleteReadinessRes } = useQuery({
     queryKey: ['admin-delete-readiness', deleteModal?.id],
