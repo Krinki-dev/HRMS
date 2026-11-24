@@ -134,13 +134,13 @@ router.post('/automation/trigger/:gstin', async (req, res) => {
     (async () => {
       try {
         addLog(taskId, 'Starting live lookup from GST portal...');
-        addLog(taskId, 'Layer 1: Attempting official GST site (services.gst.gov.in) with audio CAPTCHA');
+        addLog(taskId, 'Attempting official GST portal lookup. If CAPTCHA is required, complete it in the assisted verification flow.');
         
         const result = await scrapeGstSearchSite(gstin);
 
         if (!result) throw new Error('No data returned from any provider');
 
-        addLog(taskId, `Layer 1 Success: Found ${result.legalName || result.tradeName || 'business'}`);
+        addLog(taskId, `Official GST source returned ${result.legalName || result.tradeName || 'business'}; saving verification result.`);
         addLog(taskId, 'Saving to database...');
 
         // Save to database
