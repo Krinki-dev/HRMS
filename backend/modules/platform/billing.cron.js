@@ -1,33 +1,33 @@
-﻿const cron = require('node-cron');
+'use strict';
+
+const cron = require('node-cron');
 const { generateMonthlyInvoices, checkOverdueInvoices } = require('./billing.service');
 const logger = require('../../shared/utils/logger');
 const { THEME } = require('../../shared/utils/uiConstants');
 
 /**
- * Schedules the monthly billing job.
- * Pattern: 0 0 1 * * (Minute 0, Hour 0, Day 1 of every month)
+ * Runs renewal generation daily because prepaid subscriptions can expire on
+ * any calendar day. The service is idempotent per tenant and expiry date.
  */
 function startBillingCron() {
-  cron.schedule('0 0 1 * *', async () => {
-    logger.info(`${THEME.ICONS.PROCESS} [Cron] Triggering monthly invoice generation...`);
+  cron.schedule('5 0 * * *', async () => {
+    logger.info(`${THEME.ICONS.PROCESS} [Cron] Triggering daily subscription renewal invoice generation...`);
     try {
       const results = await generateMonthlyInvoices();
-      logger.info(`${THEME.ICONS.SUCCESS} [Cron] Monthly billing complete: ${results.success} succeeded, ${results.failed} failed.`);
-    } catch (err) {
-      logger.error(`${THEME.ICONS.ERROR} [Cron] Monthly billing job failed!`, err);
+      logger.info(`${THEME.ICONS.SUCCESS} [Cron] Renewal invoice generation complete: ${results.success} created, ${results.skipped} skipped, ${results.failed} failed.`);
+    } catch (error) {
+      logger.error(`${THEME.ICONS.ERROR} [Cron] Renewal invoice generation failed!`, error);
     }
   });
 
-  // Daily job at 01:00 AM to check for overdue payments and suspend access
   cron.schedule('0 1 * * *', async () => {
     logger.info(`${THEME.ICONS.PROCESS} [Cron] Running daily overdue check...`);
     try {
       await checkOverdueInvoices();
-    } catch (err) {
-      logger.error(`${THEME.ICONS.ERROR} [Cron] Overdue invoice check failed!`, err);
+    } catch (error) {
+      logger.error(`${THEME.ICONS.ERROR} [Cron] Overdue invoice check failed!`, error);
     }
   });
 }
 
 module.exports = { startBillingCron };
-
