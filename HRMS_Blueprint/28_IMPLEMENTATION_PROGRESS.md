@@ -118,3 +118,8 @@ No database migration, live schema change, customer-data deletion, backup execut
 - Completed the Marketing menu's previously static CTA panel: platform admins can now edit the bottom landing-page headline, supporting copy and three internal navigation actions; public output is allowlisted, length-limited and rejects protocol-relative/external destinations.
 - The public landing page now renders the configured bottom CTA content rather than hardcoded button labels and destinations.
 - CI for the CTA changes is running on the current branch head; final result will be recorded after completion.
+
+- Added server-side plan-catalog validation for names/slugs, duplicate slugs, paise amounts, employee caps, trial length, sort order and supported module assignments; invalid configurations are rejected before they can affect checkout.
+- Promo creation now validates code format, promo type, positive flat values, percentage range, expiry date and description length.
+- Plan removal is now a safe deactivation rather than a destructive catalog delete; the free baseline plan is protected and inactive plans remain available for historical references.
+- Pricing Manager now labels the action as Deactivate/Inactive and explains the effect to the administrator.
