@@ -2,7 +2,7 @@
 
 **Branch:** `architecture/postgres-tenant-isolation`  
 **Updated:** 2026-11-24  
-**Status:** In progress. Do not deploy as production-ready yet.
+**Status:** In progress. Do not deploy as production-ready yet. Latest focused hardening: 2026-11-24.
 
 ## Changes committed in this follow-up
 
@@ -56,6 +56,25 @@
 ## Deployment boundary
 
 The SQL migration has **not** been applied to the live central database. No real payment was initiated and no subscription/customer data was changed. The latest changes have not yet been confirmed by CI; the available workflow-run lookup did not return a run for the latest commit. Do not claim test or deployment success until CI and PostgreSQL integration tests are confirmed.
+
+## Focused payment-flow hardening — 2026-11-24
+
+- Subscription checkout now defaults to Razorpay rather than legacy PhonePe.
+- PhonePe v1 invoice checkout, subscription checkout, and subscription verification are blocked until Standard Checkout v2 is implemented and merchant credentials/environment are configured. The old v1 code is retained only as disabled reference and must not be re-enabled.
+- Subscription signature verification now uses the shared constant-time Razorpay signature helper.
+- Development mock subscription orders have been removed. A paid plan cannot be activated using a client-side mock response; the backend requires a positive amount and configured Razorpay credentials.
+- Onboarding no longer treats a mock payment response as a successful plan activation.
+- The frontend onboarding plan selection already submits `method: 'razorpay'` and uses the Razorpay checkout handler.
+- Environment example now documents Razorpay credentials and the PhonePe v2 credential names. Real secrets must be configured in the deployment secret store and must never be committed.
+- Current PhonePe v2 docs confirm Standard Checkout uses OAuth client credentials and the v2 checkout/status API family. See official PhonePe documentation: https://developer.phonepe.com/phonepe-payment-gateway/pg-v2-standard-checkout-integration and https://developer.phonepe.com/payment-gateway/website-integration/standard-checkout/api-integration/api-reference/order-status.
+
+## Verification status after focused hardening
+
+- GitHub combined status lookup for commit `bf78bd026b21e2a34d338b9ef4e378cf0535b7fc` returned no status checks; workflow-run lookup returned no runs. CI is therefore **unverified**, not passed.
+- No sandbox payment was initiated. No live database migration was applied.
+- PhonePe remains unavailable until its v2 implementation and merchant setup are completed.
+- Razorpay still needs automated transaction rollback/duplicate/concurrency tests, subscription webhook recovery, stale-order reconciliation, Prisma generation, and a verified sandbox run.
+- Do not label the overall payment module complete until these gates pass.
 
 ## Additional atomicity work
 
