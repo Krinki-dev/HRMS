@@ -74,7 +74,12 @@ test('rejects ineligible plans and trial add-ons not offered by the selected pla
   const { buildTrialPlanEntitlements } = require('../modules/platform/subscriptionEntitlements');
   assert.throws(() => buildTrialPlanEntitlements(plan, []), /not eligible/);
   assert.throws(() => buildTrialPlanEntitlements({
+    ...plan, slug: 'custom', is_trial_eligible: true, trial_days: 30,
+  }, []), /not eligible/);
+  const eligible = {
     ...plan, slug: 'pro', is_trial_eligible: true, trial_days: 30,
     base_price_paise: 1000, included_modules: ['employees'], addon_modules: ['payroll'],
-  }, ['not-offered']), /not available/);
+  };
+  assert.throws(() => buildTrialPlanEntitlements(eligible, ['not-offered']), /not available/);
+  assert.throws(() => buildTrialPlanEntitlements(eligible, ['payroll', 'payroll']), /Duplicate/);
 });
