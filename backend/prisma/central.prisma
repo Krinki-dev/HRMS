@@ -301,17 +301,20 @@ model invoices {
 model payment_orders {
   id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id           String   @db.Uuid
-  invoice_id          String   @db.Uuid
+  invoice_id          String?  @db.Uuid
+  purpose             String   @default("invoice")
   gateway             String   @default("razorpay")
   gateway_order_id    String   @unique
   gateway_payment_id  String?  @unique
   amount_paise        Int
   currency            String   @default("INR")
   status              String   @default("created")
+  metadata            Json?
   created_at          DateTime @default(now()) @db.Timestamptz
   updated_at          DateTime @default(now()) @db.Timestamptz
 
   @@index([tenant_id, invoice_id, status])
+  @@index([tenant_id, purpose, status])
 }
 
 model billing_events {
