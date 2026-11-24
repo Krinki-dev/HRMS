@@ -2,10 +2,11 @@
 const router   = express.Router();
 const auth     = require('../../shared/middleware/auth');
 const requireSetupComplete = require('../../shared/middleware/requireSetupComplete');
-const { checkPermission }  = require('../../shared/middleware/permission');
+const { checkPermission, checkModuleEnabled }  = require('../../shared/middleware/permission');
 const c        = require('./payroll.controller');
 
 router.use(auth);
+router.use(checkModuleEnabled('payroll'));
 
 router.get('/my-payslips', async (req, res) => {
   try {
