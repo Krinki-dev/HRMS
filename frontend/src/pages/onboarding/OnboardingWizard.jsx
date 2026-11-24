@@ -170,10 +170,20 @@ export default function OnboardingWizard({ onComplete }) {
         return;
       }
 
-      if (!priceResult || priceResult.total_paise === 0) {
-        // Custom quote (Enterprise) — just advance without payment
+      if (planSlug === 'free') {
+        await api.post('/platform/subscribe/free');
+        toast.success('Free plan activated successfully!');
         setStep(STEPS.findIndex(s => s.key === 'org'));
         return;
+      }
+
+      if (priceResult?.isCustomQuote) {
+        toast.error('Custom plans require a quote. Please contact the Syntern team before continuing.');
+        return;
+      }
+
+      if (!priceResult || !Number.isSafeInteger(priceResult.total_paise) || priceResult.total_paise <= 0) {
+        throw new Error('The selected plan price could not be verified. Please refresh the plan selection and try again.');
       }
 
       // Paid path — initiate payment order
