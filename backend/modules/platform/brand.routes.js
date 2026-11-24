@@ -33,6 +33,21 @@ router.get('/marketing', async (req, res) => {
       ctaText: typeof values.ctaText === 'string' ? values.ctaText : null,
       ctaUrl: typeof values.ctaUrl === 'string' ? values.ctaUrl : null,
       ctaSub: typeof values.ctaSub === 'string' ? values.ctaSub : null,
+      features: Array.isArray(values.features) ? values.features.slice(0, 12).filter((item) =>
+        item && typeof item.icon === 'string' && typeof item.title === 'string' && typeof item.desc === 'string'
+      ).map((item) => ({
+        icon: item.icon.slice(0, 8),
+        title: item.title.slice(0, 100),
+        desc: item.desc.slice(0, 300),
+      })) : null,
+      testimonials: Array.isArray(values.testimonials) ? values.testimonials.slice(0, 8).filter((item) =>
+        item && typeof item.quote === 'string' && typeof item.author === 'string'
+      ).map((item) => ({
+        quote: item.quote.slice(0, 500),
+        author: item.author.slice(0, 100),
+        role: typeof item.role === 'string' ? item.role.slice(0, 100) : '',
+        company: typeof item.company === 'string' ? item.company.slice(0, 100) : '',
+      })) : null,
     });
   } catch (err) {
     logger.warn(`[Marketing] Public content unavailable: ${err.message}`);
