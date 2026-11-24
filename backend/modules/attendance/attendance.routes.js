@@ -2,9 +2,10 @@
 const router  = express.Router();
 const ctrl    = require('./attendance.controller');
 const auth    = require('../../shared/middleware/auth');
-const { checkPermission } = require('../../shared/middleware/permission');
+const { checkPermission, checkModuleEnabled } = require('../../shared/middleware/permission');
 
 router.use(auth);
+router.use(checkModuleEnabled('attendance'));
 
 router.get  ('/dashboard',              checkPermission('attendance','view'),   ctrl.dashboard);
 router.get  ('/',                       checkPermission('attendance','view'),   ctrl.list);
