@@ -1,5 +1,6 @@
 ﻿import '../admin/AdminLayout.css';
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
@@ -67,6 +68,7 @@ const FORM_SCHEMA = {
 };
 
 export default function AdminSettings() {
+  const qc = useQueryClient();
   const [active, setActive] = useState('Platform');
   const [values, setValues] = useState({});
   const [testEmail, setTestEmail] = useState('');
@@ -79,7 +81,7 @@ export default function AdminSettings() {
 
   const saveM = useMutation({
     mutationFn: (data) => api.put('/platform/admin/settings', data),
-    onSuccess:  () => toast.success('Settings saved'),
+    onSuccess:  () => { toast.success('Settings saved'); setValues({}); qc.invalidateQueries({ queryKey: ['platform-settings'] }); },
     onError:    (e) => toast.error(e.response?.data?.message || 'Failed to save'),
   });
 
@@ -97,6 +99,8 @@ export default function AdminSettings() {
     onError:    (e) => toast.error(e.response?.data?.message || 'SMTP test failed'),
   });
 
+  useEffect(() => { setValues({}); }, [active]);
+
   const fields = FORM_SCHEMA[active] || [];
 
   const currentValues = serverData?.[active] || {};
@@ -107,7 +111,7 @@ export default function AdminSettings() {
 
   function handleSave(e) {
     e.preventDefault();
-    saveM.mutate({ section: active, values: { ...currentValues, ...values } });
+    saveM.mutate({ section: active, values });
   }
 
   if (isLoading) return <div className="p-10 text-center text-gray-400">Loading configurations...</div>;
@@ -153,7 +157,7 @@ export default function AdminSettings() {
                 {f.type === 'select' ? (
                   <select
                     className="form-input"
-                    defaultValue={currentValues[f.key] || f.placeholder}
+                    value={values[f.key] ?? String(currentValues[f.key] ?? f.placeholder)}
                     onChange={e => set(f.key, e.target.value)}
                   >
                     {f.options.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
@@ -163,7 +167,7 @@ export default function AdminSettings() {
                     className="form-input"
                     type={f.type}
                     placeholder={f.placeholder}
-                    defaultValue={currentValues[f.key]}
+                    value={values[f.key] ?? (f.type === 'password' ? '' : String(currentValues[f.key] ?? ''))}
                     onChange={e => set(f.key, e.target.value)}
                   />
                 )}
