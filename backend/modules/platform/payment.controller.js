@@ -1,4 +1,4 @@
-﻿const Razorpay = require('razorpay');
+const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const { centralPrisma } = require('../../shared/utils/centralPrisma');
 const axios = require('axios');
@@ -817,14 +817,13 @@ exports.createSubscriptionOrder = async (req, res) => {
       description  = `${planId === 'full' ? 'Full Plan' : 'Customized Plan'} — ${period} (incl. 18% GST)`;
     }
 
-    // ── Dev mode mock ───────────────────────────────────────────────────────
-    if (process.env.NODE_ENV === 'development' &&
-        (!process.env.RAZORPAY_KEY_ID || process.env.SKIP_PAYMENT === 'true')) {
-      return sendSuccess(res, {
-        mock: true, amount: finalAmount, keyId: null, currency: 'INR',
-        companyName: process.env.PRODUCT_NAME || 'Syntern HRMS', description,
-        prefill: { name: req.user?.name || 'Admin', email: req.user?.email || '' },
-      });
+    // Never create a client-side mock order. Paid subscription activation must
+    // always follow a real provider order and server-side verification.
+    if (!Number.isSafeInteger(Number(finalAmount)) || Number(finalAmount) <= 0) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'A paid checkout requires a positive, valid amount. Use the free-trial flow for zero-price selections.', 400);
+    }
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      return sendError(res, ERROR_CODES.SERVER, 'Razorpay checkout is not configured. Contact the administrator.', 503);
     }
 
     const subscriptionSnapshot = {
