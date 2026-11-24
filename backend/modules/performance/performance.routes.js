@@ -4,6 +4,7 @@ const perm   = require('../../shared/middleware/permission');
 const ctrl   = require('./performance.controller');
 
 router.use(auth);
+router.use(perm.checkModuleEnabled('performance'));
 const can = (a) => perm.checkPermission('performance', a);
 
 router.get ('/cycles',              can('view'),   ctrl.listCycles);
