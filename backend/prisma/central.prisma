@@ -55,6 +55,7 @@ model tenants {
   admin_phone       String?
   is_active         Boolean   @default(true)
   is_setup_complete Boolean   @default(false)
+  onboarding_progress Json     @default("{}")
   suspended_at      DateTime? @db.Timestamptz
   suspension_reason String?
   payout_config_enc String?
