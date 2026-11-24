@@ -22,7 +22,8 @@ test('accepts a valid Razorpay order/payment signature', () => {
 
 test('rejects missing, altered, or incorrectly signed payment data', () => {
   assert.equal(verifyRazorpaySignature({ orderId, paymentId, signature, secret: '' }), false);
-  assert.equal(verifyRazorpaySignature({ orderId, paymentId, signature: '', secret }), false);\n  assert.equal(verifyRazorpaySignature({ orderId, paymentId, signature: signature + 'zz', secret }), false);
+  assert.equal(verifyRazorpaySignature({ orderId, paymentId, signature: '', secret }), false);
+  assert.equal(verifyRazorpaySignature({ orderId, paymentId, signature: signature + 'zz', secret }), false);
   assert.equal(verifyRazorpaySignature({ orderId, paymentId: 'pay_other', signature, secret }), false);
 });
 
