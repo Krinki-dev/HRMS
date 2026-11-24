@@ -1,4 +1,4 @@
-﻿﻿const Razorpay = require('razorpay');
+﻿const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const { centralPrisma } = require('../../shared/utils/centralPrisma');
 const axios = require('axios');
@@ -307,7 +307,9 @@ exports.verifyPayment = async (req, res) => {
 /**
  * Creates a PhonePe Order for an unpaid invoice.
  */
-exports.createPhonePeOrder = async (req, res) => {
+exports.createPhonePeOrder = async (_req, res) => {
+  return sendError(res, ERROR_CODES.VALIDATION, 'PhonePe checkout is temporarily disabled until the current Standard Checkout v2 integration is configured and verified.', 503);
+  /*
   try {
     const { invoiceId } = req.params;
     const tenantId = await resolveTenantId(req);
@@ -371,6 +373,8 @@ exports.createPhonePeOrder = async (req, res) => {
     return sendError(res, ERROR_CODES.SERVER, 'Failed to create PhonePe order', 500);
   }
 };
+
+  */
 
 /**
  * Handles PhonePe Webhooks for asynchronous payment status updates.
@@ -755,7 +759,7 @@ exports.createSubscriptionOrder = async (req, res) => {
       // LEGACY format (from old OnboardingWizard — kept for backward compat):
       planId, period, addons = [],
       // Common:
-      method = 'phonepe',
+      method = 'razorpay',
       tenantId: requestedTenantId,
       renewalMode = 'manual',
     } = req.body;
@@ -765,6 +769,9 @@ exports.createSubscriptionOrder = async (req, res) => {
     }
     if (method === 'jiopay') {
       return sendError(res, ERROR_CODES.VALIDATION, 'JioPay checkout is disabled until the official merchant API contract is implemented.', 503);
+    }
+    if (method === 'phonepe') {
+      return sendError(res, ERROR_CODES.VALIDATION, 'PhonePe checkout is temporarily disabled until the current Standard Checkout v2 integration is configured and verified.', 503);
     }
     const normalizedRenewalMode = normalizeRenewalMode(renewalMode);
 
@@ -950,7 +957,7 @@ exports.createSubscriptionOrder = async (req, res) => {
       status: err.statusCode || err.response?.status,
       rzpDescription: err.error?.description
     };
-    const methodDisplay = (req.body.method || 'phonepe').toUpperCase();
+    const methodDisplay = (req.body.method || 'razorpay').toUpperCase();
     logger.error(`${THEME.ICONS.ERROR} [createSubscriptionOrder] ${methodDisplay} Failed:`, errorData);
     const detailedMsg = errorData.status === 401
       ? `${methodDisplay} authentication failed. Please check your .env credentials.` 
@@ -1022,12 +1029,15 @@ exports.verifySubscription = async (req, res) => {
         const sign = `${resolvedOrderId}|${resolvedPaymentId}`;
         const secret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
         if (!secret) return sendError(res, ERROR_CODES.SERVER, 'Razorpay verification is not configured.', 500);
-        const expectedSign = crypto.createHmac("sha256", secret).update(sign.toString()).digest("hex");
-        if (resolvedSignature !== expectedSign) return sendError(res, ERROR_CODES.UNAUTHORIZED, "Invalid signature", 400);
+        if (!verifyRazorpaySignature({ orderId: resolvedOrderId, paymentId: resolvedPaymentId, signature: resolvedSignature, secret })) {
+          return sendError(res, ERROR_CODES.UNAUTHORIZED, "Invalid signature", 400);
+        }
       } 
       
       // 2. PHONEPE STATUS CHECK (Server-to-Server)
       else if (method === 'phonepe') {
+        return sendError(res, ERROR_CODES.VALIDATION, 'PhonePe verification is disabled until Standard Checkout v2 is configured and verified.', 503);
+        /*
         if (!transactionId) return sendError(res, ERROR_CODES.VALIDATION, 'PhonePe transaction ID is required.', 400);
         if (!phonePeMerchantId || !phonePeSaltKey || !phonePeSaltIndex) {
           return sendError(res, ERROR_CODES.SERVER, 'PhonePe verification is not configured.', 500);
@@ -1042,6 +1052,7 @@ exports.verifySubscription = async (req, res) => {
         }
       }
 
+        */
       // 3. JIOPAY STATUS CHECK (Server-to-Server)
       else if (method === 'jiopay') {
         if (!transactionId) return sendError(res, ERROR_CODES.VALIDATION, 'JioPay transaction ID is required.', 400);
