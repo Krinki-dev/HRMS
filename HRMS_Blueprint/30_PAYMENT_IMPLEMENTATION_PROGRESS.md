@@ -118,3 +118,19 @@ The SQL migration has **not** been applied to the live central database. No real
 5. Obtain an explicit production deployment approval before switching to live Razorpay credentials.
 
 Until those gates pass, describe Razorpay as the **only enabled/launch payment method**, not as independently certified production-ready. Other payment providers are deferred so engineering can focus on the remaining HRMS modules after the Razorpay launch path is validated.
+
+## Additional safety boundary — automated payroll payouts
+
+- Automated payout initiation endpoints now fail closed with HTTP 503 and explicitly state that no transfer was initiated.
+- The previous payout handlers returned synthetic success/batch IDs without calling a real provider. Those success responses have been removed.
+- The payout webhook is also disabled until a verified payout provider, authenticated callback contract, durable payout ledger, and reconciliation flow exist.
+- Manual bank-transfer CSV export remains a separate workflow; it prepares a file and does not initiate a bank transfer.
+- This does not change the launch gateway decision: Razorpay is the only enabled customer billing gateway. Payroll payouts are a separate deferred capability and must not be described as supported by Razorpay checkout.
+
+## Latest branch hardening — 2026-11-24
+
+- Server-side subscription order creation and verification enforce Razorpay-only launch scope; non-Razorpay providers return HTTP 503 with a clear coming-soon message.
+- Synthetic automated payroll payout success responses and payout callback mutations have been disabled. No automated bank transfer can be reported as successful by these placeholder handlers.
+- Confirmed the Razorpay webhook endpoint captures raw request bytes before JSON parsing and verifies the webhook signature against those exact bytes.
+- Confirmed Razorpay invoice webhook processing uses a durable event inbox with duplicate-event handling and retryable failed status, then verifies the order/payment with Razorpay before applying the invoice update.
+- The branch currently has no reported combined CI status checks. Full automated test execution, PostgreSQL integration tests, Prisma generation, sandbox verification, and production approval remain outstanding. No live payment or live migration was performed.
