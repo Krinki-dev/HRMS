@@ -129,7 +129,7 @@ async function _read(key) {
 
 async function _write(key, payload) {
   const json = JSON.stringify(payload);
-  await centralPrisma.$executeRaw`
+  await db.$executeRaw`
     INSERT INTO platform_settings (id, values, updated_at)
     VALUES (${key}, ${json}::jsonb, NOW())
     ON CONFLICT (id) DO UPDATE
@@ -341,7 +341,7 @@ async function calculatePrice({ planSlug, selectedAddons = [], billingMonths = 1
  * @param {'auto'|'manual'} [meta.renewalMode]
  * @param {string} [meta.paymentMethod]
  */
-async function saveSelectionToTenantConfig(tenantId, priceResult, meta = {}) {
+async function saveSelectionToTenantConfig(tenantId, priceResult, meta = {}, db = centralPrisma) {
   if (!tenantId || !priceResult || priceResult.isCustomQuote) return;
   const { breakdown, plan, billingMonths } = priceResult;
 
