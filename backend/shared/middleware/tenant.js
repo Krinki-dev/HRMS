@@ -333,11 +333,14 @@ const tenantMiddleware = async (req, res, next) => {
         'Company not found. Check your URL or contact your HR admin.', 404);
     }
 
-    // Check if the tenant is active.
-    if (!tenant.is_active) {
+    // Suspended tenants may reach only authenticated invoice recovery endpoints.
+    // Every HRMS data route remains blocked until an overdue renewal is verified.
+    const requestPath = String(req.originalUrl || req.url || '').split('?')[0];
+    const isBillingRecoveryRoute = /^\/api\/v1\/platform\/subscribe\/(?:invoices\/[^/]+\/(?:pay|verify)|my-invoices|my-subscription)$/.test(requestPath);
+    if (!tenant.is_active && !isBillingRecoveryRoute) {
       console.log(`[Tenant] ✗ Suspended — subdomain="${lookupSubdomain}"`);
       return sendError(res, ERROR_CODES.LICENCE,
-        'Your account is suspended. Contact support@syntern.in', 403);
+        'Your account is suspended. Pay the outstanding subscription invoice or contact support.', 403);
     }
 
     console.log(`[Tenant] ✓ Resolved — subdomain="${tenant.subdomain}" dbMode="${tenant.db_mode}"`);
