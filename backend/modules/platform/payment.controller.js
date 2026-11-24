@@ -612,6 +612,7 @@ exports.handleWebhook = async (req, res) => {
       tx.payment_orders.findFirst({
         where: {
           gateway: 'razorpay',
+          purpose: 'invoice',
           gateway_order_id: paymentEntity.order_id,
           status: 'created',
         },
@@ -1164,14 +1165,17 @@ exports.verifySubscription = async (req, res) => {
           create: { tenant_id: tenantId, module_name: String(mod).toLowerCase(), is_active: true, enabled_at: new Date() }
         });
       }
-      await tx.payment_orders.update({
-        where: { id: subscriptionOrder.id },
+      const claimedOrder = await tx.payment_orders.updateMany({
+        where: { id: subscriptionOrder.id, tenant_id: tenantId, purpose: 'subscription', status: 'created' },
         data: {
           gateway_payment_id: resolvedPaymentId || transactionId,
           status: 'captured',
           updated_at: new Date(),
         },
       });
+      if (claimedOrder.count !== 1) {
+        throw new Error('Subscription payment order was already processed');
+      }
     });
 
     // Save plan selection to tenant_pricing_configs (feeds billing cron)
