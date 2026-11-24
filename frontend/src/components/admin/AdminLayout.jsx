@@ -53,7 +53,7 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const companyPortalUrl = buildCompanyPortalUrl(user);
-  const currentNav = NAV_ITEMS.find((item) => location.pathname === item.path || (item.path !== '/admin/dashboard' && location.pathname.startsWith(`${item.path}/`)));
+  const currentNav = location.pathname === '/admin' ? NAV_ITEMS[0] : NAV_ITEMS.find((item) => location.pathname === item.path || (item.path !== '/admin/dashboard' && location.pathname.startsWith(`${item.path}/`)));
   const pageTitle = currentNav?.label || 'Dashboard';
 
   const handleLogout = () => {
@@ -82,7 +82,7 @@ export default function AdminLayout() {
             <NavLink
               key={path}
               to={path}
-              className={({ isActive }) => `nav-btn${isActive ? ' active' : ''}`}
+              className={({ isActive }) => `nav-btn${isActive || (path === '/admin/dashboard' && location.pathname === '/admin') ? ' active' : ''}`}
             >
               <Icon size={18} className="nav-icon" />
               <span>{label}</span>
