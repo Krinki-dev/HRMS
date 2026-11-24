@@ -35,7 +35,7 @@ async function generateMonthlyInvoices() {
     // SET LOCAL must be issued and consumed inside the SAME transaction as the
     // query it protects — see backend/shared/utils/rlsContext.js.
     const tenants = await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.findMany({
-      where: { is_active: true, deleted_at: null },
+      where: { is_active: true, deleted_at: null, plan: { notIn: ['free', 'trial'] } },
       include: {
         tenant_pricing_configs: true,
         tenant_modules: { where: { is_active: true } }
