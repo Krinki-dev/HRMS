@@ -1046,28 +1046,10 @@ async function scrapeTallyGST(gstinUpper) {
 }
 
 async function scrapeGstSearchSite(gstinUpper) {
-  const providers = [
-    { name: 'gst.gov.in', fn: () => scrapeOfficialGstSite(gstinUpper) },
-    { name: 'gstsearch.in', fn: () => doScrape(gstinUpper) },
-    { name: 'knowyourgst', fn: () => scrapeKnowYourGST(gstinUpper) },
-    { name: 'tally', fn: () => scrapeTallyGST(gstinUpper) },
-  ];
-
-  for (const provider of providers) {
-    try {
-      console.log(`[gst.service] Trying ${provider.name} for ${gstinUpper}...`);
-      const result = await provider.fn();
-      if (result) {
-        result.source = provider.name;
-        console.log(`[gst.service] Success from ${provider.name}`);
-        return result;
-      }
-    } catch (err) {
-      console.warn(`[gst.service] ${provider.name} failed: ${err.message}`);
-    }
-  }
-
-  throw new Error('All GST providers failed to fetch data');
+  // Signup must use official GST data only. CAPTCHA challenges are completed by the user
+  // through createAssistedCaptchaSession/submitAssistedCaptchaSession; never auto-solve
+  // CAPTCHA or silently fall back to third-party lookup sites.
+  return scrapeOfficialGstSite(gstinUpper);
 }
 
 const CACHE_TTL_DAYS = 30; // Re-verify GST data every 30 days
