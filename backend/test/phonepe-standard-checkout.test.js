@@ -59,7 +59,7 @@ test('creates a v2 checkout order with O-Bearer authorization', async () => {
   const http = {
     post: async (url, body, options) => {
       calls.push({ url, body, options });
-      if (url.endsWith('/v1/oauth/token')) return { data: { access_token: 'token-2', expires_at: 2000 } };
+      if (url.endsWith('/v1/oauth/token')) return { data: { access_token: 'token-2', expires_at: Math.floor(Date.now() / 1000) + 3600 } };
       return { data: { redirectUrl: 'https://checkout.example/redirect' } };
     },
   };
@@ -78,7 +78,7 @@ test('checks v2 order status using merchant order ID', async () => {
   resetPhonePeTokenCache();
   const calls = [];
   const http = {
-    post: async () => ({ data: { access_token: 'token-3', expires_at: 2000 } }),
+    post: async () => ({ data: { access_token: 'token-3', expires_at: Math.floor(Date.now() / 1000) + 3600 } }),
     get: async (url, options) => {
       calls.push({ url, options });
       return { data: { orderId: 'ORDER/2', state: 'PENDING', amount: 1000, paymentDetails: [] } };
