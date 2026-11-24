@@ -233,26 +233,11 @@ exports.activateTrial = async (req, res) => {
       }));
     } catch (err) {
       logger.warn(`${THEME.ICONS.WARNING} [activateTrial] central DB lookup failed: ${err.message}`);
-      // In development, allow onboarding to continue even if central DB is unreachable.
-      if (process.env.NODE_ENV === 'development' && req.tenant) {
-        const trialDays = req.tenant.dbMode === 'cloud' ? 90 : 14;
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + trialDays);
-        logger.warn(`${THEME.ICONS.WARNING} [activateTrial] Dev fallback — returning mock trial expiry for tenant ${req.tenant.subdomain}`);
-        return sendSuccess(res, { expiryDate }, 'Trial activated (dev fallback).');
-      }
-      return sendError(res, ERROR_CODES.SERVER, 'Central database unavailable. Try again later.', 503);
+      return sendError(res, ERROR_CODES.SERVER, 'Central database unavailable. Trial was not activated; try again later.', 503);
     }
 
     if (!tenant) {
       logger.warn(`${THEME.ICONS.WARNING} [activateTrial] Tenant not found in central DB: ${resolvedTenantId}`);
-      if (process.env.NODE_ENV === 'development' && req.tenant) {
-        const trialDays = req.tenant.dbMode === 'cloud' ? 90 : 14;
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + trialDays);
-        logger.warn(`${THEME.ICONS.WARNING} [activateTrial] Dev fallback — tenant missing in central DB, returning mock trial expiry for ${req.tenant.subdomain}`);
-        return sendSuccess(res, { expiryDate }, 'Trial activated (dev fallback).');
-      }
       return sendError(res, ERROR_CODES.NOT_FOUND, 'Tenant not found in central database.', 404);
     }
 
@@ -279,11 +264,7 @@ exports.activateTrial = async (req, res) => {
       });
     } catch (err) {
       logger.warn(`${THEME.ICONS.WARNING} [activateTrial] central DB transaction failed: ${err.message}`);
-      if (process.env.NODE_ENV === 'development') {
-        logger.warn(`${THEME.ICONS.WARNING} [activateTrial] Dev fallback — returning success despite central DB transaction failure.`);
-        return sendSuccess(res, { expiryDate }, 'Trial activated (dev fallback).');
-      }
-      return sendError(res, ERROR_CODES.SERVER, 'Failed to activate trial.', 500);
+      return sendError(res, ERROR_CODES.SERVER, 'Failed to activate trial. No trial was activated.', 500);
     }
 
     return sendSuccess(res, { expiryDate }, 'Trial activated successfully.');
