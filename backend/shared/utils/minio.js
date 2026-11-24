@@ -12,6 +12,7 @@ const minioClient = new Minio.Client({
 });
 
 const BUCKET_NAME = process.env.MINIO_BUCKET || 'hrms-files';
+let storageReady = false;
 
 async function ensureBucket() {
   try {
@@ -27,8 +28,11 @@ async function ensureBucket() {
       Version: '2012-10-17',
       Statement: [],
     }));
+    storageReady = true;
   } catch (err) {
+    storageReady = false;
     logger.error('MinIO bucket init error:', err);
+    throw err;
   }
 }
 
@@ -81,4 +85,5 @@ module.exports = {
   deleteFiles,
   listFiles,
   BUCKET_NAME,
+  isStorageReady: () => storageReady,
 };
