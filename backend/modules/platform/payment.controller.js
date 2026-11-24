@@ -703,6 +703,9 @@ exports.createSubscriptionOrder = async (req, res) => {
     if (!tenantId) {
       return sendError(res, ERROR_CODES.VALIDATION, 'Tenant could not be resolved for subscription order', 400);
     }
+    if (method === 'jiopay') {
+      return sendError(res, ERROR_CODES.VALIDATION, 'JioPay checkout is disabled until the official merchant API contract is implemented.', 503);
+    }
     const normalizedRenewalMode = normalizeRenewalMode(renewalMode);
 
     // ── Dynamic pricing via plans.service ──────────────────────────────────
@@ -921,6 +924,9 @@ exports.verifySubscription = async (req, res) => {
     const tenantId = await resolveTargetTenantId(req, requestedTenantId);
     if (!tenantId) {
       return sendError(res, ERROR_CODES.VALIDATION, 'Tenant could not be resolved for subscription verification', 400);
+    }
+    if (method === 'jiopay') {
+      return sendError(res, ERROR_CODES.VALIDATION, 'JioPay verification is disabled until the official merchant API contract is implemented.', 503);
     }
 
     const resolvedOrderId = razorpay_order_id || razorpayOrderId;
