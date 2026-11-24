@@ -48,21 +48,21 @@ export default function AdminClientDetail() {
     queryFn:  () => adminApi.getTenant(id),
     enabled:  !!id,
   });
-  const t = tenantRes;
+  const t = tenantRes?.data ?? tenantRes;
 
   const { data: modsRes } = useQuery({
     queryKey: ['admin-tenant-modules', id],
     queryFn:  () => adminApi.getModules(id),
     enabled:  !!id && tab === 'modules',
   });
-  const modules = modsRes?.modules || [];
+  const modules = modsRes?.data?.modules || modsRes?.modules || [];
 
   const { data: notifRes } = useQuery({
     queryKey: ['admin-tenant-notif', id],
     queryFn:  () => adminApi.getNotifications(id),
     enabled:  !!id && tab === 'email',
   });
-  const notifCfg = notifRes?.config || {};
+  const notifCfg = notifRes?.data?.config || notifRes?.config || {};
 
   const [planEdit, setPlanEdit] = useState(false);
   const [planVal,  setPlanVal]  = useState('');
@@ -103,7 +103,7 @@ export default function AdminClientDetail() {
   });
   const testEmailM = useMutation({
     mutationFn: () => adminApi.testEmail(id, t?.adminEmail),
-    onSuccess:  (r) => { toast.success(`Test email sent to ${r?.sentTo || r?.data?.sentTo}`); qc.invalidateQueries({ queryKey: ['admin-tenant-notif', id] }); },
+    onSuccess:  (r) => { toast.success(`Test email sent to ${r?.data?.sentTo || r?.sentTo}`); qc.invalidateQueries({ queryKey: ['admin-tenant-notif', id] }); },
     onError:    (e) => toast.error(e.response?.data?.message || 'SMTP test failed'),
   });
 
