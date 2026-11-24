@@ -128,6 +128,23 @@ exports.createOrder = async (req, res) => {
     const rp = getRazorpay();
     if (!rp) return sendError(res, ERROR_CODES.SERVER, 'Payment gateway misconfigured', 500);
     const order = await rp.orders.create(options);
+    if (!order?.id || Number(order.amount) !== Number(invoice.total_paise) ||
+        String(order.currency).toUpperCase() !== String(invoice.currency).toUpperCase()) {
+      logger.error('[createOrder] Razorpay returned an order that does not match the invoice.');
+      return sendError(res, ERROR_CODES.SERVER, 'Payment gateway returned an invalid order', 502);
+    }
+
+    await withBillingRLS(req, invoice.tenant_id, (tx) => tx.payment_orders.create({
+      data: {
+        tenant_id: invoice.tenant_id,
+        invoice_id: invoice.id,
+        gateway: 'razorpay',
+        gateway_order_id: order.id,
+        amount_paise: invoice.total_paise,
+        currency: invoice.currency,
+        status: 'created',
+      },
+    }));
 
     return sendSuccess(res, {
       orderId: order.id,
@@ -191,6 +208,20 @@ exports.verifyPayment = async (req, res) => {
       return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Invalid payment signature', 400);
     }
 
+    const storedOrder = await withBillingRLS(req, tenantId, (tx) => tx.payment_orders.findFirst({
+      where: {
+        gateway_order_id: resolvedOrderId,
+        invoice_id: invoice.id,
+        tenant_id: invoice.tenant_id,
+        gateway: 'razorpay',
+        status: 'created',
+      },
+    }));
+    if (!storedOrder || Number(storedOrder.amount_paise) !== Number(invoice.total_paise) ||
+        String(storedOrder.currency).toUpperCase() !== String(invoice.currency).toUpperCase()) {
+      return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Payment order is not registered for this invoice', 400);
+    }
+
     const razorpay = getRazorpay();
     if (!razorpay) return sendError(res, ERROR_CODES.SERVER, 'Payment gateway misconfigured', 500);
     const [gatewayOrder, gatewayPayment] = await Promise.all([
@@ -201,14 +232,26 @@ exports.verifyPayment = async (req, res) => {
       return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Gateway payment does not match this invoice or is not captured', 400);
     }
 
-    await withBillingRLS(req, tenantId, (tx) => tx.invoices.update({
-      where: { id: invoiceId },
-      data: {
-        status: 'paid',
-        payment_id: resolvedPaymentId,
-        updated_at: new Date()
-      }
-    }));
+    const paymentRecorded = await withBillingRLS(req, tenantId, async (tx) => {
+      const invoiceUpdate = await tx.invoices.updateMany({
+        where: { id: invoiceId, tenant_id: invoice.tenant_id, status: { not: 'paid' } },
+        data: { status: 'paid', payment_id: resolvedPaymentId, updated_at: new Date() },
+      });
+      if (invoiceUpdate.count !== 1) return false;
+
+      await tx.payment_orders.update({
+        where: { id: storedOrder.id },
+        data: {
+          gateway_payment_id: resolvedPaymentId,
+          status: 'captured',
+          updated_at: new Date(),
+        },
+      });
+      return true;
+    });
+    if (!paymentRecorded) {
+      return sendError(res, ERROR_CODES.CONFLICT, 'Invoice was already paid or changed during verification', 409);
+    }
 
     return sendSuccess(res, null, "Payment successful and verified.");
   } catch (error) {
