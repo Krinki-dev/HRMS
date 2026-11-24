@@ -20,6 +20,7 @@ import AdminDomains      from './pages/admin/AdminDomains';
 import AdminAnalytics    from './pages/admin/AdminAnalytics';
 import AdminMarketing    from './pages/admin/AdminMarketing';
 import AdminSettings     from './pages/admin/AdminSettings';
+import AdminDocuments    from './pages/admin/AdminDocuments';
 
 import LandingPage         from './pages/landing/LandingPage';
 import SmartLoginPage      from './pages/auth/SmartLoginPage';
@@ -204,6 +205,7 @@ export default function App() {
               <Route path="analytics"   element={<AdminAnalytics />} />
               <Route path="marketing"   element={<AdminMarketing />} />
               <Route path="settings"    element={<AdminSettings />} />
+              <Route path="documents"   element={<AdminDocuments />} />
             </Route>
 
             <Route path="/platform"   element={<Navigate to="/admin" replace />} />
