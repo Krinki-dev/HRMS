@@ -80,8 +80,8 @@ async function generateMonthlyInvoices() {
           ? date
           : new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-        await withPlatformAdminRLS(centralPrisma, (tx) => tx.invoices.create({
-          data: {
+        const inserted = await withPlatformAdminRLS(centralPrisma, (tx) => tx.invoices.createMany({
+          data: [{
             tenant_id: tenant.id,
             invoice_no: invoiceNo,
             period_start: periodStart,
@@ -91,17 +91,24 @@ async function generateMonthlyInvoices() {
             module_amount_paise: calc.breakDown.modules.total,
             excess_amount_paise: calc.breakDown.excessCharges,
             discount_amount_paise: calc.breakDown.discounts.amount + calc.breakDown.discounts.flat,
-            tax_amount_paise: calc.breakDown.tax.amount, // Ensuring 18% GST is saved
+            tax_amount_paise: calc.breakDown.tax.amount,
             total_paise: calc.finalPrice,
             payment_id: paymentId,
             breakdown: {
               ...calc.breakDown,
-              renewalMode,
-              autoPayment: autoAttempt,
+              renewalMode: 'manual',
+              autoPayment: { attempted: false, success: false, reason: 'Manual renewal is enforced at launch' },
             },
-            status: invoiceStatus
-          }
+            status: 'unpaid'
+          }],
+          // The invoice number is unique. This makes a retried or overlapping
+          // monthly cron idempotent instead of producing a duplicate invoice.
+          skipDuplicates: true,
         }));
+        if (inserted.count === 0) {
+          logger.info(`[Billing] Invoice ${invoiceNo} already exists; skipping duplicate generation.`);
+          continue;
+        }
 
         // Notify Tenant Admin
         const amountFormatted = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(calc.finalPrice / 100);
