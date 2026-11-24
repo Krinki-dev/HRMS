@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { adminApi } from '../../services/adminApi';
 import '../admin/AdminLayout.css';
 
-const DOMAIN_RE = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$/i;
+const DOMAIN_RE = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
 
 export default function AdminDomains() {
   const qc = useQueryClient();
@@ -19,7 +19,7 @@ export default function AdminDomains() {
   const allTenants  = (res?.data ?? res)?.tenants || [];
   const withDomain  = allTenants.filter(t => t.customDomain);
   const withoutDomain = allTenants.filter(t => !t.customDomain && t.plan !== 'free' && t.plan !== 'trial');
-  const normalizedDomain = form.customDomain.trim().toLowerCase().replace(/\\.$/, '');
+  const normalizedDomain = form.customDomain.trim().toLowerCase().replace(/\.$/, '');
   const domainValid = DOMAIN_RE.test(normalizedDomain);
 
   const updateM = useMutation({
