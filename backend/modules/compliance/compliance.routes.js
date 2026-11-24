@@ -4,6 +4,7 @@ const perm   = require('../../shared/middleware/permission');
 const ctrl   = require('./compliance.controller');
 
 router.use(auth);
+router.use(perm.checkModuleEnabled('compliance'));
 
 const can = (action) => perm.checkPermission('compliance', action);
 
