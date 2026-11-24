@@ -12,6 +12,7 @@ import {
   TrendingUp,
   Megaphone,
   Settings,
+  FileCheck,
   Building2,
   LogOut,
   PlusCircle,
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
   { path: '/admin/domains',    icon: Globe,             label: 'Domains'            },
   { path: '/admin/analytics',  icon: TrendingUp,        label: 'Analytics'          },
   { path: '/admin/marketing',  icon: Megaphone,         label: 'Marketing'          },
+  { path: '/admin/documents',  icon: FileCheck,         label: 'Document Review'    },
   { path: '/admin/settings',   icon: Settings,          label: 'Settings'           },
 ];
 
