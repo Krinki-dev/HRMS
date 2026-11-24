@@ -136,3 +136,10 @@ No database migration, live schema change, customer-data deletion, backup execut
 - Commits: `eb382e8` (calculator hardening), `ddcadae` (API validation responses), `9a95c61` (pricing tests), `c0e5e03` (duplicate validation cleanup).
 - Backend CI was green for the calculator and route commits; the new test commit's workflow was still running at the time this note was written. Recheck CI against the latest branch head before treating this work as verified.
 - No database, migration, live payment, or staging operation was performed.
+
+
+- Follow-up UI audit found the onboarding selector treated a zero-price Free plan as Custom because it used a truthiness check. Updated `PlanSelectionStep.jsx` to distinguish null custom pricing from a legitimate zero price, so Free is selectable and its price calculator can return zero.
+- Switching between plans now clears add-ons and promo state from the previous plan, preventing stale add-ons from being submitted against a different plan.
+- Frontend Build passed for the first Free-plan UI correction commit `88d9dc8`; the latest add-on-reset UI commit is `743fc8f` and its own workflow was queued at the time of this update.
+- Fixed the new pricing test's CI import setup by supplying a syntactically valid dummy `CENTRAL_DATABASE_URL` before importing the service; the pure catalog helper does not connect to the database.
+- Backend Tests passed on commit `d9871bd973c3fb641bdb63349a47efbd4346cea5`: 59 tests, 55 passed, 0 failed, 4 skipped (database-dependent RLS checks skipped because no test database URL is configured).
