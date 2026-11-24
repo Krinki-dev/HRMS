@@ -124,7 +124,7 @@ const { upsertBackupConfigForTenant } = require('./tenantDeletion.service');
  * Persist only completion metadata for onboarding steps. Secrets remain in their
  * dedicated encrypted configuration stores and are never copied into this JSON.
  */
-const ONBOARDING_STEPS = new Set(['org', 'branding', 'work', 'payroll', 'email', 'compliance', 'backup']);
+const ONBOARDING_STEPS = new Set(['org', 'branding', 'work', 'payroll', 'email', 'compliance', 'documents', 'backup']);
 
 
 // Return persisted step markers so a customer can resume onboarding after login/reload.
@@ -201,7 +201,7 @@ router.post('/onboarding/complete', auth, async (req, res) => {
   try {
     const tenantId = req.user?.tenantId || req.user?.company_id;
     if (!tenantId) return sendError(res, ERROR_CODES.VALIDATION, 'Tenant ID required', 400);
-    const requiredSteps = ['org', 'work', 'payroll', 'email', 'compliance', 'backup'];
+    const requiredSteps = ['org', 'work', 'payroll', 'email', 'compliance', 'documents', 'backup'];
     const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
       SELECT id, is_active, onboarding_progress
       FROM tenants
