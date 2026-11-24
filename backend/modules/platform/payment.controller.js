@@ -1137,6 +1137,71 @@ exports.verifySubscription = async (req, res) => {
       }
     }
 
+    if (method === 'jiopay') {
+      return sendError(res, ERROR_CODES.VALIDATION, 'JioPay checkout is disabled until the verified merchant API contract is implemented.', 503);
+    }
+
+    const ledgerOrderId = method === 'razorpay' ? resolvedOrderId : transactionId;
+    const subscriptionOrder = await withBillingRLS(req, tenantId, (tx) => tx.payment_orders.findFirst({
+      where: {
+        tenant_id: tenantId,
+        purpose: 'subscription',
+        gateway: method,
+        gateway_order_id: ledgerOrderId,
+        status: 'created',
+      },
+    }));
+    if (!subscriptionOrder) {
+      return sendError(res, ERROR_CODES.UNAUTHORIZED, 'No pending server-created subscription order matches this payment.', 400);
+    }
+
+    const snapshot = subscriptionOrder.metadata || {};
+    const sameAddons = JSON.stringify([...(snapshot.selectedAddons || [])].sort()) ===
+      JSON.stringify([...(normalizedAddons || [])].sort());
+    if (String(snapshot.planSlug) !== String(selectedPlanSlug) ||
+        Number(snapshot.billingMonths) !== Number(normalizedBillingMonths) ||
+        Number(snapshot.employeeCount || 0) !== Number(employeeCount || 0) ||
+        String(snapshot.promoCode || '') !== String(promoCode || '') ||
+        String(snapshot.renewalMode || 'manual') !== String(normalizedRenewalMode) ||
+        !sameAddons ||
+        Number(subscriptionOrder.amount_paise) <= 0) {
+      return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Subscription selection does not match the server-created payment order.', 400);
+    }
+
+    if (method === 'razorpay') {
+      const rp = getRazorpay();
+      if (!rp) return sendError(res, ERROR_CODES.SERVER, 'Razorpay credentials missing', 500);
+      const [gatewayOrder, gatewayPayment] = await Promise.all([
+        rp.orders.fetch(resolvedOrderId),
+        rp.payments.fetch(resolvedPaymentId),
+      ]);
+      if (gatewayOrder.id !== subscriptionOrder.gateway_order_id ||
+          Number(gatewayOrder.amount) !== Number(subscriptionOrder.amount_paise) ||
+          String(gatewayOrder.currency).toUpperCase() !== String(subscriptionOrder.currency).toUpperCase() ||
+          String(gatewayOrder.notes?.tenantId || '') !== String(tenantId) ||
+          String(gatewayOrder.notes?.type || '') !== 'subscription' ||
+          gatewayPayment.order_id !== gatewayOrder.id ||
+          Number(gatewayPayment.amount) !== Number(subscriptionOrder.amount_paise) ||
+          String(gatewayPayment.currency).toUpperCase() !== String(subscriptionOrder.currency).toUpperCase() ||
+          gatewayPayment.status !== 'captured') {
+        return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Razorpay payment does not match the stored subscription order.', 400);
+      }
+    } else if (method === 'phonepe') {
+      const xVerify = crypto.createHash('sha256')
+        .update(`/pg/v1/status/${phonePeMerchantId}/${transactionId}${phonePeSaltKey}`)
+        .digest('hex') + '###' + phonePeSaltIndex;
+      const statusResponse = await axios.get(`${phonePeBaseUrl}/pg/v1/status/${phonePeMerchantId}/${transactionId}`, {
+        headers: { 'Content-Type': 'application/json', 'X-VERIFY': xVerify, 'X-MERCHANT-ID': phonePeMerchantId }
+      });
+      const statusData = statusResponse.data?.data || {};
+      if (!statusResponse.data?.success ||
+          statusResponse.data?.code !== 'PAYMENT_SUCCESS' ||
+          Number(statusData.amount) !== Number(subscriptionOrder.amount_paise) ||
+          String(statusData.merchantTransactionId || '') !== String(subscriptionOrder.gateway_order_id)) {
+        return sendError(res, ERROR_CODES.UNAUTHORIZED, 'PhonePe status does not match the stored subscription order amount and transaction.', 400);
+      }
+    }
+
     const expiryDate = new Date();
     expiryDate.setMonth(expiryDate.getMonth() + normalizedBillingMonths);
 
@@ -1219,6 +1284,14 @@ exports.verifySubscription = async (req, res) => {
           create: { tenant_id: tenantId, module_name: String(mod).toLowerCase(), is_active: true, enabled_at: new Date() }
         });
       }
+      await tx.payment_orders.update({
+        where: { id: subscriptionOrder.id },
+        data: {
+          gateway_payment_id: resolvedPaymentId || transactionId,
+          status: 'captured',
+          updated_at: new Date(),
+        },
+      });
     });
 
     // Save plan selection to tenant_pricing_configs (feeds billing cron)
