@@ -317,6 +317,21 @@ model payment_orders {
   @@index([tenant_id, purpose, status])
 }
 
+model payment_webhook_events {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gateway          String
+  gateway_event_id String
+  event_type       String
+  payload_sha256   String
+  status           String   @default("received")
+  received_at      DateTime @default(now()) @db.Timestamptz
+  processed_at     DateTime? @db.Timestamptz
+  last_error       String?
+
+  @@unique([gateway, gateway_event_id])
+  @@index([gateway, status, received_at])
+}
+
 model billing_events {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id    String?  @db.Uuid
