@@ -654,6 +654,39 @@ exports.verifySubscription = async (req, res) => {
           create: { tenant_id: tenantId, module_name: moduleName, is_active: true },
         });
       }
+      await tx.tenant_modules.updateMany({
+        where: { tenant_id: tenantId, module_name: { notIn: modules } },
+        data: { is_active: false, disabled_at: new Date() },
+      });
+      const breakdown = snapshot.price.breakdown || {};
+      const renewalMeta = { __renewalMode: 'manual', __paymentMethod: 'razorpay' };
+      await tx.tenant_pricing_configs.upsert({
+        where: { tenant_id: tenantId },
+        update: {
+          base_price_paise: breakdown.base_monthly_paise || 0,
+          employee_cap: plan.employee_cap,
+          per_employee_excess_paise: plan.per_employee_excess_paise || 0,
+          discount_bundle_pct: breakdown.bundle_discount_pct || 0,
+          discount_tenure_pct: breakdown.tenure_discount_pct || 0,
+          tenure_months: snapshot.billingMonths,
+          offer_flat_paise: breakdown.promo_deduction_paise || 0,
+          discount_module_pct: renewalMeta,
+          billing_cycle: snapshot.billingMonths === 1 ? 'monthly' : snapshot.billingMonths + '_months',
+          updated_at: new Date(),
+        },
+        create: {
+          tenant_id: tenantId,
+          base_price_paise: breakdown.base_monthly_paise || 0,
+          employee_cap: plan.employee_cap,
+          per_employee_excess_paise: plan.per_employee_excess_paise || 0,
+          discount_bundle_pct: breakdown.bundle_discount_pct || 0,
+          discount_tenure_pct: breakdown.tenure_discount_pct || 0,
+          tenure_months: snapshot.billingMonths,
+          offer_flat_paise: breakdown.promo_deduction_paise || 0,
+          discount_module_pct: renewalMeta,
+          billing_cycle: snapshot.billingMonths === 1 ? 'monthly' : snapshot.billingMonths + '_months',
+        },
+      });
     });
     return sendSuccess(res, { verified: true, plan: plan.slug, expiresAt: expiry }, 'Subscription payment verified and plan activated.');
   } catch (error) {
