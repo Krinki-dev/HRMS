@@ -206,6 +206,13 @@ The next onboarding slice has been implemented on the working branch:
 - Hardened the platform document review endpoint: reviewers now use a row lock, allowed status transitions, and an audit entry recording both the prior and new status. Approved documents are terminal; rejected/resubmission-required documents can return to review.
 - Corrected the transaction-local tenant RLS context call in subscription activation to use Prisma's query API for `SELECT set_config(...)`.
 
+## Implementation progress — office-hours code pass (2026-11-24)
+
+- Corrected monthly billing Prisma relation names to match the central Prisma schema (tenant_pricing_configs and tenant_modules) in both the tenant query and pricing calculation.
+- Monthly billing now excludes free and trial tenants, enforces manual collection even if legacy pricing metadata says automatic renewal, and uses duplicate-safe invoice insertion so overlapping/retried cron runs do not create duplicate monthly invoices.
+- Successful Razorpay subscription activation now creates a paid subscription invoice and links it to the captured payment-order ledger in the same database transaction as plan/module activation. If invoice creation fails, the transaction rolls back the activation and payment-ledger claim.
+- No database migrations were run and no database connection was used during this pass. Code execution, Prisma generation, automated tests and GitHub Actions remain unverified.
+
 ### Current rollout state
 
 - Code and migration files are committed to `architecture/postgres-tenant-isolation` only. `main` remains unchanged.
