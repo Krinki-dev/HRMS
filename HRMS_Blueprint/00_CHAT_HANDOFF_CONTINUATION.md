@@ -286,7 +286,7 @@ Continue the end-to-end plan contract audit: compare `PlanSelectionStep.jsx`, `O
 
 ## 2026-11-24 — Permanent Free-plan activation path
 
-- Added authenticated `POST /api/v1/platform/free`? **Correction:** the subscription router is mounted under the platform subscription prefix; the frontend calls `POST /platform/subscribe/free`, matching the existing onboarding API prefix.
+- Added authenticated `POST /api/v1/platform/subscribe/free` (subscription router mount confirmed in `backend/server.js`); the frontend calls the matching `/platform/subscribe/free` path through the configured API base URL.
 - Added `subscriptionEntitlements.js` as a pure catalog-to-entitlements mapper. It accepts only an active, zero-price `free` catalog plan with valid included modules and employee pricing limits.
 - Added `subscription.controller.js::activateFreePlan`. It resolves the tenant from the authenticated session, transactionally converts only `free` or `trial` onboarding accounts to permanent `free`, clears trial expiry, sets the catalog employee cap, synchronizes included modules, and resets tenant pricing configuration to zero-cost. It refuses to downgrade a tenant with a captured subscription payment. It creates no payment order and no invoice.
 - Added the authenticated `/free` route in `subscription.routes.js`.
