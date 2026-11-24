@@ -345,37 +345,10 @@ export default function PlanSelectionStep({ onNext, onBack, employeeCount = 0 })
         </div>
       </div>
 
-      <div>
-        <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Renewal Mode</p>
-        <div className="flex gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setRenewalMode('manual')}
-            className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
-              renewalMode === 'manual'
-                ? 'border-[var(--color-primary)] bg-[var(--accent-soft)] text-[var(--color-primary)]'
-                : 'border-[var(--border-color)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--color-primary)]'
-            }`}
-          >
-            Manual renewal
-          </button>
-          <button
-            type="button"
-            onClick={() => setRenewalMode('auto')}
-            className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
-              renewalMode === 'auto'
-                ? 'border-[var(--color-primary)] bg-[var(--accent-soft)] text-[var(--color-primary)]'
-                : 'border-[var(--border-color)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--color-primary)]'
-            }`}
-          >
-            Auto renewal
-          </button>
-        </div>
-        <p className="text-xs text-[var(--text-secondary)] mt-2">
-          {renewalMode === 'auto'
-            ? 'Subscription renewal will be attempted automatically on due date.'
-            : 'Renewal will stay manual. Admin can approve and pay each cycle.'}
-        </p>
+      <div className="rounded-xl border border-[var(--border-color)] bg-[var(--surface-raised)] px-4 py-3">
+        <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-1">Renewal</p>
+        <p className="text-sm font-medium text-[var(--text-primary)]">Manual renewal</p>
+        <p className="text-xs text-[var(--text-secondary)] mt-1">Automatic recurring charges are not enabled for launch. You will be able to renew your subscription manually; automatic renewal may be added later.</p>
       </div>
 
       {/* Plan cards */}
