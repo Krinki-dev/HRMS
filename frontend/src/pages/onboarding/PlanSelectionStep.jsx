@@ -425,6 +425,30 @@ export default function PlanSelectionStep({ onNext, onBack, employeeCount = 0 })
         </div>
       )}
 
+      {/* Launch payment gateway — other providers are intentionally deferred. */}
+      <section aria-label="Payment methods" className="rounded-2xl border border-[var(--border-color)] bg-[var(--surface-raised)] p-4">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">Payment method</h3>
+            <p className="text-xs text-[var(--text-secondary)] mt-1">Secure checkout for your subscription</p>
+          </div>
+          <span className="text-[10px] font-semibold rounded-full px-2.5 py-1 bg-[var(--success-soft)] text-[var(--color-success)]">Available</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <div className="inline-flex items-center gap-2 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--accent-soft)] px-3 py-2 text-sm font-semibold text-[var(--color-primary)]">
+            <span aria-hidden="true">✓</span> Razorpay
+            <span className="text-[10px] font-medium">Enabled</span>
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-color)] px-3 py-2 text-sm text-[var(--text-muted)]">
+            PhonePe <span className="text-[10px] font-semibold">Coming soon</span>
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-color)] px-3 py-2 text-sm text-[var(--text-muted)]">
+            Other payment methods <span className="text-[10px] font-semibold">Coming soon</span>
+          </div>
+        </div>
+        <p className="text-xs text-[var(--text-secondary)] mt-2">Razorpay is the only payment gateway enabled for launch. Other methods cannot be selected or used yet.</p>
+      </section>
+
       {/* Action row */}
       <div className="flex items-center justify-between pt-2">
         {onBack && (
