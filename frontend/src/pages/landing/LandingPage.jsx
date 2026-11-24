@@ -1038,8 +1038,7 @@ export default function LandingPage() {
             <div style={S.heroBadge}>✨ Full HRMS + Payroll + Compliance + Automation</div>
             <h1 style={S.h1}>{marketing.heroHeading || 'Complete HRMS for modern teams.'}</h1>
             <p style={S.lead}>
-              Manage employees, payroll, compliance, onboarding, automation and monthly filing from one powerful platform.
-              No add-ons. No per-seat billing.
+              {marketing.heroSubhead || 'Manage employees, payroll, compliance, onboarding, automation and monthly filing from one powerful platform. No add-ons. No per-seat billing.'}
             </p>
 
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 16 }}>
