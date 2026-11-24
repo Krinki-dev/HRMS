@@ -35,7 +35,7 @@ export default function AdminDomains() {
       <div className="stats-grid-4">
         <div className="stat-card"><div className="stat-label">Custom domains</div><div className="stat-value">{withDomain.length}</div></div>
         <div className="stat-card"><div className="stat-label">Eligible (no domain yet)</div><div className="stat-value" style={{ color: 'var(--admin-warning)' }}>{withoutDomain.length}</div><div className="stat-hint">Starter+ clients</div></div>
-        <div className="stat-card"><div className="stat-label">SSL active</div><div className="stat-value" style={{ color: 'var(--admin-success)' }}>{withDomain.length}</div><div className="stat-hint">via Certbot auto-renew</div></div>
+        <div className="stat-card"><div className="stat-label">SSL verification</div><div className="stat-value" style={{ color: 'var(--admin-warning)' }}>Pending</div><div className="stat-hint">Requires DNS and certificate checks</div></div>
       </div>
 
       <div className="card" style={{ marginBottom: 14 }}>
@@ -71,9 +71,9 @@ export default function AdminDomains() {
                       <td>
                         <span className="admin-pill admin-pill--accent" style={{ textTransform: 'uppercase' }}>{t.plan}</span>
                       </td>
-                      <td><span className="badge badge-active" style={{ fontSize: 9 }}>Active</span></td>
+                      <td><span className="admin-pill admin-pill--warning" style={{ fontSize: 9 }}>Mapped · unverified</span></td>
                       <td style={{ fontSize: 10, color: 'var(--admin-text-muted)' }}>
-                        CNAME → <span style={{ fontFamily: 'monospace', color: 'var(--admin-text-secondary)' }}>syntern.in</span>
+                        DNS target must be confirmed with hosting configuration
                       </td>
                       <td style={{ textAlign: 'right' }}>
                         <button className="btn-sm" style={{ color: 'var(--admin-danger)', borderColor: 'rgba(220,38,38,0.24)' }}
