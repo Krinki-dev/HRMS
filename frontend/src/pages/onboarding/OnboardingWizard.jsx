@@ -610,7 +610,7 @@ export default function OnboardingWizard({ onComplete }) {
       {/* Persistent footer button */}
       <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 20, zIndex: 60 }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          {currentStep.key !== 'plan' && (
+          {currentStep.key !== 'plan' && currentStep.key !== 'documents' && (
             <WizBtn onClick={async () => {
               if (currentStep.key === 'org') return saveOrg();
               if (currentStep.key === 'work') return saveWork();
