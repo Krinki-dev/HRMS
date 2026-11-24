@@ -30,6 +30,18 @@
 12. The registration service sets up trial state during tenant registration. Trial activation is also a separate subscription controller operation. Define one authoritative lifecycle so trial start/expiry cannot be unintentionally reset or diverge.
 13. Plan selection previously exposed an automatic-renewal choice and described automatic charge attempts, but the inspected billing cron only generates invoices and checks overdue invoices; it does not perform recurring gateway charges. The plan UI now offers manual renewal only until a real recurring-payment mandate/flow is implemented.
 
+## Implementation progress — 24 November 2026
+
+The following first-pass registration changes have been committed to the working branch:
+
+- New registration UI offers only managed Syntern PostgreSQL, customer-owned PostgreSQL server (online/offline), and customer-owned cloud PostgreSQL. MySQL, SQL Server, SQLite and the unsupported hybrid choice are no longer offered in the new-registration UI. Legacy resolver branches remain for existing tenants; they are not new-registration options.
+- Backend registration now defaults an omitted deployment mode to managed cloud and rejects unsupported new-registration modes, non-PostgreSQL local engine values, and non-PostgreSQL external connection URL schemes.
+- Registration accepts either a syntactically valid GSTIN or PAN; if both are supplied, PAN must match the PAN segment in GSTIN. The frontend now exposes the PAN-only route and makes company email optional.
+- The frontend now submits the actual consent checkbox state rather than hardcoding consent to true.
+- GST lookup's provider chain now uses only the official-source function. The existing assisted official-portal CAPTCHA flow remains; automated CAPTCHA solving and third-party fallback are not part of the registration lookup chain. GST CAPTCHA documentation has been rewritten to remove previous automated-solving claims.
+
+**Not yet complete:** official GST API/access authorisation has not been independently verified; live portal CAPTCHA behaviour has not been tested; PAN-only data enrichment is not yet implemented (PAN is currently accepted as a business identifier, not a promise of full profile lookup); customer-hosted/offline PostgreSQL provisioning is not yet certified end-to-end; trial signup still needs a broader UX reduction and backend registration/provisioning tests. No live migration or production action was performed.
+
 ## Target customer journey
 
 ### Phase 1 — Signup and identity
