@@ -289,8 +289,8 @@ router.put('/tenants/:id', async (req, res) => {
 
     let normalizedCustomDomain = customDomain;
     if (customDomain !== undefined && customDomain !== null) {
-      normalizedCustomDomain = String(customDomain).trim().toLowerCase().replace(/\\.$/, '');
-      const domainPattern = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$/i;
+      normalizedCustomDomain = String(customDomain).trim().toLowerCase().replace(/\.$/, '');
+      const domainPattern = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
       if (!domainPattern.test(normalizedCustomDomain)) {
         return sendError(res, ERROR_CODES.VALIDATION, 'Enter a valid fully-qualified domain name without protocol, path, or port.', 400);
       }
