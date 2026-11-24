@@ -505,3 +505,18 @@ exports.handlePayoutWebhook = async (_req, res) => {
     message: 'Automated payout callbacks are disabled until a verified payout provider integration is released.',
   });
 };
+
+/** Subscription checkout is intentionally fail-closed until the complete
+ * Razorpay subscription ledger + activation transaction is implemented.
+ * These exports keep Express route registration valid without accepting
+ * an unverified payment or activating a plan from client input.
+ */
+exports.createSubscriptionOrder = async (_req, res) => {
+  return sendError(res, ERROR_CODES.VALIDATION,
+    'Paid subscription checkout is temporarily unavailable while secure payment verification is being completed. No charge has been made.', 503);
+};
+
+exports.verifySubscription = async (_req, res) => {
+  return sendError(res, ERROR_CODES.VALIDATION,
+    'Subscription verification is temporarily unavailable. No plan has been activated; contact support if your bank shows a charge.', 503);
+};
