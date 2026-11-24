@@ -10,7 +10,7 @@ const { Parser } = require('json2csv');
 const billingEmailer = require('../../shared/utils/billingEmailer');
 const plansService = require('./plans.service');
 const billingLogger = require('../../shared/services/billingLogger');
-const { verifyRazorpaySignature, isRazorpayPaymentForInvoice } = require('../../shared/utils/razorpayPaymentVerification');
+const { verifyRazorpaySignature, isRazorpayPaymentForInvoice, verifyRazorpayWebhookSignature } = require('../../shared/utils/razorpayPaymentVerification');
 const { withTenantRLS, withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
@@ -709,15 +709,7 @@ exports.handleWebhook = async (req, res) => {
       return res.status(400).send('Invalid webhook configuration or request');
     }
 
-    const expected = crypto.createHmac('sha256', secret).update(rawBody).digest();
-    let supplied;
-    try {
-      if (!/^[a-f0-9]{64}$/i.test(String(signature))) throw new Error('bad signature format');
-      supplied = Buffer.from(String(signature), 'hex');
-    } catch (_) {
-      supplied = Buffer.alloc(0);
-    }
-    if (supplied.length !== expected.length || !crypto.timingSafeEqual(expected, supplied)) {
+    if (!verifyRazorpayWebhookSignature({ rawBody, signature, secret })) {
       await billingLogger.logInvalidSignature({ gateway: 'razorpay', req });
       return res.status(400).send('Invalid signature');
     }
