@@ -14,16 +14,6 @@ function getRenewalContext(pricingConfig) {
   return { renewalMode, paymentMethod };
 }
 
-async function attemptAutoRenewalPayment({ tenant, invoiceNo, totalPaise, paymentMethod }) {
-  // Placeholder until tokenized/mandate-backed recurring payments are enabled.
-  logger.warn(`${THEME.ICONS.WARNING} [AutoRenewal] ${tenant.subdomain} ${invoiceNo}: no saved mandate for ${paymentMethod || 'gateway'}, fallback to manual collection.`);
-  return {
-    attempted: true,
-    success: false,
-    reason: 'No saved recurring mandate/token configured',
-    paymentId: null,
-  };
-}
 
 /**
  * Generates monthly invoices for all active tenants.
@@ -61,7 +51,7 @@ async function generateMonthlyInvoices() {
         const activeModules = tenant.tenant_modules.map(m => m.module_name);
 
         // Run the pricing engine
-        const calc = calculateSubscription(tenant.pricing_config, activeModules, employeeCount);
+        const calc = calculateSubscription(tenant.tenant_pricing_configs, activeModules, employeeCount);
 
         const date = new Date();
         const invoiceNo = `INV-${tenant.subdomain.toUpperCase()}-${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}`;
@@ -71,7 +61,6 @@ async function generateMonthlyInvoices() {
 
         let invoiceStatus = 'unpaid';
         let paymentId = null;
-        let autoAttempt = { attempted: false, success: false, reason: null };
 
         // No automatic charge is attempted at launch. The tenant pays the
         // generated invoice through the authenticated manual Razorpay flow.
