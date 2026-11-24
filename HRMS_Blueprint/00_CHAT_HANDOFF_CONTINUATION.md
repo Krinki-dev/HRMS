@@ -262,3 +262,23 @@ Continue the end-to-end plan contract audit: compare `PlanSelectionStep.jsx`, `O
 - Backend pricing test suite passed on `d9871bd973c3fb641bdb63349a47efbd4346cea5`: 59 total, 55 passed, 0 failed, 4 skipped.
 - Current branch comparison after the latest implementation/doc updates: 259 ahead of `main`, 0 behind. `main` remains untouched.
 - Documentation commits after the last code commit trigger Backend Tests too; those documentation-head runs were still in progress at the time of this refresh. No claim is made that the newest documentation commit's run has completed.
+
+
+## 2026-11-24 continuation session — subscription contract audit
+
+- Re-opened this handoff from the live working branch before resuming. Live compare against `main`: **261 commits ahead, 0 behind**. `main` was not modified.
+- Confirmed the current frontend onboarding contract: `PlanSelectionStep.jsx` passes plan slug, selected add-ons, billing months, manual renewal mode, promo code and a display-only price result. `OnboardingWizard.jsx` sends the paid order request to the server and does not treat the client price as authoritative.
+- Confirmed `createSubscriptionOrder` derives the active employee count from the tenant database and recalculates the price server-side. It restricts launch checkout to Razorpay/manual renewal and rejects Free/Custom plans from paid checkout.
+- Confirmed `verifySubscription` checks the Razorpay signature, fetches the order and payment from Razorpay, checks captured status, order/tenant/purpose/amount/currency binding, validates the stored server-generated order snapshot, then activates tenant plan/modules, writes tenant pricing configuration, creates a paid invoice and links it to the payment order in one transaction.
+- **Confirmed unresolved Free-plan onboarding path:** `OnboardingWizard.handlePlanNext` advances directly to the Organisation step whenever `priceResult.total_paise === 0`. This includes the legitimate zero-price Free plan, not just a Custom quote. The Free plan is not activated through the paid order endpoint (which intentionally rejects it), and the Custom quote path should remain non-activating. The next implementation must distinguish Free from Custom and ensure Free plan entitlement/modules are correctly provisioned without creating a payment or invoice. Inspect signup provisioning and existing free-plan activation semantics before changing code.
+- **Recurring promo configuration needs a focused audit:** paid verification persists `breakdown.promo_deduction_paise` into `tenant_pricing_configs.offer_flat_paise`. The legacy `subscriptionCalculator.js` applies `offer_flat_paise` during each calculation, while its comment describes a first-month offer. Before changing this, inspect the billing cron/service and promo expiry semantics to determine whether the discount is accidentally repeated on renewals or already cleared by the billing workflow.
+- The onboarding UI currently has a `renewalMode` state defaulting to `manual`, and the UI explicitly communicates manual renewal. Keep this invariant; do not introduce recurring auto-charge.
+- No source-code files were modified in this audit session. No migrations, database access, staging deployment, live payment or production action was performed. CI was not re-run in this read-only audit session; do not claim new CI verification.
+- Handoff file itself is being refreshed to preserve the verified findings and exact next work.
+
+### Immediate next actions (updated after contract audit)
+1. Inspect tenant signup/provisioning and free-plan/module initialization. Implement a distinct, idempotent Free-plan activation path that grants only the Free catalog plan's included modules, writes the matching plan/cap configuration, and never creates a payment or invoice. Keep Custom quote as a sales/contact path and do not silently activate it.
+2. Inspect `billing.service.js`, billing cron, `subscriptionCalculator.js`, and promo validation/storage to establish whether `offer_flat_paise` is applied once or on every renewal. Fix the persisted subscription discount model only after tracing the complete billing lifecycle; add regression tests.
+3. Add focused tests for Free-plan activation/idempotency and promo renewal behavior. Run Backend Tests and Frontend Build on the resulting code commits.
+4. Continue Marketing persistence/rendering audit and Document Review API/UI contract audit.
+5. Recheck the current branch head, CI and main comparison before reporting progress. Keep all migrations, staging, live payments and production changes on hold until user confirms readiness.
