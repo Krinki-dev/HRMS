@@ -65,7 +65,7 @@ test('creates a v2 checkout order with O-Bearer authorization', async () => {
   };
   const result = await createPhonePePayment({
     merchantOrderId: 'ORDER-1', amount: 12500, redirectUrl: 'https://merchant.example/return',
-    env, http, metaInfo: { udf1: 'tenant-1' },
+    env, http,
   });
   assert.equal(result.redirectUrl, 'https://checkout.example/redirect');
   assert.equal(calls[1].url, 'https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/pay');
