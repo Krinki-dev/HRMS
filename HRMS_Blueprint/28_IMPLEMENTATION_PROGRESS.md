@@ -81,3 +81,14 @@ No database migration, live schema change, customer-data deletion, backup execut
 - Result: **success**
 - Successful steps: checkout, Node.js setup, `npm ci --ignore-scripts`, generation of tenant and central Prisma clients, and `npm test`.
 - This validates the source state at commits `32cd598` and `669e939`. Documentation-only follow-up is newer; it does not change executable code.
+
+
+## Razorpay verification hardening — 2026-11-24
+- Removed the development mock-order response from invoice order creation; a real gateway order is required.
+- Rejects client-supplied mock verification requests.
+- Requires a configured Razorpay secret and non-empty order/payment/signature values.
+- Verifies the HMAC signature using constant-time comparison.
+- Fetches the order and payment directly from Razorpay and checks invoice receipt, amount, currency, order linkage, and captured payment status before marking an invoice paid.
+- Added unit tests for signature validation and invoice/payment matching.
+- This does not yet complete the billing workflow: server-side order persistence, webhook idempotency, atomic invoice state transitions, and equivalent verified flows for PhonePe/JioPay remain outstanding.
+- GitHub Actions validation for these newest commits is pending; no live payment was attempted.
