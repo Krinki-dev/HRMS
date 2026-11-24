@@ -34,3 +34,25 @@ If you want, I can also:
 - Add application-level code to set `app.current_tenant` per-request.
 - Create Prisma migration files instead of raw SQL.
 - Add CI checks to run the DB linter and prevent regressions.
+
+
+## 2026-11-24 platform onboarding and document workflow
+
+Apply these additive migrations to the **central database**, in filename order, after taking a backup:
+
+- `20261124_payment_order_ledger.sql` — payment order and webhook idempotency ledgers.
+- `20261124_tenant_onboarding_progress.sql` — persisted onboarding step markers.
+- `20261124_tenant_storage_inventory.sql` and `20261124_tenant_storage_lifecycle.sql` — tenant storage metadata/lifecycle.
+- `20261124_company_document_workflow.sql` — company document metadata, review states and subscription open-order uniqueness.
+
+Run from the repository root on a controlled staging host:
+
+```bash
+psql "$CENTRAL_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend/db-migrations/20261124_payment_order_ledger.sql
+psql "$CENTRAL_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend/db-migrations/20261124_tenant_onboarding_progress.sql
+psql "$CENTRAL_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend/db-migrations/20261124_tenant_storage_inventory.sql
+psql "$CENTRAL_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend/db-migrations/20261124_tenant_storage_lifecycle.sql
+psql "$CENTRAL_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend/db-migrations/20261124_company_document_workflow.sql
+```
+
+Then regenerate the central Prisma client from `backend/` with `npx prisma generate --schema=prisma/central.prisma`. Do not run this against production without an approved backup/rollback window. Document upload remains disabled unless MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY and (in production) MINIO_USE_SSL=true are configured. The bucket must remain private; the API issues only five-minute signed download links after tenant ownership checks.
