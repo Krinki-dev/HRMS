@@ -143,3 +143,10 @@ No database migration, live schema change, customer-data deletion, backup execut
 - Frontend Build passed for the first Free-plan UI correction commit `88d9dc8`; the latest add-on-reset UI commit is `743fc8f` and its own workflow was queued at the time of this update.
 - Fixed the new pricing test's CI import setup by supplying a syntactically valid dummy `CENTRAL_DATABASE_URL` before importing the service; the pure catalog helper does not connect to the database.
 - Backend Tests passed on commit `d9871bd973c3fb641bdb63349a47efbd4346cea5`: 59 tests, 55 passed, 0 failed, 4 skipped (database-dependent RLS checks skipped because no test database URL is configured).
+
+
+### Latest CI confirmation — 2026-11-24
+- Commit `743fc8f877fb6362787c31eb34b3b21430c52d05`: Backend Tests **success**, Frontend Build **success**.
+- Backend test summary on `d9871bd973c3fb641bdb63349a47efbd4346cea5`: 59 total, 55 passed, 0 failed, 4 skipped.
+- The current branch head includes subsequent documentation commits; their Backend Tests workflow runs were still in progress at the latest check. The most recent code commit's frontend and backend checks are green.
+- Branch comparison: 259 commits ahead of `main`, 0 behind. `main` has not been modified.
