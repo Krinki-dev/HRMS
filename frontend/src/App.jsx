@@ -124,7 +124,7 @@ function RequirePlatformAdmin({ children }) {
   const { isLoggedIn, user } = useAuthStore();
     if (!isLoggedIn) { window.location.replace('/login'); return null; }
   // Use is_platform_admin field, not role
-    if (!user?.is_platform_admin) { window.location.replace('/login'); return null; }
+    if (!user?.is_platform_admin && user?.role !== 'super_admin') { window.location.replace('/login'); return null; }
   return children;
 }
 
