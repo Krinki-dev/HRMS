@@ -296,7 +296,7 @@ exports.verifyPayment = async (req, res) => {
       return true;
     });
     if (!paymentRecorded) {
-      return sendError(res, ERROR_CODES.CONFLICT, 'Invoice was already paid or changed during verification', 409);
+      return sendError(res, ERROR_CODES.VALIDATION, 'Invoice was already paid or changed during verification', 409);
     }
 
     return sendSuccess(res, null, "Payment successful and verified.");
@@ -537,7 +537,8 @@ exports.createSubscriptionOrder = async (req, res) => {
     if (addons.some((item) => !allowedAddons.has(item))) {
       return sendError(res, ERROR_CODES.VALIDATION, 'One or more selected add-ons are not available for this plan.', 400);
     }
-    const employeeCount = Math.max(0, Math.min(100000, Number(req.body.employeeCount) || 0));
+    if (!req.db?.employee?.count) return sendError(res, ERROR_CODES.SERVER, 'Employee count could not be verified for pricing.', 503);
+    const employeeCount = await req.db.employee.count();
     const price = await plansService.calculatePrice({
       planSlug, selectedAddons: addons, billingMonths: Number(billingMonths),
       employeeCount, promoCode: promoCode ? String(promoCode).trim() : undefined,
@@ -545,6 +546,11 @@ exports.createSubscriptionOrder = async (req, res) => {
     if (price.isCustomQuote || !Number.isSafeInteger(price.total_paise) || price.total_paise <= 0) {
       return sendError(res, ERROR_CODES.VALIDATION, 'This plan requires a custom quote or has an invalid amount.', 400);
     }
+    const openOrder = await withBillingRLS(req, tenantId, (tx) => tx.payment_orders.findFirst({
+      where: { tenant_id: tenantId, purpose: 'subscription', gateway: 'razorpay', status: 'created' },
+      orderBy: { created_at: 'desc' },
+    }));
+    if (openOrder) return sendError(res, ERROR_CODES.VALIDATION, 'A subscription payment is already awaiting verification. Complete it or contact support before starting another.', 409);
     const rp = getRazorpay();
     if (!rp) return sendError(res, ERROR_CODES.SERVER, 'Razorpay is not configured.', 503);
     const receipt = ('SUB-' + tenantId.slice(0, 8) + '-' + Date.now()).slice(0, 40);
@@ -617,17 +623,12 @@ exports.verifySubscription = async (req, res) => {
         gatewayOrder.notes?.purpose !== 'subscription') {
       return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Captured payment does not match the registered subscription order.', 400);
     }
-    const currentRequest = {
-      planSlug: req.body.planSlug || snapshot.planSlug,
-      selectedAddons: req.body.selectedAddons || snapshot.selectedAddons,
-      billingMonths: req.body.billingMonths || snapshot.billingMonths,
-      employeeCount: req.body.employeeCount ?? snapshot.employeeCount,
-      promoCode: req.body.promoCode ?? snapshot.promoCode,
-      renewalMode: 'manual',
-    };
-    if (!matchesSubscriptionOrderSnapshot({ snapshot, request: currentRequest, amountPaise: stored.amount_paise }) ||
-        Number(snapshot.price?.total_paise) !== Number(stored.amount_paise) || snapshot.renewalMode !== 'manual') {
-      return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Subscription selection does not match the stored order.', 400);
+    if (!snapshot.planSlug || !Array.isArray(snapshot.selectedAddons) ||
+        !Number.isInteger(Number(snapshot.billingMonths)) ||
+        !Number.isSafeInteger(Number(snapshot.price?.total_paise)) ||
+        Number(snapshot.price.total_paise) !== Number(stored.amount_paise) ||
+        snapshot.renewalMode !== 'manual') {
+      return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Stored subscription order snapshot is invalid.', 400);
     }
     const plan = (await plansService.getPlans()).find((item) => item.slug === snapshot.planSlug);
     if (!plan || !plan.is_active) return sendError(res, ERROR_CODES.VALIDATION, 'The selected plan is no longer available.', 409);
@@ -642,7 +643,7 @@ exports.verifySubscription = async (req, res) => {
       if (claimed.count !== 1) throw new Error('SUBSCRIPTION_ORDER_ALREADY_PROCESSED');
       await tx.tenants.update({
         where: { id: tenantId },
-        data: { plan: plan.slug, plan_expires_at: expiry, max_employees: plan.employee_cap || 200000 },
+        data: { plan: plan.slug, plan_expires_at: expiry },
       });
       const modules = [...new Set([...(plan.included_modules || []), ...(snapshot.selectedAddons || [])])];
       for (const moduleName of modules) {
