@@ -46,4 +46,62 @@ function buildFreePlanEntitlements(plan) {
   };
 }
 
-module.exports = { buildFreePlanEntitlements };
+
+/**
+ * Validate a selected catalog plan and resolve its trial entitlements.
+ * The selected plan's catalog trial_days is eligibility metadata only here:
+ * tenant registration owns the already-started trial's expiry.
+ */
+function buildTrialPlanEntitlements(plan, selectedAddons = []) {
+  if (!plan || plan.is_active === false || plan.is_trial_eligible !== true ||
+      !Number.isSafeInteger(Number(plan.trial_days)) || Number(plan.trial_days) < 1) {
+    throw new Error('The selected plan is not eligible for a free trial');
+  }
+  if (!Array.isArray(selectedAddons) || selectedAddons.length > 20 ||
+      selectedAddons.some((module) => typeof module !== 'string' || !module.trim())) {
+    throw new Error('Trial add-ons must be a list of valid module names');
+  }
+  const requested = selectedAddons.map((module) => module.trim());
+  if (new Set(requested).size !== requested.length) throw new Error('Duplicate trial add-ons are not allowed');
+
+  const included = new Set(Array.isArray(plan.included_modules) ? plan.included_modules : []);
+  const allowed = new Set(Array.isArray(plan.addon_modules) ? plan.addon_modules : []);
+  if (requested.some((module) => included.has(module) || !allowed.has(module))) {
+    throw new Error('One or more selected trial add-ons are not available for this plan');
+  }
+
+  const modules = [...new Set([...included, ...requested])];
+  if (!modules.length) throw new Error('The selected trial plan must define included modules');
+  const basePrice = plan.base_price_paise == null ? 0 : Number(plan.base_price_paise);
+  const employeeCap = plan.employee_cap == null ? null : Number(plan.employee_cap);
+  const overagePrice = Number(plan.per_employee_excess_paise ?? 0);
+  if (!Number.isSafeInteger(basePrice) || basePrice < 0 ||
+      (employeeCap !== null && (!Number.isSafeInteger(employeeCap) || employeeCap < 1)) ||
+      !Number.isSafeInteger(overagePrice) || overagePrice < 0) {
+    throw new Error('The selected trial plan has invalid pricing limits');
+  }
+
+  return {
+    modules,
+    employeeCap,
+    pricingConfig: {
+      base_price_paise: basePrice,
+      employee_cap: employeeCap,
+      per_employee_excess_paise: overagePrice,
+      discount_base_pct: 0,
+      discount_module_pct: {},
+      discount_bundle_pct: 0,
+      bundle_trigger_count: 3,
+      discount_tenure_pct: 0,
+      tenure_months: 1,
+      offer_flat_paise: 0,
+      offer_expiry_date: null,
+      is_stackable: false,
+      final_override_paise: null,
+      billing_cycle: 'monthly',
+      updated_at: new Date(),
+    },
+  };
+}
+
+module.exports = { buildFreePlanEntitlements, buildTrialPlanEntitlements };
