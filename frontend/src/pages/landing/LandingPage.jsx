@@ -800,7 +800,13 @@ export default function LandingPage() {
 
   const goto = (path) => navigate(path);
 
-  useEffect(() => {\n    let active = true;\n    api.get('/platform/marketing')\n      .then((response) => { if (active) setMarketing(response.data?.data || {}); })\n      .catch(() => { /* Keep the built-in landing-page copy when settings are unavailable. */ });\n    return () => { active = false; };\n  }, []);
+  useEffect(() => {
+    let active = true;
+    api.get('/platform/marketing')
+      .then((response) => { if (active) setMarketing(response.data?.data || {}); })
+      .catch(() => { /* Keep the built-in landing-page copy when settings are unavailable. */ });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     const setAppHeight = () => {
