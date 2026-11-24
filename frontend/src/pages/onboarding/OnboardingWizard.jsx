@@ -629,7 +629,10 @@ export default function OnboardingWizard({ onComplete }) {
             }}>Skip</WizBtn>
           )}
           {currentStep.key === 'backup' && (
-            <WizBtn variant="ghost" onClick={() => setStep(s => s + 1)}>Skip</WizBtn>
+            <WizBtn variant="ghost" onClick={async () => {
+              await api.post('/platform/onboarding/save-step', { step: 'backup', skipped: true });
+              setStep(s => s + 1);
+            }}>Skip</WizBtn>
           )}
         </div>
       </div>
