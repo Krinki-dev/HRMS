@@ -28,7 +28,7 @@ function scanBuffer(buffer, { host = process.env.CLAMAV_HOST, port = Number(proc
     socket.on('error', fail);
     socket.on('data', (chunk) => response.push(chunk));
     socket.on('connect', () => {
-      socket.write(Buffer.from('zINSTREAM\\0'));
+      socket.write(Buffer.from('zINSTREAM\0'));
       const chunkSize = 64 * 1024;
       for (let offset = 0; offset < buffer.length; offset += chunkSize) {
         const chunk = buffer.subarray(offset, Math.min(offset + chunkSize, buffer.length));
