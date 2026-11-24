@@ -42,6 +42,20 @@ The following first-pass registration changes have been committed to the working
 
 **Not yet complete:** official GST API/access authorisation has not been independently verified; live portal CAPTCHA behaviour has not been tested; PAN-only data enrichment is not yet implemented (PAN is currently accepted as a business identifier, not a promise of full profile lookup); customer-hosted/offline PostgreSQL provisioning is not yet certified end-to-end; trial signup still needs a broader UX reduction and backend registration/provisioning tests. No live migration or production action was performed.
 
+## Implementation progress — onboarding persistence
+
+The next onboarding slice has been implemented on the working branch:
+
+- Added `tenants.onboarding_progress` JSONB metadata to the central Prisma model and canonical SQL schema, plus a separate additive migration file.
+- The authenticated `POST /onboarding/save-step` route now validates step names and persists completion/skip markers against the authenticated tenant. It does not copy client-supplied credentials or arbitrary step data into the progress JSON.
+- Backup credentials continue through the existing dedicated backup configuration helper; branding logo URLs are accepted only over HTTPS.
+- Added authenticated `POST /onboarding/complete`. It checks the tenant is active and requires persisted markers for organisation, work settings, payroll, email, compliance, and backup before setting `is_setup_complete=true`. Missing steps return a 409 with their keys.
+- Updated wizard step handlers to persist completion/skip markers, stopped silently swallowing department/designation and salary-component creation errors, and removed the obsolete PhonePe return-to-onboarding checkout handler.
+
+**Important rollout requirement:** the new SQL migration has been committed but has NOT been applied to any database. Apply it only after backup and environment confirmation. Generate the central Prisma client after schema change before deploying. Full frontend/backend tests and PostgreSQL integration tests have not yet been run.
+
+**Known onboarding follow-up:** compliance portal credentials are intentionally deferred from this progress endpoint because it is not a secure credential store; the UI should direct customers to the dedicated secure settings flow for PF/ESI credentials. The wizard currently records that step as deferred/skipped rather than falsely claiming those credentials were saved.
+
 ## Target customer journey
 
 ### Phase 1 — Signup and identity
