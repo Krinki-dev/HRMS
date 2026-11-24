@@ -1311,14 +1311,14 @@ export default function LandingPage() {
           <div className="lp-reveal">
           <div style={S.ctaBox}>
             <div style={{ ...S.heroBadge, marginInline: 'auto', marginBottom: 16 }}>GET STARTED</div>
-            <h2 style={{ ...S.h2, maxWidth: 860, marginInline: 'auto', marginBottom: 14 }}>Bring HR, payroll and compliance together in one system.</h2>
+            <h2 style={{ ...S.h2, maxWidth: 860, marginInline: 'auto', marginBottom: 14 }}>{marketing.bottomCtaHeading || 'Bring HR, payroll and compliance together in one system.'}</h2>
             <p style={{ ...S.lead, marginInline: 'auto', marginBottom: 22 }}>
-              Start with a free trial, sign in to continue, or talk to us for enterprise and deployment discussions.
+              {marketing.bottomCtaSubhead || 'Start with a free trial, sign in to continue, or talk to us for enterprise and deployment discussions.'}
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', gap: 14, flexWrap: 'wrap' }}>
-              <button style={{ ...S.btnPrimary, padding: '15px 28px', fontSize: 15 }} onClick={() => goto('/register')}>Sign up free</button>
-              <button style={{ ...S.btnOutline, padding: '15px 28px', fontSize: 15, color: '#fff', borderColor: 'rgba(255,255,255,0.14)' }} onClick={() => goto('/login')}>Login</button>
-              <button style={{ ...S.btnOutline, padding: '15px 28px', fontSize: 15, color: '#fff', borderColor: 'rgba(255,255,255,0.14)' }} onClick={() => goto('/contact')}>Contact us</button>
+              <button style={{ ...S.btnPrimary, padding: '15px 28px', fontSize: 15 }} onClick={() => goto(marketing.bottomCtaPrimaryUrl || '/register')}>{marketing.bottomCtaPrimaryText || 'Sign up free'}</button>
+              <button style={{ ...S.btnOutline, padding: '15px 28px', fontSize: 15, color: '#fff', borderColor: 'rgba(255,255,255,0.14)' }} onClick={() => goto(marketing.bottomCtaSecondaryUrl || '/login')}>{marketing.bottomCtaSecondaryText || 'Login'}</button>
+              <button style={{ ...S.btnOutline, padding: '15px 28px', fontSize: 15, color: '#fff', borderColor: 'rgba(255,255,255,0.14)' }} onClick={() => goto(marketing.bottomCtaContactUrl || '/contact')}>{marketing.bottomCtaContactText || 'Contact us'}</button>
             </div>
           </div>
           </div>
