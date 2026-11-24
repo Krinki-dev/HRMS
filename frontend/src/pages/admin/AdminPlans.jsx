@@ -183,7 +183,7 @@ export default function AdminPlans() {
                 </span>
                 <button className="btn-sm"
                   onClick={() => setEditPlan(isEdit ? null : plan.id)}>
-                  {isEdit ? 'Cancel' : 'Edit plan'}
+                  {isEdit ? 'Close details' : 'Plan details'}
                 </button>
               </div>
 
@@ -192,8 +192,7 @@ export default function AdminPlans() {
                 <div style={{ marginTop: 12, padding: '12px 14px', background: 'var(--admin-accent-soft)', borderRadius: 8, border: '0.5px solid rgba(37,99,235,0.24)' }}>
                   <div style={{ fontSize: 11, color: 'var(--admin-accent)', fontWeight: 600, marginBottom: 8 }}>Edit plan config</div>
                   <div style={{ fontSize: 11, color: 'var(--admin-text-soft)', lineHeight: 1.7 }}>
-                    Global plan pricing and features are now managed dynamically. 
-                    To modify the standard catalog, go to <strong>Platform Settings → Subscription Plans</strong>.
+                    This screen is for plan performance and client distribution. To change the live pricing configuration, open the <strong>Pricing &amp; Plans</strong> menu.
                     <br /><br />
                     To manage custom discounts or enterprise overrides for a specific client, use the <strong>Billing & Pricing</strong> tab in the Client Details page.
                   </div>
