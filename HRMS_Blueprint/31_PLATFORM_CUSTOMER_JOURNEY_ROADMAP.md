@@ -180,7 +180,7 @@ The next onboarding slice has been implemented on the working branch:
 - Updated the onboarding wizard to resume at the first step without a persisted completion marker after reload/login. Existing marker persistence remains the source of truth.
 - Removed PF/EPFO and ESIC password fields from initial onboarding. The screen now clearly states that portal credentials are deferred to Settings; no user is led to believe those values were saved.
 - Removed development-only trial success responses when the central database lookup or transaction fails. Trial activation now fails closed if it was not persisted.
-- Fixed the Express route-registration defect caused by missing subscription payment controller exports. Both endpoints now return explicit HTTP 503 responses and do not create orders, accept mock payments, or activate plans. **Paid subscription checkout remains blocked** until the complete Razorpay order ledger, server-side capture verification, idempotent plan activation and invoice transaction are implemented and tested. This is an intentional safety stop, not a completed payment integration.
+- Fixed the Express route-registration defect caused by missing subscription payment controller exports. The endpoints now have a Razorpay-only order and server-side capture-verification implementation with a persisted payment-order snapshot and transactional plan/module activation. Manual renewal is enforced; PhonePe, JioPay and automatic renewal remain blocked. This code path is committed but **not yet verified end-to-end** against Razorpay test mode and a migrated staging database. A paid subscription invoice/receipt record is not yet created by this activation transaction and remains a release item.
 - Backend dependencies include Multer and MinIO, but a tenant-scoped private document upload/review flow has not yet been implemented or verified. Do not expose uploads until object-storage configuration, private bucket policy, file validation, malware scanning strategy, tenant ownership checks, reviewer audit trail and authorized download are in place.
 - The onboarding progress API depends on the previously added `onboarding_progress` central schema migration. It has **not** been applied to a live database; Prisma client generation and automated tests remain pending.
 
@@ -201,6 +201,10 @@ The next onboarding slice has been implemented on the working branch:
 - Added private MinIO object storage metadata flow, 10 MB limit, PDF/JPEG/PNG content-signature checks, ClamAV INSTREAM scanning, tenant-scoped metadata queries, five-minute signed download links, platform review queue/download/status endpoints, and append-only reviewer history. Uploads fail closed if private storage or ClamAV is not configured. No public document URL is exposed.
 - Added central migration `20261124_company_document_workflow.sql` with document metadata, review history, tenant RLS policies and one-open-subscription-order uniqueness. Updated the central schema reference and migration instructions.
 - Added basic ClamAV scanner validation tests. These have not yet been run in a connected checkout.
+
+
+- Hardened the platform document review endpoint: reviewers now use a row lock, allowed status transitions, and an audit entry recording both the prior and new status. Approved documents are terminal; rejected/resubmission-required documents can return to review.
+- Corrected the transaction-local tenant RLS context call in subscription activation to use Prisma's query API for `SELECT set_config(...)`.
 
 ### Current rollout state
 
