@@ -11,6 +11,7 @@ const billingEmailer = require('../../shared/utils/billingEmailer');
 const plansService = require('./plans.service');
 const billingLogger = require('../../shared/services/billingLogger');
 const { verifyRazorpaySignature, isRazorpayPaymentForInvoice, verifyRazorpayWebhookSignature } = require('../../shared/utils/razorpayPaymentVerification');
+const { matchesSubscriptionOrderSnapshot } = require('../../shared/utils/subscriptionPaymentVerification');
 const { withTenantRLS, withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
@@ -1106,15 +1107,18 @@ exports.verifySubscription = async (req, res) => {
     }
 
     const snapshot = subscriptionOrder.metadata || {};
-    const sameAddons = JSON.stringify([...(snapshot.selectedAddons || [])].sort()) ===
-      JSON.stringify([...(normalizedAddons || [])].sort());
-    if (String(snapshot.planSlug) !== String(selectedPlanSlug) ||
-        Number(snapshot.billingMonths) !== Number(normalizedBillingMonths) ||
-        Number(snapshot.employeeCount || 0) !== Number(employeeCount || 0) ||
-        String(snapshot.promoCode || '') !== String(promoCode || '') ||
-        String(snapshot.renewalMode || 'manual') !== String(normalizedRenewalMode) ||
-        !sameAddons ||
-        Number(subscriptionOrder.amount_paise) <= 0) {
+    if (!matchesSubscriptionOrderSnapshot({
+      snapshot,
+      request: {
+        planSlug: selectedPlanSlug,
+        selectedAddons: normalizedAddons,
+        billingMonths: normalizedBillingMonths,
+        employeeCount,
+        promoCode,
+        renewalMode: normalizedRenewalMode,
+      },
+      amountPaise: subscriptionOrder.amount_paise,
+    })) {
       return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Subscription selection does not match the server-created payment order.', 400);
     }
 
