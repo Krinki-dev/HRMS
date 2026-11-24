@@ -13,6 +13,17 @@ const HERO_DEFAULTS = {
   ctaSub:   'No credit card required',
 };
 
+const CTA_DEFAULTS = {
+  heading: 'Bring HR, payroll and compliance together in one system.',
+  subhead: 'Start with a free trial, sign in to continue, or talk to us for enterprise and deployment discussions.',
+  primaryText: 'Sign up free',
+  primaryUrl: '/register',
+  secondaryText: 'Login',
+  secondaryUrl: '/login',
+  contactText: 'Contact us',
+  contactUrl: '/contact',
+};
+
 const FEATURE_DEFAULTS = [
   { icon: '₹',  title: 'Payroll on all plans',           desc: 'Payslips, PF, ESI, TDS — included in every plan. Not a paid addon.' },
   { icon: '🤖', title: 'Browser automation (unique)',     desc: 'Auto-file ECR on EPFO. Auto-file ESI challan. Aadhaar KYC auto-fill. No competitor has this.' },
@@ -28,6 +39,7 @@ export default function AdminMarketing() {
   const [hero,   setHero]     = useState(HERO_DEFAULTS);
   const [features, setFeatures] = useState(FEATURE_DEFAULTS);
   const [testimonials, setTestimonials] = useState([]);
+  const [cta, setCta] = useState(CTA_DEFAULTS);
   const [copied, setCopied]   = useState(false);
 
   // 1. Fetch current marketing settings from DB
@@ -49,6 +61,16 @@ export default function AdminMarketing() {
       setHero(h => ({ ...h, ...marketingRes, heading: marketingRes.heroHeading || marketingRes.heading || h.heading, subhead: marketingRes.heroSubhead || marketingRes.subhead || h.subhead }));
       if (Array.isArray(marketingRes.features)) setFeatures(marketingRes.features);
       if (Array.isArray(marketingRes.testimonials)) setTestimonials(marketingRes.testimonials);
+      setCta(current => ({ ...current,
+        heading: marketingRes.bottomCtaHeading || current.heading,
+        subhead: marketingRes.bottomCtaSubhead || current.subhead,
+        primaryText: marketingRes.bottomCtaPrimaryText || current.primaryText,
+        primaryUrl: marketingRes.bottomCtaPrimaryUrl || current.primaryUrl,
+        secondaryText: marketingRes.bottomCtaSecondaryText || current.secondaryText,
+        secondaryUrl: marketingRes.bottomCtaSecondaryUrl || current.secondaryUrl,
+        contactText: marketingRes.bottomCtaContactText || current.contactText,
+        contactUrl: marketingRes.bottomCtaContactUrl || current.contactUrl,
+      }));
     }
   }, [marketingRes]);
 
@@ -224,26 +246,45 @@ export default function AdminMarketing() {
 
         {active === 'CTA' && (
           <div className="card" style={{ padding: '16px 20px' }}>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 14 }}>Call-to-action links</div>
-            <table className="data-table">
-              <thead><tr><th>Section</th><th>CTA text</th><th>URL</th><th>Status</th></tr></thead>
-              <tbody>
-                {[
-                  { section: 'Hero banner',        text: 'Start free trial',     url: '/register', status: 'active' },
-                  { section: 'Pricing (Starter)',   text: 'Get Starter',          url: '/register?plan=starter', status: 'active' },
-                  { section: 'Pricing (Pro)',        text: 'Get Professional',     url: '/register?plan=pro',     status: 'active' },
-                  { section: 'Pricing (Enterprise)', text: 'Contact sales',        url: 'mailto:sales@syntern.in', status: 'active' },
-                  { section: 'Bottom banner',       text: 'Book a demo',           url: 'mailto:demo@syntern.in',  status: 'active' },
-                ].map((r, i) => (
-                  <tr key={i}>
-                    <td style={{ fontSize: 12 }}>{r.section}</td>
-                    <td style={{ fontSize: 11, fontWeight: 500 }}>{r.text}</td>
-                    <td style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--admin-accent)' }}>{r.url}</td>
-                    <td><span className="badge badge-active" style={{ fontSize: 9 }}>Active</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Bottom banner actions</div>
+            <div style={{ fontSize: 11, color: 'var(--admin-text-soft)', marginBottom: 14 }}>
+              Edit the public landing-page headline, supporting text and navigation actions. URLs must be internal paths beginning with /.
+            </div>
+            <div style={{ display: 'grid', gap: 12 }}>
+              <label style={{ fontSize: 11, color: 'var(--admin-text-soft)' }}>Headline
+                <input className="form-input" maxLength={180} value={cta.heading} onChange={e => setCta(v => ({ ...v, heading: e.target.value }))} />
+              </label>
+              <label style={{ fontSize: 11, color: 'var(--admin-text-soft)' }}>Supporting text
+                <textarea className="form-input" rows={3} maxLength={400} value={cta.subhead} onChange={e => setCta(v => ({ ...v, subhead: e.target.value }))} />
+              </label>
+              {[
+                ['Primary button', 'primaryText', 'primaryUrl'],
+                ['Secondary button', 'secondaryText', 'secondaryUrl'],
+                ['Contact button', 'contactText', 'contactUrl'],
+              ].map(([label, textKey, urlKey]) => (
+                <div key={textKey} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <label style={{ fontSize: 11, color: 'var(--admin-text-soft)' }}>{label} text
+                    <input className="form-input" maxLength={50} value={cta[textKey]} onChange={e => setCta(v => ({ ...v, [textKey]: e.target.value }))} />
+                  </label>
+                  <label style={{ fontSize: 11, color: 'var(--admin-text-soft)' }}>{label} URL
+                    <input className="form-input" maxLength={180} value={cta[urlKey]} onChange={e => setCta(v => ({ ...v, [urlKey]: e.target.value }))} placeholder="/register" />
+                  </label>
+                </div>
+              ))}
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button className="btn-primary" type="button" disabled={saveM.isPending || !cta.heading.trim() || !cta.subhead.trim() || ![cta.primaryUrl, cta.secondaryUrl, cta.contactUrl].every(url => /^\/(?!\/)/.test(url))} onClick={() => saveM.mutate({
+                  ...(marketingRes || {}),
+                  bottomCtaHeading: cta.heading,
+                  bottomCtaSubhead: cta.subhead,
+                  bottomCtaPrimaryText: cta.primaryText,
+                  bottomCtaPrimaryUrl: cta.primaryUrl,
+                  bottomCtaSecondaryText: cta.secondaryText,
+                  bottomCtaSecondaryUrl: cta.secondaryUrl,
+                  bottomCtaContactText: cta.contactText,
+                  bottomCtaContactUrl: cta.contactUrl,
+                })}>{saveM.isPending ? 'Saving…' : 'Save CTA section'}</button>
+              </div>
+            </div>
           </div>
         )}
       </div>
