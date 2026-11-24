@@ -90,7 +90,10 @@ router.post('/plans/calculate', async (req, res) => {
     const result = await svc.calculatePrice({ planSlug, selectedAddons, billingMonths, employeeCount, promoCode });
     return sendSuccess(res, result);
   } catch (err) {
-    return sendError(res, ERROR_CODES.SERVER, err.message || 'Calculation failed', 500);
+    const message = String(err?.message || 'Calculation failed');
+    const validation = /^(A valid plan|Billing period|Employee count|Selected add-ons|Duplicate add-ons|Selected plan|Module |Pricing is not configured|Discount configuration|Promo code|Calculated )/.test(message);
+    return sendError(res, validation ? ERROR_CODES.VALIDATION : ERROR_CODES.SERVER,
+      validation ? message : 'Calculation failed', validation ? 400 : 500);
   }
 });
 
