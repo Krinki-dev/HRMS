@@ -4,6 +4,8 @@ import toast from 'react-hot-toast';
 import { adminApi } from '../../services/adminApi';
 import '../admin/AdminLayout.css';
 
+const DOMAIN_RE = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$/i;
+
 export default function AdminDomains() {
   const qc = useQueryClient();
   const [addModal, setAddModal] = useState(false);
@@ -17,6 +19,8 @@ export default function AdminDomains() {
   const allTenants  = (res?.data ?? res)?.tenants || [];
   const withDomain  = allTenants.filter(t => t.customDomain);
   const withoutDomain = allTenants.filter(t => !t.customDomain && t.plan !== 'free' && t.plan !== 'trial');
+  const normalizedDomain = form.customDomain.trim().toLowerCase().replace(/\\.$/, '');
+  const domainValid = DOMAIN_RE.test(normalizedDomain);
 
   const updateM = useMutation({
     mutationFn: ({ id, customDomain }) => adminApi.updateTenant(id, { customDomain }),
@@ -126,10 +130,10 @@ export default function AdminDomains() {
           <div style={{ color: 'var(--admin-text-muted)' }}># In your DNS provider, add:</div>
           <div>Type: <strong>CNAME</strong></div>
           <div>Host: <strong>hr</strong> (or whatever subdomain you want)</div>
-          <div>Value: <strong>syntern.in</strong></div>
+          <div>Value: <strong>Confirm the target with the deployment / DNS configuration</strong></div>
           <div>TTL: <strong>3600</strong></div>
           <div style={{ marginTop: 8, color: 'var(--admin-text-muted)' }}># Result: hr.yourcompany.com → syntern.in</div>
-          <div style={{ color: 'var(--admin-text-muted)' }}># SSL is auto-provisioned via Let&apos;s Encrypt within 60 seconds</div>
+          <div style={{ color: 'var(--admin-text-muted)' }}># After DNS points to the configured hosting target, verify routing and SSL before marking the domain live</div>
         </div>
       </div>
 
@@ -149,13 +153,13 @@ export default function AdminDomains() {
             <div className="form-group">
               <label className="form-label">Custom domain *</label>
               <input className="form-input" placeholder="hr.clientcompany.com" value={form.customDomain} onChange={e => setForm(f => ({ ...f, customDomain: e.target.value }))} />
-              <div style={{ fontSize: 10, color: 'var(--admin-text-muted)', marginTop: 4 }}>Client must add a CNAME record pointing to syntern.in first</div>
+              <div style={{ fontSize: 10, color: 'var(--admin-text-muted)', marginTop: 4 }}>Client must add the CNAME record pointing to the target confirmed by the hosting configuration</div>
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button className="btn-sm" onClick={() => setAddModal(false)}>Cancel</button>
               <button className="btn-sm" style={{ background: 'var(--admin-accent)', color: '#fff', borderColor: 'var(--admin-accent)' }}
-                onClick={() => updateM.mutate({ id: form.tenantId, customDomain: form.customDomain })}
-                disabled={!form.tenantId || !form.customDomain || updateM.isPending}>
+                onClick={() => updateM.mutate({ id: form.tenantId, customDomain: normalizedDomain })}
+                disabled={!form.tenantId || !domainValid || updateM.isPending}>
                 {updateM.isPending ? 'Saving…' : 'Save mapping'}
               </button>
             </div>
