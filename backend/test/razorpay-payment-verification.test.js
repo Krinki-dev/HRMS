@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const {
   verifyRazorpaySignature,
   isRazorpayPaymentForInvoice,
+  verifyRazorpayWebhookSignature,
 } = require('../shared/utils/razorpayPaymentVerification');
 
 const secret = 'test-secret';
@@ -33,4 +34,14 @@ test('accepts only a captured payment matching the server invoice and gateway or
   assert.equal(isRazorpayPaymentForInvoice({ order, payment: { ...payment, amount: 1 }, invoice }), false);
   assert.equal(isRazorpayPaymentForInvoice({ order: { ...order, receipt: 'OTHER' }, payment, invoice }), false);
   assert.equal(isRazorpayPaymentForInvoice({ order, payment: { ...payment, order_id: 'order_other' }, invoice }), false);
+});
+
+test('verifies Razorpay webhook signatures against exact raw request bytes', () => {
+  const rawBody = Buffer.from('{"event":"payment.captured","payload":{"id":1}}');
+  const webhookSecret = 'webhook-test-secret';
+  const valid = crypto.createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
+  assert.equal(verifyRazorpayWebhookSignature({ rawBody, signature: valid, secret: webhookSecret }), true);
+  assert.equal(verifyRazorpayWebhookSignature({ rawBody: Buffer.from(rawBody.toString() + ' '), signature: valid, secret: webhookSecret }), false);
+  assert.equal(verifyRazorpayWebhookSignature({ rawBody, signature: valid, secret: '' }), false);
+  assert.equal(verifyRazorpayWebhookSignature({ rawBody, signature: 'invalid', secret: webhookSecret }), false);
 });
