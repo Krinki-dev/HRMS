@@ -499,6 +499,21 @@ CREATE INDEX IF NOT EXISTS idx_company_documents_review_queue
   WHERE status IN ('submitted', 'under_review', 'resubmission_required');
 
 
+
+CREATE TABLE IF NOT EXISTS company_document_reviews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  document_id UUID NOT NULL REFERENCES company_documents(id) ON DELETE CASCADE,
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  reviewer_id UUID,
+  from_status TEXT,
+  to_status TEXT NOT NULL,
+  reviewer_note TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_company_document_reviews_document
+  ON company_document_reviews (document_id, created_at DESC);
+
+
 -- VERIFY: List created tables
 -- ================================================================
 SELECT
