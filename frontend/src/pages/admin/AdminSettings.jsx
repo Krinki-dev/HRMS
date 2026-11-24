@@ -74,7 +74,7 @@ export default function AdminSettings() {
   const [testEmail, setTestEmail] = useState('');
 
   // 1. Fetch settings from DB (Live Override) or .env (Fallback)
-  const { data: serverData, isLoading } = useQuery({
+  const { data: serverData, isLoading, isError, refetch } = useQuery({
     queryKey: ['platform-settings'],
     queryFn: () => api.get('/platform/admin/settings').then(res => res.data),
   });
@@ -114,7 +114,8 @@ export default function AdminSettings() {
     saveM.mutate({ section: active, values });
   }
 
-  if (isLoading) return <div className="p-10 text-center text-gray-400">Loading configurations...</div>;
+  if (isLoading) return <div className="admin-empty-state">Loading configurations…</div>;
+  if (isError) return <div className="admin-alert admin-alert--warning">Could not load saved platform settings. Saving is disabled until the settings can be loaded. <button className="btn-sm" type="button" onClick={() => refetch()}>Retry</button></div>;
 
   return (
     <div className="hr-settings-layout">
