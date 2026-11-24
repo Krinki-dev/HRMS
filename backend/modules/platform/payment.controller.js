@@ -506,17 +506,159 @@ exports.handlePayoutWebhook = async (_req, res) => {
   });
 };
 
-/** Subscription checkout is intentionally fail-closed until the complete
- * Razorpay subscription ledger + activation transaction is implemented.
- * These exports keep Express route registration valid without accepting
- * an unverified payment or activating a plan from client input.
+
+/**
+ * Razorpay-only paid subscription checkout. Prices are server-calculated;
+ * renewal is manual and payment activation is idempotently ledger-backed.
  */
-exports.createSubscriptionOrder = async (_req, res) => {
-  return sendError(res, ERROR_CODES.VALIDATION,
-    'Paid subscription checkout is temporarily unavailable while secure payment verification is being completed. No charge has been made.', 503);
+exports.createSubscriptionOrder = async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId || req.user?.company_id;
+    if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Tenant session required', 401);
+    const { planSlug, selectedAddons = [], billingMonths = 1, promoCode, method = 'razorpay', renewalMode = 'manual' } = req.body || {};
+    if (method !== 'razorpay') return sendError(res, ERROR_CODES.VALIDATION, 'Only Razorpay is available at launch.', 503);
+    if (renewalMode !== 'manual') return sendError(res, ERROR_CODES.VALIDATION, 'Only manual renewal is supported.', 400);
+    if (!planSlug || !Array.isArray(selectedAddons) || selectedAddons.length > 20 || ![1, 6, 12, 24].includes(Number(billingMonths))) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Invalid plan selection.', 400);
+    }
+    const tenant = await withBillingRLS(req, tenantId, (tx) => tx.tenants.findUnique({
+      where: { id: tenantId },
+      select: { id: true, name: true, admin_name: true, admin_email: true, is_active: true }
+    }));
+    if (!tenant || !tenant.is_active) return sendError(res, ERROR_CODES.NOT_FOUND, 'Active company account not found.', 404);
+
+    const plans = await plansService.getPlans();
+    const plan = plans.find((item) => item.slug === planSlug);
+    if (!plan || plan.slug === 'free' || plan.slug === 'custom') {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Choose an available paid plan. Custom plans require a quote.', 400);
+    }
+    const allowedAddons = new Set(plan.addon_modules || []);
+    const addons = [...new Set(selectedAddons.map(String))].sort();
+    if (addons.some((item) => !allowedAddons.has(item))) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'One or more selected add-ons are not available for this plan.', 400);
+    }
+    const employeeCount = Math.max(0, Math.min(100000, Number(req.body.employeeCount) || 0));
+    const price = await plansService.calculatePrice({
+      planSlug, selectedAddons: addons, billingMonths: Number(billingMonths),
+      employeeCount, promoCode: promoCode ? String(promoCode).trim() : undefined,
+    });
+    if (price.isCustomQuote || !Number.isSafeInteger(price.total_paise) || price.total_paise <= 0) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'This plan requires a custom quote or has an invalid amount.', 400);
+    }
+    const rp = getRazorpay();
+    if (!rp) return sendError(res, ERROR_CODES.SERVER, 'Razorpay is not configured.', 503);
+    const receipt = ('SUB-' + tenantId.slice(0, 8) + '-' + Date.now()).slice(0, 40);
+    const order = await rp.orders.create({
+      amount: price.total_paise, currency: 'INR', receipt,
+      notes: { tenantId, planSlug, purpose: 'subscription' },
+    });
+    if (!order?.id || Number(order.amount) !== price.total_paise || String(order.currency).toUpperCase() !== 'INR') {
+      return sendError(res, ERROR_CODES.SERVER, 'Razorpay returned an invalid order.', 502);
+    }
+    const snapshot = {
+      planSlug, selectedAddons: addons, billingMonths: Number(billingMonths),
+      employeeCount, promoCode: promoCode ? String(promoCode).trim() : '',
+      renewalMode: 'manual', price,
+    };
+    await withBillingRLS(req, tenantId, (tx) => tx.payment_orders.create({
+      data: {
+        tenant_id: tenantId, purpose: 'subscription', gateway: 'razorpay',
+        gateway_order_id: order.id, amount_paise: price.total_paise,
+        currency: 'INR', status: 'created', metadata: snapshot,
+      },
+    }));
+    return sendSuccess(res, {
+      orderId: order.id, amount: order.amount, currency: order.currency,
+      keyId: process.env.RAZORPAY_KEY_ID, companyName: tenant.name || 'Syntern HRMS',
+      description: plan.name + ' subscription — ' + billingMonths + ' month(s)',
+      prefill: { name: tenant.admin_name || '', email: tenant.admin_email || '' },
+    }, 'Razorpay order created');
+  } catch (error) {
+    logger.error('[createSubscriptionOrder] Failed:', error);
+    return sendError(res, ERROR_CODES.SERVER, 'Could not create subscription order. No payment has been confirmed.', 500);
+  }
 };
 
-exports.verifySubscription = async (_req, res) => {
-  return sendError(res, ERROR_CODES.VALIDATION,
-    'Subscription verification is temporarily unavailable. No plan has been activated; contact support if your bank shows a charge.', 503);
+exports.verifySubscription = async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId || req.user?.company_id;
+    if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Tenant session required', 401);
+    const { razorpay_order_id: orderId, razorpay_payment_id: paymentId, razorpay_signature: signature } = req.body || {};
+    const secret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
+    if (!secret || !orderId || !paymentId || !signature) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Payment verification details are incomplete.', 400);
+    }
+    if (!verifyRazorpaySignature({ orderId, paymentId, signature, secret })) {
+      await billingLogger.logInvalidSignature({ gateway: 'razorpay', req });
+      return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Invalid Razorpay payment signature.', 400);
+    }
+    const stored = await withBillingRLS(req, tenantId, (tx) => tx.payment_orders.findFirst({
+      where: { tenant_id: tenantId, purpose: 'subscription', gateway: 'razorpay', gateway_order_id: orderId },
+    }));
+    if (!stored) return sendError(res, ERROR_CODES.NOT_FOUND, 'Subscription order was not found for this company.', 404);
+    if (stored.status === 'captured') {
+      if (stored.gateway_payment_id === paymentId) return sendSuccess(res, { verified: true, alreadyProcessed: true }, 'Subscription payment already verified.');
+      return sendError(res, ERROR_CODES.CONFLICT, 'This order has already been processed.', 409);
+    }
+    if (stored.status !== 'created') return sendError(res, ERROR_CODES.CONFLICT, 'This payment order is no longer payable.', 409);
+
+    const snapshot = stored.metadata || {};
+    const rp = getRazorpay();
+    if (!rp) return sendError(res, ERROR_CODES.SERVER, 'Razorpay is not configured.', 503);
+    const [gatewayOrder, gatewayPayment] = await Promise.all([rp.orders.fetch(orderId), rp.payments.fetch(paymentId)]);
+    if (String(gatewayOrder.id) !== String(orderId) ||
+        Number(gatewayOrder.amount) !== Number(stored.amount_paise) ||
+        String(gatewayOrder.currency).toUpperCase() !== String(stored.currency).toUpperCase() ||
+        String(gatewayPayment.order_id) !== String(orderId) ||
+        Number(gatewayPayment.amount) !== Number(stored.amount_paise) ||
+        String(gatewayPayment.currency).toUpperCase() !== String(stored.currency).toUpperCase() ||
+        gatewayPayment.status !== 'captured' ||
+        String(gatewayOrder.notes?.tenantId || '') !== String(tenantId) ||
+        gatewayOrder.notes?.purpose !== 'subscription') {
+      return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Captured payment does not match the registered subscription order.', 400);
+    }
+    const currentRequest = {
+      planSlug: req.body.planSlug || snapshot.planSlug,
+      selectedAddons: req.body.selectedAddons || snapshot.selectedAddons,
+      billingMonths: req.body.billingMonths || snapshot.billingMonths,
+      employeeCount: req.body.employeeCount ?? snapshot.employeeCount,
+      promoCode: req.body.promoCode ?? snapshot.promoCode,
+      renewalMode: 'manual',
+    };
+    if (!matchesSubscriptionOrderSnapshot({ snapshot, request: currentRequest, amountPaise: stored.amount_paise }) ||
+        Number(snapshot.price?.total_paise) !== Number(stored.amount_paise) || snapshot.renewalMode !== 'manual') {
+      return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Subscription selection does not match the stored order.', 400);
+    }
+    const plan = (await plansService.getPlans()).find((item) => item.slug === snapshot.planSlug);
+    if (!plan || !plan.is_active) return sendError(res, ERROR_CODES.VALIDATION, 'The selected plan is no longer available.', 409);
+
+    const expiry = new Date();
+    expiry.setMonth(expiry.getMonth() + Number(snapshot.billingMonths));
+    await withBillingRLS(req, tenantId, async (tx) => {
+      const claimed = await tx.payment_orders.updateMany({
+        where: { id: stored.id, tenant_id: tenantId, status: 'created', gateway_payment_id: null },
+        data: { gateway_payment_id: paymentId, status: 'captured', updated_at: new Date() },
+      });
+      if (claimed.count !== 1) throw new Error('SUBSCRIPTION_ORDER_ALREADY_PROCESSED');
+      await tx.tenants.update({
+        where: { id: tenantId },
+        data: { plan: plan.slug, plan_expires_at: expiry, max_employees: plan.employee_cap || 200000 },
+      });
+      const modules = [...new Set([...(plan.included_modules || []), ...(snapshot.selectedAddons || [])])];
+      for (const moduleName of modules) {
+        await tx.tenant_modules.upsert({
+          where: { uq_tenant_module: { tenant_id: tenantId, module_name: moduleName } },
+          update: { is_active: true, disabled_at: null, enabled_at: new Date() },
+          create: { tenant_id: tenantId, module_name: moduleName, is_active: true },
+        });
+      }
+    });
+    return sendSuccess(res, { verified: true, plan: plan.slug, expiresAt: expiry }, 'Subscription payment verified and plan activated.');
+  } catch (error) {
+    if (error.message === 'SUBSCRIPTION_ORDER_ALREADY_PROCESSED') {
+      return sendError(res, ERROR_CODES.CONFLICT, 'This subscription payment is already being processed.', 409);
+    }
+    logger.error('[verifySubscription] Failed:', error);
+    return sendError(res, ERROR_CODES.SERVER, 'Payment could not be verified or activated. Contact support before retrying.', 500);
+  }
 };
