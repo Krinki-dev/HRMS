@@ -129,3 +129,16 @@ The user should not need to make routine technical choices. Their attention is r
 ## Current safety boundary
 
 No production database migration, real payment, live customer-data change or production deployment is authorized by this plan. Keep implementation on `architecture/postgres-tenant-isolation`; never modify `main` directly.
+
+
+## 2026-11-25 — Additional production blocker discovered
+
+A source audit found the shared `checkModuleEnabled()` middleware was a no-op and the primary module routers did not mount it. This allowed API endpoints to be reachable without checking the server-persisted tenant module entitlement set. The first enforcement slice is now implemented for Employees, Attendance, Leave, Payroll, Compliance, Recruitment, Performance, Training, Assets, Expenses and Reports, with unit tests added (not yet run). Remaining module routers and per-user authorization still need review. Treat this as a P0 security/entitlement gate until CI and PostgreSQL-backed tests verify it.
+
+## Revised immediate module execution
+
+1. Verify the new module entitlement middleware tests and exact catalog-to-`tenant_modules` name alignment.
+2. Audit Employees end-to-end (admin CRUD, employee self-service, identity/document data, import/export, access control, frontend states and persistence).
+3. Audit Attendance + Leave together (self-service ownership, manager/HR approvals, shift/calendar rules, payroll handoff).
+4. Audit Payroll + Compliance together (calculations, lock/publish, statutory thresholds, exports, state configuration and audit).
+5. Fix the highest-severity correctness/security gaps found, then continue secondary modules.
