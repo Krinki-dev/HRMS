@@ -53,7 +53,7 @@ export default function AdminMarketing() {
     mutationFn: (values) => api.put('/platform/admin/settings', { section: 'Marketing', values }),
     onSuccess: () => {
       toast.success('Landing page updated successfully');
-      qc.invalidateQueries(['admin-marketing']);
+      qc.invalidateQueries({ queryKey: ['admin-marketing'] });
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to save'),
   });
@@ -67,7 +67,14 @@ export default function AdminMarketing() {
   }
 
   function handleSave() {
-    saveM.mutate(hero);
+    saveM.mutate({
+      ...(marketingRes || {}),
+      heroHeading: hero.heading,
+      heroSubhead: hero.subhead,
+      ctaText: hero.ctaText,
+      ctaUrl: hero.ctaUrl,
+      ctaSub: hero.ctaSub,
+    });
   }
 
   if (isLoading) return <div className="p-10 text-center text-gray-400">Loading landing page content...</div>;
