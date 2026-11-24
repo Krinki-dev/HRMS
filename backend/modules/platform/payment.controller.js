@@ -604,9 +604,22 @@ exports.handleWebhook = async (req, res) => {
       }));
     } catch (inboxError) {
       if (inboxError.code === 'P2002' || inboxError.code === '23505') {
-        return res.status(200).json({ status: 'duplicate' });
+        const existingEvent = await withPlatformAdminRLS(centralPrisma, (tx) =>
+          tx.payment_webhook_events.findUnique({
+            where: { gateway_gateway_event_id: { gateway: 'razorpay', gateway_event_id: String(webhookEventId) } },
+          })
+        );
+        if (existingEvent?.status === 'failed') {
+          await withPlatformAdminRLS(centralPrisma, (tx) => tx.payment_webhook_events.update({
+            where: { id: existingEvent.id },
+            data: { status: 'received', last_error: null, received_at: new Date(), processed_at: null },
+          }));
+        } else {
+          return res.status(200).json({ status: 'duplicate' });
+        }
+      } else {
+        throw inboxError;
       }
-      throw inboxError;
     }
     // Only payment.captured contains a payment entity with an order_id and
     // captured amount. order.paid alone is not used to mark invoices paid.
