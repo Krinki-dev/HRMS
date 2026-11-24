@@ -15,6 +15,32 @@ const logger = require('../../shared/utils/logger');
 const { normalizeHostname, buildHostnameCandidates } = require('../../shared/utils/domainRouting');
 
 /**
+ * GET /marketing
+ * Public, read-only landing-page content. Never exposes platform secrets.
+ */
+router.get('/marketing', async (req, res) => {
+  try {
+    const rows = await centralPrisma.$queryRaw`
+      SELECT values
+      FROM platform_settings
+      WHERE id = 'Marketing'
+      LIMIT 1
+    `;
+    const values = rows[0]?.values || {};
+    return sendSuccess(res, {
+      heroHeading: typeof values.heroHeading === 'string' ? values.heroHeading : null,
+      heroSubhead: typeof values.heroSubhead === 'string' ? values.heroSubhead : null,
+      ctaText: typeof values.ctaText === 'string' ? values.ctaText : null,
+      ctaUrl: typeof values.ctaUrl === 'string' ? values.ctaUrl : null,
+      ctaSub: typeof values.ctaSub === 'string' ? values.ctaSub : null,
+    });
+  } catch (err) {
+    logger.warn(`[Marketing] Public content unavailable: ${err.message}`);
+    return sendSuccess(res, {});
+  }
+});
+
+/**
  * GET /brand
  * Fetches tenant-specific branding like colors and logos based on hostname.
  */
