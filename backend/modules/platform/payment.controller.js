@@ -152,17 +152,43 @@ exports.createOrder = async (req, res) => {
       return sendError(res, ERROR_CODES.SERVER, 'Payment gateway returned an invalid order', 502);
     }
 
-    await withBillingRLS(req, invoice.tenant_id, (tx) => tx.payment_orders.create({
-      data: {
-        tenant_id: invoice.tenant_id,
-        invoice_id: invoice.id,
-        gateway: 'razorpay',
-        gateway_order_id: order.id,
-        amount_paise: invoice.total_paise,
-        currency: invoice.currency,
-        status: 'created',
-      },
-    }));
+    try {
+      await withBillingRLS(req, invoice.tenant_id, (tx) => tx.payment_orders.create({
+        data: {
+          tenant_id: invoice.tenant_id,
+          invoice_id: invoice.id,
+          gateway: 'razorpay',
+          gateway_order_id: order.id,
+          amount_paise: invoice.total_paise,
+          currency: invoice.currency,
+          status: 'created',
+        },
+      }));
+    } catch (ledgerError) {
+      // Concurrent checkout requests can both create a gateway order before
+      // the partial unique index admits only one open ledger row. Recover the
+      // winner rather than returning a misleading generic server error.
+      if (ledgerError.code === 'P2002' || ledgerError.code === '23505') {
+        const winner = await withBillingRLS(req, invoice.tenant_id, (tx) => tx.payment_orders.findFirst({
+          where: { invoice_id: invoice.id, tenant_id: invoice.tenant_id, gateway: 'razorpay', status: 'created' },
+          orderBy: { created_at: 'desc' },
+        }));
+        if (winner &&
+            Number(winner.amount_paise) === Number(invoice.total_paise) &&
+            String(winner.currency).toUpperCase() === String(invoice.currency).toUpperCase()) {
+          return sendSuccess(res, {
+            orderId: winner.gateway_order_id,
+            amount: winner.amount_paise,
+            currency: winner.currency,
+            keyId: process.env.RAZORPAY_KEY_ID,
+            companyName: 'Syntern HRMS',
+            description: `Payment for ${invoice.invoice_no}`,
+            prefill: { name: invoice.tenant.admin_name, email: invoice.tenant.admin_email },
+          });
+        }
+      }
+      throw ledgerError;
+    }
 
     return sendSuccess(res, {
       orderId: order.id,
