@@ -207,8 +207,13 @@ async function savePlan(planData) {
 }
 
 async function deletePlan(id) {
-  const data  = await _readForWrite(KEY.PLANS);
-  const plans = (data?.plans || DEFAULT_PLANS).filter(p => p.id !== id);
+  const data = await _readForWrite(KEY.PLANS);
+  const plans = [...(data?.plans || DEFAULT_PLANS)];
+  const index = plans.findIndex((plan) => plan.id === id);
+  if (index === -1) throw new Error('Plan not found');
+  if (plans[index].slug === 'free') throw new Error('The free baseline plan cannot be removed; deactivate or edit other plans instead.');
+  // Retain the catalog record for historical subscription references and auditability.
+  plans[index] = { ...plans[index], is_active: false };
   await _write(KEY.PLANS, { plans });
 }
 
