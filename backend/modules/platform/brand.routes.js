@@ -121,6 +121,27 @@ const { upsertBackupConfigForTenant } = require('./tenantDeletion.service');
  */
 const ONBOARDING_STEPS = new Set(['org', 'branding', 'work', 'payroll', 'email', 'compliance', 'backup']);
 
+
+// Return persisted step markers so a customer can resume onboarding after login/reload.
+router.get('/onboarding/progress', auth, async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId || req.user?.company_id;
+    if (!tenantId) return sendError(res, ERROR_CODES.VALIDATION, 'Tenant ID required', 400);
+    const rows = await centralPrisma.$queryRaw`
+      SELECT onboarding_progress, is_setup_complete
+      FROM tenants WHERE id = ${tenantId}::uuid AND deleted_at IS NULL LIMIT 1
+    `;
+    if (!rows.length) return sendError(res, ERROR_CODES.NOT_FOUND, 'Company account not found', 404);
+    return sendSuccess(res, {
+      progress: rows[0].onboarding_progress || {},
+      isSetupComplete: rows[0].is_setup_complete === true,
+    }, 'Onboarding progress retrieved');
+  } catch (err) {
+    logger.error('[onboarding/progress]', err);
+    return sendError(res, ERROR_CODES.SERVER, 'Failed to load onboarding progress', 500);
+  }
+});
+
 router.post('/onboarding/save-step', auth, async (req, res) => {
   try {
     const { step, data = {}, skipped = false } = req.body || {};
