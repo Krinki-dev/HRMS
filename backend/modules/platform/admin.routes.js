@@ -287,6 +287,15 @@ router.put('/tenants/:id', async (req, res) => {
       adminName, adminEmail, adminPhone,
     } = req.body;
 
+    let normalizedCustomDomain = customDomain;
+    if (customDomain !== undefined && customDomain !== null) {
+      normalizedCustomDomain = String(customDomain).trim().toLowerCase().replace(/\\.$/, '');
+      const domainPattern = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$/i;
+      if (!domainPattern.test(normalizedCustomDomain)) {
+        return sendError(res, ERROR_CODES.VALIDATION, 'Enter a valid fully-qualified domain name without protocol, path, or port.', 400);
+      }
+    }
+
     const setParts = [`updated_at = NOW()`];
     const params   = [];
     let idx = 1;
@@ -301,7 +310,7 @@ router.put('/tenants/:id', async (req, res) => {
     set('plan',             plan);
     set('plan_expires_at',  planExpiresAt);
     set('max_employees',    maxEmployees);
-    set('custom_domain',    customDomain);
+    set('custom_domain',    normalizedCustomDomain);
     set('logo_url',         logoUrl);
     set('primary_color',    primaryColor);
     set('background_color', backgroundColor);
