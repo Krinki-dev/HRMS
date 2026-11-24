@@ -14,7 +14,7 @@ export default function AdminDomains() {
     queryFn:  () => adminApi.listTenants({ limit: 100, status: 'all' }),
     staleTime: 60_000,
   });
-  const allTenants  = res?.tenants || [];
+  const allTenants  = (res?.data ?? res)?.tenants || [];
   const withDomain  = allTenants.filter(t => t.customDomain);
   const withoutDomain = allTenants.filter(t => !t.customDomain && t.plan !== 'free' && t.plan !== 'trial');
 
