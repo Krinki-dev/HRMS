@@ -151,14 +151,14 @@ async function _write(key, payload) {
 
 // ── Plans ─────────────────────────────────────────────────────────────────────
 async function getPlans({ includeInactive = false } = {}) {
-  const data  = await _readForWrite(KEY.PLANS);
+  const data  = await _read(KEY.PLANS);
   let plans   = data?.plans || DEFAULT_PLANS;
   if (!includeInactive) plans = plans.filter(p => p.is_active);
   return plans.sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
 }
 
 async function savePlan(planData) {
-  const data  = await _read(KEY.PLANS);
+  const data  = await _readForWrite(KEY.PLANS);
   let plans   = data?.plans || DEFAULT_PLANS;
   const isNew = !planData.id;
 
