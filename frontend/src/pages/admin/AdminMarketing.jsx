@@ -168,31 +168,33 @@ export default function AdminMarketing() {
           <div className="card" style={{ padding: '16px 20px' }}>
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Pricing display</div>
             <div style={{ fontSize: 11, color: 'var(--admin-text-soft)', marginBottom: 14 }}>
-              Dynamic pricing (₹1,499 Base Plan) synced with platform catalog.
+              Read-only preview of the live plan catalog used by onboarding and server-side checkout calculations.
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
               {catalogPlans.map(p => {
-                const color = p.id === 'pro' ? '#8b5cf6' : p.id === 'enterprise' ? '#f59e0b' : '#3b82f6';
+                const color = p.is_popular ? '#8b5cf6' : p.slug === 'custom' ? '#f59e0b' : '#3b82f6';
+                const hasFixedPrice = Number.isFinite(Number(p.base_price_paise)) && p.base_price_paise !== null;
                 return (
-                <div key={p.id} style={{ background: p.highlight ? 'rgba(236, 232, 255, 0.5)' : 'var(--admin-surface-alt)', border: `1.5px solid ${p.highlight ? 'rgba(196,181,253,0.8)' : 'var(--admin-border)'}`, borderRadius: 10, padding: '14px 14px', textAlign: 'center' }}>
+                <div key={p.id} style={{ background: p.is_popular ? 'rgba(236, 232, 255, 0.5)' : 'var(--admin-surface-alt)', border: `1.5px solid ${p.is_popular ? 'rgba(196,181,253,0.8)' : 'var(--admin-border)'}`, borderRadius: 10, padding: '14px 14px', textAlign: 'center' }}>
                   <div style={{ display: 'flex', justifyContent: 'center', gap: 4, alignItems: 'center', marginBottom: 6 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: color, textTransform: 'uppercase' }}>{p.name}</div>
-                    {p.originalPrice && <div style={{ fontSize: 9, color: 'var(--admin-text-soft)', textDecoration: 'line-through' }}>₹{p.originalPrice}</div>}
+                    <div style={{ fontSize: 11, fontWeight: 700, color, textTransform: 'uppercase' }}>{p.name}</div>
+                    {p.badge && <div style={{ fontSize: 9, color: 'var(--admin-text-soft)' }}>{p.badge}</div>}
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 800 }}>
-                    {p.price ? `₹${p.price.toLocaleString('en-IN')}` : 'Custom'}
-                    <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--admin-text-soft)' }}>{p.period ? `/${p.period}` : ''}</span>
+                    {hasFixedPrice ? `₹${(Number(p.base_price_paise) / 100).toLocaleString('en-IN')}` : 'Custom quote'}
+                    <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--admin-text-soft)' }}>{hasFixedPrice ? '/mo' : ''}</span>
                   </div>
                   <div style={{ fontSize: 10, color: 'var(--admin-text-soft)', marginTop: 4 }}>
-                    {p.id === 'enterprise' ? 'Own Server Mode' : `First ${p.baseEmployees} Employees`}
+                    {p.employee_cap == null ? 'Unlimited employees' : `Up to ${p.employee_cap} employees`}
                   </div>
-                  <div style={{ fontSize: 9, color: 'var(--admin-text-soft)' }}>+18% GST Extra</div>
+                  <div style={{ fontSize: 9, color: 'var(--admin-text-soft)' }}>GST at checkout</div>
                 </div>
                 );
               })}
+              {catalogPlans.length === 0 && <div className="admin-empty-state">Plan catalog is unavailable.</div>}
             </div>
             <div style={{ marginTop: 14, fontSize: 11, color: 'var(--admin-text-soft)', lineHeight: 1.7 }}>
-              <strong>To change a price:</strong> Open <code>backend/modules/platform/subscription.routes.js</code> → find the <code>PLANS</code> array → change the <code>price</code> value → commit + deploy.
+              <strong>To change a price:</strong> Use the <strong>Pricing &amp; Plans</strong> menu. Checkout totals are recalculated by the backend before a Razorpay order is created.
             </div>
           </div>
         )}
