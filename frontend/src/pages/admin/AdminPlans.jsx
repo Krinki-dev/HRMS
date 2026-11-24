@@ -38,13 +38,14 @@ export default function AdminPlans() {
   const gstRate = plansRes?.data?.gstRate || plansRes?.gstRate || 0;
 
 
-  const MRR = {
-    free:       0,
-    trial:      0,
-    starter:    (bp.starter || 0) * (catalogPlans.find(p => p.id === 'starter')?.price || 1499),
-    pro:        (bp.pro     || 0) * (catalogPlans.find(p => p.id === 'pro')?.price || 4999),
-    enterprise: (bp.enterprise || 0) * 15000,
-  };
+  const MRR = Object.fromEntries(catalogPlans.map((plan) => {
+    const key = plan.slug || plan.id;
+    const count = Number(bp[key] || 0);
+    const monthlyPriceRupees = plan.base_price_paise != null
+      ? Number(plan.base_price_paise) / 100
+      : Number(plan.price || 0);
+    return [key, count * monthlyPriceRupees];
+  }));
   const totalMRR = Object.values(MRR).reduce((s, v) => s + v, 0);
   const ARR      = totalMRR * 12;
 
@@ -140,14 +141,15 @@ export default function AdminPlans() {
 
       {/* ── Plan cards ── */}
       <div className="plans-grid">
-        {catalogPlans.filter(p => p.id !== 'trial').map(plan => {
-          const count = bp[plan.id] || 0;
-          const rev   = MRR[plan.id] || 0;
-          const color = PLAN_COLORS[plan.id] || 'var(--admin-text-soft)';
-          const isEdit = editPlan === plan.id;
+        {catalogPlans.filter(p => (p.slug || p.id) !== 'trial').map(plan => {
+          const planKey = plan.slug || plan.id;
+          const count = bp[planKey] || 0;
+          const rev   = MRR[planKey] || 0;
+          const color = PLAN_COLORS[planKey] || 'var(--admin-text-soft)';
+          const isEdit = editPlan === planKey;
 
           return (
-            <div key={plan.id} className={`plan-card${plan.highlight ? ' featured' : ''}`}>
+            <div key={plan.id} className={`plan-card${plan.is_popular || plan.highlight ? ' featured' : ''}`}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                 <div>
                   <div style={{ fontSize: 11, fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{plan.name}</div>
@@ -182,7 +184,7 @@ export default function AdminPlans() {
                   {plan.maxEmployees ? `Up to ${plan.maxEmployees} employees` : 'Unlimited employees'}
                 </span>
                 <button className="btn-sm"
-                  onClick={() => setEditPlan(isEdit ? null : plan.id)}>
+                  onClick={() => setEditPlan(isEdit ? null : planKey)}>
                   {isEdit ? 'Close details' : 'Plan details'}
                 </button>
               </div>
