@@ -799,6 +799,8 @@ export default function LandingPage() {
   const resumeTimeoutRef = useRef(null);
 
   const goto = (path) => navigate(path);
+  const featureItems = Array.isArray(marketing.features) && marketing.features.length ? marketing.features : FEATURES;
+  const testimonialItems = Array.isArray(marketing.testimonials) ? marketing.testimonials : [];
 
   useEffect(() => {
     let active = true;
@@ -1129,7 +1131,7 @@ export default function LandingPage() {
           </div>
 
           <div className="lp-feature-grid">
-            {FEATURES.map((feature) => (
+            {featureItems.map((feature) => (
               <div key={feature.title} className="lp-reveal">
                 <HoverCard>
                   <div style={S.iconBox}>{feature.icon}</div>
@@ -1295,7 +1297,19 @@ export default function LandingPage() {
       </section>
 
       <section id="cta-section" ref={(el) => (sectionsRef.current[6] = el)} style={S.section}>
-        <div className="lp-container lp-reveal">
+        <div className="lp-container">
+          {testimonialItems.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14, marginBottom: 24 }}>
+              {testimonialItems.map((item, index) => (
+                <div key={index} style={{ ...S.card, padding: 20 }}>
+                  <p style={{ ...S.lead, fontSize: 14, marginBottom: 14 }}>“{item.quote}”</p>
+                  <div style={{ color: '#fff', fontWeight: 700, fontSize: 13 }}>{item.author}</div>
+                  <div style={{ color: '#94A3B8', fontSize: 11 }}>{[item.role, item.company].filter(Boolean).join(' · ')}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="lp-reveal">
           <div style={S.ctaBox}>
             <div style={{ ...S.heroBadge, marginInline: 'auto', marginBottom: 16 }}>GET STARTED</div>
             <h2 style={{ ...S.h2, maxWidth: 860, marginInline: 'auto', marginBottom: 14 }}>Bring HR, payroll and compliance together in one system.</h2>
@@ -1307,6 +1321,7 @@ export default function LandingPage() {
               <button style={{ ...S.btnOutline, padding: '15px 28px', fontSize: 15, color: '#fff', borderColor: 'rgba(255,255,255,0.14)' }} onClick={() => goto('/login')}>Login</button>
               <button style={{ ...S.btnOutline, padding: '15px 28px', fontSize: 15, color: '#fff', borderColor: 'rgba(255,255,255,0.14)' }} onClick={() => goto('/contact')}>Contact us</button>
             </div>
+          </div>
           </div>
         </div>
       </section>
