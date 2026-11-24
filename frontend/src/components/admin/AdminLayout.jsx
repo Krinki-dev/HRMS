@@ -116,8 +116,8 @@ export default function AdminLayout() {
       <div className="admin-main">
         <header className="admin-topbar">
           <div className="topbar-title-group">
-            <div className="topbar-title">Admin Dashboard</div>
-            <div className="topbar-sub">Platform overview</div>
+            <div className="topbar-title">{pageTitle}</div>
+            <div className="topbar-sub">Syntern platform administration</div>
           </div>
 
           <div className="topbar-actions">
