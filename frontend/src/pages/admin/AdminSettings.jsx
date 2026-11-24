@@ -20,18 +20,18 @@ const FORM_SCHEMA = {
   'Theme': [
     { key: 'primaryColor',             label: 'Primary color',                 type: 'text', placeholder: '#2563EB', envKey: 'THEME_PRIMARY_COLOR' },
     { key: 'primaryColorHover',        label: 'Primary hover color',           type: 'text', placeholder: '#1D4ED8', envKey: 'THEME_PRIMARY_HOVER' },
-    { key: 'backgroundColor',          label: 'Background color',              type: 'text', placeholder: '#0f1117', envKey: 'THEME_BG_PRIMARY' },
-    { key: 'secondaryBackgroundColor', label: 'Secondary background color',    type: 'text', placeholder: '#161b22', envKey: 'THEME_BG_SECONDARY' },
-    { key: 'surfaceColor',             label: 'Card / surface color',          type: 'text', placeholder: '#1c2128', envKey: 'THEME_BG_CARD' },
-    { key: 'textColor',                label: 'Primary text color',            type: 'text', placeholder: '#e6edf3', envKey: 'THEME_TEXT_PRIMARY' },
-    { key: 'textSecondaryColor',       label: 'Secondary text color',          type: 'text', placeholder: '#8b949e', envKey: 'THEME_TEXT_SECONDARY' },
-    { key: 'borderColor',              label: 'Border color',                  type: 'text', placeholder: '#30363d', envKey: 'THEME_BORDER' },
-    { key: 'sidebarColor',             label: 'Admin sidebar color',           type: 'text', placeholder: '#161b22', envKey: 'THEME_SIDEBAR' },
-    { key: 'topbarColor',              label: 'Admin topbar color',            type: 'text', placeholder: '#161b22', envKey: 'THEME_TOPBAR' },
-    { key: 'accentSoft',               label: 'Accent soft background',        type: 'text', placeholder: '#388bfd1a', envKey: 'THEME_ACCENT_SOFT' },
-    { key: 'successColor',             label: 'Success color',                 type: 'text', placeholder: '#3fb950', envKey: 'THEME_SUCCESS' },
-    { key: 'warningColor',             label: 'Warning color',                 type: 'text', placeholder: '#d29922', envKey: 'THEME_WARNING' },
-    { key: 'dangerColor',              label: 'Danger color',                  type: 'text', placeholder: '#f85149', envKey: 'THEME_DANGER' },
+    { key: 'backgroundColor',          label: 'Background color',              type: 'text', placeholder: '#f5f6f8', envKey: 'THEME_BG_PRIMARY' },
+    { key: 'secondaryBackgroundColor', label: 'Secondary background color',    type: 'text', placeholder: '#ffffff', envKey: 'THEME_BG_SECONDARY' },
+    { key: 'surfaceColor',             label: 'Card / surface color',          type: 'text', placeholder: '#ffffff', envKey: 'THEME_BG_CARD' },
+    { key: 'textColor',                label: 'Primary text color',            type: 'text', placeholder: '#20242c', envKey: 'THEME_TEXT_PRIMARY' },
+    { key: 'textSecondaryColor',       label: 'Secondary text color',          type: 'text', placeholder: '#555e6d', envKey: 'THEME_TEXT_SECONDARY' },
+    { key: 'borderColor',              label: 'Border color',                  type: 'text', placeholder: '#dfe3e9', envKey: 'THEME_BORDER' },
+    { key: 'sidebarColor',             label: 'Admin sidebar color',           type: 'text', placeholder: '#fbfbfc', envKey: 'THEME_SIDEBAR' },
+    { key: 'topbarColor',              label: 'Admin topbar color',            type: 'text', placeholder: '#ffffff', envKey: 'THEME_TOPBAR' },
+    { key: 'accentSoft',               label: 'Accent soft background',        type: 'text', placeholder: '#e7efff', envKey: 'THEME_ACCENT_SOFT' },
+    { key: 'successColor',             label: 'Success color',                 type: 'text', placeholder: '#18794e', envKey: 'THEME_SUCCESS' },
+    { key: 'warningColor',             label: 'Warning color',                 type: 'text', placeholder: '#946200', envKey: 'THEME_WARNING' },
+    { key: 'dangerColor',              label: 'Danger color',                  type: 'text', placeholder: '#c43d43', envKey: 'THEME_DANGER' },
   ],
   'Email / SMTP': [
     { key: 'smtpHost',   label: 'SMTP host',       type: 'text',     placeholder: 'smtp.gmail.com',       envKey: 'SMTP_HOST' },
@@ -48,11 +48,11 @@ const FORM_SCHEMA = {
       options: [{ v:'fast2sms', l:'Fast2SMS' }, { v:'msg91', l:'MSG91' }, { v:'none', l:'Disabled' }],
       envKey: 'SMS_PROVIDER' },
     { key: 'smsApiKey',   label: 'API key (platform fallback)', type: 'password', placeholder: '(leave blank to keep)', envKey: 'SMS_API_KEY' },
-    { key: 'smsSender',   label: 'Default sender ID',           type: 'text',     placeholder: 'SYNTRN',               envKey: 'SMS_SENDER' },
+    { key: 'smsSenderId', label: 'Default sender ID', type: 'text', placeholder: 'SYNTRN', envKey: 'SMS_SENDER_ID' },
   ],
   'GST settings': [
     { key: 'gstScrapeMode', label: 'Fetch method', type: 'select', placeholder: 'playwright',
-      options: [{ v:'playwright', l:'Playwright automation (free)' }, { v:'gsp', l:'GSP API (paid key required)' }],
+      options: [{ v:'playwright', l:'Official GST portal (assisted browser flow)' }],
       envKey: 'GST_SCRAPE_MODE' },
     { key: 'gstCacheDays',  label: 'Cache TTL (days)', type: 'text', placeholder: '30', envKey: 'GST_CACHE_DAYS' },
   ],
@@ -139,11 +139,11 @@ export default function AdminSettings() {
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--admin-text)' }}>{active}</div>
             <div style={{ fontSize: 11, color: 'var(--admin-text-muted)', marginTop: 2 }}>
               {active === 'Platform' && 'Global platform identity and operational defaults.'}
-              {active === 'Theme' && 'Visual tokens for the Mac-style UI. Stored centrally for cleanup and staged rollout.'}
+              {active === 'Theme' && 'Saved as configuration values for a future rollout. The live application appearance is currently controlled by the shared frontend/src/styles/theme.css tokens.'}
               {active === 'Email / SMTP' && 'Platform-level SMTP for system emails (new company welcome, billing). Tenant-specific SMTP is set per client.'}
               {active === 'SMS gateway' && 'Platform fallback SMS provider. Individual clients configure their own in their settings.'}
               {active === 'GST settings' && 'How GST numbers are verified during company registration.'}
-              {active === 'Security' && 'Global auth and security policies applied to all tenants.'}
+              {active === 'Security' && 'Saved configuration values only. Runtime authentication and rate-limit enforcement remain controlled by the deployed backend configuration until the runtime settings integration is completed.'}
             </div>
           </div>
 
@@ -212,7 +212,7 @@ export default function AdminSettings() {
           </div>
 
           <div className="admin-alert admin-alert--warning" style={{ marginTop: 14 }}>
-            <strong>Note:</strong> Platform settings that map to .env variables (JWT secret, SMTP credentials) require a server restart to take effect after saving. Settings are stored in the central DB and applied on next startup.
+            <strong>Note:</strong> These values are stored in the central settings table. Saving them does not automatically change the running server environment; apply and verify operational changes through the deployment process. Secrets remain masked and must never be pasted into support chats.
           </div>
         </form>
       </div>
