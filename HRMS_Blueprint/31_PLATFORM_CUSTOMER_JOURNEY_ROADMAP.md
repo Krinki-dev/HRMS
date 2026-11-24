@@ -172,3 +172,21 @@ The next onboarding slice has been implemented on the working branch:
 6. Define and implement the tenant document data model and private upload storage integration after checking the existing MinIO/file-upload infrastructure.
 7. Unify trial activation so registration and the trial endpoint cannot reset or diverge the trial period.
 8. Add automated tests and run the full suite before claiming the journey complete.
+
+
+## Implementation progress — latest continuation (2026-11-24)
+
+- Added `GET /platform/onboarding/progress` so the authenticated tenant can retrieve persisted step markers and setup-complete state.
+- Updated the onboarding wizard to resume at the first step without a persisted completion marker after reload/login. Existing marker persistence remains the source of truth.
+- Removed PF/EPFO and ESIC password fields from initial onboarding. The screen now clearly states that portal credentials are deferred to Settings; no user is led to believe those values were saved.
+- Removed development-only trial success responses when the central database lookup or transaction fails. Trial activation now fails closed if it was not persisted.
+- Fixed the Express route-registration defect caused by missing subscription payment controller exports. Both endpoints now return explicit HTTP 503 responses and do not create orders, accept mock payments, or activate plans. **Paid subscription checkout remains blocked** until the complete Razorpay order ledger, server-side capture verification, idempotent plan activation and invoice transaction are implemented and tested. This is an intentional safety stop, not a completed payment integration.
+- Backend dependencies include Multer and MinIO, but a tenant-scoped private document upload/review flow has not yet been implemented or verified. Do not expose uploads until object-storage configuration, private bucket policy, file validation, malware scanning strategy, tenant ownership checks, reviewer audit trail and authorized download are in place.
+- The onboarding progress API depends on the previously added `onboarding_progress` central schema migration. It has **not** been applied to a live database; Prisma client generation and automated tests remain pending.
+
+### Remaining release blockers
+
+1. Implement and test the complete Razorpay-only subscription payment/activation transaction; keep manual renewal only.
+2. Implement private company-document upload, review, rejection/resubmission and audit workflow using the existing storage dependencies only after confirming deployment configuration.
+3. Apply the central schema migration in a controlled non-production environment, regenerate Prisma, and run backend tests/frontend build.
+4. Verify wizard save-step endpoints and the resume/complete path end-to-end against a migrated test database.
