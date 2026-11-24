@@ -1,10 +1,11 @@
 ﻿const express = require('express');
 const router  = express.Router();
 const auth    = require('../../shared/middleware/auth');
-const { checkPermission } = require('../../shared/middleware/permission');
+const { checkPermission, checkModuleEnabled } = require('../../shared/middleware/permission');
 const ctrl    = require('./reports.controller');
 
 router.use(auth);
+router.use(checkModuleEnabled('reports'));
 
 router.get(
   '/attendance/monthly',
