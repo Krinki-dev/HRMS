@@ -31,3 +31,26 @@ CREATE INDEX IF NOT EXISTS idx_company_documents_review_queue
 CREATE UNIQUE INDEX IF NOT EXISTS uq_payment_orders_one_open_subscription
   ON public.payment_orders (tenant_id)
   WHERE purpose = 'subscription' AND gateway = 'razorpay' AND status = 'created';
+
+-- Tenant isolation for document metadata. Platform reviewers use the explicit admin RLS context.
+ALTER TABLE public.company_documents ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS company_documents_select ON public.company_documents;
+CREATE POLICY company_documents_select ON public.company_documents
+  FOR SELECT USING (
+    tenant_id::text = current_setting('app.current_tenant', true)
+    OR current_setting('jwt.claims.is_platform_admin', true) = 'true'
+  );
+DROP POLICY IF EXISTS company_documents_insert ON public.company_documents;
+CREATE POLICY company_documents_insert ON public.company_documents
+  FOR INSERT WITH CHECK (
+    tenant_id::text = current_setting('app.current_tenant', true)
+  );
+DROP POLICY IF EXISTS company_documents_update ON public.company_documents;
+CREATE POLICY company_documents_update ON public.company_documents
+  FOR UPDATE USING (
+    tenant_id::text = current_setting('app.current_tenant', true)
+    OR current_setting('jwt.claims.is_platform_admin', true) = 'true'
+  ) WITH CHECK (
+    tenant_id::text = current_setting('app.current_tenant', true)
+    OR current_setting('jwt.claims.is_platform_admin', true) = 'true'
+  );
