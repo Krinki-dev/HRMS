@@ -129,7 +129,7 @@ async function _read(key) {
 
 async function _write(key, payload) {
   const json = JSON.stringify(payload);
-  await db.$executeRaw`
+  await centralPrisma.$executeRaw`
     INSERT INTO platform_settings (id, values, updated_at)
     VALUES (${key}, ${json}::jsonb, NOW())
     ON CONFLICT (id) DO UPDATE
