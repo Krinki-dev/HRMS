@@ -19,20 +19,14 @@ async function ensureBucket() {
     if (!exists) {
       await minioClient.makeBucket(BUCKET_NAME, process.env.MINIO_REGION || 'us-east-1');
       
-      const policy = JSON.stringify({
-        Version: '2012-10-17',
-        Statement: [
-          {
-            Effect: 'Deny',
-            Principal: '*',
-            Action: 's3:GetObject',
-            Resource: `arn:aws:s3:::${BUCKET_NAME}/*`,
-          },
-        ],
-      });
-      await minioClient.setBucketPolicy(BUCKET_NAME, policy);
       logger.info(`MinIO bucket '${BUCKET_NAME}' created.`);
     }
+    // No public-read policy is ever granted. An empty policy keeps objects private
+    // while allowing authenticated, short-lived presigned URLs to work.
+    await minioClient.setBucketPolicy(BUCKET_NAME, JSON.stringify({
+      Version: '2012-10-17',
+      Statement: [],
+    }));
   } catch (err) {
     logger.error('MinIO bucket init error:', err);
   }
