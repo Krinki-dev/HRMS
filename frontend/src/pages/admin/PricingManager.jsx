@@ -123,7 +123,7 @@ function PlanModal({ plan, onSave, onClose }) {
     base_price_paise:'', employee_cap:'', per_employee_excess_paise:5000,
     included_modules:['employees','attendance','leave','payroll','compliance','reports','automation','notifications','settings','documents'],
     addon_modules:['recruitment','performance','training','expenses','assets','fieldforce','ai'],
-    is_trial_eligible:true, trial_days:90, sort_order:99,
+    is_trial_eligible:true, trial_days:14, sort_order:99,
     ...plan, highlights: plan.highlights?.length ? plan.highlights : [''],
   });
   const [saving, setSaving] = useState(false);
