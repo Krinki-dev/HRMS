@@ -120,6 +120,21 @@ export default function OnboardingWizard({ onComplete }) {
   const [searchParams] = useSearchParams();
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
+  // Resume from server-persisted onboarding markers instead of restarting at step 1.
+  useEffect(() => {
+    let active = true;
+    api.get('/platform/onboarding/progress').then((response) => {
+      if (!active) return;
+      const progress = response.data?.data?.progress || {};
+      const next = ['org', 'branding', 'work', 'payroll', 'email', 'compliance', 'backup']
+        .find((key) => progress[key]?.completed !== true);
+      if (next) setStep(STEPS.findIndex((item) => item.key === next));
+      else if (response.data?.data?.isSetupComplete) navigate('/dashboard', { replace: true });
+      else setStep(STEPS.findIndex((item) => item.key === 'done'));
+    }).catch(() => { /* New accounts may not have progress yet; start normally. */ });
+    return () => { active = false; };
+  }, [navigate]);
+
 
   // ---------- Payment mutations ----------
   const orderM = useMutation({
@@ -512,25 +527,9 @@ export default function OnboardingWizard({ onComplete }) {
 
           {currentStep.key === 'compliance' && (
             <div>
-              <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Compliance portal credentials</div>
-              <div style={{ fontSize: 13, color: C.muted, marginBottom: 8 }}>Syntern can auto-file PF ECR and ESI challan.</div>
-              <div style={{ padding: '10px 14px', background: 'rgba(37,99,235,0.07)', borderRadius: 8, fontSize: 12, marginBottom: 20 }}>🔒 Credentials encrypted with AES-256.</div>
-              {!skipCompliance && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                  <div style={{ background: C.surface, borderRadius: 10, padding: 16, border: `1px solid ${C.border}` }}>
-                    <div style={{ fontWeight: 600, fontSize: 13, color: '#fbbf24', marginBottom: 12 }}>PF / EPFO Portal</div>
-                    <Inp label="Username" value={pf.username} onChange={v => setPf(p=>({...p,username:v}))} placeholder="DLCPM0XXXXXX" />
-                    <Inp label="Password" value={pf.password} onChange={v => setPf(p=>({...p,password:v}))} type="password" placeholder="EPFO password" />
-                    <Inp label="Establishment code" value={pf.employerCode} onChange={v => setPf(p=>({...p,employerCode:v}))} placeholder="Establishment code" hint="For ECR file" />
-                  </div>
-                  <div style={{ background: C.surface, borderRadius: 10, padding: 16, border: `1px solid ${C.border}` }}>
-                    <div style={{ fontWeight: 600, fontSize: 13, color: '#34d399', marginBottom: 12 }}>ESI / ESIC Portal</div>
-                    <Inp label="Username" value={esi.username} onChange={v => setEsi(e=>({...e,username:v}))} placeholder="ESIC username" />
-                    <Inp label="Password" value={esi.password} onChange={v => setEsi(e=>({...e,password:v}))} type="password" placeholder="ESIC password" />
-                  </div>
-                </div>
-              )}
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, marginTop: 16 }}><input type="checkbox" checked={skipCompliance} onChange={e => setSkipCompliance(e.target.checked)} /> Skip — add later in Settings</label>
+              <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Compliance setup</div>
+              <div style={{ fontSize: 13, color: C.muted, marginBottom: 16 }}>PF/EPFO and ESI/ESIC portal credentials are not collected during initial onboarding. Configure them later in Settings after verifying the secure credential-storage workflow.</div>
+              <div style={{ padding: '12px 14px', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 8, fontSize: 12, color: C.amber }}>No portal passwords are saved on this screen. You can continue and configure compliance securely later.</div>
             </div>
           )}
 
