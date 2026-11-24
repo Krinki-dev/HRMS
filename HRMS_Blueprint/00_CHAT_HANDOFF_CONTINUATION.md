@@ -235,3 +235,23 @@ A response saying “I will continue in the background” is not a valid status 
 
 ### Next task after this handoff update
 Continue the end-to-end plan contract audit: compare `PlanSelectionStep.jsx`, `OnboardingWizard.jsx`, `payment.controller.js`, invoice snapshot fields and `saveSelectionToTenantConfig`. Correct mismatched payloads and ensure the saved tenant pricing config does not silently discard the selected employee cap/add-ons. Add tests where practical. Then recheck current branch CI and update this file again.
+
+
+## 2026-11-24 continued work — onboarding selector and pricing tests
+
+- Fixed a frontend pricing bug: `PlanSelectionStep.jsx` previously treated a legitimate zero-price Free plan as Custom because it used a truthiness check. It now treats only null/undefined base prices as Custom and allows the Free plan to be selected.
+- Switching plans now clears previously selected add-ons and promo status so modules from the previous plan cannot accidentally remain in the checkout payload.
+- Added a pure catalog calculator and validation tests. Backend CI passed on `d9871bd973c3fb641bdb63349a47efbd4346cea5`: 59 tests total, 55 passed, 0 failed, 4 skipped (RLS tests requiring a dedicated test database were skipped).
+- Frontend Build passed for `88d9dc8a24a42015e5502705870e9c3ab23d23fb`. The subsequent plan-switch add-on reset is commit `743fc8f877fb6362787c31eb34b3b21430c52d05`; check its Frontend Build run before claiming the latest frontend head is green.
+- The first test attempt failed because importing the service instantiated the central Prisma client without a CI datasource URL. The test now sets a dummy syntactically valid URL before import; no database connection is made by the pure calculator tests.
+- Files changed in this follow-up: `backend/modules/platform/plans.service.js`, `backend/modules/platform/plans.routes.js`, `backend/test/plan-pricing.test.js`, `frontend/src/pages/onboarding/PlanSelectionStep.jsx`, and this progress/handoff documentation.
+- Latest implementation commits include `eb382e86d4bc7de4151d0d001c25030af26b017d`, `ddcadae59973d88c52e21b12346bbb18443d5ed7`, `9a95c61467c3cdaf4bf7d9193cef9cdbb7431115`, `c0e5e034363e06112d4300a5404192869a4b0c75`, `d9871bd973c3fb641bdb63349a47efbd4346cea5`, `88d9dc8a24a42015e5502705870e9c3ab23d23fb`, and `743fc8f877fb6362787c31eb34b3b21430c52d05`.
+- The full checkout contract audit is not complete. `verifySubscription` already snapshots plan/add-ons, activates tenant modules, writes the plan employee cap and creates the paid invoice in one transaction. Still inspect the complete transaction tail, verify the client/server payload contract and identify any price/invoice arithmetic mismatch. The older `saveSelectionToTenantConfig` helper appears to be a separate legacy path; do not refactor it until all callers are checked.
+- No DB migration, staging deployment, or live payment was performed. `main` remains untouched.
+
+### Immediate next actions (updated)
+1. Check Backend Tests and Frontend Build for latest branch head after commit `743fc8f...` and the following documentation commits.
+2. Finish audit of `PlanSelectionStep.jsx` → `OnboardingWizard.jsx` → `createSubscriptionOrder` → `verifySubscription`; ensure the server uses its own employee count and exact stored snapshot, and review invoice totals/line items.
+3. Add tests around subscription snapshot verification and invoice arithmetic if a pure helper can be extracted safely.
+4. Continue Marketing persistence/rendering audit and Document Review API/UI contract audit.
+5. Keep DB migrations, staging, live payments and production changes on hold until user confirms readiness.
