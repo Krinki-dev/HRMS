@@ -15,7 +15,7 @@ const Skeleton = () => (
 
 // ── Plan Card ─────────────────────────────────────────────────────────────────
 function PlanCard({ plan, selected, onSelect, modulePricing, selectedAddons, onToggleAddon, price, calcLoading }) {
-  const isCustom = !plan.base_price_paise;
+  const isCustom = plan.base_price_paise == null;
 
   return (
     <div
@@ -249,7 +249,7 @@ export default function PlanSelectionStep({ onNext, onBack, employeeCount = 0 })
   // Recalculate on any change
   const recalc = useCallback(async (slug, addons, months, code) => {
     const plan = catalog?.plans?.find(p => p.slug === slug);
-    if (!plan?.base_price_paise) { setPrice(null); return; }
+    if (!plan || plan.base_price_paise == null) { setPrice(null); return; }
     setCalcLoading(true);
     try {
       const res = await api.post('/platform/plans/calculate', {
