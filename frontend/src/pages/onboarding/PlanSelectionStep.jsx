@@ -266,6 +266,14 @@ export default function PlanSelectionStep({ onNext, onBack, employeeCount = 0 })
     if (catalog) recalc(selectedPlan, selectedAddons, billingMonths, promoStatus === 'valid' ? promoCode : '');
   }, [selectedPlan, selectedAddons, billingMonths, catalog]);
 
+  const handleSelectPlan = (slug) => {
+    if (slug === selectedPlan) return;
+    setSelectedPlan(slug);
+    setAddons([]);
+    setPromoStatus(null);
+    setPrice(null);
+  };
+
   const handleToggleAddon = (mod) =>
     setAddons(prev => prev.includes(mod) ? prev.filter(m => m !== mod) : [...prev, mod]);
 
@@ -358,7 +366,7 @@ export default function PlanSelectionStep({ onNext, onBack, employeeCount = 0 })
             key={plan.id}
             plan={plan}
             selected={selectedPlan === plan.slug}
-            onSelect={setSelectedPlan}
+            onSelect={handleSelectPlan}
             modulePricing={modulePricing}
             selectedAddons={selectedAddons}
             onToggleAddon={handleToggleAddon}
