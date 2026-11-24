@@ -1125,6 +1125,23 @@ exports.verifySubscription = async (req, res) => {
       ?? planBasePrices[selectedPlanSlug]
       ?? 0;
 
+    const tenantForInvoice = await withBillingRLS(req, tenantId, (tx) =>
+      tx.tenants.findUnique({ where: { id: tenantId }, select: { subdomain: true } })
+    );
+    const now = new Date();
+    const invoiceNo = `SUB-${String((tenantForInvoice?.subdomain || 'TENANT')).toUpperCase()}-${now.getTime()}`;
+    const breakdown = calculatedPrice?.breakdown || {
+      base_monthly_paise: basePricePaise,
+      excess_paise: 0,
+      addons: [],
+      discount_paise: 0,
+      gst_paise: 0,
+      amount_before_tax: basePricePaise * normalizedBillingMonths,
+    };
+    const grossBeforeTax = breakdown.amount_before_tax ?? (basePricePaise * normalizedBillingMonths);
+    const gstPaise = breakdown.gst_paise ?? Math.round(grossBeforeTax * 0.18);
+    const totalPaise = calculatedPrice?.total_paise ?? (grossBeforeTax + gstPaise);
+
     const offerExpiry = expiryDate;
     const billingCycle = toBillingCycleLabel(normalizedBillingMonths);
 
@@ -1176,58 +1193,36 @@ exports.verifySubscription = async (req, res) => {
       if (claimedOrder.count !== 1) {
         throw new Error('Subscription payment order was already processed');
       }
-    });
-
-    // Save plan selection to tenant_pricing_configs (feeds billing cron)
-    if (calculatedPrice) {
-      await plansService.saveSelectionToTenantConfig(tenantId, calculatedPrice, {
-        renewalMode: normalizedRenewalMode,
-        paymentMethod: method,
-      });
-      logger.info(`[verifySubscription] Pricing config saved for tenant ${tenantId}`);
-    }
-
-    // Create a paid invoice snapshot for this successful subscription purchase.
-    const tenant = await withBillingRLS(req, tenantId, (tx) => tx.tenants.findUnique({ where: { id: tenantId }, select: { subdomain: true } }));
-    const now = new Date();
-    const invNo = `SUB-${String((tenant?.subdomain || 'TENANT')).toUpperCase()}-${now.getTime()}`;
-
-    const breakdown = calculatedPrice?.breakdown || {
-      base_monthly_paise: basePricePaise,
-      excess_paise: 0,
-      addons: [],
-      discount_paise: 0,
-      gst_paise: 0,
-      amount_before_tax: basePricePaise * normalizedBillingMonths,
-    };
-
-    const grossBeforeTax = breakdown.amount_before_tax ?? (basePricePaise * normalizedBillingMonths);
-    const gstPaise = breakdown.gst_paise ?? Math.round(grossBeforeTax * 0.18);
-    const totalPaise = calculatedPrice?.total_paise ?? (grossBeforeTax + gstPaise);
-
-    await withBillingRLS(req, tenantId, (tx) => tx.invoices.create({
-      data: {
-        tenant_id: tenantId,
-        invoice_no: invNo,
-        period_start: now,
-        period_end: expiryDate,
-        due_date: now,
-        base_amount_paise: (breakdown.base_monthly_paise || basePricePaise) * normalizedBillingMonths,
-        module_amount_paise: (breakdown.addon_total_monthly || 0) * normalizedBillingMonths,
-        excess_amount_paise: (breakdown.excess_paise || 0) * normalizedBillingMonths,
-        discount_amount_paise: (breakdown.discount_paise || 0) + (breakdown.promo_deduction_paise || 0),
-        tax_amount_paise: gstPaise,
-        total_paise: totalPaise,
-        status: 'paid',
-        payment_id: resolvedPaymentId || transactionId || null,
-        breakdown: {
-          ...(calculatedPrice || {}),
+      if (calculatedPrice) {
+        await plansService.saveSelectionToTenantConfig(tenantId, calculatedPrice, {
           renewalMode: normalizedRenewalMode,
           paymentMethod: method,
-          purchaseType: 'subscription_activation',
+        }, tx);
+      }
+      await tx.invoices.create({
+        data: {
+          tenant_id: tenantId,
+          invoice_no: invoiceNo,
+          period_start: now,
+          period_end: expiryDate,
+          due_date: now,
+          base_amount_paise: (breakdown.base_monthly_paise || basePricePaise) * normalizedBillingMonths,
+          module_amount_paise: (breakdown.addon_total_monthly || 0) * normalizedBillingMonths,
+          excess_amount_paise: (breakdown.excess_paise || 0) * normalizedBillingMonths,
+          discount_amount_paise: (breakdown.discount_paise || 0) + (breakdown.promo_deduction_paise || 0),
+          tax_amount_paise: gstPaise,
+          total_paise: totalPaise,
+          status: 'paid',
+          payment_id: resolvedPaymentId || transactionId || null,
+          breakdown: {
+            ...(calculatedPrice || {}),
+            renewalMode: normalizedRenewalMode,
+            paymentMethod: method,
+            purchaseType: 'subscription_activation',
+          },
         },
-      },
-    }));
+      });
+    });
 
     return sendSuccess(res, null, "Subscription activated successfully.");
   } catch (error) {
