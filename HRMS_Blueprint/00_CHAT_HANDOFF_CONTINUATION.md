@@ -355,3 +355,46 @@ Continue the end-to-end plan contract audit: compare `PlanSelectionStep.jsx`, `O
 6. Re-check Backend Tests and Frontend Build for the exact latest branch head. Current connector status lookups returned no status entries/runs; no CI pass is claimed.
 
 No DB connection, migration, staging, deployment, live payment or production change was performed. `main` remains untouched.
+
+
+## 10. 2026-11-25 — Production priority and manual renewal implementation
+
+User priority: finish the remaining production-critical platform work as quickly and safely as possible, then move directly to HRMS module implementation. Do not spend time on optional polish while core modules remain to be audited/completed. Communicate estimates plainly; do not claim production readiness from code commits alone.
+
+### Manual prepaid renewal source changes (committed; runtime verification pending)
+
+- Added `backend/modules/platform/billingRenewal.js` with deterministic month-end-safe calendar arithmetic, renewal-period calculation, stable invoice-number generation, and max-expiry selection.
+- Reworked `billing.service.js` so new renewal invoices are generated only when a paid subscription's `plan_expires_at` has actually arrived. The invoice period is anchored to the prepaid expiry, not the previous calendar month. It creates a one-month manual renewal invoice and uses a deterministic tenant + expiry-date invoice number so daily cron retries are idempotent.
+- Legacy paid tenants with a null expiry are deliberately skipped for manual reconciliation; the system does not invent a billing date.
+- Changed billing cron to run renewal invoice generation daily because subscriptions can expire on any calendar day. Overdue checks remain daily. No automatic charge is attempted.
+- Updated invoice payment verification so only invoices explicitly marked `manual_subscription_renewal` extend `tenants.plan_expires_at`; the extension is calculated from the later of the current paid-through date and the invoice's immutable `renewalExpiresAt` snapshot. Initial subscription checkout invoices are not altered.
+- A verified renewal payment clears suspension only when the suspension reason is the system-generated unpaid-invoice suspension; manual/admin suspensions are not silently lifted.
+- Tenant middleware now permits suspended tenants through only the authenticated subscription invoice recovery endpoints (`pay`, `verify`, `my-invoices`, `my-subscription`). Other HRMS routes remain blocked.
+- Added `backend/test/billing-renewal.test.js` covering early-invoice suppression, legacy null expiry, mid-month periods, month-end/leap-year clamping, deterministic invoice numbers, and expiry extension.
+- Commits: helper `d291fceccdb091e88df4ee26a430a64fadc9a7be`; tests `17bedcb7f1533604318144ed5d343c786b21bcb7`; billing service `8982a36450b882ff2c48b683e8ee377e8c7ac402`; daily cron `ebb548706bd4168a2c2cd5cce634e62e7eb6b3b6`; payment renewal activation `6fc1dd6cd78ba7067622b80d40f46e197b20a3a6`; suspended billing recovery `e12e05bf899700f48927f098fa47b0cd5ef4aa6e`.
+
+### Important verification and release caveats
+
+- These are source changes only. No local Node test suite, Prisma validation/generation, PostgreSQL integration test, staging test, Razorpay sandbox transaction, migration, or production deployment was executed.
+- The combined commit status lookup for the latest code commit returned no status entries; the workflow-run connector only returned PR-triggered runs and returned none. Do not state that CI passed.
+- The renewal policy implemented is one-month manual renewal after the prepaid expiry. The invoice is generated on/after expiry, with a seven-day due window; the overdue job suspends access after the due date. The user can still access only billing recovery endpoints after suspension.
+- Confirm invoice calculations against the actual plan catalogue and GST invoice policy in staging before launch. The renewal invoice uses the current monthly pricing configuration; it does not attempt to replay the previous prepaid invoice's promotional deduction.
+- The daily job can only create invoices for active paid tenants with a valid non-null expiry and pricing configuration. Legacy paid tenants with null expiry need a reviewed migration/reconciliation list.
+- Review the narrow suspended-tenant route exception and all proxy/host variants in integration tests before release.
+
+### Production readiness estimate and next execution order
+
+Planning estimate from source review (not a guaranteed calendar promise):
+- Billing/renewal hardening and tests: 1–3 focused engineering days remain, primarily validation, webhook/ledger review, and reconciliation.
+- Tenant provisioning/isolation, onboarding, access control and platform-admin verification: 2–4 focused days.
+- Core HRMS module completion/integration: 5–10+ focused days depending on actual gaps found in Employees, Attendance, Leave, Payroll and Compliance.
+- Security/regression/staging/deployment readiness: 3–5 focused days after the above.
+
+Priority after renewal:
+1. Verify billing and subscription lifecycle end-to-end (including webhook raw-body/signature, payment ledger idempotency, reconciliation, suspended recovery and renewal).
+2. Verify tenant provisioning, PostgreSQL storage classification/resolver, RLS and onboarding persistence. No production migration until supervised staging and backup/restore verification.
+3. Audit and complete core modules in dependency order: Employees → Attendance/Shift → Leave → Payroll → Compliance.
+4. Then Recruitment, Performance, Training, Assets, Expenses, Reports, Notifications/Automation.
+5. Run security, tenant-isolation, browser E2E, backup/restore and deployment gates.
+
+User should not be asked to repeat technical decisions. Ask for their involvement only when staging/DB access, secrets configuration, legal/business policy confirmation, or production approval is genuinely required.
