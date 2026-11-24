@@ -94,7 +94,7 @@ export default function AdminAnalytics() {
     }
     build();
     return () => { destroyed = true; planChart?.destroy(); };
-  }, [stats.total, bp.free, bp.trial]);
+  }, [stats.total, bp.free, bp.trial, bp.starter, bp.pro, bp.enterprise]);
 
   const total = stats.total || 0;
   const paid  = (bp.starter || 0) + (bp.pro || 0) + (bp.enterprise || 0);
@@ -102,10 +102,12 @@ export default function AdminAnalytics() {
 
   // Soft-coded MRR calculation based on backend catalog
   const MRR = catalog.reduce((sum, plan) => {
-    const count = bp[plan.id] || 0;
-    // Default fallback values if plan price is null (Enterprise)
-    const price = plan.price || (plan.id === 'enterprise' ? 15000 : 0);
-    return sum + (count * price);
+    const key = plan.slug || plan.id;
+    const count = Number(bp[key] || 0);
+    const monthlyPriceRupees = plan.base_price_paise != null
+      ? Number(plan.base_price_paise) / 100
+      : Number(plan.price || 0);
+    return sum + (count * monthlyPriceRupees);
   }, 0);
 
   function fmt(n) {
