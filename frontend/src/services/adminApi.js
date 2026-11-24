@@ -44,6 +44,18 @@ export const adminApi = {
   testEmail: (id, toEmail) =>
     api.post(`/platform/admin/tenants/${id}/notifications/test`, { type: 'email', toEmail }).then(r => r.data),
 
+  getCompanyDocumentReviewQueue: () =>
+    api.get('/platform/company-documents/review-queue').then(r => r.data),
+
+  getCompanyDocumentReviewDownload: (id) =>
+    api.get(`/platform/company-documents/${id}/review-download`).then(r => r.data),
+
+  getCompanyDocumentReviews: (id) =>
+    api.get(`/platform/company-documents/${id}/reviews`).then(r => r.data),
+
+  reviewCompanyDocument: (id, data) =>
+    api.patch(`/platform/company-documents/${id}/review`, data).then(r => r.data),
+
 };
 
 export const notificationSettingsApi = {
