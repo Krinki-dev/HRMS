@@ -1,5 +1,8 @@
-﻿﻿const { centralPrisma } = require('../../shared/utils/centralPrisma');
+'use strict';
+
+const { centralPrisma } = require('../../shared/utils/centralPrisma');
 const { calculateSubscription } = require('./subscriptionCalculator');
+const { getMonthlyRenewalPeriod, buildRenewalInvoiceNumber } = require('./billingRenewal');
 const logger = require('../../shared/utils/logger');
 const { THEME } = require('../../shared/utils/uiConstants');
 const billingEmailer = require('../../shared/utils/billingEmailer');
@@ -14,102 +17,101 @@ function getRenewalContext(pricingConfig) {
   return { renewalMode, paymentMethod };
 }
 
-
 /**
- * Generates monthly invoices for all active tenants.
+ * Creates a one-month manual renewal invoice only after the prepaid term ends.
+ * Legacy paid tenants without plan_expires_at are deliberately skipped for
+ * manual reconciliation; the system must not guess their billing dates.
  */
-async function generateMonthlyInvoices() {
-  logger.info(`${THEME.ICONS.PROCESS} Starting monthly invoice generation...`);
-
+async function generateMonthlyInvoices(now = new Date()) {
+  logger.info(`${THEME.ICONS.PROCESS} Starting subscription renewal invoice generation...`);
   try {
-    // SET LOCAL must be issued and consumed inside the SAME transaction as the
-    // query it protects — see backend/shared/utils/rlsContext.js.
     const tenants = await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.findMany({
-      where: { is_active: true, deleted_at: null, plan: { notIn: ['free', 'trial'] } },
+      where: {
+        is_active: true,
+        deleted_at: null,
+        plan: { notIn: ['free', 'trial'] },
+        plan_expires_at: { lte: now },
+      },
       include: {
         tenant_pricing_configs: true,
-        tenant_modules: { where: { is_active: true } }
-      }
+        tenant_modules: { where: { is_active: true } },
+      },
     }));
 
-    const results = { success: 0, failed: 0 };
-
+    const results = { success: 0, failed: 0, skipped: 0 };
     for (const tenant of tenants) {
       try {
-        if (!tenant.tenant_pricing_configs) continue;
+        if (!tenant.tenant_pricing_configs) {
+          results.skipped++;
+          continue;
+        }
+        const period = getMonthlyRenewalPeriod(tenant.plan_expires_at, now);
+        if (!period) {
+          results.skipped++;
+          continue;
+        }
 
-        // Launch policy: renewals are manual only. Legacy tenant metadata that
-        // says "auto" must never trigger an unverified recurring charge.
         const legacyRenewal = getRenewalContext(tenant.tenant_pricing_configs);
-        const renewalMode = 'manual';
-        const paymentMethod = legacyRenewal.paymentMethod;
         if (legacyRenewal.renewalMode === 'auto') {
           logger.warn(`[Billing] Ignoring legacy automatic-renewal setting for ${tenant.subdomain}; manual renewal is enforced.`);
         }
 
         const employeeCount = tenant.max_employees || 0;
-        const activeModules = tenant.tenant_modules.map(m => m.module_name);
-
-        // Run the pricing engine
+        const activeModules = tenant.tenant_modules.map((module) => module.module_name);
         const calc = calculateSubscription(tenant.tenant_pricing_configs, activeModules, employeeCount);
+        if (!Number.isSafeInteger(calc.finalPrice) || calc.finalPrice <= 0) {
+          throw new Error('Calculated monthly renewal amount is invalid.');
+        }
 
-        const date = new Date();
-        const invoiceNo = `INV-${tenant.subdomain.toUpperCase()}-${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-        
-        const periodStart = new Date(date.getFullYear(), date.getMonth() - 1, 1);
-        const periodEnd = new Date(date.getFullYear(), date.getMonth(), 0);
-
-        let invoiceStatus = 'unpaid';
-        let paymentId = null;
-
-        // No automatic charge is attempted at launch. The tenant pays the
-        // generated invoice through the authenticated manual Razorpay flow.
-
-        const dueDate = invoiceStatus === 'paid'
-          ? date
-          : new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const invoiceNo = buildRenewalInvoiceNumber(tenant.subdomain, period.periodStart);
+        const dueDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const breakdown = {
+          billingType: 'manual_subscription_renewal',
+          renewalMode: 'manual',
+          renewalMonths: 1,
+          renewalStartAt: period.startAt.toISOString(),
+          renewalExpiresAt: period.expiresAt.toISOString(),
+          monthlyPricing: calc.breakDown,
+          autoPayment: { attempted: false, success: false, reason: 'Manual renewal is enforced at launch' },
+        };
 
         const inserted = await withPlatformAdminRLS(centralPrisma, (tx) => tx.invoices.createMany({
           data: [{
             tenant_id: tenant.id,
             invoice_no: invoiceNo,
-            period_start: periodStart,
-            period_end: periodEnd,
+            period_start: period.periodStart,
+            period_end: period.periodEnd,
             due_date: dueDate,
-            base_amount_paise: calc.breakDown.base.final,
-            module_amount_paise: calc.breakDown.modules.total,
-            excess_amount_paise: calc.breakDown.excessCharges,
-            discount_amount_paise: calc.breakDown.discounts.amount + calc.breakDown.discounts.flat,
-            tax_amount_paise: calc.breakDown.tax.amount,
+            base_amount_paise: calc.breakDown.base?.final || 0,
+            module_amount_paise: calc.breakDown.modules?.total || 0,
+            excess_amount_paise: calc.breakDown.excessCharges || 0,
+            discount_amount_paise: (calc.breakDown.discounts?.amount || 0) + (calc.breakDown.discounts?.flat || 0),
+            tax_amount_paise: calc.breakDown.tax?.amount || 0,
             total_paise: calc.finalPrice,
-            payment_id: paymentId,
-            breakdown: {
-              ...calc.breakDown,
-              renewalMode: 'manual',
-              autoPayment: { attempted: false, success: false, reason: 'Manual renewal is enforced at launch' },
-            },
-            status: 'unpaid'
+            currency: 'INR',
+            payment_id: null,
+            breakdown,
+            status: 'unpaid',
           }],
-          // The invoice number is unique. This makes a retried or overlapping
-          // monthly cron idempotent instead of producing a duplicate invoice.
           skipDuplicates: true,
         }));
+
         if (inserted.count === 0) {
-          logger.info(`[Billing] Invoice ${invoiceNo} already exists; skipping duplicate generation.`);
+          logger.info(`[Billing] Renewal invoice ${invoiceNo} already exists; skipping duplicate cron execution.`);
+          results.skipped++;
           continue;
         }
 
-        // Notify Tenant Admin
-        const amountFormatted = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(calc.finalPrice / 100);
+        const amountFormatted = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' })
+          .format(calc.finalPrice / 100);
         try {
           await billingEmailer.sendInvoiceNotification(tenant.admin_email, invoiceNo, amountFormatted);
-        } catch (emailErr) {
-          logger.error(`${THEME.ICONS.ERROR} Failed to send invoice notification to ${tenant.admin_email}:`, emailErr);
+        } catch (emailError) {
+          logger.error(`${THEME.ICONS.ERROR} Failed to send renewal invoice notification to ${tenant.admin_email}:`, emailError);
         }
-
         results.success++;
-      } catch (err) {
-        logger.error(`Failed to generate invoice for ${tenant.subdomain}:`, err);
+      } catch (error) {
+        logger.error(`Failed to generate renewal invoice for ${tenant.subdomain}:`, error);
         results.failed++;
       }
     }
@@ -121,30 +123,28 @@ async function generateMonthlyInvoices() {
 }
 
 /**
- * Scans for overdue invoices and automatically suspends tenants.
+ * Suspends tenants only after an unpaid invoice reaches its due date.
+ * The tenant middleware retains a narrow authenticated billing-recovery path.
  */
-async function checkOverdueInvoices() {
+async function checkOverdueInvoices(now = new Date()) {
   logger.info(`${THEME.ICONS.PROCESS} Checking for overdue invoices...`);
   try {
     const overdueInvoices = await withPlatformAdminRLS(centralPrisma, (tx) => tx.invoices.findMany({
-      where: {
-        status: 'unpaid',
-        due_date: { lt: new Date() }
-      },
-      include: { tenant: true }
+      where: { status: 'unpaid', due_date: { lt: now } },
+      include: { tenant: true },
     }));
 
-    for (const inv of overdueInvoices) {
-      if (inv.tenant.is_active) {
-        await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.update({
-          where: { id: inv.tenant_id },
+    for (const invoice of overdueInvoices) {
+      if (invoice.tenant.is_active) {
+        await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.updateMany({
+          where: { id: invoice.tenant_id, is_active: true },
           data: {
             is_active: false,
-            suspended_at: new Date(),
-            suspension_reason: `Automatic suspension due to unpaid invoice ${inv.invoice_no}`
-          }
+            suspended_at: now,
+            suspension_reason: `Automatic suspension due to unpaid invoice ${invoice.invoice_no}`,
+          },
         }));
-        logger.warn(`${THEME.ICONS.WARNING} Suspended tenant ${inv.tenant.subdomain} for non-payment of ${inv.invoice_no}`);
+        logger.warn(`${THEME.ICONS.WARNING} Suspended tenant ${invoice.tenant.subdomain} for non-payment of ${invoice.invoice_no}`);
       }
     }
   } catch (error) {
