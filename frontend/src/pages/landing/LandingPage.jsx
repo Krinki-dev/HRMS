@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 
 const animationStyles = `
   :root {
@@ -791,12 +792,13 @@ export default function LandingPage() {
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tourCompleted, setTourCompleted] = useState(false);
+  const [marketing, setMarketing] = useState({});
   const autoScrollTimerRef = useRef(null);
   const sectionsRef = useRef([]);
   const isScrollingRef = useRef(false);
   const resumeTimeoutRef = useRef(null);
 
-  const goto = (path) => navigate(path);
+  const goto = (path) => navigate(path);\n\n  useEffect(() => {\n    let active = true;\n    api.get('/platform/marketing')\n      .then((response) => { if (active) setMarketing(response.data?.data || {}); })\n      .catch(() => { /* Keep the built-in landing-page copy when settings are unavailable. */ });\n    return () => { active = false; };\n  }, []);
 
   useEffect(() => {
     const setAppHeight = () => {
@@ -1024,14 +1026,14 @@ export default function LandingPage() {
         <div className="lp-container lp-grid-hero">
           <div className="lp-reveal">
             <div style={S.heroBadge}>✨ Full HRMS + Payroll + Compliance + Automation</div>
-            <h1 style={S.h1}>Complete HRMS for <span style={{ color: '#67E8F9' }}>modern</span> teams.</h1>
+            <h1 style={S.h1}>{marketing.heroHeading || 'Complete HRMS for modern teams.'}</h1>
             <p style={S.lead}>
               Manage employees, payroll, compliance, onboarding, automation and monthly filing from one powerful platform.
               No add-ons. No per-seat billing.
             </p>
 
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 16 }}>
-              <button style={{ ...S.btnPrimary, padding: '14px 26px', fontSize: 15 }} onClick={() => goto('/register')}>Start 14-day free trial</button>
+              <button style={{ ...S.btnPrimary, padding: '14px 26px', fontSize: 15 }} onClick={() => goto(typeof marketing.ctaUrl === 'string' && marketing.ctaUrl.startsWith('/') && !marketing.ctaUrl.startsWith('//') ? marketing.ctaUrl : '/register')}>{marketing.ctaText || 'Start 14-day free trial'}</button>
               <button style={{ ...S.btnOutline, padding: '14px 26px', fontSize: 15, color: '#fff', borderColor: 'rgba(255,255,255,0.14)' }} onClick={() => { pauseAutoScroll(false); scrollToSection(2); }}>
                 Explore features
               </button>
