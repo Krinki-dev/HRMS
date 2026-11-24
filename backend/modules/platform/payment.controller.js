@@ -687,6 +687,55 @@ exports.verifySubscription = async (req, res) => {
           billing_cycle: snapshot.billingMonths === 1 ? 'monthly' : snapshot.billingMonths + '_months',
         },
       });
+
+      // Record the exact payment as a paid subscription invoice in the same
+      // transaction as entitlement activation. A failed invoice insert rolls
+      // back activation and the captured ledger claim together.
+      const addonLines = (breakdown.addons || []).map((addon) => ({
+        name: String(addon.module || addon.label || 'module'),
+        final: Number(addon.monthly_paise || 0) * Number(snapshot.billingMonths),
+      }));
+      const baseAmount = Number(breakdown.base_monthly_paise || 0) * Number(snapshot.billingMonths);
+      const moduleAmount = Number(breakdown.addon_total_monthly || 0) * Number(snapshot.billingMonths);
+      const excessAmount = Number(breakdown.excess_paise || 0) * Number(snapshot.billingMonths);
+      const discountAmount = Number(breakdown.discount_paise || 0) + Number(breakdown.promo_deduction_paise || 0);
+      const invoiceNo = `SUB-${tenantId.slice(0, 8).toUpperCase()}-${Date.now()}`;
+      const invoice = await tx.invoices.create({
+        data: {
+          tenant_id: tenantId,
+          invoice_no: invoiceNo,
+          period_start: new Date(),
+          period_end: expiry,
+          due_date: new Date(),
+          base_amount_paise: baseAmount,
+          module_amount_paise: moduleAmount,
+          excess_amount_paise: excessAmount,
+          discount_amount_paise: discountAmount,
+          tax_amount_paise: Number(breakdown.gst_paise || 0),
+          total_paise: Number(snapshot.price.total_paise),
+          currency: 'INR',
+          status: 'paid',
+          payment_id: paymentId,
+          breakdown: {
+            plan: snapshot.planSlug,
+            billingMonths: snapshot.billingMonths,
+            employeeCount: snapshot.employeeCount,
+            modules: { list: addonLines, total: moduleAmount },
+            discounts: {
+              percentage: Number(breakdown.total_discount_pct || 0),
+              amount: Number(breakdown.discount_paise || 0),
+              flat: Number(breakdown.promo_deduction_paise || 0),
+            },
+            tax: { rate: Number(breakdown.gst_rate || 18), amount: Number(breakdown.gst_paise || 0) },
+            renewalMode: 'manual',
+            paymentMethod: 'razorpay',
+          },
+        },
+      });
+      await tx.payment_orders.update({
+        where: { id: stored.id },
+        data: { invoice_id: invoice.id, updated_at: new Date() },
+      });
     });
     return sendSuccess(res, { verified: true, plan: plan.slug, expiresAt: expiry }, 'Subscription payment verified and plan activated.');
   } catch (error) {
