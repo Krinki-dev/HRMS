@@ -399,24 +399,48 @@ router.patch('/company-documents/:id/review', auth, async (req, res) => {
       return sendError(res, ERROR_CODES.VALIDATION, 'Invalid review status or note.', 400);
     }
     const result = await withPlatformAdminRLS(centralPrisma, async (tx) => {
+      // Lock the row so concurrent reviewers cannot create contradictory audit
+      // entries or move an approved document back into the review queue.
+      const currentRows = await tx.$queryRaw`
+        SELECT id, tenant_id, status
+        FROM company_documents
+        WHERE id = ${req.params.id}::uuid
+        FOR UPDATE
+      `;
+      if (!currentRows.length) return { notFound: true };
+      const current = currentRows[0];
+      const transitions = {
+        submitted: new Set(['under_review', 'approved', 'rejected', 'resubmission_required']),
+        under_review: new Set(['approved', 'rejected', 'resubmission_required']),
+        rejected: new Set(['under_review']),
+        resubmission_required: new Set(['under_review']),
+        approved: new Set(),
+      };
+      if (!transitions[current.status]?.has(status)) {
+        return { invalidTransition: true, fromStatus: current.status };
+      }
       const rows = await tx.$queryRaw`
         UPDATE company_documents
         SET status = ${status}, reviewer_id = ${req.user?.id || null}::uuid,
             reviewer_note = ${String(reviewerNote)}, reviewed_at = NOW(), updated_at = NOW()
-        WHERE id = ${req.params.id}::uuid
+        WHERE id = ${current.id}::uuid AND tenant_id = ${current.tenant_id}::uuid
         RETURNING id, tenant_id, status, reviewer_note, reviewed_at
       `;
-      if (!rows.length) return null;
+      if (!rows.length) throw new Error('COMPANY_DOCUMENT_REVIEW_UPDATE_LOST');
       await tx.$executeRaw`
         INSERT INTO company_document_reviews
-          (document_id, tenant_id, reviewer_id, to_status, reviewer_note)
+          (document_id, tenant_id, reviewer_id, from_status, to_status, reviewer_note)
         VALUES
           (${rows[0].id}::uuid, ${rows[0].tenant_id}::uuid, ${req.user?.id || null}::uuid,
-           ${status}, ${String(reviewerNote)})
+           ${current.status}, ${status}, ${String(reviewerNote)})
       `;
       return rows[0];
     });
-    if (!result) return sendError(res, ERROR_CODES.NOT_FOUND, 'Company document not found.', 404);
+    if (result?.notFound) return sendError(res, ERROR_CODES.NOT_FOUND, 'Company document not found.', 404);
+    if (result?.invalidTransition) {
+      return sendError(res, ERROR_CODES.VALIDATION,
+        `Cannot move a document from ${result.fromStatus} to ${status}.`, 409);
+    }
     return sendSuccess(res, result, 'Document review status updated.');
   } catch (err) {
     logger.error('[company-documents/review]', err);
