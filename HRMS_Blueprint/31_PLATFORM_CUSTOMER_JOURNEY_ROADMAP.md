@@ -249,3 +249,15 @@ The next onboarding slice has been implemented on the working branch:
 - Made Platform Settings edits section-scoped, prevented masked credentials from being resubmitted as literal secrets, and reloads saved settings after a successful update.
 - The admin top bar now identifies the active section, and the sidebar becomes horizontally navigable on narrow screens.
 - These are source-level integration fixes. No frontend build, live API request, browser QA, automated test or database migration was run during this pass. The remaining work is to complete functional editing for currently informational Marketing subsections, finish legacy theme-token migration, and validate every menu against a running staging environment.
+## Admin menu completion pass — continued (2026-11-24)
+
+- Fixed the platform admin top-bar title so it actually renders the active menu name (the earlier layout calculation was present but the markup still showed a hard-coded Dashboard title).
+- Added a public read-only marketing-content endpoint that returns only approved landing-page copy fields; it does not expose platform settings secrets.
+- Connected the public landing page to saved hero heading, subheading, CTA label, CTA destination (restricted to same-origin paths), and CTA helper text. Marketing edits now affect the live landing page after save.
+- Corrected the marketing editor's save payload to persist the exact field names consumed by the public endpoint.
+- Corrected Platform Settings SMS sender field naming, removed the unsupported paid GSP option in favour of the official GST portal assisted flow, aligned theme colour examples with the macOS-inspired light palette, and clarified that stored Theme/Security values are not runtime-applied yet.
+- Corrected the Plans Analytics screen guidance to point to the actual Pricing & Plans menu instead of a non-existent settings section.
+- Changed the Domains screen to label mappings as unverified and stop claiming SSL is active without a DNS/certificate verification integration.
+- GitHub Actions exposed two existing PhonePe unit-test failures caused by expired hard-coded token expiry timestamps in test fixtures. Updated those fixtures to use a future expiry timestamp; this does not enable PhonePe as a payment option.
+- CI was observed running backend tests on these commits. The failing run had 45 passing, 2 failing, and 4 skipped tests; the two failures were the stale PhonePe test fixtures. The corrected commit's result is pending and must be checked before calling the backend suite green.
+- Frontend build, browser QA, and database-backed integration checks remain unverified. Database migrations and deployment remain on hold.
