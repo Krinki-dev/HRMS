@@ -76,8 +76,11 @@ function calculateSubscription(config, activeModules = [], employeeCount = 0) {
 
   const globalDiscountAmount = Math.round(subtotal * (totalPercentageDiscount / 100));
   
-  // 6. Final Flat Offer (e.g. ₹500 off first month)
-  const flatOffer = config.offer_flat_paise || 0;
+  // 6. Final Flat Offer. Ignore invalid or expired offers so stale pricing
+  // configuration cannot keep granting a discount indefinitely.
+  const offerExpiry = config.offer_expiry_date ? new Date(config.offer_expiry_date) : null;
+  const offerExpired = offerExpiry && (!Number.isFinite(offerExpiry.getTime()) || offerExpiry <= new Date());
+  const flatOffer = offerExpired ? 0 : (Number(config.offer_flat_paise) || 0);
 
   const amountBeforeTax = Math.max(0, subtotal - globalDiscountAmount - flatOffer);
   
