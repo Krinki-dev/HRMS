@@ -243,9 +243,9 @@ function PlansTab({ data, reload }) {
     await reload();
   };
   const del = async (id, name) => {
-    if (!confirm(`Delete plan "${name}"?`)) return;
+    if (!confirm(`Deactivate plan "${name}"? It will be hidden from new signups but retained for existing subscription records.`)) return;
     await api.delete(`/platform/admin/plans/${id}`);
-    toast.success('Plan deleted'); await reload();
+    toast.success('Plan deactivated'); await reload();
   };
   return (
     <div className="space-y-4">
@@ -288,7 +288,7 @@ function PlansTab({ data, reload }) {
             )}
             <div className="flex gap-2 mt-4">
               <Btn small variant="secondary" onClick={() => setModal(plan)}>Edit</Btn>
-              <Btn small variant="danger" onClick={() => del(plan.id, plan.name)}>Delete</Btn>
+              <Btn small variant="danger" onClick={() => del(plan.id, plan.name)} disabled={plan.slug === 'free' || !plan.is_active}>{plan.is_active ? 'Deactivate' : 'Inactive'}</Btn>
             </div>
           </div>
         ))}
