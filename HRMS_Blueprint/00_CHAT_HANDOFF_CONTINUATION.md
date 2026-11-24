@@ -219,3 +219,19 @@ For every work session, report:
 - What remains and the next concrete task.
 
 A response saying “I will continue in the background” is not a valid status update. Do not imply background work is running after a turn ends. The user should be able to check GitHub commits and Actions to see real work.
+
+
+## 2026-11-24 continued work — plan pricing hardening
+
+- Latest work resumed from the Immediate next actions section and addressed the plan catalog → checkout calculator validation gap.
+- `backend/modules/platform/plans.service.js`: added deterministic `calculatePriceFromCatalog`; only active plans are eligible; add-ons must be offered by the selected plan and cannot duplicate included modules; duplicate selections, unsupported billing periods, invalid employee counts, malformed module pricing and invalid discount configuration are rejected. Flat promo deductions cannot exceed the post-discount amount. A zero-price Free plan is calculated as zero; only null/undefined base prices return custom-quote mode.
+- `backend/modules/platform/plans.routes.js`: price-selection/configuration errors are returned as HTTP 400 validation errors instead of generic HTTP 500.
+- `backend/test/plan-pricing.test.js`: added focused unit coverage for price math, discounts/promos, Free/Custom plans, inactive plans, add-on eligibility and invalid catalog/request data.
+- `HRMS_Blueprint/28_IMPLEMENTATION_PROGRESS.md` records this work.
+- Commits: `eb382e86d4bc7de4151d0d001c25030af26b017d`, `ddcadae59973d88c52e21b12346bbb18443d5ed7`, `9a95c61467c3cdaf4bf7d9193cef9cdbb7431115`, `c0e5e034363e06112d4300a5404192869a4b0c75`, and progress-doc commit `d247c3f0ab3856cda65e9ce5932c9c010c22feea`.
+- CI: Backend Tests passed for the calculator and route commits. The workflow for the new pricing test commit was in progress at the last check; verify the latest branch head and its workflow before claiming the tests passed. Frontend Build has not been re-run because this session changed backend code only.
+- Remaining verification: confirm onboarding selector and payment controller send the expected request types and enforce the same server-side plan rules; inspect whether tenant pricing configuration preserves the selected plan's employee cap and add-on snapshot; add a regression test for these contract points.
+- Live database, migrations, staging, and payment execution remain on hold. `main` remains untouched.
+
+### Next task after this handoff update
+Continue the end-to-end plan contract audit: compare `PlanSelectionStep.jsx`, `OnboardingWizard.jsx`, `payment.controller.js`, invoice snapshot fields and `saveSelectionToTenantConfig`. Correct mismatched payloads and ensure the saved tenant pricing config does not silently discard the selected employee cap/add-ons. Add tests where practical. Then recheck current branch CI and update this file again.
