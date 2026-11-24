@@ -136,6 +136,40 @@ export default function OnboardingWizard({ onComplete }) {
     onError: (e) => toast.error(e.response?.data?.message || 'Failed'),
   });
 
+  // Complete PhonePe v2 checkout after the provider redirects back to onboarding.
+  const [phonePeReturnHandled, setPhonePeReturnHandled] = useState(false);
+  useEffect(() => {
+    if (phonePeReturnHandled ||
+        searchParams.get('status') !== 'verify' ||
+        searchParams.get('method') !== 'phonepe') return;
+    const transactionId = searchParams.get('transactionId');
+    const encodedSelection = searchParams.get('selection');
+    if (!transactionId || !encodedSelection) {
+      setPhonePeReturnHandled(true);
+      toast.error('Payment return details are incomplete. Please contact support.');
+      navigate('/onboarding', { replace: true });
+      return;
+    }
+    setPhonePeReturnHandled(true);
+    (async () => {
+      try {
+        const normalized = encodedSelection.replace(/-/g, '+').replace(/_/g, '/');
+        const selection = JSON.parse(atob(normalized));
+        await api.post('/platform/subscribe/verify', {
+          ...selection,
+          transactionId,
+          method: 'phonepe',
+        });
+        toast.success('Payment successful! Plan activated.');
+        setStep(STEPS.findIndex(s => s.key === 'org'));
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'PhonePe payment could not be verified. Contact support if money was deducted.');
+      } finally {
+        navigate('/onboarding', { replace: true });
+      }
+    })();
+  }, [searchParams, phonePeReturnHandled, navigate]);
+
   async function handlePlanNext({ planSlug, selectedAddons, billingMonths, renewalMode = 'manual', promoCode, priceResult, startTrial, method }) {
     try {
       if (startTrial) {
@@ -169,6 +203,11 @@ export default function OnboardingWizard({ onComplete }) {
       });
 
       const orderData = orderResp.data?.data;
+
+      if (orderData?.method === 'phonepe' && orderData.redirectUrl) {
+        window.location.assign(orderData.redirectUrl);
+        return;
+      }
 
       if (orderData?.mock) {
         throw new Error('Mock payment responses are not accepted. Configure a real payment gateway.');
