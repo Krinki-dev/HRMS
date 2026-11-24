@@ -123,3 +123,16 @@ No database migration, live schema change, customer-data deletion, backup execut
 - Promo creation now validates code format, promo type, positive flat values, percentage range, expiry date and description length.
 - Plan removal is now a safe deactivation rather than a destructive catalog delete; the free baseline plan is protected and inactive plans remain available for historical references.
 - Pricing Manager now labels the action as Deactivate/Inactive and explains the effect to the administrator.
+
+
+## Plan pricing hardening — 2026-11-24 (continued session)
+
+- Refactored price calculation into a deterministic catalog-based helper so pricing rules can be tested without a live database.
+- Checkout calculation now rejects inactive plans, unsupported billing terms, invalid employee counts, duplicate add-ons, add-ons already included in the selected plan, and modules not offered by that plan.
+- Added defensive validation for configured module prices and discount percentages; flat promo deductions are capped at the remaining discounted amount so totals cannot become negative.
+- Corrected custom-quote handling: only a null/undefined base price is a custom quote; the zero-price Free plan calculates to zero instead of being misclassified as a custom quote.
+- Public calculate endpoint now returns invalid selection/configuration errors as HTTP 400 validation responses instead of generic HTTP 500 responses.
+- Added `backend/test/plan-pricing.test.js` covering normal price calculation, discounts/promos, free/custom plans, inactive plans, add-on eligibility, invalid input and malformed catalog data.
+- Commits: `eb382e8` (calculator hardening), `ddcadae` (API validation responses), `9a95c61` (pricing tests), `c0e5e03` (duplicate validation cleanup).
+- Backend CI was green for the calculator and route commits; the new test commit's workflow was still running at the time this note was written. Recheck CI against the latest branch head before treating this work as verified.
+- No database, migration, live payment, or staging operation was performed.
