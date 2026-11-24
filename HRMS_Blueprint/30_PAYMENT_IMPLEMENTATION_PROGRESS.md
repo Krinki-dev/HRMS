@@ -68,6 +68,13 @@ The SQL migration has **not** been applied to the live central database. No real
 - Environment example now documents Razorpay credentials and the PhonePe v2 credential names. Real secrets must be configured in the deployment secret store and must never be committed.
 - Current PhonePe v2 docs confirm Standard Checkout uses OAuth client credentials and the v2 checkout/status API family. See official PhonePe documentation: https://developer.phonepe.com/phonepe-payment-gateway/pg-v2-standard-checkout-integration and https://developer.phonepe.com/payment-gateway/website-integration/standard-checkout/api-integration/api-reference/order-status.
 
+## Subscription-order integrity tests — continued work
+
+- Extracted the server-side subscription-order snapshot comparison into `backend/shared/utils/subscriptionPaymentVerification.js`. It compares plan, add-ons, billing term, employee count, promo code, renewal mode, and a positive safe-integer amount.
+- The subscription verification controller now uses this shared helper instead of inline comparison logic.
+- Added `backend/test/subscription-payment-verification.test.js` covering matching selections, add-on order normalization, tampering across each selection field, missing snapshots, invalid amounts, and default renewal mode.
+- Ran the helper's five corresponding Node.js tests in an isolated local test harness: **5 passed, 0 failed**. This is a focused helper test only; it is not a full backend test-suite or CI result.
+
 ## Verification status after focused hardening
 
 - GitHub combined status lookup for commit `bf78bd026b21e2a34d338b9ef4e378cf0535b7fc` returned no status checks; workflow-run lookup returned no runs. CI is therefore **unverified**, not passed.
