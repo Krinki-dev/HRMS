@@ -223,3 +223,29 @@ No database migration, live schema change, customer-data deletion, backup execut
 6. Re-check Backend Tests and Frontend Build for the exact latest branch head. Current connector status lookups returned no status entries/runs; no CI pass is claimed.
 
 No DB connection, migration, staging, deployment, live payment or production change was performed. `main` remains untouched.
+
+
+## 2026-11-25 — Prepaid manual renewal lifecycle implementation
+
+- Added pure renewal helpers in `backend/modules/platform/billingRenewal.js`: month-end-safe calendar-month extension, renewal eligibility, stable invoice number and safe max-expiry selection.
+- Replaced the previous-calendar-month invoice generator with a daily-eligible prepaid renewal generator. It selects only active paid tenants whose non-null `plan_expires_at` is at or before the current time; it skips legacy null-expiry tenants rather than guessing. Renewal invoice periods start at the paid-through timestamp and end one month later (inclusive date range). Invoice numbers are deterministic per tenant + renewal start date, and duplicate daily cron runs are protected by `skipDuplicates`.
+- Changed the billing cron from first-of-month to daily renewal generation; overdue checks remain daily. Renewal is manual only; no recurring gateway charge is attempted.
+- Invoice verification now extends the tenant paid-through date only for an invoice with `breakdown.billingType = manual_subscription_renewal`, using the later of the current expiry and the immutable invoice expiry snapshot. Initial subscription activation invoices are not affected.
+- A paid renewal can clear an automatic unpaid-invoice suspension, but does not clear a manual/admin suspension.
+- Suspended tenants can reach only authenticated subscription invoice recovery endpoints; HRMS data endpoints remain blocked.
+- Added six pure tests for before-expiry suppression, null legacy expiry, mid-month boundaries, month-end/leap-year handling, deterministic invoice identity and extension from the later expiry.
+- Commits: `d291fceccdb091e88df4ee26a430a64fadc9a7be`, `17bedcb7f1533604318144ed5d343c786b21bcb7`, `8982a36450b882ff2c48b683e8ee377e8c7ac402`, `ebb548706bd4168a2c2cd5cce634e62e7eb6b3b6`, `6fc1dd6cd78ba7067622b80d40f46e197b20a3a6`, `e12e05bf899700f48927f098fa47b0cd5ef4aa6e`.
+
+### Verification status
+- Not run: local `node --test`, Prisma validation/generation, PostgreSQL integration tests, Razorpay sandbox, browser E2E, migrations, staging, or production deployment.
+- Latest queried combined CI status had no entries; workflow-run lookup exposed only PR-triggered runs and returned none. CI is therefore unverified, not passed.
+- Current branch comparison: 291 commits ahead / 0 behind `main`; `main` remains untouched.
+- Remaining billing checks: webhook raw-body signature and common ledger transition, subscription order/renewal replay, stale order reconciliation, tax invoice arithmetic, and suspended recovery integration tests.
+- Legacy paid tenants with null `plan_expires_at` need manual inventory/reconciliation; no automatic expiry is inferred.
+
+### Next priority — move to core HRMS modules after billing verification
+1. Finish source + CI verification of renewal, webhook, payment ledger and subscription expiry behavior.
+2. Verify tenant storage lifecycle/resolver, registration provisioning, RLS, onboarding persistence and role/permission boundaries.
+3. Audit Employees first, then Attendance/Shift, Leave, Payroll and Compliance as one connected operational workflow. Do not assume route presence means module completeness; verify frontend actions, backend validation, DB schema, tenant isolation, approval states and tests.
+4. Then proceed through Recruitment, Performance, Training, Assets, Expenses, Reports and Notifications/Automation.
+5. Staging DB migrations, backup/restore drill, provider sandbox and production release remain gated on user access/approval.
