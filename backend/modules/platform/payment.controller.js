@@ -12,6 +12,7 @@ const plansService = require('./plans.service');
 const billingLogger = require('../../shared/services/billingLogger');
 const { verifyRazorpaySignature, isRazorpayPaymentForInvoice, verifyRazorpayWebhookSignature } = require('../../shared/utils/razorpayPaymentVerification');
 const { matchesSubscriptionOrderSnapshot } = require('../../shared/utils/subscriptionPaymentVerification');
+const { getLaterExpiry } = require('./billingRenewal');
 const { createPhonePePayment, getPhonePeOrderStatus, isPhonePeOrderPaid } = require('../../shared/utils/phonepeStandardCheckout');
 const { withTenantRLS, withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 
@@ -278,6 +279,12 @@ exports.verifyPayment = async (req, res) => {
       return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Gateway payment does not match this invoice or is not captured', 400);
     }
 
+    const renewalInvoice = invoice.breakdown?.billingType === 'manual_subscription_renewal';
+    const renewalExpiry = renewalInvoice ? new Date(invoice.breakdown?.renewalExpiresAt) : null;
+    if (renewalInvoice && !Number.isFinite(renewalExpiry.getTime())) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Renewal invoice is missing a valid paid-through date.', 409);
+    }
+
     const paymentRecorded = await withBillingRLS(req, tenantId, async (tx) => {
       const invoiceUpdate = await tx.invoices.updateMany({
         where: { id: invoiceId, tenant_id: invoice.tenant_id, status: { not: 'paid' } },
@@ -293,6 +300,23 @@ exports.verifyPayment = async (req, res) => {
           updated_at: new Date(),
         },
       });
+
+      if (renewalInvoice) {
+        const tenant = await tx.tenants.findUnique({
+          where: { id: invoice.tenant_id },
+          select: { plan_expires_at: true, is_active: true, suspension_reason: true },
+        });
+        if (!tenant) throw new Error('RENEWAL_TENANT_NOT_FOUND');
+        const nextExpiry = getLaterExpiry(tenant.plan_expires_at, renewalExpiry);
+        const billingSuspension = String(tenant.suspension_reason || '').startsWith('Automatic suspension due to unpaid invoice ');
+        await tx.tenants.update({
+          where: { id: invoice.tenant_id },
+          data: {
+            plan_expires_at: nextExpiry,
+            ...(billingSuspension ? { is_active: true, suspended_at: null, suspension_reason: null } : {}),
+          },
+        });
+      }
       return true;
     });
     if (!paymentRecorded) {
