@@ -220,3 +220,12 @@ The next onboarding slice has been implemented on the working branch:
 - Before enabling paid checkout, apply the payment ledger, onboarding, storage lifecycle/inventory and company-document migrations in staging; regenerate the central Prisma client; configure Razorpay test credentials, private MinIO and ClamAV; then run end-to-end checkout and replay/idempotency tests.
 - Before enabling document uploads, verify MinIO private bucket policy and ClamAV daemon reachability in the deployment environment. Uploads intentionally return 503 until both are ready.
 - Latest GitHub status lookup returned no CI statuses or workflow runs for the inspected commit. Automated tests, Prisma generation and frontend build remain unverified.
+
+
+## Platform company-document review UI (2026-11-24)
+
+- Added a platform-admin Document Review screen at `/admin/documents`.
+- Connected the screen to the existing authenticated review queue, short-lived secure download, review-history, and status-update endpoints.
+- Added review actions for the supported state machine: submitted → under review / approved / rejected / resubmission required; rejected or resubmission-required → under review; approved remains terminal.
+- The queue refreshes periodically and can be refreshed manually. Reviewer notes are limited to 2,000 characters in the UI and backend.
+- This is a code implementation only. Frontend build, browser workflow, role/permission checks against a running environment, object-storage access, and database migration remain unverified.
