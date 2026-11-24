@@ -34,6 +34,14 @@ function superAdmin(req, res, next) {
   next();
 }
 
+function sendPlanMutationError(res, err, fallback) {
+  const message = String(err?.message || '');
+  if (message === 'Plan not found') return sendError(res, ERROR_CODES.NOT_FOUND, message, 404);
+  const validation = /^(Plan name|Plan slug|Base price|Employee cap|Employee overage price|Trial days|Sort order|included_modules|addon_modules|A module cannot|The free baseline)/.test(message);
+  return sendError(res, validation ? ERROR_CODES.VALIDATION : ERROR_CODES.SERVER,
+    validation ? message : fallback, validation ? 400 : 500);
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // PUBLIC — no auth, used during tenant onboarding
 // ══════════════════════════════════════════════════════════════════════════════
@@ -124,7 +132,8 @@ router.post('/admin/plans', auth, superAdmin, async (req, res) => {
     logger.info(`[Admin] Plan created: ${plan.name} by ${req.user?.email}`);
     return sendSuccess(res, plan, 'Plan created');
   } catch (err) {
-    return sendError(res, ERROR_CODES.SERVER, err.message || 'Create failed', 500);
+    logger.error('[Admin/plans/create]', err);
+    return sendPlanMutationError(res, err, 'Create failed');
   }
 });
 
@@ -213,16 +222,18 @@ router.put('/admin/plans/:id', auth, superAdmin, async (req, res) => {
     const plan = await svc.savePlan({ ...req.body, id: req.params.id });
     return sendSuccess(res, plan, 'Plan updated');
   } catch (err) {
-    return sendError(res, ERROR_CODES.SERVER, err.message || 'Update failed', 500);
+    logger.error('[Admin/plans/update]', err);
+    return sendPlanMutationError(res, err, 'Update failed');
   }
 });
 
 router.delete('/admin/plans/:id', auth, superAdmin, async (req, res) => {
   try {
     await svc.deletePlan(req.params.id);
-    return sendSuccess(res, null, 'Plan deleted');
+    return sendSuccess(res, null, 'Plan deactivated');
   } catch (err) {
-    return sendError(res, ERROR_CODES.SERVER, 'Delete failed', 500);
+    logger.error('[Admin/plans/deactivate]', err);
+    return sendPlanMutationError(res, err, 'Could not deactivate plan');
   }
 });
 
