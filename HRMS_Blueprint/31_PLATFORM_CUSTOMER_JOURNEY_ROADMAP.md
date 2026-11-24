@@ -190,3 +190,22 @@ The next onboarding slice has been implemented on the working branch:
 2. Implement private company-document upload, review, rejection/resubmission and audit workflow using the existing storage dependencies only after confirming deployment configuration.
 3. Apply the central schema migration in a controlled non-production environment, regenerate Prisma, and run backend tests/frontend build.
 4. Verify wizard save-step endpoints and the resume/complete path end-to-end against a migrated test database.
+
+
+## Implementation progress — subscription, documents and migration package (2026-11-24)
+
+- Replaced the temporary subscription 503 handlers with a Razorpay-only checkout path. It calculates price on the server, uses the authenticated tenant, snapshots the selected plan/add-ons/term/price in `payment_orders`, checks Razorpay signature and fetches the order/payment from Razorpay before activation. Activation updates the payment ledger, tenant plan/expiry, module entitlements and tenant pricing configuration in one central transaction. Renewal is fixed to manual; non-Razorpay providers and automatic renewal are rejected.
+- Subscription checkout derives employee count from the tenant database rather than trusting the browser. It refuses to create another order while an open subscription order exists. A partial unique index in the new migration enforces this at database level too.
+- Trial activation now refuses to reset an existing trial/paid plan and uses a conditional update inside a transaction to prevent concurrent duplicate trial activation.
+- Added a company document onboarding step with GST certificate, company PAN, incorporation certificate, address proof, bank proof and other categories. Customers can upload, view status and skip explicitly.
+- Added private MinIO object storage metadata flow, 10 MB limit, PDF/JPEG/PNG content-signature checks, ClamAV INSTREAM scanning, tenant-scoped metadata queries, five-minute signed download links, platform review queue/download/status endpoints, and append-only reviewer history. Uploads fail closed if private storage or ClamAV is not configured. No public document URL is exposed.
+- Added central migration `20261124_company_document_workflow.sql` with document metadata, review history, tenant RLS policies and one-open-subscription-order uniqueness. Updated the central schema reference and migration instructions.
+- Added basic ClamAV scanner validation tests. These have not yet been run in a connected checkout.
+
+### Current rollout state
+
+- Code and migration files are committed to `architecture/postgres-tenant-isolation` only. `main` remains unchanged.
+- The central database migrations are **prepared but not applied**. No database connection or environment target was available in this workflow, so no staging or production database was modified.
+- Before enabling paid checkout, apply the payment ledger, onboarding, storage lifecycle/inventory and company-document migrations in staging; regenerate the central Prisma client; configure Razorpay test credentials, private MinIO and ClamAV; then run end-to-end checkout and replay/idempotency tests.
+- Before enabling document uploads, verify MinIO private bucket policy and ClamAV daemon reachability in the deployment environment. Uploads intentionally return 503 until both are ready.
+- Latest GitHub status lookup returned no CI statuses or workflow runs for the inspected commit. Automated tests, Prisma generation and frontend build remain unverified.
