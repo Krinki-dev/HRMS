@@ -116,35 +116,93 @@ const auth = require('../../shared/middleware/auth');
 const { upsertBackupConfigForTenant } = require('./tenantDeletion.service');
 
 /**
- * POST /onboarding/save-step
- * Saves onboarding step data for the authenticated tenant.
- * Handles all steps including 'branding' (saves logo_url to tenants table).
+ * Persist only completion metadata for onboarding steps. Secrets remain in their
+ * dedicated encrypted configuration stores and are never copied into this JSON.
  */
+const ONBOARDING_STEPS = new Set(['org', 'branding', 'work', 'payroll', 'email', 'compliance', 'backup']);
+
 router.post('/onboarding/save-step', auth, async (req, res) => {
   try {
-    const { step, data = {} } = req.body;
+    const { step, data = {}, skipped = false } = req.body || {};
     const tenantId = req.user?.tenantId || req.user?.company_id;
-    if (!tenantId) return res.status(400).json({ message: 'Tenant ID required' });
+    if (!tenantId) return sendError(res, ERROR_CODES.VALIDATION, 'Tenant ID required', 400);
+    if (!ONBOARDING_STEPS.has(step)) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Unknown onboarding step', 400);
+    }
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Invalid step data', 400);
+    }
 
     if (step === 'branding' && data.logoUrl) {
-      await centralPrisma.$executeRawUnsafe(
-        `UPDATE tenants SET logo_url = $1, updated_at = NOW() WHERE id = $2::uuid`,
-        data.logoUrl,
-        tenantId
-      );
-      return res.json({ success: true, message: 'Logo saved successfully' });
+      const logoUrl = String(data.logoUrl).trim();
+      if (!/^https:\/\//i.test(logoUrl)) {
+        return sendError(res, ERROR_CODES.VALIDATION, 'Logo must use a secure HTTPS URL', 400);
+      }
+      await centralPrisma.$executeRaw`
+        UPDATE tenants SET logo_url = ${logoUrl}, updated_at = NOW()
+        WHERE id = ${tenantId}::uuid AND deleted_at IS NULL
+      `;
     }
 
-    if (step === 'backup') {
-      await upsertBackupConfigForTenant(centralPrisma, tenantId, data || {});
-      return res.json({ success: true, message: 'Backup provider and credentials saved' });
+    if (step === 'backup' && !skipped) {
+      await upsertBackupConfigForTenant(centralPrisma, tenantId, data);
     }
 
-    // For other steps, just acknowledge (handled by other endpoints or no DB action needed)
-    return res.json({ success: true, step, message: `Step ${step} acknowledged` });
+    // Record only status metadata; never persist passwords, OAuth tokens, SMTP
+    // credentials, PF/ESI credentials, or arbitrary client-supplied step data.
+    const marker = { completed: true, skipped: Boolean(skipped), updatedAt: new Date().toISOString() };
+    const rows = await centralPrisma.$queryRaw`
+      UPDATE tenants
+      SET onboarding_progress = COALESCE(onboarding_progress, '{}'::jsonb)
+            || jsonb_build_object(${step}, ${JSON.stringify(marker)}::jsonb),
+          updated_at = NOW()
+      WHERE id = ${tenantId}::uuid AND deleted_at IS NULL
+      RETURNING id
+    `;
+    if (!rows.length) return sendError(res, ERROR_CODES.NOT_FOUND, 'Company account not found', 404);
+    return sendSuccess(res, { step, ...marker }, 'Onboarding progress saved');
   } catch (err) {
     logger.error('[onboarding/save-step]', err);
-    return res.status(500).json({ message: 'Failed to save step', error: err.message });
+    return sendError(res, ERROR_CODES.SERVER, 'Failed to save onboarding step', 500);
   }
 });
+
+/**
+ * Mark onboarding complete only after all required steps have a persisted
+ * completion marker. Skipped steps are explicit customer choices, not missing data.
+ */
+router.post('/onboarding/complete', auth, async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId || req.user?.company_id;
+    if (!tenantId) return sendError(res, ERROR_CODES.VALIDATION, 'Tenant ID required', 400);
+    const requiredSteps = ['org', 'work', 'payroll', 'email', 'compliance', 'backup'];
+    const rows = await centralPrisma.$queryRaw`
+      SELECT id, is_active, onboarding_progress
+      FROM tenants
+      WHERE id = ${tenantId}::uuid AND deleted_at IS NULL
+      LIMIT 1
+    `;
+    const tenant = rows[0];
+    if (!tenant) return sendError(res, ERROR_CODES.NOT_FOUND, 'Company account not found', 404);
+    if (!tenant.is_active) return sendError(res, ERROR_CODES.FORBIDDEN, 'Company account is not active', 403);
+
+    const progress = tenant.onboarding_progress || {};
+    const missing = requiredSteps.filter((key) => progress[key]?.completed !== true);
+    if (missing.length) {
+      return sendError(res, ERROR_CODES.VALIDATION,
+        'Complete or explicitly skip each remaining setup step before launching.',
+        409, { missingSteps: missing });
+    }
+
+    await centralPrisma.$executeRaw`
+      UPDATE tenants SET is_setup_complete = true, updated_at = NOW()
+      WHERE id = ${tenantId}::uuid AND deleted_at IS NULL
+    `;
+    return sendSuccess(res, { isSetupComplete: true }, 'Company setup completed');
+  } catch (err) {
+    logger.error('[onboarding/complete]', err);
+    return sendError(res, ERROR_CODES.SERVER, 'Could not complete company setup', 500);
+  }
+});
+
 module.exports = router;
