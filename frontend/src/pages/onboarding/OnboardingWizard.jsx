@@ -171,14 +171,7 @@ export default function OnboardingWizard({ onComplete }) {
       const orderData = orderResp.data?.data;
 
       if (orderData?.mock) {
-        // Dev mode: skip real payment
-        await api.post('/platform/subscribe/verify', {
-          planSlug, billingMonths, renewalMode, selectedAddons, promoCode,
-          mock: true, razorpay_payment_id: 'mock', razorpay_order_id: 'mock', razorpay_signature: 'mock',
-        });
-        toast.success('Plan activated (dev mode)!');
-        setStep(STEPS.findIndex(s => s.key === 'org'));
-        return;
+        throw new Error('Mock payment responses are not accepted. Configure a real payment gateway.');
       }
 
       // Open Razorpay checkout
