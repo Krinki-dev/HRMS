@@ -26,6 +26,8 @@ export default function AdminMarketing() {
   const qc = useQueryClient();
   const [active, setActive]   = useState('Hero');
   const [hero,   setHero]     = useState(HERO_DEFAULTS);
+  const [features, setFeatures] = useState(FEATURE_DEFAULTS);
+  const [testimonials, setTestimonials] = useState([]);
   const [copied, setCopied]   = useState(false);
 
   // 1. Fetch current marketing settings from DB
@@ -45,6 +47,8 @@ export default function AdminMarketing() {
   useEffect(() => {
     if (marketingRes && Object.keys(marketingRes).length > 0) {
       setHero(h => ({ ...h, ...marketingRes, heading: marketingRes.heroHeading || marketingRes.heading || h.heading, subhead: marketingRes.heroSubhead || marketingRes.subhead || h.subhead }));
+      if (Array.isArray(marketingRes.features)) setFeatures(marketingRes.features);
+      if (Array.isArray(marketingRes.testimonials)) setTestimonials(marketingRes.testimonials);
     }
   }, [marketingRes]);
 
@@ -141,23 +145,21 @@ export default function AdminMarketing() {
 
         {active === 'Features' && (
           <div className="card" style={{ padding: '16px 20px' }}>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Feature cards</div>
-            <div style={{ fontSize: 11, color: 'var(--admin-text-soft)', marginBottom: 14 }}>These 6 cards appear in the &quot;Why Syntern?&quot; section on the landing page.</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              {FEATURE_DEFAULTS.map((f, i) => (
-                <div key={i} style={{ background: 'var(--admin-surface-alt)', border: '1px solid var(--admin-border)', borderRadius: 8, padding: '12px 14px' }}>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: 20 }}>{f.icon}</span>
-                    <div>
-                      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 3, color: 'var(--admin-text)' }}>{f.title}</div>
-                      <div style={{ fontSize: 11, color: 'var(--admin-text-soft)', lineHeight: 1.5 }}>{f.desc}</div>
-                    </div>
-                  </div>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Editable landing-page feature cards</div>
+            <div style={{ fontSize: 11, color: 'var(--admin-text-soft)', marginBottom: 14 }}>Changes are saved centrally and shown on the public landing page.</div>
+            <div style={{ display: 'grid', gap: 12 }}>
+              {features.map((feature, index) => (
+                <div key={index} style={{ display: 'grid', gridTemplateColumns: '72px 1fr 1fr auto', gap: 8, alignItems: 'start' }}>
+                  <input className="form-input" aria-label="Feature icon" value={feature.icon} maxLength={8} onChange={e => setFeatures(items => items.map((item, i) => i === index ? { ...item, icon: e.target.value } : item))} />
+                  <input className="form-input" aria-label="Feature title" value={feature.title} maxLength={100} onChange={e => setFeatures(items => items.map((item, i) => i === index ? { ...item, title: e.target.value } : item))} />
+                  <textarea className="form-input" aria-label="Feature description" rows={2} maxLength={300} value={feature.desc} onChange={e => setFeatures(items => items.map((item, i) => i === index ? { ...item, desc: e.target.value } : item))} />
+                  <button className="btn-sm" type="button" onClick={() => setFeatures(items => items.filter((_, i) => i !== index))}>Remove</button>
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: 14, padding: '10px 12px', background: 'rgba(217,119,6,0.12)', borderRadius: 6, fontSize: 11, color: 'var(--admin-warning)' }}>
-              To edit feature text: modify <code>FEATURE_DEFAULTS</code> in this file and redeploy.
+            <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+              <button className="btn-sm" type="button" onClick={() => setFeatures(items => items.length < 12 ? [...items, { icon: '✨', title: '', desc: '' }] : items)} disabled={features.length >= 12}>+ Add feature</button>
+              <button className="btn-primary" type="button" onClick={() => saveM.mutate({ ...(marketingRes || {}), features })} disabled={saveM.isPending || features.some(item => !item.title.trim() || !item.desc.trim())}>{saveM.isPending ? 'Saving…' : 'Save features'}</button>
             </div>
           </div>
         )}
@@ -197,13 +199,23 @@ export default function AdminMarketing() {
 
         {active === 'Testimonials' && (
           <div className="card" style={{ padding: '16px 20px' }}>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Testimonials</div>
-            <div style={{ fontSize: 11, color: 'var(--admin-text-soft)', marginBottom: 14 }}>Add testimonials from real clients once you have them. These appear on the landing page.</div>
-            <div style={{ textAlign: 'center', padding: 40, color: 'var(--admin-text-soft)', fontSize: 12 }}>
-              No testimonials yet. Once you onboard real clients and collect feedback, add them here.
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Customer testimonials</div>
+            <div style={{ fontSize: 11, color: 'var(--admin-text-soft)', marginBottom: 14 }}>Publish only genuine customer quotes with permission. Empty entries are not shown publicly.</div>
+            <div style={{ display: 'grid', gap: 12 }}>
+              {testimonials.map((item, index) => (
+                <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr auto', gap: 8, alignItems: 'start' }}>
+                  <textarea className="form-input" aria-label="Customer quote" rows={2} maxLength={500} placeholder="Customer quote" value={item.quote} onChange={e => setTestimonials(items => items.map((row, i) => i === index ? { ...row, quote: e.target.value } : row))} />
+                  <input className="form-input" aria-label="Author" maxLength={100} placeholder="Name" value={item.author} onChange={e => setTestimonials(items => items.map((row, i) => i === index ? { ...row, author: e.target.value } : row))} />
+                  <input className="form-input" aria-label="Role" maxLength={100} placeholder="Role" value={item.role || ''} onChange={e => setTestimonials(items => items.map((row, i) => i === index ? { ...row, role: e.target.value } : row))} />
+                  <input className="form-input" aria-label="Company" maxLength={100} placeholder="Company" value={item.company || ''} onChange={e => setTestimonials(items => items.map((row, i) => i === index ? { ...row, company: e.target.value } : row))} />
+                  <button className="btn-sm" type="button" onClick={() => setTestimonials(items => items.filter((_, i) => i !== index))}>Remove</button>
+                </div>
+              ))}
+              {testimonials.length === 0 && <div className="admin-empty-state">No testimonials published. Add a verified customer quote when permission is available.</div>}
             </div>
-            <div style={{ padding: '10px 12px', background: 'var(--admin-accent-soft)', borderRadius: 6, fontSize: 11, color: 'var(--admin-accent)' }}>
-              💡 After PCEPL goes live: ask them for a 1-2 sentence quote about using Syntern. Add it here to improve landing page conversion.
+            <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+              <button className="btn-sm" type="button" onClick={() => setTestimonials(items => items.length < 8 ? [...items, { quote: '', author: '', role: '', company: '' }] : items)} disabled={testimonials.length >= 8}>+ Add testimonial</button>
+              <button className="btn-primary" type="button" onClick={() => saveM.mutate({ ...(marketingRes || {}), testimonials })} disabled={saveM.isPending || testimonials.some(item => !item.quote.trim() || !item.author.trim())}>{saveM.isPending ? 'Saving…' : 'Save testimonials'}</button>
             </div>
           </div>
         )}
