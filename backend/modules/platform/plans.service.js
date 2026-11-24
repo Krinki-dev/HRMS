@@ -295,8 +295,9 @@ function calculatePriceFromCatalog({ plans, modulePricing, discounts, promo, pla
       selectedAddons.some((module) => typeof module !== 'string' || !module.trim())) {
     throw new Error('Selected add-ons must be a list of supported module names');
   }
+  const requestedAddonCount = selectedAddons.length;
   selectedAddons = [...new Set(selectedAddons)];
-  if (selectedAddons.length !== arguments[0].selectedAddons?.length) {
+  if (selectedAddons.length !== requestedAddonCount) {
     throw new Error('Duplicate add-ons are not allowed');
   }
 
