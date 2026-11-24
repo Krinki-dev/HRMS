@@ -298,6 +298,22 @@ model invoices {
   @@index([status])
 }
 
+model payment_orders {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id           String   @db.Uuid
+  invoice_id          String   @db.Uuid
+  gateway             String   @default("razorpay")
+  gateway_order_id    String   @unique
+  gateway_payment_id  String?  @unique
+  amount_paise        Int
+  currency            String   @default("INR")
+  status              String   @default("created")
+  created_at          DateTime @default(now()) @db.Timestamptz
+  updated_at          DateTime @default(now()) @db.Timestamptz
+
+  @@index([tenant_id, invoice_id, status])
+}
+
 model billing_events {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id    String?  @db.Uuid
