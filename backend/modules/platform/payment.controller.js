@@ -10,6 +10,7 @@ const { Parser } = require('json2csv');
 const billingEmailer = require('../../shared/utils/billingEmailer');
 const plansService = require('./plans.service');
 const billingLogger = require('../../shared/services/billingLogger');
+const { verifyRazorpaySignature, isRazorpayPaymentForInvoice } = require('../../shared/utils/razorpayPaymentVerification');
 const { withTenantRLS, withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
@@ -124,23 +125,6 @@ exports.createOrder = async (req, res) => {
       }
     };
 
-    if (process.env.NODE_ENV === 'development' && (!process.env.RAZORPAY_KEY_ID || process.env.SKIP_PAYMENT === 'true')) {
-      logger.warn(`${THEME.ICONS.WARNING} [createOrder] Using mock invoice payment mode in development`);
-      return sendSuccess(res, {
-        mock: true,
-        orderId: `MOCK-${invoice.id}`,
-        amount: invoice.total_paise,
-        currency: invoice.currency,
-        keyId: null,
-        companyName: 'Syntern HRMS',
-        description: `Payment for ${invoice.invoice_no}`,
-        prefill: {
-          name: invoice.tenant.admin_name,
-          email: invoice.tenant.admin_email,
-        }
-      });
-    }
-
     const rp = getRazorpay();
     if (!rp) return sendError(res, ERROR_CODES.SERVER, 'Payment gateway misconfigured', 500);
     const order = await rp.orders.create(options);
@@ -190,24 +174,38 @@ exports.verifyPayment = async (req, res) => {
     }
     if (invoice.status === 'paid') return sendError(res, ERROR_CODES.VALIDATION, 'Invoice already paid', 400);
 
-    if (!mock) {
-      const sign = `${resolvedOrderId}|${resolvedPaymentId}`;
-      const secret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
-      const expectedSign = crypto
-        .createHmac("sha256", secret)
-        .update(sign.toString())
-        .digest("hex");
+    if (mock) {
+      return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Client-side mock payments are not accepted', 403);
+    }
+    const secret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
+    if (!secret || !resolvedOrderId || !resolvedPaymentId || !resolvedSignature) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Payment verification details are incomplete or gateway is not configured', 400);
+    }
+    if (!verifyRazorpaySignature({
+      orderId: resolvedOrderId,
+      paymentId: resolvedPaymentId,
+      signature: resolvedSignature,
+      secret,
+    })) {
+      await billingLogger.logInvalidSignature({ gateway: 'razorpay', req });
+      return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Invalid payment signature', 400);
+    }
 
-      if (resolvedSignature !== expectedSign) {
-        return sendError(res, ERROR_CODES.UNAUTHORIZED, "Invalid payment signature", 400);
-      }
+    const razorpay = getRazorpay();
+    if (!razorpay) return sendError(res, ERROR_CODES.SERVER, 'Payment gateway misconfigured', 500);
+    const [gatewayOrder, gatewayPayment] = await Promise.all([
+      razorpay.orders.fetch(resolvedOrderId),
+      razorpay.payments.fetch(resolvedPaymentId),
+    ]);
+    if (!isRazorpayPaymentForInvoice({ order: gatewayOrder, payment: gatewayPayment, invoice })) {
+      return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Gateway payment does not match this invoice or is not captured', 400);
     }
 
     await withBillingRLS(req, tenantId, (tx) => tx.invoices.update({
       where: { id: invoiceId },
       data: {
         status: 'paid',
-        payment_id: resolvedPaymentId || (mock ? `MOCK-${invoiceId}` : null),
+        payment_id: resolvedPaymentId,
         updated_at: new Date()
       }
     }));
