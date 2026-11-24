@@ -31,20 +31,20 @@ export default function AdminMarketing() {
   // 1. Fetch current marketing settings from DB
   const { data: marketingRes, isLoading } = useQuery({
     queryKey: ['admin-marketing'],
-    queryFn: () => api.get('/platform/admin/marketing').then(res => res.data),
+    queryFn: () => api.get('/platform/admin/settings').then(res => res.data?.data?.Marketing || {}),
   });
 
   // 1.1 Fetch current plan catalog for preview
   const { data: plansRes } = useQuery({
     queryKey: ['admin-plans-catalog'],
-    queryFn: () => api.get('/platform/admin/plans').then(res => res.data),
+    queryFn: () => api.get('/platform/admin/plans').then(res => res.data?.data || {}),
   });
   const catalogPlans = plansRes?.plans || [];
 
   // Sync local state when data is loaded
   useEffect(() => {
     if (marketingRes && Object.keys(marketingRes).length > 0) {
-      setHero(h => ({ ...h, ...marketingRes }));
+      setHero(h => ({ ...h, ...marketingRes, heading: marketingRes.heroHeading || marketingRes.heading || h.heading, subhead: marketingRes.heroSubhead || marketingRes.subhead || h.subhead }));
     }
   }, [marketingRes]);
 
