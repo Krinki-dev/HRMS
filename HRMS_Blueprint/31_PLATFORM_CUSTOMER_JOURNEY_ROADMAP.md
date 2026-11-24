@@ -38,8 +38,8 @@
 
 **Business identity lookup:**
 - Ask whether the business is GST-registered. If yes, collect GSTIN; otherwise offer PAN as the alternative identifier.
-- Prefer an authorised official GST portal/API integration for GSTIN lookup and prefill. Confirm current portal/API terms and permitted access before implementation; do not automate around or defeat CAPTCHA.
-- If official lookup requires CAPTCHA or no permitted API is available, embed/redirect to an official user-assisted verification step where feasible, or show a clear CAPTCHA/manual verification step in the registration journey. The customer solves it; the system then validates and records the returned details/status.
+- Prefer an authorised official GST portal/API integration for GSTIN lookup and prefill. Confirm current portal/API terms and permitted access before implementation; do not automate around or defeat CAPTCHA. The current GST automation code/documentation describes audio-CAPTCHA transcription, OCR, and fallback sites (including KnowYourGST/Tally); this is not the desired final behaviour and must be replaced or disabled for signup.
+- If official lookup requires CAPTCHA or no permitted API is available, embed/redirect to an official user-assisted verification step where feasible, or show a clear CAPTCHA/manual verification step in the registration journey. The customer solves it; the system then validates and records the returned details/status. Do not use OCR, audio-to-text, CAPTCHA-solving services, or a third-party site as an automatic fallback.
 - Use PAN-based lookup only through an authorised source and only for fields legally available. Do not promise a complete PAN profile where official access does not provide one.
 - Let the user review and correct fetched details. Record verification source, time, and status, and distinguish `prefilled` from `verified` data.
 
