@@ -416,7 +416,10 @@ export default function PlanSelectionStep({ onNext, onBack, employeeCount = 0 })
             PhonePe <span className="text-[10px] font-semibold">Coming soon</span>
           </div>
           <div className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-color)] px-3 py-2 text-sm text-[var(--text-muted)]">
-            Other payment methods <span className="text-[10px] font-semibold">Coming soon</span>
+            JioPay <span className="text-[10px] font-semibold">Coming soon</span>
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-color)] px-3 py-2 text-sm text-[var(--text-muted)]">
+            More methods <span className="text-[10px] font-semibold">Coming soon</span>
           </div>
         </div>
         <p className="text-xs text-[var(--text-secondary)] mt-2">Razorpay is the only payment gateway enabled for launch. Other methods cannot be selected or used yet.</p>
