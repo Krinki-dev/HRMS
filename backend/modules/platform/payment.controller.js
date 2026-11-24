@@ -12,6 +12,7 @@ const plansService = require('./plans.service');
 const billingLogger = require('../../shared/services/billingLogger');
 const { verifyRazorpaySignature, isRazorpayPaymentForInvoice, verifyRazorpayWebhookSignature } = require('../../shared/utils/razorpayPaymentVerification');
 const { matchesSubscriptionOrderSnapshot } = require('../../shared/utils/subscriptionPaymentVerification');
+const { createPhonePePayment, getPhonePeOrderStatus, isPhonePeOrderPaid } = require('../../shared/utils/phonepeStandardCheckout');
 const { withTenantRLS, withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
@@ -771,9 +772,6 @@ exports.createSubscriptionOrder = async (req, res) => {
     if (method === 'jiopay') {
       return sendError(res, ERROR_CODES.VALIDATION, 'JioPay checkout is disabled until the official merchant API contract is implemented.', 503);
     }
-    if (method === 'phonepe') {
-      return sendError(res, ERROR_CODES.VALIDATION, 'PhonePe checkout is temporarily disabled until the current Standard Checkout v2 integration is configured and verified.', 503);
-    }
     const normalizedRenewalMode = normalizeRenewalMode(renewalMode);
 
     // ── Dynamic pricing via plans.service ──────────────────────────────────
@@ -873,51 +871,29 @@ exports.createSubscriptionOrder = async (req, res) => {
       });
     }
 
-    // ── PhonePe ─────────────────────────────────────────────────────────
+    // ── PhonePe Standard Checkout v2 ──────────────────────────────────────
     if (method === 'phonepe') {
-      if (!phonePeMerchantId || !phonePeSaltKey) return sendError(res, ERROR_CODES.SERVER, 'PhonePe credentials missing in .env', 500);
-      
-      const merchantTransactionId = `SUB-${String(tenantId || 'new').substring(0, 8)}-${Date.now()}`;
-      const safeAddons = Array.isArray(addons) ? addons : (req.body.selectedAddons || []);
-      const payload = {
-        merchantId: phonePeMerchantId,
-        merchantTransactionId: merchantTransactionId,
-        merchantUserId: `USER-${String(tenantId || 'new').substring(0, 8)}`,
+      const merchantOrderId = `SUB-${String(tenantId).replace(/-/g, '').substring(0, 12)}-${Date.now()}`;
+      const redirectUrl = `${process.env.FRONTEND_URL}/onboarding?step=plan&status=verify&method=phonepe&transactionId=${encodeURIComponent(merchantOrderId)}`;
+      const checkout = await createPhonePePayment({
+        merchantOrderId,
         amount: finalAmount,
-        currency: 'INR',
-        redirectUrl: `${process.env.FRONTEND_URL}/onboarding?step=plan&status=verify&method=phonepe&transactionId=${merchantTransactionId}`,
-        redirectMode: 'POST',
-        callbackUrl: `${process.env.BACKEND_URL}/api/v1/platform/subscribe/phonepe-webhook`,
-        mobileNumber: tenant?.admin_phone || '9999999999',
-        paymentInstrument: { type: 'PAY_PAGE' },
-        metadata: { tenantId, planId: resolvedPlanId, period: billingMonths ? `${billingMonths}months` : period, renewalMode: normalizedRenewalMode, addons: safeAddons.join(','), type: 'subscription' }
-      };
-
-      const base64Payload = Buffer.from(JSON.stringify(payload)).toString('base64');
-      const xVerify = crypto.createHash('sha256').update(base64Payload + '/pg/v1/pay' + phonePeSaltKey).digest('hex') + '###' + phonePeSaltIndex;
-
-      const response = await axios.post(`${phonePeBaseUrl}/pg/v1/pay`, { request: base64Payload }, {
-        headers: { 'Content-Type': 'application/json', 'X-VERIFY': xVerify, 'X-MERCHANT-ID': phonePeMerchantId }
+        redirectUrl,
+        metaInfo: { udf1: String(tenantId), udf2: 'subscription', udf3: String(resolvedPlanId) },
       });
-
-      if (response.data.success) {
-        const redirectUrl = response.data.data?.instrumentResponse?.redirectInfo?.url || response.data.data?.instrumentResponse?.url;
-        if (!redirectUrl) return sendError(res, ERROR_CODES.SERVER, 'PhonePe did not return a checkout URL', 502);
-        await withBillingRLS(req, tenantId, (tx) => tx.payment_orders.create({
-          data: {
-            tenant_id: tenantId,
-            purpose: 'subscription',
-            gateway: 'phonepe',
-            gateway_order_id: merchantTransactionId,
-            amount_paise: finalAmount,
-            currency: 'INR',
-            status: 'created',
-            metadata: subscriptionSnapshot,
-          },
-        }));
-        return sendSuccess(res, { method: 'phonepe', redirectUrl, transactionId: merchantTransactionId });
-      }
-      return sendError(res, ERROR_CODES.SERVER, response.data.message || 'PhonePe initiation failed', 500);
+      await withBillingRLS(req, tenantId, (tx) => tx.payment_orders.create({
+        data: {
+          tenant_id: tenantId,
+          purpose: 'subscription',
+          gateway: 'phonepe',
+          gateway_order_id: merchantOrderId,
+          amount_paise: finalAmount,
+          currency: 'INR',
+          status: 'created',
+          metadata: subscriptionSnapshot,
+        },
+      }));
+      return sendSuccess(res, { method: 'phonepe', redirectUrl: checkout.redirectUrl, transactionId: merchantOrderId });
     }
 
     // ── JioPay ──────────────────────────────────────────────────────────
@@ -1034,25 +1010,11 @@ exports.verifySubscription = async (req, res) => {
         }
       } 
       
-      // 2. PHONEPE STATUS CHECK (Server-to-Server)
+      // PhonePe v2 order status is checked after the persisted order is loaded.
       else if (method === 'phonepe') {
-        return sendError(res, ERROR_CODES.VALIDATION, 'PhonePe verification is disabled until Standard Checkout v2 is configured and verified.', 503);
-        /*
-        if (!transactionId) return sendError(res, ERROR_CODES.VALIDATION, 'PhonePe transaction ID is required.', 400);
-        if (!phonePeMerchantId || !phonePeSaltKey || !phonePeSaltIndex) {
-          return sendError(res, ERROR_CODES.SERVER, 'PhonePe verification is not configured.', 500);
-        }
-        const xVerify = crypto.createHash('sha256').update(`/pg/v1/status/${phonePeMerchantId}/${transactionId}` + phonePeSaltKey).digest('hex') + '###' + phonePeSaltIndex;
-        const response = await axios.get(`${phonePeBaseUrl}/pg/v1/status/${phonePeMerchantId}/${transactionId}`, {
-          headers: { 'Content-Type': 'application/json', 'X-VERIFY': xVerify, 'X-MERCHANT-ID': phonePeMerchantId }
-        });
-        
-        if (!response.data.success || response.data.code !== 'PAYMENT_SUCCESS') {
-          return sendError(res, ERROR_CODES.VALIDATION, `PhonePe Status: ${response.data.message || 'Payment not successful'}`, 400);
-        }
+        if (!transactionId) return sendError(res, ERROR_CODES.VALIDATION, 'PhonePe merchant order ID is required.', 400);
       }
 
-        */
       // 3. JIOPAY STATUS CHECK (Server-to-Server)
       else if (method === 'jiopay') {
         if (!transactionId) return sendError(res, ERROR_CODES.VALIDATION, 'JioPay transaction ID is required.', 400);
@@ -1141,19 +1103,17 @@ exports.verifySubscription = async (req, res) => {
         return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Razorpay payment does not match the stored subscription order.', 400);
       }
     } else if (method === 'phonepe') {
-      const xVerify = crypto.createHash('sha256')
-        .update(`/pg/v1/status/${phonePeMerchantId}/${transactionId}${phonePeSaltKey}`)
-        .digest('hex') + '###' + phonePeSaltIndex;
-      const statusResponse = await axios.get(`${phonePeBaseUrl}/pg/v1/status/${phonePeMerchantId}/${transactionId}`, {
-        headers: { 'Content-Type': 'application/json', 'X-VERIFY': xVerify, 'X-MERCHANT-ID': phonePeMerchantId }
-      });
-      const statusData = statusResponse.data?.data || {};
-      if (!statusResponse.data?.success ||
-          statusResponse.data?.code !== 'PAYMENT_SUCCESS' ||
-          Number(statusData.amount) !== Number(subscriptionOrder.amount_paise) ||
-          String(statusData.merchantTransactionId || '') !== String(subscriptionOrder.gateway_order_id)) {
+      const phonePeStatus = await getPhonePeOrderStatus({ merchantOrderId: transactionId });
+      if (!isPhonePeOrderPaid(phonePeStatus, {
+        merchantOrderId: subscriptionOrder.gateway_order_id,
+        amount: subscriptionOrder.amount_paise,
+      })) {
         return sendError(res, ERROR_CODES.UNAUTHORIZED, 'PhonePe status does not match the stored subscription order amount and transaction.', 400);
       }
+      resolvedPaymentId = phonePeStatus.paymentDetails.find((payment) =>
+        payment?.state === 'COMPLETED' &&
+        Number(payment.amount) === Number(subscriptionOrder.amount_paise)
+      ).transactionId;
     }
 
     const expiryDate = new Date();
