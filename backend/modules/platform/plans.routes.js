@@ -164,11 +164,35 @@ router.get('/admin/plans/promos', auth, superAdmin, async (req, res) => {
 
 router.post('/admin/plans/promos', auth, superAdmin, async (req, res) => {
   try {
-    const { code, type, value_paise, value_pct, expiry, is_active = true, description } = req.body;
-    if (!code || !type) return sendError(res, ERROR_CODES.VALIDATION, 'code and type required', 400);
-    const promo = await svc.savePromoCode({ code: code.toUpperCase(), type, value_paise, value_pct, expiry, is_active, description });
+    const { code, type, value_paise, value_pct, expiry, is_active = true, description } = req.body || {};
+    const normalizedCode = String(code || '').trim().toUpperCase();
+    if (!/^[A-Z0-9][A-Z0-9_-]{1,31}$/.test(normalizedCode)) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Promo code must be 2–32 letters, numbers, hyphens or underscores.', 400);
+    }
+    if (!['flat', 'percent'].includes(type)) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Promo type must be flat or percent.', 400);
+    }
+    const flatValue = type === 'flat' ? Number(value_paise) : null;
+    const percentValue = type === 'percent' ? Number(value_pct) : null;
+    if (type === 'flat' && (!Number.isSafeInteger(flatValue) || flatValue <= 0)) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Flat promo value must be a positive amount in paise.', 400);
+    }
+    if (type === 'percent' && (!Number.isFinite(percentValue) || percentValue <= 0 || percentValue > 100)) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Percentage promo must be greater than 0 and no more than 100.', 400);
+    }
+    if (expiry && !Number.isFinite(Date.parse(expiry))) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Promo expiry must be a valid date.', 400);
+    }
+    if (typeof is_active !== 'boolean' || (description != null && String(description).length > 240)) {
+      return sendError(res, ERROR_CODES.VALIDATION, 'Invalid promo status or description.', 400);
+    }
+    const promo = await svc.savePromoCode({
+      code: normalizedCode, type, value_paise: flatValue, value_pct: percentValue,
+      expiry: expiry || null, is_active, description: String(description || '').trim(),
+    });
     return sendSuccess(res, promo, 'Promo code saved');
   } catch (err) {
+    logger.error('[Admin/plans/promos]', err);
     return sendError(res, ERROR_CODES.SERVER, 'Save failed', 500);
   }
 });
