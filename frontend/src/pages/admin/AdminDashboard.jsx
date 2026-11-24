@@ -117,7 +117,7 @@ export default function AdminDashboard() {
               <div className="card-title">Recent sign-ups</div>
               <div className="card-sub">Last 10 registered companies</div>
             </div>
-            <Link to="/platform/tenants" className="btn-sm">View all {THEME.ICONS.FORWARD}</Link>
+            <Link to="/admin/clients" className="btn-sm">View all {THEME.ICONS.FORWARD}</Link>
           </div>
           <div className="admin-panel-body admin-table-scroll">
             <table className="data-table">
@@ -149,7 +149,7 @@ export default function AdminDashboard() {
                       {t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : '—'}
                     </td>
                     <td>
-                      <Link to={`/platform/tenants/${t.id}`} className="btn-sm">Open</Link>
+                      <Link to={`/admin/clients/${t.id}`} className="btn-sm">Open</Link>
                     </td>
                   </tr>
                 ))}
@@ -192,13 +192,13 @@ export default function AdminDashboard() {
       {stats.expiringSoon > 0 && (
         <div className="admin-alert admin-alert--warning">
           <span>⚠</span>
-          <span><strong>{stats.expiringSoon} subscription{stats.expiringSoon !== 1 ? 's' : ''}</strong> expiring within 7 days. <Link to="/platform/tenants?status=active" style={{ color: 'inherit', fontWeight: 700 }}>Review now →</Link></span>
+          <span><strong>{stats.expiringSoon} subscription{stats.expiringSoon !== 1 ? 's' : ''}</strong> expiring within 7 days. <Link to="/admin/clients?status=active" style={{ color: 'inherit', fontWeight: 700 }}>Review now →</Link></span>
         </div>
       )}
       {stats.suspended > 0 && (
         <div className="admin-alert admin-alert--danger" style={{ marginTop: 8 }}>
           <span>⛔</span>
-          <span><strong>{stats.suspended} account{stats.suspended !== 1 ? 's' : ''}</strong> currently suspended. <Link to="/platform/tenants?status=suspended" style={{ color: 'inherit', fontWeight: 700 }}>View →</Link></span>
+          <span><strong>{stats.suspended} account{stats.suspended !== 1 ? 's' : ''}</strong> currently suspended. <Link to="/admin/clients?status=suspended" style={{ color: 'inherit', fontWeight: 700 }}>View →</Link></span>
         </div>
       )}
     </div>
