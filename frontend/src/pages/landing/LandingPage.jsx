@@ -798,7 +798,9 @@ export default function LandingPage() {
   const isScrollingRef = useRef(false);
   const resumeTimeoutRef = useRef(null);
 
-  const goto = (path) => navigate(path);\n\n  useEffect(() => {\n    let active = true;\n    api.get('/platform/marketing')\n      .then((response) => { if (active) setMarketing(response.data?.data || {}); })\n      .catch(() => { /* Keep the built-in landing-page copy when settings are unavailable. */ });\n    return () => { active = false; };\n  }, []);
+  const goto = (path) => navigate(path);
+
+  useEffect(() => {\n    let active = true;\n    api.get('/platform/marketing')\n      .then((response) => { if (active) setMarketing(response.data?.data || {}); })\n      .catch(() => { /* Keep the built-in landing-page copy when settings are unavailable. */ });\n    return () => { active = false; };\n  }, []);
 
   useEffect(() => {
     const setAppHeight = () => {
