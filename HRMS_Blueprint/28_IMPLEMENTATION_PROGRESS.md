@@ -249,3 +249,20 @@ No DB connection, migration, staging, deployment, live payment or production cha
 3. Audit Employees first, then Attendance/Shift, Leave, Payroll and Compliance as one connected operational workflow. Do not assume route presence means module completeness; verify frontend actions, backend validation, DB schema, tenant isolation, approval states and tests.
 4. Then proceed through Recruitment, Performance, Training, Assets, Expenses, Reports and Notifications/Automation.
 5. Staging DB migrations, backup/restore drill, provider sandbox and production release remain gated on user access/approval.
+
+
+## 2026-11-25 — HRMS module entitlement enforcement
+
+- Source audit found `checkModuleEnabled()` in `backend/shared/middleware/permission.js` was a no-op and was not mounted on the main module routers. This meant a tenant's server-side `tenant_modules` entitlement list was not consistently enforced at the API boundary, even though plan selection persisted module entitlements.
+- Implemented exact, case-insensitive server-resolved module entitlement checking. Missing entitlement metadata fails closed with 403. Only a platform-level operator (`req.user.is_platform_admin === true`) bypasses the tenant plan check; company Admin/HR roles do not.
+- Mounted module entitlement checks on Employees, Attendance, Leave, Payroll, Compliance, Recruitment, Performance, Training, Assets, Expenses and Reports routers.
+- Added `backend/test/module-entitlements.test.js` for exact matching, case normalization, denied tenant access, missing metadata and platform-admin bypass.
+- Commits: permission middleware `12880a58ec59f8158851566de2a47b3adeb811d9`; Employees `2a00217e75f148efc8d7ea5e2d1e7885aa513d2d`; Attendance `3e90f6fed52a35bfa68996f7c66f6f2d042dbbd4`; Leave `fe26e14c73c5a42bb3e7838656a7833136b846a0`; Payroll `7f6e9a784673a0f727ef7d6fbaa37fcf6c0608c0`; Compliance `b4522fc0c47bd7741888e38562a25d558295c4fc`; Recruitment `a0e308dda57bb6aed85ebe3b756e27a79854900b`; Performance `0ba2f2d1f906ffc0d13e23b3a7b78752e82c010e`; Training `9a0e467daa324dc3a6a98b79dad5216b66524771`; Assets `aa2a11a2419ef1257fd8b70261cc294612c9b4f4`; Expenses `a208e506248850c83e14f4c905c5341aa8dcb2e8`; Reports `0310b94e23dd2b11294afb789004112fd7eea747`; tests `6f27e355834e3ebd6af2deb0e6369d08ef58e127`.
+- This is a first API-boundary enforcement slice, not a complete module security audit. Check all remaining module routers (automation, notifications, settings, roles, documents and future endpoints), confirm platform-admin behavior, and run regression tests to ensure every registered module's name matches the catalog and persisted entitlement values.
+- Attendance self-service and Leave self-service routes still require a dedicated route-by-route authorization audit; module gating alone does not replace user/manager ownership checks or action permissions.
+
+### Module source-audit observations
+- Employees, Attendance, Leave, Payroll and Compliance already have backend routes/controllers/services; they are not greenfield modules.
+- Payroll has an integration test for payroll calculations, lifecycle guards and company scoping. Compliance has a PostgreSQL integration test for cross-company data-leak regression. Both require configured test PostgreSQL and may skip in ordinary CI.
+- Frontend module completeness and browser workflows have not yet been verified. The old module blueprint's June 2026 "Live" labels are historical, not current production certification.
+- Next module work should audit Employees first, then Attendance/Shift, Leave, Payroll and Compliance as one connected flow. Prioritize security and persistence gaps over new feature breadth.
