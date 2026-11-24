@@ -32,7 +32,15 @@ router.get('/marketing', async (req, res) => {
       heroSubhead: typeof values.heroSubhead === 'string' ? values.heroSubhead : null,
       ctaText: typeof values.ctaText === 'string' ? values.ctaText : null,
       ctaUrl: typeof values.ctaUrl === 'string' ? values.ctaUrl : null,
-      ctaSub: typeof values.ctaSub === 'string' ? values.ctaSub : null,
+      ctaSub: typeof values.ctaSub === 'string' ? values.ctaSub.slice(0, 180) : null,
+      bottomCtaHeading: typeof values.bottomCtaHeading === 'string' ? values.bottomCtaHeading.slice(0, 180) : null,
+      bottomCtaSubhead: typeof values.bottomCtaSubhead === 'string' ? values.bottomCtaSubhead.slice(0, 400) : null,
+      bottomCtaPrimaryText: typeof values.bottomCtaPrimaryText === 'string' ? values.bottomCtaPrimaryText.slice(0, 50) : null,
+      bottomCtaPrimaryUrl: typeof values.bottomCtaPrimaryUrl === 'string' && values.bottomCtaPrimaryUrl.startsWith('/') && !values.bottomCtaPrimaryUrl.startsWith('//') ? values.bottomCtaPrimaryUrl.slice(0, 180) : null,
+      bottomCtaSecondaryText: typeof values.bottomCtaSecondaryText === 'string' ? values.bottomCtaSecondaryText.slice(0, 50) : null,
+      bottomCtaSecondaryUrl: typeof values.bottomCtaSecondaryUrl === 'string' && values.bottomCtaSecondaryUrl.startsWith('/') && !values.bottomCtaSecondaryUrl.startsWith('//') ? values.bottomCtaSecondaryUrl.slice(0, 180) : null,
+      bottomCtaContactText: typeof values.bottomCtaContactText === 'string' ? values.bottomCtaContactText.slice(0, 50) : null,
+      bottomCtaContactUrl: typeof values.bottomCtaContactUrl === 'string' && values.bottomCtaContactUrl.startsWith('/') && !values.bottomCtaContactUrl.startsWith('//') ? values.bottomCtaContactUrl.slice(0, 180) : null,
       features: Array.isArray(values.features) ? values.features.slice(0, 12).filter((item) =>
         item && typeof item.icon === 'string' && typeof item.title === 'string' && typeof item.desc === 'string'
       ).map((item) => ({
