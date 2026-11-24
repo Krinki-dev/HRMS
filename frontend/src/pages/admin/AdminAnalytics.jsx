@@ -21,7 +21,7 @@ export default function AdminAnalytics() {
     queryKey: ['plans-catalog'],
     queryFn: () => api.get('/platform/admin/plans').then(res => res.data),
   });
-  const catalog = plansRes?.plans || [];
+  const catalog = plansRes?.data?.plans || plansRes?.plans || [];
 
   useEffect(() => {
     if (!growRef.current) return;
