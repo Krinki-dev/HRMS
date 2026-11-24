@@ -34,8 +34,8 @@ export default function AdminPlans() {
     queryFn:  () => import('../../services/api').then(m => m.default.get('/platform/admin/plans').then(r => r.data)),
     staleTime: 3600_000,
   });
-  const catalogPlans = plansRes?.plans || [];
-  const gstRate = plansRes?.gstRate || 0;
+  const catalogPlans = plansRes?.data?.plans || plansRes?.plans || [];
+  const gstRate = plansRes?.data?.gstRate || plansRes?.gstRate || 0;
 
 
   const MRR = {
