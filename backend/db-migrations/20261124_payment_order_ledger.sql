@@ -28,3 +28,21 @@ CREATE INDEX IF NOT EXISTS idx_payment_orders_tenant_purpose_status
 CREATE UNIQUE INDEX IF NOT EXISTS uq_payment_orders_one_open_per_invoice
   ON public.payment_orders (invoice_id)
   WHERE gateway = 'razorpay' AND status = 'created';
+
+
+-- Durable idempotency inbox for provider webhook delivery/replay handling.
+CREATE TABLE IF NOT EXISTS public.payment_webhook_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  gateway TEXT NOT NULL,
+  gateway_event_id TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  payload_sha256 TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'received'
+    CHECK (status IN ('received', 'processed', 'ignored', 'failed')),
+  received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  processed_at TIMESTAMPTZ,
+  last_error TEXT,
+  CONSTRAINT uq_payment_webhook_gateway_event UNIQUE (gateway, gateway_event_id)
+);
+CREATE INDEX IF NOT EXISTS idx_payment_webhook_status_received
+  ON public.payment_webhook_events (gateway, status, received_at);
