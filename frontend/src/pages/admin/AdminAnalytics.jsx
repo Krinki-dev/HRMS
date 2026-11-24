@@ -32,8 +32,9 @@ export default function AdminAnalytics() {
       if (destroyed) return;
       growChart?.destroy();
 
-      const gc = 'rgba(0,0,0,0.06)';
-      const tc = 'var(--admin-text-soft)';
+      const token = (name, fallback) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+      const gc = token('--admin-border', 'rgba(0,0,0,0.08)');
+      const tc = token('--admin-text-soft', '#687386');
 
       growChart = new Chart(growRef.current, {
         type: 'bar',
@@ -42,7 +43,7 @@ export default function AdminAnalytics() {
           datasets: [{
             label: 'Clients',
             data:  [bp.trial || 0, bp.starter || 0, bp.pro || 0, bp.enterprise || 0],
-            backgroundColor: ['var(--admin-success)', 'var(--admin-accent)', '#8b5cf6', 'var(--admin-warning)'],
+            backgroundColor: [token('--admin-success', '#18794e'), token('--admin-accent', '#2463d3'), '#7054c8', token('--admin-warning', '#946200')],
             borderRadius: 5,
           }],
         },
@@ -69,6 +70,7 @@ export default function AdminAnalytics() {
       if (destroyed) return;
       planChart?.destroy();
 
+      const token = (name, fallback) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
       const total = stats.total || 1;
       const paid  = (bp.starter || 0) + (bp.pro || 0) + (bp.enterprise || 0);
 
@@ -78,7 +80,7 @@ export default function AdminAnalytics() {
           labels: ['Free', 'Trial', 'Paid'],
           datasets: [{
             data:  [bp.free || 0, bp.trial || 0, paid],
-            backgroundColor: ['var(--admin-surface-muted)', 'var(--admin-success)', 'var(--admin-accent)'],
+            backgroundColor: [token('--admin-surface-muted', '#eef0f3'), token('--admin-success', '#18794e'), token('--admin-accent', '#2463d3')],
             borderWidth: 0,
             hoverOffset: 4,
           }],
@@ -86,7 +88,7 @@ export default function AdminAnalytics() {
         options: {
           responsive: true, maintainAspectRatio: false,
           cutout: '65%',
-          plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, color: 'var(--admin-text-soft)', padding: 14 } } },
+          plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, color: token('--admin-text-soft', '#687386'), padding: 14 } } },
         },
       });
     }
