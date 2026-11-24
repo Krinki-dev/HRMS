@@ -16,3 +16,9 @@ CREATE TABLE IF NOT EXISTS public.payment_orders (
 );
 CREATE INDEX IF NOT EXISTS idx_payment_orders_tenant_invoice_status
   ON public.payment_orders (tenant_id, invoice_id, status);
+
+-- At most one open Razorpay order per invoice. A failed/captured order may be
+-- followed by a new attempt after its status is changed.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_payment_orders_one_open_per_invoice
+  ON public.payment_orders (invoice_id)
+  WHERE gateway = 'razorpay' AND status = 'created';
