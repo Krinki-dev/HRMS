@@ -255,3 +255,77 @@
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
 }
+
+
+/* Compact layouts: keep every platform section reachable on tablets and phones. */
+@media (max-width: 900px) {
+  .admin-sidebar { width: 208px; }
+  .admin-topbar { padding-inline: 14px; }
+  .topbar-actions { gap: 7px; }
+}
+
+@media (max-width: 680px) {
+  .admin-layout {
+    height: 100dvh;
+    min-height: 100dvh;
+    flex-direction: column;
+  }
+
+  .admin-sidebar {
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .sidebar-brand {
+    padding: 9px 12px;
+    border-bottom: 0;
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 8px 8px;
+    gap: 5px;
+    scrollbar-width: thin;
+  }
+
+  .nav-btn {
+    flex: 0 0 auto;
+    padding: 8px 10px;
+    white-space: nowrap;
+  }
+
+  .nav-divider,
+  .sidebar-user {
+    display: none;
+  }
+
+  .admin-main {
+    min-height: 0;
+  }
+
+  .admin-topbar {
+    height: auto;
+    min-height: var(--topbar-height);
+    flex-wrap: wrap;
+    padding: 10px 12px;
+  }
+
+  .topbar-title { font-size: 14px; }
+  .topbar-sub,
+  .topbar-domain { display: none; }
+  .topbar-actions { gap: 6px; }
+  .btn-primary,
+  .btn-logout { padding: 7px 9px; font-size: 12px; }
+  .admin-content { padding: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-btn,
+  .btn-primary,
+  .btn-logout { transition: none; }
+}
