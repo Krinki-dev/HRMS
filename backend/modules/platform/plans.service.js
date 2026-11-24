@@ -457,7 +457,7 @@ async function saveSelectionToTenantConfig(tenantId, priceResult, meta = {}, db 
     discount_tenure_pct:        tenurePct,
     tenure_months:              billingMonths,
     is_stackable:               false,
-    offer_flat_paise:           breakdown.promo_deduction_paise || 0,
+    offer_flat_paise:           0,
     billing_cycle:              billingMonths === 1 ? 'monthly' : `${billingMonths}_months`,
   });
 
@@ -477,7 +477,7 @@ async function saveSelectionToTenantConfig(tenantId, priceResult, meta = {}, db 
       0, ${JSON.stringify(moduleDiscountMeta)}::jsonb,
       ${breakdown.bundle_discount_pct || 0}, 3,
       ${tenurePct}, ${billingMonths},
-      false, ${breakdown.promo_deduction_paise || 0},
+      false, 0,
       ${billingMonths === 1 ? 'monthly' : `${billingMonths}_months`},
       NOW()
     )
@@ -486,7 +486,7 @@ async function saveSelectionToTenantConfig(tenantId, priceResult, meta = {}, db 
           discount_bundle_pct       = ${breakdown.bundle_discount_pct || 0},
           discount_tenure_pct       = ${tenurePct},
           tenure_months             = ${billingMonths},
-          offer_flat_paise          = ${breakdown.promo_deduction_paise || 0},
+          offer_flat_paise          = 0,
           billing_cycle             = ${billingMonths === 1 ? 'monthly' : `${billingMonths}_months`},
             discount_module_pct       = ${JSON.stringify(moduleDiscountMeta)}::jsonb,
             updated_at                = NOW()
