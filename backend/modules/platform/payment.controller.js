@@ -115,6 +115,24 @@ exports.createOrder = async (req, res) => {
 
     if (invoice.status === 'paid') return sendError(res, ERROR_CODES.VALIDATION, 'Invoice already paid', 400);
 
+    const existingOrder = await withBillingRLS(req, invoice.tenant_id, (tx) => tx.payment_orders.findFirst({
+      where: { invoice_id: invoice.id, tenant_id: invoice.tenant_id, gateway: 'razorpay', status: 'created' },
+      orderBy: { created_at: 'desc' },
+    }));
+    if (existingOrder &&
+        Number(existingOrder.amount_paise) === Number(invoice.total_paise) &&
+        String(existingOrder.currency).toUpperCase() === String(invoice.currency).toUpperCase()) {
+      return sendSuccess(res, {
+        orderId: existingOrder.gateway_order_id,
+        amount: existingOrder.amount_paise,
+        currency: existingOrder.currency,
+        keyId: process.env.RAZORPAY_KEY_ID,
+        companyName: 'Syntern HRMS',
+        description: `Payment for ${invoice.invoice_no}`,
+        prefill: { name: invoice.tenant.admin_name, email: invoice.tenant.admin_email },
+      });
+    }
+
     const options = {
       amount: invoice.total_paise,
       currency: invoice.currency,
