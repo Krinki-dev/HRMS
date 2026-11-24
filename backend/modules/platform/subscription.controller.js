@@ -194,7 +194,7 @@ exports.activateTrial = async (req, res) => {
 
     if (jwtTenantId) {
       try {
-        const maybe = await withTenantRLS(centralPrisma, jwtTenantId, (tx) => tx.tenants.findUnique({ where: { id: jwtTenantId }, select: { id: true } }));
+        const maybe = await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.findUnique({ where: { id: jwtTenantId }, select: { id: true } }));
         if (maybe) resolvedTenantId = maybe.id;
         else logger.warn(`${THEME.ICONS.WARNING} [activateTrial] JWT tenantId present but not found in central DB: ${jwtTenantId}`);
       } catch (e) {
@@ -227,7 +227,7 @@ exports.activateTrial = async (req, res) => {
 
     let tenant;
     try {
-      tenant = await withTenantRLS(centralPrisma, resolvedTenantId, (tx) => tx.tenants.findUnique({
+      tenant = await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.findUnique({
         where: { id: resolvedTenantId },
         select: { id: true, plan: true, plan_expires_at: true, db_mode: true }
       }));
@@ -250,11 +250,13 @@ exports.activateTrial = async (req, res) => {
     expiryDate.setDate(expiryDate.getDate() + trialDays);
 
     try {
-      await withTenantRLS(centralPrisma, resolvedTenantId, async (tx) => {
-        await tx.tenants.update({
-          where: { id: resolvedTenantId },
+      await withPlatformAdminRLS(centralPrisma, async (tx) => {
+        await tx.$queryRawUnsafe("SELECT set_config($1, $2, true)", 'app.current_tenant', resolvedTenantId);
+        const activated = await tx.tenants.updateMany({
+          where: { id: resolvedTenantId, plan: 'free', OR: [{ plan_expires_at: null }, { plan_expires_at: { lte: new Date() } }] },
           data: { plan: 'trial', plan_expires_at: expiryDate }
         });
+        if (activated.count !== 1) throw new Error('TRIAL_ALREADY_ACTIVATED');
         await tx.tenant_pricing_configs.upsert({
           where: { tenant_id: resolvedTenantId },
           update: { offer_expiry_date: expiryDate },
@@ -268,6 +270,7 @@ exports.activateTrial = async (req, res) => {
       });
     } catch (err) {
       logger.warn(`${THEME.ICONS.WARNING} [activateTrial] central DB transaction failed: ${err.message}`);
+      if (err.message === 'TRIAL_ALREADY_ACTIVATED') return sendError(res, ERROR_CODES.VALIDATION, 'A trial or paid plan has already been activated for this company.', 409);
       return sendError(res, ERROR_CODES.SERVER, 'Failed to activate trial. No trial was activated.', 500);
     }
 
