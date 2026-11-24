@@ -37,8 +37,8 @@ async function generateMonthlyInvoices() {
     const tenants = await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.findMany({
       where: { is_active: true, deleted_at: null },
       include: {
-        pricing_config: true,
-        modules: { where: { is_active: true } }
+        tenant_pricing_configs: true,
+        tenant_modules: { where: { is_active: true } }
       }
     }));
 
@@ -46,12 +46,19 @@ async function generateMonthlyInvoices() {
 
     for (const tenant of tenants) {
       try {
-        if (!tenant.pricing_config) continue;
+        if (!tenant.tenant_pricing_configs) continue;
 
-        const { renewalMode, paymentMethod } = getRenewalContext(tenant.pricing_config);
+        // Launch policy: renewals are manual only. Legacy tenant metadata that
+        // says "auto" must never trigger an unverified recurring charge.
+        const legacyRenewal = getRenewalContext(tenant.tenant_pricing_configs);
+        const renewalMode = 'manual';
+        const paymentMethod = legacyRenewal.paymentMethod;
+        if (legacyRenewal.renewalMode === 'auto') {
+          logger.warn(`[Billing] Ignoring legacy automatic-renewal setting for ${tenant.subdomain}; manual renewal is enforced.`);
+        }
 
         const employeeCount = tenant.max_employees || 0;
-        const activeModules = tenant.modules.map(m => m.module_name);
+        const activeModules = tenant.tenant_modules.map(m => m.module_name);
 
         // Run the pricing engine
         const calc = calculateSubscription(tenant.pricing_config, activeModules, employeeCount);
@@ -66,18 +73,8 @@ async function generateMonthlyInvoices() {
         let paymentId = null;
         let autoAttempt = { attempted: false, success: false, reason: null };
 
-        if (renewalMode === 'auto') {
-          autoAttempt = await attemptAutoRenewalPayment({
-            tenant,
-            invoiceNo,
-            totalPaise: calc.finalPrice,
-            paymentMethod,
-          });
-          if (autoAttempt.success) {
-            invoiceStatus = 'paid';
-            paymentId = autoAttempt.paymentId || `AUTO-${tenant.id}-${Date.now()}`;
-          }
-        }
+        // No automatic charge is attempted at launch. The tenant pays the
+        // generated invoice through the authenticated manual Razorpay flow.
 
         const dueDate = invoiceStatus === 'paid'
           ? date
