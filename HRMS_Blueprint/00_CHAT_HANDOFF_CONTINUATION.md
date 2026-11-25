@@ -408,3 +408,17 @@ User should not be asked to repeat technical decisions. Ask for their involvemen
 - Current audit shows the main HRMS modules already have substantial backend routes/controllers/services. Payroll and Compliance have integration tests requiring PostgreSQL. Their existing "Live" blueprint labels are not proof of end-to-end readiness.
 - Immediate module task: audit Employees frontend + backend service/controller + database schema + ESS permissions + document storage; then trace Attendance and Leave into Payroll and Compliance. Check each workflow end-to-end rather than adding broad features blindly.
 - Review remaining module routers and permission coverage, especially self-service Attendance/Leave, Automation, Notifications, Settings and Roles. Plan gating and per-user authorization are separate requirements.
+
+
+## 12. 2026-11-25 — Frozen user requirement: CSV + relational multi-sheet Excel for every module
+
+- User requires two first-class import/export options across all HRMS modules: standard CSV and advanced Excel workbook (.xlsx).
+- XLSX is one workbook per module dataset with multiple logically related worksheets, not a collection of unrelated flat CSVs. Employee example: Basic/Employees, Contact, Family, Education, Employment History/Lifecycle, plus permission-gated sensitive sheets and controlled reference lists.
+- Parent/child links must use stable employee codes and/or immutable record IDs, never row numbers or names. New IDs are server-generated and returned in an import result mapping. All references are resolved within the current tenant.
+- Import is preview-first: parse, validate all sheets/references/duplicates/required fields, show sheet/row-level errors, allow confirmation, commit safely, and provide a downloadable error workbook and summary. Explicit create/update/upsert modes; no silent deletion/replacement.
+- Export/import respect tenant isolation, module entitlements, role permissions and field-level sensitive data rules. Bank/salary/identity data excluded by default and separately authorised. Documents are represented by secure metadata/reference unless explicitly handled through a protected document workflow.
+- Excel templates preserve useful formats, date/number formats, dropdowns, frozen headers, filters and instructions. No macros/external links; formulas are usability only and never trusted as imported source values.
+- CSV remains supported; for relational datasets use separate CSVs or a documented ZIP bundle while keeping a simple CSV option.
+- Apply to Employees, Attendance, Leave, Payroll, Compliance, Recruitment, Performance, Training, Assets, Expenses and all other applicable modules.
+- Build reusable import/export engine and schema-driven templates during Employees; reuse the framework for each subsequent module. Include sample/template download links in UI and round-trip tests for CSV and XLSX.
+- Detailed rules are recorded in `HRMS_Blueprint/32_PRODUCTION_READINESS_AND_MODULE_EXECUTION_PLAN.md`. This requirement is frozen; do not ask the user to repeat it.
