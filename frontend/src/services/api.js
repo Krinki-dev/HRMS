@@ -1,4 +1,4 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 import { tenantSubdomain as _tenantSubdomain } from '../utils/tenantDomain';
 import { useAuthStore } from '../store/authStore';
 
@@ -13,7 +13,7 @@ api.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 api.interceptors.request.use(
   (config) => {
     
-    const token = localStorage.getItem('accessToken');
+    const token = useAuthStore.getState().accessToken;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -65,6 +65,7 @@ api.interceptors.response.use(
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
       }).then((token) => {
+        original.headers = original.headers || {};
         original.headers.Authorization = `Bearer ${token}`;
         return api(original);
       });
@@ -87,7 +88,7 @@ api.interceptors.response.use(
 
       if (!newToken) throw new Error('No access token in refresh response');
 
-      localStorage.setItem('accessToken', newToken);
+      useAuthStore.getState().updateToken(newToken);
       api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
 
       try {
@@ -98,6 +99,7 @@ api.interceptors.response.use(
 
       processQueue(null, newToken);
 
+      original.headers = original.headers || {};
       original.headers.Authorization = `Bearer ${newToken}`;
       return api(original);
 
@@ -105,7 +107,7 @@ api.interceptors.response.use(
       
       processQueue(refreshError, null);
 
-      localStorage.removeItem('accessToken');
+      delete api.defaults.headers.common['Authorization'];
       try {
         const { useAuthStore } = await import('../store/authStore');
         useAuthStore.getState().logout();
