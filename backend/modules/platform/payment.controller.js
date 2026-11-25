@@ -10,6 +10,7 @@ const { Parser } = require('json2csv');
 const billingEmailer = require('../../shared/utils/billingEmailer');
 const plansService = require('./plans.service');
 const billingLogger = require('../../shared/services/billingLogger');
+const { isPaidStorageReady } = require('./paidStorageGuard');
 const { verifyRazorpaySignature, isRazorpayPaymentForInvoice, verifyRazorpayWebhookSignature } = require('../../shared/utils/razorpayPaymentVerification');
 const { matchesSubscriptionOrderSnapshot } = require('../../shared/utils/subscriptionPaymentVerification');
 const { getLaterExpiry } = require('./billingRenewal');
@@ -560,11 +561,7 @@ exports.createSubscriptionOrder = async (req, res) => {
     if (!plan || plan.slug === 'free' || plan.slug === 'custom') {
       return sendError(res, ERROR_CODES.VALIDATION, 'Choose an available paid plan. Custom plans require a quote.', 400);
     }
-    const paidStorageReady = tenant.storage_status === 'ready' &&
-      (tenant.storage_tier === 'dedicated_schema' ||
-        (tenant.storage_tier === 'dedicated_database' &&
-          (tenant.db_mode !== 'cloud' || plan.slug === 'enterprise')));
-    if (!paidStorageReady) {
+    if (!isPaidStorageReady(tenant, plan.slug)) {
       return sendError(res, ERROR_CODES.VALIDATION,
         'Paid checkout is paused until this company has verified dedicated PostgreSQL storage. No payment order was created.',
         409, { code: 'TENANT_STORAGE_MIGRATION_REQUIRED' });
@@ -676,11 +673,7 @@ exports.verifySubscription = async (req, res) => {
       where: { id: tenantId },
       select: { db_mode: true, storage_tier: true, storage_status: true },
     }));
-    const paidStorageReady = tenantStorage?.storage_status === 'ready' &&
-      (tenantStorage.storage_tier === 'dedicated_schema' ||
-        (tenantStorage.storage_tier === 'dedicated_database' &&
-          (tenantStorage.db_mode !== 'cloud' || plan.slug === 'enterprise')));
-    if (!paidStorageReady) {
+    if (!isPaidStorageReady(tenantStorage, plan.slug)) {
       return sendError(res, ERROR_CODES.VALIDATION,
         'Payment was verified with the gateway, but plan activation is paused until dedicated PostgreSQL storage is verified. Contact support; do not pay again.',
         409, { code: 'TENANT_STORAGE_MIGRATION_REQUIRED', paymentCapturedAtGateway: true });
