@@ -20,6 +20,36 @@ function decryptConfiguredValue(value, decryptValue) {
   return decryptValue(value);
 }
 
+function buildLocalPostgresUrl(tenant, decryptValue) {
+  const type = String(tenant.local_db_type || 'postgres').toLowerCase();
+  if (!['postgres', 'postgresql'].includes(type)) {
+    throw new Error('Only PostgreSQL is supported for customer-hosted/local tenant databases.');
+  }
+  const read = (value) => {
+    if (!value) return value;
+    const decrypted = decryptConfiguredValue(value, decryptValue);
+    return decrypted || value;
+  };
+  const host = read(tenant.local_db_host);
+  const database = read(tenant.local_db_name);
+  const username = read(tenant.local_db_user);
+  const password = read(tenant.local_db_pass) || '';
+  const port = Number(tenant.local_db_port || 5432);
+  if (!host || !database || !username) {
+    throw new Error('Local PostgreSQL configuration requires host, database name and username.');
+  }
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error('Local PostgreSQL port must be an integer between 1 and 65535.');
+  }
+  const url = new URL('postgresql://localhost');
+  url.hostname = host;
+  url.port = String(port);
+  url.username = username;
+  url.password = password;
+  url.pathname = `/${database}`;
+  return url.toString();
+}
+
 function resolveTenantStorageTarget(tenant, {
   cloudDatabaseUrl,
   decryptValue,
@@ -55,9 +85,8 @@ function resolveTenantStorageTarget(tenant, {
       if (!rawUrl) throw new Error('External PostgreSQL connection is not configured for this tenant.');
       break;
     case 'local':
-      // Local credentials must be converted to a URL by a separately tested
-      // credential builder. Do not infer defaults or silently use cloud.
-      throw new Error('Local PostgreSQL URL construction is not enabled in this resolver stage.');
+      rawUrl = buildLocalPostgresUrl(tenant, decryptValue);
+      break;
     default:
       throw new Error(`Unsupported database mode "${tenant.db_mode}" for classified tenant storage.`);
   }
@@ -97,4 +126,4 @@ function resolveTenantStorageTarget(tenant, {
   });
 }
 
-module.exports = { resolveTenantStorageTarget };
+module.exports = { resolveTenantStorageTarget, buildLocalPostgresUrl };
