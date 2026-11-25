@@ -1019,6 +1019,32 @@ router.post('/test-smtp', async (req, res) => {
 
 
 // ================================================================
+// GET /tenants/:id/migration-history
+// Returns the latest read-only inventory audit snapshots for one tenant.
+// ================================================================
+router.get('/tenants/:id/migration-history', async (req, res) => {
+  try {
+    const tenantId = req.params.id;
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(tenantId)) {
+      return sendError(res, ERROR_CODES.NOT_FOUND, 'Invalid tenant ID format', 404);
+    }
+    const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
+      SELECT id, status, source_schema, destination_schema,
+             source_storage_tier, target_storage_tier, blockers,
+             inventory, requested_by_email, created_at
+      FROM tenant_migration_jobs
+      WHERE tenant_id = ${tenantId}::uuid
+      ORDER BY created_at DESC
+      LIMIT 20
+    `);
+    return sendSuccess(res, rows, 'Tenant migration audit history loaded');
+  } catch (err) {
+    logger.error('[Admin/tenant-migration-history] Failure:', err);
+    return sendError(res, ERROR_CODES.SERVER, 'Unable to load tenant migration audit history', 500);
+  }
+});
+
+// ================================================================
 // GET /tenants/:id/migration-preview
 // Read-only inventory for shared-schema to paid dedicated-schema migration.
 // No schema creation, data copy, or tenant activation is performed.
