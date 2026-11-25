@@ -71,3 +71,10 @@ After the Central upgrade and backup verification:
 5. Existing legacy tenants remain blocked by the resolver until explicitly classified and verified. No automatic legacy classification, schema cloning, data movement, production migration or deployment has been performed from this code work.
 
 The registration path records new tenant storage as `provisioning`, seeds the operational company/role/admin records, and only then marks storage `ready` and the tenant active. If seeding fails, the tenant remains inactive and its storage remains non-ready for manual recovery.
+
+
+## Central KYC tenant-isolation migration
+
+Apply `20261125_central_kyc_tenant_isolation.sql` only after a verified Central DB backup and a reviewed migration window. It adds `tenant_id`, replaces global Aadhaar-hash uniqueness with `(tenant_id, aadhaar_hash)` uniqueness, and allows Central RLS access only to the owning tenant or platform admins.
+
+Existing rows are intentionally left with `tenant_id IS NULL`. They are not visible to tenant-scoped KYC routes after this migration. Do not backfill by guessing from Aadhaar hashes, email, phone or task IDs. A separate evidence-based ownership reconciliation is required before any legacy KYC row is assigned to a tenant.
