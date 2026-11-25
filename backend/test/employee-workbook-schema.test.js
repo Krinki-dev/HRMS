@@ -77,6 +77,17 @@ test('supports only explicit non-destructive conflict modes', () => {
   assert.equal(validateWorkbookData(EMPLOYEE_WORKBOOK_SCHEMA, valid, { mode: 'replace-all' }).valid, false);
 });
 
+test('requires explicit child record IDs for update-only and forbids them in create-only', () => {
+  const updateResult = validateWorkbookData(EMPLOYEE_WORKBOOK_SCHEMA, valid, { mode: 'update-only' });
+  assert.ok(updateResult.errors.some((error) => error.sheet === 'Family' && error.field === 'recordId'));
+  const createData = {
+    ...valid,
+    Family: [{ recordId: '123e4567-e89b-42d3-a456-426614174000', employeeCode: 'EMP0001', name: 'Ravi', relationship: 'spouse' }],
+  };
+  const createResult = validateWorkbookData(EMPLOYEE_WORKBOOK_SCHEMA, createData, { mode: 'create-only' });
+  assert.ok(createResult.errors.some((error) => error.sheet === 'Family' && error.field === 'recordId'));
+});
+
 test('requires Employee Code and accepts native Excel date values', () => {
   const data = {
     Employees: [{ firstName: 'Asha', lastName: 'Sharma', dateOfJoining: new Date('2026-01-01T00:00:00.000Z') }],
