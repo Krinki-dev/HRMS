@@ -20,6 +20,7 @@ This phase is intentionally inventory-only:
 - The inventory includes both inbound and outbound cross-schema FK dependencies; any such relationship blocks migration until reviewed.
 - The Platform Admin preview displays FK constraints, schema-qualified table names, column mappings, and validation status.
 - For each uniquely resolved, validated FK ownership path, it reports tenant-owned dependent row counts, orphan counts, and rows with nullable ownership references.
+- It checks direct tenant-owned child rows against direct tenant-owned FK parents and blocks when a child points to another tenant's parent record.
 - Orphaned or nullable ownership references are explicit migration blockers; ambiguous paths and unvalidated FK paths are never used for dependent-row counts.
 - It does not copy dependent rows.
 - Any `NOT VALID` foreign-key constraint is an explicit blocker; the preview does not validate or alter constraints.
@@ -41,7 +42,7 @@ The ownership path is displayed from the dependent table toward its tenant-owned
 
 1. Add an explicit, reviewed manifest for every operational, global/reference, and tenant-owned table.
 2. Use the captured ordered FK column mappings to resolve indirect ownership against tenant-specific parent row sets; composite keys, nullable references, cycles, and ambiguous paths need explicit handling.
-3. Extend dependent-row verification to every FK path and detect cross-tenant references and orphan records; resolve inbound/outbound cross-schema dependencies.
+3. Extend dependent-row verification to every FK path, including indirect cross-tenant references, and resolve inbound/outbound cross-schema dependencies.
 4. Compare source and destination schema versions, extensions, indexes, constraints, and unique-key collisions.
 5. Add durable migration-job state, resumable checkpoints, and idempotency keys in Central DB.
 6. Copy in dependency order into an isolated staging schema/target.
