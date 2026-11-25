@@ -62,17 +62,16 @@ function validateWorkbookData(schema, sheets, options = {}) {
     });
   }
 
-  const parentDefinition = schema.sheets.find((sheet) => sheet.name === 'Employees');
-  const parentRows = normalized[parentDefinition?.name] || [];
-  const parentKeys = new Set(parentRows.map((row) => String(row?.[parentDefinition.key] || '').trim().toLowerCase()).filter(Boolean));
-
   for (const definition of schema.sheets.filter((sheet) => sheet.parent)) {
+    const parentDefinition = schema.sheets.find((sheet) => sheet.name === definition.parent.sheet);
+    const parentRows = parentDefinition ? normalized[parentDefinition.name] || [] : [];
+    const parentKeys = new Set(parentRows.map((row) => String(row?.[definition.parent.key] || '').trim().toLowerCase()).filter(Boolean));
     const seenRecordIds = new Set();
     (normalized[definition.name] || []).forEach((row, index) => {
-      const employeeCode = String(row?.[definition.parent.field] || '').trim().toLowerCase();
+      const parentValue = String(row?.[definition.parent.field] || '').trim().toLowerCase();
       const rowNumber = index + 2;
-      if (!parentKeys.has(employeeCode)) {
-        errors.push({ sheet: definition.name, row: rowNumber, field: definition.parent.field, message: 'Employee Code does not match a row in the Employees worksheet' });
+      if (!parentDefinition || !parentKeys.has(parentValue)) {
+        errors.push({ sheet: definition.name, row: rowNumber, field: definition.parent.field, message: `Reference does not match a row in the ${definition.parent.sheet} worksheet` });
       }
       const recordId = row?.recordId;
       if (!isBlank(recordId)) {
