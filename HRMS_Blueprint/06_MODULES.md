@@ -469,7 +469,7 @@ cross-company/cross-tenant PF/ESI/PT/TDS data leak (payroll-run lookups previous
 - Data backup & restore
 - White label settings (logo, name, colors)
 - Subscription & billing (view invoices, upgrade plan)
-- DB mode configuration (local/cloud/hybrid)
+- DB mode configuration (managed cloud / external PostgreSQL / local PostgreSQL)
 
 **DB Tables:** roles, tenant_modules, workflow_configs (add to schema), notification_rules (add to schema), notification_templates (add to schema), custom_field_definitions (add to schema), custom_field_values (add to schema), api_keys (add to schema), webhook_configs (add to schema), audit_logs, backup_logs (add to schema), tenant_branding (UI branding), tenant_db_config (DB connection config), notification_config
 **Depends on:** Nothing (foundation layer)
