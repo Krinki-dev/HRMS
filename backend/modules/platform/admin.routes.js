@@ -1058,7 +1058,24 @@ router.get('/tenants/:id/migration-preview', async (req, res) => {
       sourceSchema: source.schemaName,
       destinationSchema: deriveTenantSchemaName(tenantId),
     });
-    return sendSuccess(res, inventory, 'Read-only migration inventory generated');
+    const status = inventory.blockers.length ? 'blocked' : 'inventory_only';
+    const jobRows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
+      INSERT INTO tenant_migration_jobs (
+        tenant_id, status, source_schema, destination_schema,
+        source_storage_tier, target_storage_tier, inventory, blockers,
+        requested_by_email, created_at
+      ) VALUES (
+        ${tenantId}::uuid, ${status}, ${inventory.sourceSchema},
+        ${inventory.destinationSchema}, ${tenant.storage_tier},
+        'dedicated_schema', ${JSON.stringify(inventory)}::jsonb,
+        ${JSON.stringify(inventory.blockers)}::jsonb,
+        ${req.user?.email || null}, NOW()
+      )
+      RETURNING id
+    `);
+    inventory.jobId = jobRows[0]?.id || null;
+    inventory.jobStatus = status;
+    return sendSuccess(res, inventory, 'Read-only migration inventory generated and audited');
   } catch (err) {
     logger.error('[Admin/tenant-migration-preview] Failure:', err);
     return sendError(res, ERROR_CODES.SERVER, 'Unable to generate tenant migration inventory', 500);
