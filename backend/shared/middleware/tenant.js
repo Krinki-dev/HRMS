@@ -11,6 +11,7 @@
 const { PrismaClient } = require('@prisma/client');
 const { sendError, ERROR_CODES } = require('../utils/response');
 const { decrypt } = require('../utils/encryption');
+const { resolveTenantStorageTarget } = require('../utils/tenantStorageResolver');
 const { normalizeHostname, isPlatformRootHost, buildHostnameCandidates } = require('../utils/domainRouting');
 
 // ── DB connection pool — one PrismaClient per unique DB URL ──────
@@ -44,95 +45,18 @@ function getCentralDB() {
 }
 
 // ── Helpers ─────────────────────────────────────────────────────
-function tryDecrypt(val) {
-  if (!val) return val;
-  try { return decrypt(val); } catch { return val; }
-}
-
-function extractTenantSubdomain(req) {
-  const headerSubdomain = req.headers['x-tenant-subdomain']?.toLowerCase().trim();
-  if (headerSubdomain) return headerSubdomain;
-
-  const host = normalizeHostname(req.hostname || req.headers.host || '');
-  if (!host || isPlatformRootHost(host)) return null;
-  if (host.startsWith('hrms.')) return null;
-  return host.split('.')[0];
-}
-
-function buildLocalConnectionString(cfg) {
-  const host = cfg.local_db_host ? tryDecrypt(cfg.local_db_host) : 'localhost';
-  const user = cfg.local_db_user ? tryDecrypt(cfg.local_db_user) : 'postgres';
-  const pass = cfg.local_db_pass ? tryDecrypt(cfg.local_db_pass) : '';
-  const port = cfg.local_db_port || 5432;
-  const name = cfg.local_db_name || 'hrms';
-  const type = cfg.local_db_type || 'postgres';
-  const encodedPass = encodeURIComponent(pass);
-
-  switch (type) {
-    case 'mysql':  return `mysql://${user}:${encodedPass}@${host}:${port}/${name}`;
-    case 'mssql':  return `sqlserver://${host}:${port};database=${name};user=${user};password=${pass};trustServerCertificate=true`;
-    case 'sqlite': return `file:${name}`;
-    default:       return `postgresql://${user}:${encodedPass}@${host}:${port}/${name}`;
-  }
-}
-
-// ── NEW: schema‑aware DB resolver ──────────────────────────────
+// Resolve only tenants with an audited, ready PostgreSQL storage allocation.
+// Legacy/unclassified records fail closed; they must be inventoried and classified
+// before this router is enabled for production traffic.
 async function resolveTenantDB(tenant) {
-  let dbUrl;
-
-  switch (tenant.db_mode) {
-    case 'cloud':
-      // For 'cloud' mode, if a specific db_url is provided (e.g., for legacy tenants), use it.
-      // Otherwise, fall back to the platform's shared cloud database URL from environment variables.
-      if (tenant.db_url) {
-        dbUrl = tryDecrypt(tenant.db_url);
-      } else {
-        const fallbackUrl = process.env.CLOUD_TENANT_DATABASE_URL || process.env.DEV_TENANT_DATABASE_URL;
-        if (!fallbackUrl) {
-          throw new Error(`Tenant ${tenant.subdomain} has no db_url and no fallback env (CLOUD_TENANT_DATABASE_URL/DEV_TENANT_DATABASE_URL)`);
-        }
-        dbUrl = fallbackUrl;
-      }
-      break;
-    case 'external_cloud':
-      dbUrl = tenant.db_url ? tryDecrypt(tenant.db_url) : null;
-      break;
-
-    case 'local':
-      dbUrl = buildLocalConnectionString(tenant);
-      break;
-
-    case 'hybrid': {
-      const localUrl = buildLocalConnectionString(tenant);
-      try {
-        const localClient = getTenantDB(localUrl);
-        await localClient.$queryRaw`SELECT 1`;
-        dbUrl = localUrl;
-      } catch (e) {
-        // If local DB is unreachable, fall back to cloud URL if configured.
-        // This ensures resilience for hybrid setups.
-        console.warn(`[Tenant] Local DB unreachable for "${tenant.subdomain}", falling back to cloud`);
-        if (!tenant.db_url) throw new Error(`Tenant ${tenant.subdomain} has no cloud fallback url`);
-        dbUrl = tryDecrypt(tenant.db_url);
-      }
-      break;
-    }
-
-    default:
-      // Default case assumes db_url is mandatory if no specific mode is matched.
-      if (!tenant.db_url) throw new Error(`Tenant ${tenant.subdomain} has no db_url`);
-      dbUrl = tryDecrypt(tenant.db_url);
-  }
-
-  // ── NEW: Append schema parameter if tenant uses a shared database ──
-  if (tenant.schema_name && dbUrl) {
-    const urlObj = new URL(dbUrl);
-    // Ensure the schema parameter is correctly appended to the connection string.
-    urlObj.searchParams.set('schema', tenant.schema_name);
-    dbUrl = urlObj.toString();
-  }
-
-  return getTenantDB(dbUrl);
+  const target = resolveTenantStorageTarget(tenant, {
+    cloudDatabaseUrl: process.env.CLOUD_TENANT_DATABASE_URL || process.env.DEV_TENANT_DATABASE_URL,
+    // Supports both previously encrypted values and explicitly configured
+    // plaintext URLs during a controlled migration; invalid ciphertext fails
+    // URL validation rather than being used as a connection string.
+    decryptValue: (value) => decrypt(value) || value,
+  });
+  return getTenantDB(target.databaseUrl);
 }
 
 // ── Platform roots ─────────────────────────────────────────────
@@ -236,41 +160,13 @@ const tenantMiddleware = async (req, res, next) => {
       const tenant = rows[0];
 
       if (!tenant) {
-        console.log(`[Tenant] DEV — tenant "${subdomain}" not in central DB, falling back to DEV_TENANT_DATABASE_URL`);
-        // fallback to default dev behaviour
-        req.db = getTenantDB(process.env.DEV_TENANT_DATABASE_URL);
-        req.tenant = {
-          id: process.env.DEV_TENANT_ID || '00000000-0000-0000-0000-000000000000',
-          name: 'Dev Company',
-          subdomain: 'dev',
-          dbMode: 'cloud',
-          schema_name: null,
-          enabledModules: ['employees','attendance','leave','payroll','compliance',
-            'recruitment','performance','training','assets','expenses',
-            'reports','automation','communication','settings'],
-        };
-        return next();
+        return sendError(res, ERROR_CODES.NOT_FOUND,
+          'Company not found. Check the tenant URL or contact your HR admin.', 404);
       }
 
-      // Found in central DB — attempt to resolve their DB.
-      // If resolution fails (e.g. unprovisioned db_url), fall back to dev database.
-      try {
-        req.db = await resolveTenantDB(tenant);
-      } catch (resolveErr) {
-        let finalUrl = process.env.DEV_TENANT_DATABASE_URL;
-        if (!finalUrl) throw resolveErr;
-        
-        console.warn(`[Tenant] DEV — resolution failed for "${tenant.subdomain}", falling back to DEV_TENANT_DATABASE_URL`);
-
-        // FIX: Even in fallback, we must respect the tenant's schema if it exists
-        if (tenant.schema_name) {
-          const urlObj = new URL(finalUrl);
-          urlObj.searchParams.set('schema', tenant.schema_name);
-          finalUrl = urlObj.toString();
-        }
-
-        req.db = getTenantDB(finalUrl);
-      }
+      // A known tenant must never be routed to the generic development DB
+      // when its own storage record is missing, unclassified or unavailable.
+      req.db = await resolveTenantDB(tenant);
 
       req.tenant = {
         id:             tenant.id,
