@@ -541,7 +541,7 @@ exports.handlePayoutWebhook = async (_req, res) => {
  */
 exports.createSubscriptionOrder = async (req, res) => {
   try {
-    const tenantId = req.user?.centralTenantId || req.user?.tenantId;
+    const tenantId = await resolveTenantId(req);
     if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Tenant session required', 401);
     const { planSlug, selectedAddons = [], billingMonths = 1, promoCode, method = 'razorpay', renewalMode = 'manual' } = req.body || {};
     if (method !== 'razorpay') return sendError(res, ERROR_CODES.VALIDATION, 'Only Razorpay is available at launch.', 503);
@@ -551,7 +551,7 @@ exports.createSubscriptionOrder = async (req, res) => {
     }
     const tenant = await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.findUnique({
       where: { id: tenantId },
-      select: { id: true, name: true, admin_name: true, admin_email: true, is_active: true }
+      select: { id: true, name: true, admin_name: true, admin_email: true, is_active: true, db_mode: true, storage_tier: true, storage_status: true }
     }));
     if (!tenant || !tenant.is_active) return sendError(res, ERROR_CODES.NOT_FOUND, 'Active company account not found.', 404);
 
@@ -559,6 +559,15 @@ exports.createSubscriptionOrder = async (req, res) => {
     const plan = plans.find((item) => item.slug === planSlug);
     if (!plan || plan.slug === 'free' || plan.slug === 'custom') {
       return sendError(res, ERROR_CODES.VALIDATION, 'Choose an available paid plan. Custom plans require a quote.', 400);
+    }
+    const paidStorageReady = tenant.storage_status === 'ready' &&
+      (tenant.storage_tier === 'dedicated_schema' ||
+        (tenant.storage_tier === 'dedicated_database' &&
+          (tenant.db_mode !== 'cloud' || plan.slug === 'enterprise')));
+    if (!paidStorageReady) {
+      return sendError(res, ERROR_CODES.VALIDATION,
+        'Paid checkout is paused until this company has verified dedicated PostgreSQL storage. No payment order was created.',
+        409, { code: 'TENANT_STORAGE_MIGRATION_REQUIRED' });
     }
     const allowedAddons = new Set(plan.addon_modules || []);
     const addons = [...new Set(selectedAddons.map(String))].sort();
@@ -663,6 +672,19 @@ exports.verifySubscription = async (req, res) => {
     }
     const plan = (await plansService.getPlans()).find((item) => item.slug === snapshot.planSlug);
     if (!plan || !plan.is_active) return sendError(res, ERROR_CODES.VALIDATION, 'The selected plan is no longer available.', 409);
+    const tenantStorage = await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.findUnique({
+      where: { id: tenantId },
+      select: { db_mode: true, storage_tier: true, storage_status: true },
+    }));
+    const paidStorageReady = tenantStorage?.storage_status === 'ready' &&
+      (tenantStorage.storage_tier === 'dedicated_schema' ||
+        (tenantStorage.storage_tier === 'dedicated_database' &&
+          (tenantStorage.db_mode !== 'cloud' || plan.slug === 'enterprise')));
+    if (!paidStorageReady) {
+      return sendError(res, ERROR_CODES.VALIDATION,
+        'Payment was verified with the gateway, but plan activation is paused until dedicated PostgreSQL storage is verified. Contact support; do not pay again.',
+        409, { code: 'TENANT_STORAGE_MIGRATION_REQUIRED', paymentCapturedAtGateway: true });
+    }
 
     const expiry = new Date();
     expiry.setMonth(expiry.getMonth() + Number(snapshot.billingMonths));
