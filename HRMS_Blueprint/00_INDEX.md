@@ -1,16 +1,27 @@
 # HRMS PROJECT BLUEPRINT — MASTER INDEX
-> **Version: 4.0** | Last Updated: June 2026 | Status: Active Development (~82% Production-Ready)
+> **Version: 5.0** | Last Updated: 2026-11-25 | Status: Architecture reconciliation in progress — NOT production-ready
 > Product: Syntern HRMS (configurable name via `PRODUCT_NAME` env var)
 
 ---
+
+## CURRENT AUTHORITY — 2026-11-25
+
+Read these documents before making architecture or code changes:
+1. 00_CHAT_HANDOFF_CONTINUATION.md — latest handoff, user-approved constraints and immediate continuation.
+2. 33_MASTER_CODEBASE_ARCHITECTURE_AUDIT.md — source-verified architecture, findings, blockers and implementation sequence.
+3. 34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md — only the product/business choices that still need owner input.
+4. 07_FROZEN_DECISIONS.md — frozen decisions, with its new override section taking precedence over legacy contradictions.
+
+The June 2026 module status percentages and "production-ready" labels below are historical snapshots, not release evidence. The old 08_STATUS_AND_CHANGELOG.md reference is unresolved; use 33_MASTER_CODEBASE_ARCHITECTURE_AUDIT.md and 32_PRODUCTION_READINESS_AND_MODULE_EXECUTION_PLAN.md for current status.
 
 ## ⚡ HOW TO USE (READ THIS FIRST)
 
 ```
 Starting any new AI chat:
-  ALWAYS paste → 07_FROZEN_DECISIONS.md  (all final decisions + constraints)
-  ALWAYS paste → 08_STATUS_AND_CHANGELOG.md (current status of every module)
-  ONLY paste   → relevant flow doc         (only what you're working on)
+  ALWAYS read → 00_CHAT_HANDOFF_CONTINUATION.md
+  ALWAYS read → 33_MASTER_CODEBASE_ARCHITECTURE_AUDIT.md
+  ALWAYS read → 34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md (for unresolved owner choices)
+  ALSO read   → 07_FROZEN_DECISIONS.md and the relevant flow doc
 
 Never paste everything at once — keep context focused.
 ```
@@ -34,7 +45,9 @@ Never paste everything at once — keep context focused.
 | File | Purpose |
 |------|---------|
 | **07_FROZEN_DECISIONS.md** ⭐ | ALL final decisions — paste in every chat |
-| **08_STATUS_AND_CHANGELOG.md** | Module status, bug log, full change history |
+| **32_PRODUCTION_READINESS_AND_MODULE_EXECUTION_PLAN.md** | Current release gates and execution priority |
+| **33_MASTER_CODEBASE_ARCHITECTURE_AUDIT.md** | Source-verified codebase and architecture baseline |
+| **34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md** | Business choices and recommended defaults |
 
 ### Flow Documents (FE / BE / DB 3-column format)
 | File | Covers | Status |
@@ -96,7 +109,8 @@ Never paste everything at once — keep context focused.
 | How data flows | 05_DATA_FLOW.md |
 | What a module does | 06_MODULES.md |
 | All final decisions | 07_FROZEN_DECISIONS.md |
-| Current build status & bugs | 08_STATUS_AND_CHANGELOG.md |
+| Current architecture status & blockers | 33_MASTER_CODEBASE_ARCHITECTURE_AUDIT.md |
+| Owner decisions still required | 34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md |
 | Any page's FE/BE/DB steps | Relevant flow doc (09–20) |
 
 ---
