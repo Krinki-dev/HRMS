@@ -180,6 +180,8 @@ model tenant_branch_links {
 model central_kyc_records {
   id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id        String?   @db.Uuid
+  // Operational employee UUID; no FK because employee rows live in tenant DBs.
+  employee_id      String?   @db.Uuid
   aadhaar_hash     String
   method           String
   kyc_timestamp    DateTime? @db.Timestamptz
