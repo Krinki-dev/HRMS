@@ -114,7 +114,7 @@ router.get('/brand', async (req, res) => {
     } catch (dbErr) {
       // Fallback to basic columns if branding columns are missing from schema
       logger.warn(`[Brand] Advanced columns missing, falling back to basic query: ${dbErr.message}`);
-      rows = await centralPrisma.$queryRaw`
+      rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
         SELECT subdomain, custom_domain, name AS company_name, logo_url
         FROM tenants
         WHERE (
@@ -126,7 +126,7 @@ router.get('/brand', async (req, res) => {
           AND deleted_at IS NULL
           AND is_active = true
         LIMIT 1
-      `;
+      `);
     }
 
     if (rows.length === 0) {
