@@ -19,7 +19,7 @@ test('paid plans use a tenant-specific schema, independent of employee count',()
   assert.equal(r.storageTier,STORAGE_TIERS.DEDICATED_SCHEMA);
   assert.equal(r.schemaName,deriveTenantSchemaName(tenantId));
 });
-test('enterprise may explicitly request dedicated database isolation',()=>{
+test('enterprise cloud may explicitly request platform-managed dedicated database isolation',()=>{
   const r=buildStorageDescriptor({tenantId,plan:'enterprise',dbMode:'external_cloud',dbUrl:pgUrl,requestedTier:STORAGE_TIERS.DEDICATED_DATABASE});
   assert.equal(r.storageTier,STORAGE_TIERS.DEDICATED_DATABASE);
   assert.equal(r.schemaName,null);
@@ -46,4 +46,21 @@ test('cloud mode can defer connection URL to deployment configuration',()=>{
   const r=buildStorageDescriptor({plan:'free',dbMode:'cloud'});
   assert.equal(r.databaseUrl,null);
   assert.equal(r.connectionSource,'CLOUD_TENANT_DATABASE_URL');
+});
+
+
+test('customer-managed local and external PostgreSQL use a dedicated database even during trial', () => {
+  const local = buildStorageDescriptor({
+    tenantId, plan: 'trial', dbMode: 'local',
+    dbUrl: 'postgresql://hrms:secret@127.0.0.1:5432/customer',
+  });
+  assert.equal(local.storageTier, STORAGE_TIERS.DEDICATED_DATABASE);
+  assert.equal(local.schemaName, null);
+
+  const external = buildStorageDescriptor({
+    tenantId, plan: 'trial', dbMode: 'external_cloud',
+    dbUrl: pgUrl,
+  });
+  assert.equal(external.storageTier, STORAGE_TIERS.DEDICATED_DATABASE);
+  assert.equal(external.schemaName, null);
 });
