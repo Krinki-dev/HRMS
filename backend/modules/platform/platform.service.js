@@ -5,8 +5,7 @@
 const { PrismaClient } = require('@prisma/client');
 const { v4: uuidv4 }   = require('uuid');
 const bcrypt           = require('bcryptjs');
-const { encrypt, decrypt, mask } = require('../../shared/utils/encryption');
-const { appendSchemaToUrl } = require('../../shared/utils/dbSchema');
+const { encrypt, decrypt } = require('../../shared/utils/encryption');
 const { buildStorageDescriptor } = require('../../shared/utils/tenantStorageConfig');
 const { buildLocalPostgresUrl, resolveTenantStorageTarget } = require('../../shared/utils/tenantStorageResolver');
 const { sendSuccess, sendError, ERROR_CODES } = require('../../shared/utils/response');
@@ -15,104 +14,20 @@ const emailService = require('../../shared/utils/emailService');
 const logger = require('../../shared/utils/logger');
 
 /**
- * Constructs a database connection string for on-premise/local databases.
- * @param {Object} localDb - Database connection parameters
- * @returns {string} The constructed URL.
- */
-function buildLocalUrl(localDb) {
-  const type = localDb.type || 'postgres';
-  const host = localDb.host || 'localhost';
-  const port = localDb.port || 5432;
-  const name = localDb.name || 'hrms';
-  const user = localDb.user || 'postgres';
-  // Only encode if it hasn't been encoded yet (heuristic: doesn't contain %)
-  const pass = (localDb.pass && !localDb.pass.includes('%')) ? encodeURIComponent(localDb.pass) : (localDb.pass || '');
-  
-  switch (type) {
-    case 'mysql':  return `mysql://${user}:${pass}@${host}:${port}/${name}`;
-    case 'mssql':  return `sqlserver://${host}:${port};database=${name};user=${user};password=${localDb.pass || ''};trustServerCertificate=true`;
-    default:       return `postgresql://${user}:${pass}@${host}:${port}/${name}`;
-  }
-}
-
-/**
- * @description Centralized resolver for tenant database *base* connection strings.
- * Handles environment-specific fallbacks and AES decryption.
- * This function returns the raw connection string without any `?schema=` parameter.
- * The caller is responsible for appending the schema if needed (e.g., for Prisma client instantiation).
- * @param {string} dbMode - Deployment mode ('cloud', 'local', etc.)
- * @param {Object} tenantData - Tenant metadata from central database or request body
- * @param {string} [optionalUrl] - Explicit override URL
- * @returns {string|null} Base connection string
+ * Compatibility wrapper for older callers. All tenant DB routing must use the
+ * audited storage lifecycle; this deliberately rejects legacy/unclassified
+ * records and unsupported database modes instead of silently falling back.
  */
 function resolveTenantDbUrl(dbMode, tenantData, optionalUrl) {
-  const isDev = process.env.NODE_ENV === 'development';
-  
-  /**
-   * Safe decryption helper.
-   */
-  const d = (val) => {
-    if (!val || typeof val !== 'string' || !val.includes(':') || val.length < 32) return val;
-    try { return decrypt(val); } catch { return val; }
+  const tenant = {
+    ...tenantData,
+    db_mode: dbMode || tenantData?.db_mode,
+    db_url: tenantData?.db_url || optionalUrl || null,
   };
-
-  let resolvedUrl = null;
-  const schema = tenantData?.schema_name || null;
-
-  switch (dbMode) {
-    case 'cloud':
-      // For 'cloud' mode, if a specific db_url is provided (e.g., for legacy tenants), use it.
-      // Otherwise, fall back to the platform's shared cloud database URL from environment variables.
-      if (tenantData?.db_url) {
-        resolvedUrl = d(tenantData.db_url);
-      } else {
-        const fallbackUrl = process.env.CLOUD_TENANT_DATABASE_URL || process.env.DEV_TENANT_DATABASE_URL;
-        if (!fallbackUrl) {
-          // Log a warning but don't throw here, let the global fallback handle it if in dev.
-          logger.warn(`[resolveTenantDbUrl] CLOUD_TENANT_DATABASE_URL or DEV_TENANT_DATABASE_URL not set for cloud mode.`);
-        }
-        resolvedUrl = fallbackUrl;
-      }
-      break;
-    case 'external_cloud':
-      // For 'external_cloud' mode, a db_url is expected.
-      // Log a warning if it's missing but don't throw, allowing for potential dev fallbacks.
-      resolvedUrl = d(tenantData?.db_url || optionalUrl);
-      if (!resolvedUrl) logger.warn(`[resolveTenantDbUrl] External DB URL missing or invalid for external_cloud mode.`);
-      break;
-    case 'local':
-    case 'hybrid':
-      // Merge nested localDb (from reg) and flat row (from login)
-      const raw = tenantData?.localDb || tenantData; 
-      if (!raw) { logger.warn(`[resolveTenantDbUrl] Local DB config missing for ${dbMode} mode.`); break; }
-      
-      // Map DB column names or Request property names to standard internal keys
-      const decryptedConfig = {
-        type: raw.local_db_type || raw.type || 'postgres',
-        host: d(raw.local_db_host || raw.host || 'localhost'),
-        port: raw.local_db_port || raw.port || 5432,
-        name: raw.local_db_name || raw.name || 'hrms',
-        user: d(raw.local_db_user || raw.user || 'postgres'),
-        pass: d(raw.local_db_pass || raw.pass || ''),
-      };
-      resolvedUrl = buildLocalUrl(decryptedConfig);
-      break;
-  }
-
-  // Global fallback for development: if resolution failed and we are in dev mode, use the DEV_TENANT_DATABASE_URL.
-  if (!resolvedUrl && isDev && process.env.DEV_TENANT_DATABASE_URL) {
-    resolvedUrl = process.env.DEV_TENANT_DATABASE_URL;
-    if (resolvedUrl) logger.info(`[DB-Resolver] Resolution failed for ${dbMode}, falling back to DEV_TENANT_DATABASE_URL`);
-  }
-  if (!resolvedUrl) return null; // Final check: if no URL could be resolved, return null.
-  // If a specific schema is defined (Standard for Multi-tenancy), append it
-  if (schema && (dbMode === 'cloud' || dbMode === 'external_cloud')) {
-    resolvedUrl = appendSchemaToUrl(resolvedUrl, schema);
-  }
-
-  logger.debug(`[DB-Resolver] Resolved URL: ${mask(resolvedUrl)}`);
-
-  return resolvedUrl;
+  return resolveTenantStorageTarget(tenant, {
+    cloudDatabaseUrl: process.env.CLOUD_TENANT_DATABASE_URL || (process.env.NODE_ENV === 'development' ? process.env.DEV_TENANT_DATABASE_URL : null),
+    decryptValue: (value) => decrypt(value) || value,
+  }).databaseUrl;
 }
 
 /**
