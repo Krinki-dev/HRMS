@@ -322,12 +322,12 @@ router.post('/verify-otp', otpLimiter, async (req, res) => {
       const accessToken = authService.signAccessToken(user, permissions, tenantId || null);
       const refreshToken = authService.signRefreshToken(user.id);
       setRefreshCookie(res, refreshToken);
-      const tenantInfo = await authService.getTenantInfo(tenantId || user.company_id);
+      const tenantInfo = await authService.getTenantInfo(tenantId || null);
       const isPlatformAdmin = await authService.isPlatformAdmin(user.id);
       const payload = authService.buildUserPayload(user, permissions, tenantInfo, isPlatformAdmin);
       eventNotifier.notifyLogin({
         db: activeDb,
-        companyId: tenantId || user.company_id,
+        companyId: user.company_id,
         user,
         ipAddress: req.ip,
       }).catch((err) => {
@@ -427,8 +427,8 @@ router.post('/refresh', async (req, res) => {
       return sendError(res, ERROR_CODES.UNAUTHORIZED, 'User not found.', 401);
     }
     const permissions = safeParseJSON(user.role?.permissions);
-    const accessToken = authService.signAccessToken(user, permissions);
-    const tenantInfo = await authService.getTenantInfo(req.tenant?.id || user.company_id);
+    const accessToken = authService.signAccessToken(user, permissions, resolvedCentralTenantId);
+    const tenantInfo = await authService.getTenantInfo(resolvedCentralTenantId);
     const isPlatformAdmin = await authService.isPlatformAdmin(user.id);
     const payload = authService.buildUserPayload(user, permissions, tenantInfo, isPlatformAdmin);
     if (isTemporary) await activeDb.$disconnect();
