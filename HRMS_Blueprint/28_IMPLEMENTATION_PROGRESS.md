@@ -486,3 +486,13 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - For managed-cloud Trial, the storage descriptor points to shared `public`; customer-managed `local`/`external_cloud` use dedicated database mode. Registration checks for existing `public.companies`, `public.roles`, and `public.users` before insertion, then seeds a new operational company/role/admin. It sets `schemaProvisioned = true` after that connectivity/schema check; this is not equivalent to a durable provisioning state machine or a full migration/seed verification workflow.
 - Remaining P0 signup blockers: hard-coded Free→Trial behavior needs owner decision; provisioning is synchronous and lacks durable retry/compensation; schema initialization depends on preinstalled tables; paid upgrade promotion and public→UUID-schema data migration are not implemented; company/tenant membership and duplicate retry behavior need further review.
 - Next engineering task: continue P0 storage lifecycle audit across signup, request routing, auth lookup, platform admin and background jobs; then design the durable idempotent provisioning state machine without altering production data. Do not mark a tenant ready merely because the database connection succeeds.
+
+
+## 2026-11-26 verification update — P0 identity code increment
+
+- Exact code commit `1e32d1b2376c83a8a523af77ced2462711142a5e` passed Backend Tests workflow #668: `success` (https://github.com/Krinki-dev/HRMS/actions/runs/45721817132).
+- The same exact code commit passed Tenant Migration PostgreSQL Integration workflow #16: `success` (https://github.com/Krinki-dev/HRMS/actions/runs/45721817039).
+- Both workflows ran against the source commit containing the Central tenant resolver hardening, KYC route changes, billing tenant resolver change and identity regression tests. Subsequent commits through `64837385466a550995c3e0af1ddc93623023aa1a` changed documentation only; no executable source changed after the tested code commit in this increment.
+- The latest branch head at this documentation update is `64837385466a550995c3e0af1ddc93623023aa1a`. Recheck before future edits.
+- These CI results verify the configured automated backend suite and disposable PostgreSQL integration workflow only. They do not prove production DB migration state, real customer data isolation, staging deployment, real Razorpay, MinIO/ClamAV production readiness, backup restore for live tenants, or browser E2E.
+- Identity hardening increment is source-implemented and CI-verified; the overall P0 identity audit remains open pending exhaustive caller inventory and end-to-end multi-company/company membership tests.
