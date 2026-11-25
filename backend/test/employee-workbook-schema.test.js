@@ -59,3 +59,12 @@ test('supports only explicit non-destructive conflict modes', () => {
   assert.deepEqual(IMPORT_MODES, ['create-only', 'update-only', 'upsert']);
   assert.equal(validateWorkbookData(EMPLOYEE_WORKBOOK_SCHEMA, valid, { mode: 'replace-all' }).valid, false);
 });
+
+test('requires Employee Code and accepts native Excel date values', () => {
+  const data = {
+    Employees: [{ firstName: 'Asha', lastName: 'Sharma', dateOfJoining: new Date('2026-01-01T00:00:00.000Z') }],
+  };
+  const result = validateWorkbookData(EMPLOYEE_WORKBOOK_SCHEMA, data);
+  assert.ok(result.errors.some((error) => error.sheet === 'Employees' && error.field === 'employeeCode'));
+  assert.ok(!result.errors.some((error) => error.field === 'dateOfJoining'));
+});
