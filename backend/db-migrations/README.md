@@ -86,3 +86,10 @@ Dedicated customer-managed PostgreSQL databases and Enterprise managed-cloud ded
 
 
 KYC employee links use an optional `employee_id` UUID in the Central KYC table. The referenced employee lives in the tenant operational database, so the Central table intentionally has no foreign key across databases. Apply `20261125_central_kyc_employee_link.sql` after the KYC tenant-isolation migration and before enabling the KYC-to-employee link endpoint. The endpoint now fails visibly if the row is not updated; it no longer reports success when the column is absent.
+
+
+## Paid tenant migration inventory audit
+
+Apply `20261125_tenant_migration_jobs.sql` to the Central PostgreSQL database before enabling the Platform Admin **Storage migration** inventory endpoint. The migration creates an append-only inventory audit table protected by the platform-admin RLS claim. The same table is included in `backend/prisma/central_schema.sql` for fresh installations.
+
+The current endpoint records only a read-only source inventory and blocker snapshot. It does not create a destination schema, copy tenant data, change storage metadata, or activate a subscription. Do not apply this migration to production without the normal backup, review, and approval process.
