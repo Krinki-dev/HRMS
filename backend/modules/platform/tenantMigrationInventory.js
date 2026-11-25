@@ -202,6 +202,7 @@ async function inspectTenantMigration({
       dependentTables: Object.values(classification).filter((item) => item.scope === 'dependent').length,
       unclassifiedTables: Object.values(classification).filter((item) => item.scope === 'unclassified').length,
       ambiguousTables: Object.values(classification).filter((item) => item.scope === 'ambiguous').length,
+      crossSchemaForeignKeyCount: fkResult.rows.filter((fk) => fk.child_schema !== sourceSchema || fk.foreign_schema !== sourceSchema).length,
       destinationSchemaExists: existingSchemas.has(destinationSchema),
     };
     const blockers = [];
