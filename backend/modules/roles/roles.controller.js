@@ -1,6 +1,6 @@
 ﻿const svc  = require('./roles.service');
 const { sendSuccess, sendError, ERROR_CODES } = require('../../shared/utils/response');
-const { resolveTenantId } = require('../../shared/utils/tenantResolver');
+const { resolveCompanyId } = require('../../shared/utils/tenantResolver');
 const eventNotifier = require('../notifications/event-notifier.service');
 
 const wrap = (fn) => async (req, res) => {
@@ -20,7 +20,7 @@ const wrap = (fn) => async (req, res) => {
 
 module.exports = {
   list: wrap(async (req, res) => {
-    const tenantId = await resolveTenantId(req);
+    const tenantId = await resolveCompanyId(req);
     sendSuccess(res, {
       roles:     await svc.list(req.db, tenantId),
       templates: svc.getTemplates(),
@@ -28,7 +28,7 @@ module.exports = {
   }),
 
   create: wrap(async (req, res) => {
-    const tenantId = await resolveTenantId(req);
+    const tenantId = await resolveCompanyId(req);
     const created = await svc.create(req.db, tenantId, req.body);
     eventNotifier.notifyRoleChanged({
       db: req.db,
@@ -41,7 +41,7 @@ module.exports = {
   }),
 
   update: wrap(async (req, res) => {
-    const tenantId = await resolveTenantId(req);
+    const tenantId = await resolveCompanyId(req);
     const updated = await svc.update(req.db, tenantId, req.params.id, req.body);
     eventNotifier.notifyRoleChanged({
       db: req.db,
@@ -54,14 +54,14 @@ module.exports = {
   }),
 
   remove: wrap(async (req, res) => {
-    const tenantId = await resolveTenantId(req);
+    const tenantId = await resolveCompanyId(req);
     await svc.remove(req.db, tenantId, req.params.id);
     sendSuccess(res, null, 'Role deleted.');
   }),
 
   assignRole: wrap(async (req, res) => {
     if (!req.body.roleId) return sendError(res, ERROR_CODES.VALIDATION, 'roleId required.');
-    const tenantId = await resolveTenantId(req);
+    const tenantId = await resolveCompanyId(req);
     const assigned = await svc.assignRole(req.db, tenantId, req.params.userId, req.body.roleId);
     eventNotifier.notifyRoleAssigned({
       db: req.db,
