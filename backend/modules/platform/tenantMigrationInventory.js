@@ -14,6 +14,11 @@ function classifyTenantTables({ tables, columns, foreignKeys }) {
       .filter((column) => tableSet.has(column.table_name) && column.column_name === 'company_id')
       .map((column) => column.table_name)
   );
+  // The registration flow creates a separate companies.id UUID; it is not the
+  // Central tenants.id. Treat the companies row as the ownership root.
+  if (tableSet.has('companies') && columns.some((column) => column.table_name === 'companies' && column.column_name === 'id')) {
+    direct.add('companies');
+  }
   const parents = new Map();
   for (const fk of foreignKeys) {
     if (!tableSet.has(fk.table_name) || !tableSet.has(fk.foreign_table_name)) continue;
@@ -55,6 +60,8 @@ async function inspectTenantMigration({
   tenantId,
   sourceSchema,
   destinationSchema,
+  gstin = null,
+  pan = null,
   poolFactory = (config) => new Pool(config),
 }) {
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(tenantId || ''))) {
@@ -104,6 +111,20 @@ async function inspectTenantMigration({
       ),
     ]);
     const tables = tableResult.rows.map((row) => row.table_name);
+    if (!tables.includes('companies') || (!gstin && !pan)) {
+      throw new Error('Cannot prove the tenant company record. A companies table and verified GSTIN or PAN are required.');
+    }
+    const companyResult = await pool.query(
+      `SELECT id FROM ${quoteIdentifier(sourceSchema)}.companies
+       WHERE ($1::text IS NULL OR UPPER(gstin) = UPPER($1))
+         AND ($2::text IS NULL OR UPPER(pan) = UPPER($2))
+       LIMIT 2`,
+      [gstin, pan]
+    );
+    if (companyResult.rows.length !== 1) {
+      throw new Error('Tenant company identity could not be resolved uniquely from the registered GSTIN/PAN.');
+    }
+    const companyId = companyResult.rows[0].id;
     const classification = classifyTenantTables({
       tables,
       columns: columnResult.rows,
@@ -113,10 +134,15 @@ async function inspectTenantMigration({
     const directCounts = {};
     for (const table of tables) {
       if (classification[table].scope !== 'direct') continue;
-      const count = await pool.query(
-        `SELECT COUNT(*)::text AS count FROM ${quoteIdentifier(sourceSchema)}.${quoteIdentifier(table)} WHERE company_id = $1`,
-        [tenantId]
-      );
+      const count = table === 'companies'
+        ? await pool.query(
+            `SELECT COUNT(*)::text AS count FROM ${quoteIdentifier(sourceSchema)}.companies WHERE id = $1`,
+            [companyId]
+          )
+        : await pool.query(
+            `SELECT COUNT(*)::text AS count FROM ${quoteIdentifier(sourceSchema)}.${quoteIdentifier(table)} WHERE company_id = $1`,
+            [companyId]
+          );
       directCounts[table] = Number(count.rows[0].count);
     }
 
@@ -134,6 +160,7 @@ async function inspectTenantMigration({
 
     return {
       tenantId,
+      companyId,
       sourceSchema,
       destinationSchema,
       inventoryOnly: true,
