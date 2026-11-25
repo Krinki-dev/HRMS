@@ -65,6 +65,13 @@ export default function AdminClientDetail() {
     retry: false,
   });
   const migration = migrationRes?.data?.data || migrationRes?.data || migrationRes;
+  const { data: migrationHistoryRes, isLoading: migrationHistoryLoading, error: migrationHistoryError } = useQuery({
+    queryKey: ['admin-tenant-migration-history', id],
+    queryFn: () => adminApi.getTenantMigrationHistory(id),
+    enabled: !!id && tab === 'storage',
+    retry: false,
+  });
+  const migrationHistory = migrationHistoryRes?.data?.data || migrationHistoryRes?.data || migrationHistoryRes || [];
 
   const { data: notifRes } = useQuery({
     queryKey: ['admin-tenant-notif', id],
@@ -332,6 +339,36 @@ export default function AdminClientDetail() {
               </div>
             </div>
           )}
+
+          <div style={{ marginTop: 18, borderTop: '1px solid var(--admin-border)', paddingTop: 14 }}>
+            <div className="card-title" style={{ fontSize: 12 }}>Migration audit history</div>
+            {migrationHistoryLoading && <div className="card-sub" style={{ marginTop: 8 }}>Loading audit records…</div>}
+            {migrationHistoryError && <div style={{ marginTop: 8, color: 'var(--admin-danger)', fontSize: 11 }}>Unable to load migration audit history.</div>}
+            {!migrationHistoryLoading && !migrationHistoryError && !migrationHistory.length && (
+              <div className="card-sub" style={{ marginTop: 8 }}>No migration inventory has been recorded for this tenant.</div>
+            )}
+            {!!migrationHistory.length && (
+              <div style={{ display: 'grid', gap: 8, marginTop: 10 }}>
+                {migrationHistory.map((job) => (
+                  <div key={job.id} style={{ padding: '10px 12px', border: '1px solid var(--admin-border)', borderRadius: 7 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                      <strong style={{ fontSize: 11 }}>{String(job.status || 'unknown').replaceAll('_', ' ')}</strong>
+                      <span style={{ fontSize: 10, color: 'var(--admin-text-soft)' }}>{job.created_at ? new Date(job.created_at).toLocaleString('en-IN') : '—'}</span>
+                    </div>
+                    <div style={{ marginTop: 5, fontSize: 10, color: 'var(--admin-text-soft)' }}>
+                      {job.source_schema} → {job.destination_schema} · {job.source_storage_tier} → {job.target_storage_tier}
+                    </div>
+                    {!!job.blockers?.length && (
+                      <div style={{ marginTop: 6, color: 'var(--admin-warning)', fontSize: 10 }}>
+                        {job.blockers.length} safety blocker(s) recorded
+                      </div>
+                    )}
+                    {job.requested_by_email && <div style={{ marginTop: 4, fontSize: 10, color: 'var(--admin-text-soft)' }}>Requested by {job.requested_by_email}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
