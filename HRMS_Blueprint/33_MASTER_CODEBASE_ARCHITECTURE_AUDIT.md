@@ -625,3 +625,18 @@ Recommendation:
 - This is a P0 release blocker alongside the paid shared-to-dedicated data migration and the fresh customer-managed PostgreSQL installer.
 
 - Targeted isolated local logic harnesses passed 19 checks across storage configuration/resolution, RLS parameter binding, paid-storage activation guard and safe backup-target policy. These harnesses do not replace the repository's full `npm test`, Prisma generation, integration tests or GitHub Actions; those remain unverified.
+
+
+## 2026-11-26 resumed P0 audit — identity contract and next execution gate
+
+- Resumed from the current branch head after reading this handoff, the master architecture audit, owner decisions, identity helper, authentication middleware, auth token issuance, tenant resolver and identity tests.
+- Verified branch at session start: `architecture/postgres-tenant-isolation`, head `fa14574e1e6329dfd29ad87dd0b070882c010c04`. Do not assume this remains latest after subsequent commits; re-fetch before each write/session.
+- The current source contains `backend/shared/utils/tenantIdentity.js`, `backend/shared/utils/tenantResolver.js`, `backend/shared/middleware/auth.js`, `backend/modules/auth/auth.routes.js`, `backend/modules/auth/auth.service.js` and `backend/test/tenant-identity.test.js` implementing part of the identity split.
+- Confirmed auth token issuance currently includes `companyId: user.company_id`, `centralTenantId`, and a compatibility `tenantId: centralTenantId`. Auth middleware maps these into `req.user.companyId`, `req.user.centralTenantId`, and `req.user.tenantId` (Central ID).
+- Confirmed the repository still contains legacy operational callers that use `req.user.tenantId` as `companyId` (examples found on the common-base/default-branch code search include audit, leave, KYC, expenses, employees, attendance and notifications). This is an integration blocker: do not globally alias or swap `tenantId` until all Central-vs-operational callers have been enumerated on the working branch.
+- The current helper's legacy-token fallback maps legacy `tenantId` to `companyId` and uses the authenticated `central_user_index.company_id` as the Central tenant ID. Preserve this compatibility only when the index row is tied to the authenticated user; do not use hostname/header values to rebind a token.
+- Next P0 action: produce a working-branch caller inventory for every `req.user.tenantId`, `req.user.companyId`, `req.user.centralTenantId`, `req.tenant.id`, `resolveTenantId`, `resolveCompanyId`, and `resolveCentralTenantId` reference. Classify each by target database/table, change it to the explicit resolver, and add regression tests for cross-tenant and legacy-token behavior.
+- Do not claim P0 identity is complete based only on helper unit tests. Required exit: no ambiguous tenant identifier at operational or Central query boundaries; old tokens either resolve safely through authenticated central index or fail closed with a re-login path; platform-admin selected-tenant behavior remains explicit.
+- No executable code, database, deployment, production migration or payment was changed/performed in this documentation-only resumed audit.
+- Estimates for planning only: P0 8–15 focused working days (about 12–20 substantial coding sessions); P1 10–18 working days (about 15–25 sessions); integrated regression and handoff 2–4 days (3–5 sessions). Re-estimate after the caller inventory and PostgreSQL migration-baseline audit. Estimates assume one capable AI coding agent and prompt repository access; schema/legacy data surprises can extend them.
+- New execution map and next-model prompt: `HRMS_Blueprint/35_P0_P1_EXECUTION_ROADMAP_AND_P2_HANDOFF_PROMPT.md`.
