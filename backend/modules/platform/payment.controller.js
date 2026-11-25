@@ -16,6 +16,7 @@ const { matchesSubscriptionOrderSnapshot } = require('../../shared/utils/subscri
 const { getLaterExpiry } = require('./billingRenewal');
 const { createPhonePePayment, getPhonePeOrderStatus, isPhonePeOrderPaid } = require('../../shared/utils/phonepeStandardCheckout');
 const { withTenantRLS, withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
+const { resolveCentralTenantId } = require('../../shared/utils/tenantResolver');
 
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
   // Only warn if not in test/dev mode or if we expect payments to work
@@ -55,28 +56,29 @@ function getRazorpay() {
   }
 }
 
-// Helper: resolve tenant id from JWT, req.tenant, or X-Tenant-Subdomain header
+// Resolve Central tenant identity from the authenticated request. Ordinary
+// users may only use their token/index identity. Only platform admins may
+// select another tenant through the resolved request context or admin selector.
 async function resolveTenantId(req) {
-  if (req.user?.is_platform_admin && req.tenant?.id) return req.tenant.id;
-  const jwtTenantId = req.user?.centralTenantId || req.user?.tenantId;
-  if (jwtTenantId) return jwtTenantId;
-  if (req.tenant?.id) return req.tenant.id;
-  // A caller-controlled tenant header is a tenant selector, not proof of
-  // membership. Only a platform admin may resolve a tenant from this header.
-  if (!req.user?.is_platform_admin) return null;
-  const subdomain = req.headers['x-tenant-subdomain'] || req.headers['x-tenant'];
-  if (subdomain) {
+  if (!req.user?.is_platform_admin) {
     try {
-      // No tenant is known yet (that's what we're resolving), so this runs under
-      // the platform-admin RLS predicate — see shared/utils/rlsContext.js.
-      const t = await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.findFirst({ where: { subdomain } }));
-      if (t) return t.id;
-    } catch (err) {
-      logger.warn(`${THEME.ICONS.WARNING} [resolveTenantId] centralPrisma lookup failed: ${err.message}`);
-      // Fall through to allow other resolution methods or let caller handle missing tenant
+      return resolveCentralTenantId(req);
+    } catch {
+      return null;
     }
   }
-  return null;
+  if (req.tenant?.id) return req.tenant.id;
+  const subdomain = req.headers['x-tenant-subdomain'] || req.headers['x-tenant'];
+  if (!subdomain) return null;
+  try {
+    const t = await withPlatformAdminRLS(centralPrisma, (tx) =>
+      tx.tenants.findFirst({ where: { subdomain } })
+    );
+    return t?.id || null;
+  } catch (err) {
+    logger.warn(`${THEME.ICONS.WARNING} [resolveTenantId] centralPrisma lookup failed: ${err.message}`);
+    return null;
+  }
 }
 
 async function resolveTargetTenantId(req, requestedTenantId) {
