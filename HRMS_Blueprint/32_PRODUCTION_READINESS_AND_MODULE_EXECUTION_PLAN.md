@@ -142,3 +142,61 @@ A source audit found the shared `checkModuleEnabled()` middleware was a no-op an
 3. Audit Attendance + Leave together (self-service ownership, manager/HR approvals, shift/calendar rules, payroll handoff).
 4. Audit Payroll + Compliance together (calculations, lock/publish, statutory thresholds, exports, state configuration and audit).
 5. Fix the highest-severity correctness/security gaps found, then continue secondary modules.
+
+
+## 2026-11-25 — User requirement: dual-format, relational Excel + CSV import/export for every HRMS module
+
+This is a frozen product requirement for module implementation. Do not ask the user to repeat it or treat it as optional polish.
+
+### Required two export/import options
+Every HRMS module must support both:
+1. **Standard CSV** import/export for simple, flat, interoperability-oriented data exchange.
+2. **Advanced Excel workbook (.xlsx)** import/export as a second first-class option. Each workbook may contain multiple related worksheets/tabs representing the module's logical data entities and relationships, all packaged into one file.
+
+### Relational Employee workbook example
+One workbook for employee master data with sheets such as:
+- Instructions / Read Me (version, tenant-independent template metadata, import rules, accepted values, generated timestamp)
+- Employees / Basic Details
+- Contact Details
+- Family Members / Dependants
+- Education
+- Employment History / Lifecycle Events
+- Bank Details (restricted access; include only with explicit authorised export)
+- Documents Index (metadata and secure references only; do not embed private documents by default)
+- Reference Data / Lookup Lists (departments, designations, branches, employment types, etc.)
+- Import Errors / Validation Results (for generated error workbook, not source input)
+
+### Relationship and identity rules
+- Every parent record has a stable business key (e.g. Employee Code) and/or immutable record ID; child tabs refer to that parent key. Do not rely on worksheet row numbers or display names as foreign keys.
+- For existing records, support stable record IDs for update/upsert where authorised; for new records, generate IDs server-side and return a downloadable result workbook mapping import keys to created IDs.
+- Support one-to-many child sheets (family, education, employment history, contact methods) and optional reference sheets for controlled values.
+- Validate all references, duplicates, required fields, data types, dates, enumerations and tenant ownership before committing.
+- Import is preview-first: parse → validate → show row/sheet-level errors and warnings → user confirms → commit in a transaction/batched safe workflow. Provide a downloadable error workbook retaining original row references.
+- Never trust IDs to cross tenant boundaries. Resolve references within the authenticated tenant and reject cross-tenant IDs.
+- Define explicit conflict modes: create-only, update-only, upsert; require explicit selection where ambiguous. Avoid silent destructive replacement/deletion.
+- Provide import summary and audit log: created, updated, skipped, rejected; actor, time, template version, checksum/job ID.
+- Exports must respect permissions, module entitlements, field-level sensitive-data permissions and tenant scoping. Sensitive bank, identity and salary data must be separately permission-gated and excluded by default unless explicitly authorised.
+- Formula cells are for usability only; formulas must not be trusted as source values during import. Import reads validated raw cell values, not formula results alone. Avoid volatile/external-link formulas and macros.
+- Preserve dates, numeric formats, dropdown validations, frozen headers, filters, column widths and readable instructions in generated templates. Do not use macros or external workbook links.
+- CSV remains available and must document its flat-data limitations; related records can be exported as separate CSV files or via a documented ZIP bundle if the module has multiple related entities.
+
+### Apply consistently across all modules
+Use a shared import/export framework and module-specific workbook schemas, not one generic flat sheet. At minimum audit and implement:
+- Employees: basic, contact, family, education, employment/lifecycle, work assignments, permitted bank/document metadata.
+- Attendance: attendance records, shifts, rosters/assignments, holidays, regularization, overtime (as applicable).
+- Leave: leave types, balances/ledger, applications, approvals and policy references (with safeguards around opening balances).
+- Payroll: employee salary structures, components, payroll runs, payslips/earnings/deductions, reimbursements/adjustments, statutory outputs; sensitive permissions and locked-period safeguards.
+- Compliance: period summaries, employee statutory identifiers/eligibility and filing/export data with jurisdiction and effective-date metadata.
+- Recruitment, Performance, Training, Assets, Expenses, Reports and other modules: each gets a workbook schema reflecting its parent-child relationships and controlled reference values.
+
+### Delivery / UX
+- Provide clearly labelled CSV and Excel options side-by-side in each module's import/export area.
+- Provide downloadable sample/template workbook links from the application, with template version and a short instructions sheet.
+- Support upload of completed workbook, validation preview, error workbook download, confirmation and import summary.
+- Exports should support filters/date ranges and optionally include related sheets, respecting role and field permissions.
+- Templates must be generated from the same schema metadata used by import validators to prevent template/parser drift.
+- Add representative round-trip tests: export → import unchanged workbook → no unintended data change; edit workbook → preview → import → verify parent/child relationships.
+- For each module, test CSV compatibility alongside workbook import/export.
+
+### Execution rule
+Build a reusable, secure workbook engine and template/schema contract during the Employees module. Then reuse it module-by-module. Do not postpone the workbook option until after all modules are completed; design module work around both CSV and relational XLSX from the start. Keep the standard CSV path intact.
