@@ -50,7 +50,7 @@ The ownership path is displayed from the dependent table toward its tenant-owned
 7. Verify per-table source/destination row counts and checksums; validate all FK constraints.
 8. Define recovery/rollback and cutover locking to prevent writes being lost during final synchronization.
 9. Switch storage metadata only after successful verification, then enable paid entitlement.
-10. Add integration tests against disposable PostgreSQL databases before production rollout.
+10. Add integration tests against disposable PostgreSQL databases before production rollout. A PostgreSQL 16 CI integration test now exercises direct/dependent row counts, composite FK metadata, orphan/null references, NOT VALID constraints, cross-schema dependencies and cross-tenant references; it does not authorize production copy.
 
 ## Operational policy
 
