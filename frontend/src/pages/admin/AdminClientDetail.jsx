@@ -42,6 +42,7 @@ export default function AdminClientDetail() {
   const { id }  = useParams();
   const qc      = useQueryClient();
   const [tab, setTab] = useState('overview');
+  const [migrationPreviewRequested, setMigrationPreviewRequested] = useState(false);
 
   const { data: tenantRes, isLoading } = useQuery({
     queryKey: ['admin-tenant', id],
@@ -56,6 +57,14 @@ export default function AdminClientDetail() {
     enabled:  !!id && tab === 'modules',
   });
   const modules = modsRes?.data?.modules || modsRes?.modules || [];
+
+  const { data: migrationRes, isLoading: migrationLoading, error: migrationError, refetch: refetchMigration } = useQuery({
+    queryKey: ['admin-tenant-migration-preview', id],
+    queryFn: () => adminApi.getTenantMigrationPreview(id),
+    enabled: !!id && tab === 'storage' && migrationPreviewRequested,
+    retry: false,
+  });
+  const migration = migrationRes?.data?.data || migrationRes?.data || migrationRes;
 
   const { data: notifRes } = useQuery({
     queryKey: ['admin-tenant-notif', id],
@@ -127,6 +136,7 @@ export default function AdminClientDetail() {
     { key: 'overview', label: 'Overview' },
     { key: 'modules',  label: 'Modules'  },
     { key: 'billing',  label: 'Billing & Pricing' },
+    { key: 'storage',  label: 'Storage migration' },
     { key: 'email',    label: 'Email config' },
   ];
 
@@ -256,6 +266,74 @@ export default function AdminClientDetail() {
       )}
 
       {}
+
+      {tab === 'storage' && (
+        <div className="card" style={{ padding: '16px 18px' }}>
+          <div className="card-title">Paid tenant storage migration</div>
+          <div className="card-sub" style={{ marginTop: 5, lineHeight: 1.6 }}>
+            Read-only preflight for moving a managed-cloud tenant from the shared public schema to its UUID-derived dedicated schema.
+            This check does not create schemas, copy records, change the plan, or activate paid access.
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 14 }}>
+            <button className="btn-sm" onClick={() => { setMigrationPreviewRequested(true); refetchMigration(); }} disabled={migrationLoading}>
+              {migrationLoading ? 'Inspecting database…' : 'Run migration inventory'}
+            </button>
+            <span style={{ fontSize: 11, color: 'var(--admin-text-soft)' }}>No data is modified</span>
+          </div>
+          {migrationError && (
+            <div style={{ marginTop: 12, color: 'var(--admin-danger)', fontSize: 12 }}>
+              {migrationError.response?.data?.message || migrationError.message || 'Migration inventory failed.'}
+            </div>
+          )}
+          {migration?.summary && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(125px, 1fr))', gap: 8 }}>
+                {[
+                  ['Tables', migration.summary.totalTables],
+                  ['Directly scoped', migration.summary.directlyScoped],
+                  ['Dependent', migration.summary.dependentTables],
+                  ['Unclassified', migration.summary.unclassifiedTables],
+                  ['FK relationships', migration.foreignKeyCount],
+                  ['Destination schema', migration.summary.destinationSchemaExists ? 'Already exists' : 'Not created'],
+                ].map(([label, value]) => (
+                  <div key={label} style={{ padding: '10px 12px', borderRadius: 7, background: 'var(--admin-surface-muted)' }}>
+                    <div style={{ fontSize: 10, color: 'var(--admin-text-soft)' }}>{label}</div>
+                    <div style={{ fontSize: 15, fontWeight: 600, marginTop: 3 }}>{value}</div>
+                  </div>
+                ))}
+              </div>
+              {!!migration.blockers?.length && (
+                <div style={{ marginTop: 12, padding: 12, borderRadius: 7, background: 'var(--admin-warning-soft)', color: 'var(--admin-warning)', fontSize: 11 }}>
+                  <strong>Review required before any migration</strong>
+                  {migration.blockers.map((item) => <div key={item} style={{ marginTop: 5 }}>• {item}</div>)}
+                </div>
+              )}
+              <div style={{ marginTop: 14, fontSize: 11, fontWeight: 600 }}>Table ownership inventory</div>
+              <div style={{ overflowX: 'auto', marginTop: 7 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+                  <thead><tr style={{ textAlign: 'left', color: 'var(--admin-text-soft)' }}>
+                    <th style={{ padding: 7 }}>Table</th><th style={{ padding: 7 }}>Scope</th><th style={{ padding: 7 }}>Ownership path</th><th style={{ padding: 7, textAlign: 'right' }}>Source rows</th>
+                  </tr></thead>
+                  <tbody>
+                    {(migration.tables || []).map((row) => (
+                      <tr key={row.name} style={{ borderTop: '1px solid var(--admin-border)' }}>
+                        <td style={{ padding: 7, fontFamily: 'monospace' }}>{row.name}</td>
+                        <td style={{ padding: 7 }}>{row.scope}</td>
+                        <td style={{ padding: 7 }}>{row.ownershipPath?.join(' → ') || '—'}</td>
+                        <td style={{ padding: 7, textAlign: 'right' }}>{row.sourceRows ?? 'Pending relation analysis'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ marginTop: 12, color: 'var(--admin-text-soft)', fontSize: 10 }}>
+                Inventory generated {migration.generatedAt ? new Date(migration.generatedAt).toLocaleString('en-IN') : '—'}. Copy execution remains disabled until every table has a verified ownership rule, dependency order, destination validation, and recovery plan.
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {tab === 'billing' && (
         <BillingConfigTab tenantId={id} />
       )}
