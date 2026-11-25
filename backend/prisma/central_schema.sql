@@ -54,8 +54,8 @@ CREATE TABLE IF NOT EXISTS tenants (
   --   cloud         → Syntern provisions DB (db_url set by ops)
   --   external_cloud→ db_url = client's own Supabase/Neon URL
   --   local         → local_db_* fields = client's on-premise server
-  --   hybrid        → local_db_* (primary) + db_url (cloud backup)
-  db_mode             TEXT          NOT NULL DEFAULT 'cloud',          -- 'cloud' | 'external_cloud' | 'local' | 'hybrid'
+  --   hybrid        → legacy-only value; new allocations reject hybrid mode
+  db_mode             TEXT          NOT NULL DEFAULT 'cloud',          -- 'cloud' | 'external_cloud' | 'local' (PostgreSQL only)
   db_url              TEXT,                                            -- encrypted cloud/external URL
   schema_name         TEXT,                                            -- for shared DB: schema name (e.g., 'tenant_abc')
   local_db_type       TEXT,                                            -- 'postgres' | 'mysql' | 'mssql'
