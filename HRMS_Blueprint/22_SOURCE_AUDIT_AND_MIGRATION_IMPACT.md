@@ -2,7 +2,7 @@
 
 **Status:** Working audit; findings are based on source files inspected on branch `architecture/postgres-tenant-isolation`.
 **Purpose:** Record concrete implementation risks before changing production application code.
-**Architecture baseline:** PostgreSQL only; Free/Trial tenants use shared tenant tables; every Paid plan receives its own PostgreSQL schema; dedicated database/instance is an optional Enterprise isolation tier. Client-hosted PostgreSQL is supported as an offline deployment mode. Hybrid synchronization is a separate feature and must not be represented as connection fallback.
+**Architecture baseline:** PostgreSQL only; Free/Trial tenants share tenant operational tables in public; every Paid plan receives its own PostgreSQL schema; dedicated database/instance is an optional Enterprise isolation tier. Client-hosted PostgreSQL is supported as an offline deployment mode. Hybrid synchronization is a separate feature and must not be represented as connection fallback.
 
 ## 1. Executive assessment
 
@@ -118,8 +118,8 @@ Central tenant row, modules, user index, and pricing config are inserted in a tr
 
 | Tenant lifecycle / plan | Storage target | Isolation |
 |---|---|---|
-| Free | Shared PostgreSQL tenant schema/tables (per finalized table model) | Tenant/company key + authorization; central RLS where applicable |
-| Trial | Same shared tier as Free | Same as Free |
+| Free | Shared PostgreSQL public schema | Tenant/company key + authorization; RLS where applicable |
+| Trial | Same public schema as Free | Same as Free |
 | Any Paid plan | Dedicated PostgreSQL schema | Schema-level isolation; enforce company scope and authorization inside schema |
 | Enterprise add-on (optional) | Dedicated PostgreSQL database/instance | Infrastructure-level isolation |
 | Client-hosted/offline | PostgreSQL on client/Syntern-managed local infrastructure | Dedicated deployment boundary; offline operation |
