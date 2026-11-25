@@ -7,6 +7,7 @@ const { IMPORT_MODES, validateWorkbookData } = require('../shared/import-export/
 
 const valid = {
   Employees: [{ employeeCode: 'EMP0001', firstName: 'Asha', lastName: 'Sharma', dateOfJoining: '2026-01-01' }],
+  ContactDetails: [{ employeeCode: 'EMP0001', phone: '9876543210', personalEmail: 'asha@example.com' }],
   Addresses: [{ employeeCode: 'EMP0001', addressType: 'local', pincode: '110001' }],
   Family: [{ employeeCode: 'EMP0001', name: 'Ravi', relationship: 'spouse', isDependent: true }],
   Education: [{ employeeCode: 'EMP0001', eduLevel: 'graduate', passingYear: 2020 }],
@@ -15,7 +16,7 @@ const valid = {
 
 test('employee workbook defines relational child sheets with stable Employee Code references', () => {
   assert.deepEqual(EMPLOYEE_WORKBOOK_SCHEMA.sheets.map((sheet) => sheet.name), [
-    'Employees', 'Addresses', 'Family', 'Education', 'PreviousEmployment',
+    'Employees', 'ContactDetails', 'Addresses', 'Family', 'Education', 'PreviousEmployment',
   ]);
   for (const sheet of EMPLOYEE_WORKBOOK_SCHEMA.sheets.filter((item) => item.parent)) {
     assert.equal(sheet.parent.field, 'employeeCode');
@@ -28,7 +29,7 @@ test('employee workbook defines relational child sheets with stable Employee Cod
 test('validates a relational employee workbook', () => {
   const result = validateWorkbookData(EMPLOYEE_WORKBOOK_SCHEMA, valid, { mode: 'upsert' });
   assert.equal(result.valid, true);
-  assert.equal(result.rowCount, 5);
+  assert.equal(result.rowCount, 6);
   assert.deepEqual(result.errors, []);
 });
 
