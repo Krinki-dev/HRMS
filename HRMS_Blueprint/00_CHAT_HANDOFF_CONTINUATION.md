@@ -453,3 +453,66 @@ User should not be asked to repeat technical decisions. Ask for their involvemen
 - Sensitive employee import fields (Aadhaar, PAN, UAN, ESI and disability status) now require explicit employees.edit_sensitive permission when populated. Normal CSV import remains possible without sensitive permission. Default CSV template excludes these fields; CSV export already excludes them.
 - Billing renewal invoice period_end bug found by CI was fixed: inclusive period_end is the calendar day before the paid-through expiry date. Backend CI run at 3388326dc14305f58487e26b578f2e613896bddb passed. The newest workbook/security commits still need a final green CI run; intermediate runs exposed validator/test issues which have since been corrected in commits 1016ea36c5c16b7a6da405511866255f012eacc3 and 9d93d7394e397c4f0b142d86a7daef0cd99267ba.
 - XLSX parser/writer, template, import preview/confirm persistence, database conflict checks, transaction-safe commit, error workbook and UI are not implemented yet. Do not present the workbook feature as complete.
+
+## 2026-11-25 — User-confirmed storage policy and source-audit continuation
+
+This section supersedes older handoff statements wherever they conflict with the user's latest explicit clarification.
+
+### User-confirmed architecture decisions
+
+- PostgreSQL is the only supported database engine. Remove obsolete MySQL, SQL Server/MSSQL and SQLite compatibility code after tracing callers and documenting any required legacy-data conversion.
+- Free and Trial customers share the tenant operational database's `public` schema.
+- Every Paid customer receives an individually isolated PostgreSQL schema. The schema name must be generated from a stable tenant identifier, not customer-controlled input or a mutable subdomain.
+- The user confirms that current tenant operational records are dummy/test data and may be cleaned or removed if required for the upgrade. This is permission to plan cleanup, not evidence that any deletion has occurred. Back up first and keep Central/platform records distinct from tenant operational test data.
+- The user confirms that repeated HRMS table sets across schemas are intentional in principle: paid customers have their own schemas; Free/Trial share `public`. Do not treat every repeated schema as accidental duplication. Classify each schema before cleanup.
+- During every module upgrade, perform a bounded code-cleanup pass: remove dead branches, obsolete database-engine compatibility, duplicate implementations, unused imports/helpers and stale comments only after reference checks and tests. Do not perform unrelated mass rewrites.
+- Keep this file current after meaningful work. The user is non-technical; avoid asking them to run code or SQL while source-code work can proceed. Never ask for passwords or full connection strings.
+
+### Tenant database inventory supplied by the user
+
+Read-only inspection of the tenant operational database reported PostgreSQL 17.6 and schemas including `public`, `tenant_app`, `tenant_hrms`, `tenant_pcepl`, `tenant_rahultradeco`, and `tenant_syntern`, in addition to Supabase-managed `auth`, `realtime`, `storage`, and `vault` schemas. HRMS table names repeat across the tenant schemas. Estimated row counts showed a small number of announcement rows in `tenant_hrms` and `tenant_pcepl`; most listed HRMS tables showed zero estimated rows. These are PostgreSQL statistics estimates, not exact counts. The diagnostic found no `_prisma_migrations` table in the inspected database. Installed extensions included pgcrypto, pg_stat_statements, plpgsql, supabase_vault and uuid-ossp.
+
+Do not drop Supabase-managed schemas. Do not infer that `tenant_app` or any customer schema is safe to delete solely from its name or estimated row count. Reconcile schema names against Central tenant records and the actual provisioning/routing code first. Central DB and tenant operational DB remain separate configuration roles (`CENTRAL_DATABASE_URL` and `DEV_TENANT_DATABASE_URL`); never run tenant SQL against Central or vice versa.
+
+### Confirmed source findings on the working branch
+
+Comparison from baseline commit `cd400a602eb255029c1daeeae1d35f0c7b7ee948` to reviewed commit `89a22e5e1c52dd001275c808be0caff54a53d959` reported 364 commits ahead and 0 behind. The reviewed head commit is dated 2026-11-25. This confirms the scale of the branch history; it does not mean all 364 commits have been individually diff-reviewed.
+
+1. `backend/shared/middleware/tenant.js` still contains MySQL, MSSQL and SQLite URL branches, and a `hybrid` local-to-cloud connection fallback. That fallback is not synchronization.
+2. `backend/modules/platform/platform.service.js` has a second URL resolver and duplicate MySQL/MSSQL branches. Its registration path still derives `tenant_<subdomain>` for cloud/external-cloud customers and clones a template schema regardless of Free/Trial/Paid plan.
+3. Registration does not write `storage_tier` or `storage_status`; Central Prisma defaults those fields to `legacy_unclassified`. The registration path later writes a schema name, but the new storage lifecycle model is not yet integrated.
+4. Paid subscription verification updates the plan, modules, pricing configuration, invoice and payment ledger transactionally, but does not provision/verify a dedicated schema or update storage lifecycle metadata. Free-plan and Trial activation paths also do not update storage assignment.
+5. `tenantStorageConfig.js` and `tenantStorageResolver.js` currently require the shared schema name `shared_tenants`, which conflicts with the user's explicit requirement that Free/Trial use `public`. The resolver is not yet wired into `tenant.js`.
+6. `tenantStorageResolver.js` deliberately blocks local mode at this stage even though client-hosted/offline PostgreSQL remains a documented product requirement. Implement and test PostgreSQL local URL construction before enabling that path.
+7. `dbSchema.js` uses template cloning via `CREATE TABLE ... LIKE` plus separate sequence creation. This is not a complete versioned schema-provisioning process and must not be the canonical paid-schema provisioning mechanism.
+8. The tenant Prisma schema has a distinct `companies.id` from Central `tenants.id`. Shared-`public` isolation must define the authenticated mapping and consistently scope company-owned records and child records. A prior real compliance cross-company data leak was fixed with `company_id` filters; treat this as a security-critical regression class and audit all modules.
+9. `tenantDeletionGuard.js` blocks shared storage deletion, and `tenantDeletion.service.js` currently fails closed before physical deletion pending restore verification. Keep this protection; never drop/recreate `public` for one tenant.
+10. The legacy tenant Prisma migration directory has a SQL Server migration lock and SQL Server-specific initial SQL. It is not a valid PostgreSQL migration history. Do not run it against PostgreSQL or use `migrate reset`.
+
+### Documentation alignment required
+
+- `HRMS_Blueprint/21_POSTGRES_TENANCY_MIGRATION_PLAN.md`, `22_SOURCE_AUDIT_AND_MIGRATION_IMPACT.md`, `23_FILE_BY_FILE_IMPLEMENTATION_BLUEPRINT.md`, `25_TENANT_STORAGE_RESOLVER.md`, `26_TENANT_STORAGE_INVENTORY_AUDIT.md`, `28_IMPLEMENTATION_PROGRESS.md`, `04_DATABASE.md`, `05_DATA_FLOW.md`, and `07_FROZEN_DECISIONS.md` need reconciliation with the explicit `public` shared-schema rule and the latest code.
+- `tenantStorageConfig.js`, `tenantStorageResolver.js`, and their tests currently use `shared_tenants`; update the contract and tests to `public` as part of the controlled storage-resolver integration.
+- The Blueprint index and this handoff refer to `08_STATUS_AND_CHANGELOG.md`, but fetching that path on the working branch returned 404. Confirm the intended status source and update the index/handoff references rather than asking a new chat to locate a missing file.
+- The existing source-audit document contains useful findings but must be refreshed where current code has changed. In particular, registration now returns a provisioning error and leaves the tenant inactive when schema cloning or seeding fails; it still lacks a durable retry/state-machine workflow.
+
+### Required implementation order
+
+1. Finish a history/source audit of the 364-commit branch range, prioritizing database architecture, tenant middleware, registration, payment/subscription, storage lifecycle, deletion/backup, auth/company mapping, and security-sensitive module changes. Compare commit messages/diffs with current files; treat current branch source as authoritative.
+2. Define the canonical storage contract: Free/Trial = `public`; Paid = UUID-derived dedicated schema; PostgreSQL only; client-hosted/offline PostgreSQL remains a separately validated deployment mode. Keep Central platform metadata and tenant operational data correctly separated.
+3. Update pure storage configuration/resolver/tests from `shared_tenants` to `public`; define the mapping between Central tenant ID, business company ID and all tenant-owned child records.
+4. Build one idempotent PostgreSQL provisioning/promotion service. Trial signup must route to `public`; verified paid activation must provision/migrate/copy/validate a dedicated schema before switching routing or paid entitlements. Preserve rollback source data until validation and retention checks pass.
+5. Integrate the resolver into request middleware, background jobs, backups and deletion. Remove recognized-tenant development fallbacks that can silently route to another dataset. Ensure pool cache identity and lifecycle are safe.
+6. Replace template cloning with versioned PostgreSQL migrations and a valid baseline. Do not run the old MSSQL migration history.
+7. Audit every tenant module for company/tenant scoping, sensitive-field permissions, duplicate/dead code and obsolete database-engine branches. Add regression tests as each module is upgraded.
+8. Update all architecture, database, data-flow, frozen-decision, progress and handoff documents to match implemented behavior.
+9. Validate Prisma generation, backend tests, frontend build, disposable PostgreSQL integration, tenant isolation, paid promotion rollback, backup/restore and provider sandbox flows on exact commits. No production readiness claim until these gates pass.
+
+### Current verification boundary
+
+- The Central/platform additive schema upgrade was previously executed by the user on the correct Central database and all 12 verification checks returned true.
+- The tenant database inspection was read-only. No tenant migration, schema deletion, data cleanup, routing change, payment or deployment has been performed as part of this update.
+- The latest reviewed tenant inventory diagnostic fix is commit `89a22e5e1c52dd001275c808be0caff54a53d959`.
+- CI for the latest reviewed branch commit must be checked again; earlier successful CI runs do not verify the current branch state.
+- Do not ask the user to repeat the architecture decisions or rerun SQL at this stage. Continue source/history analysis and implementation on `architecture/postgres-tenant-isolation`; never modify `main`.
+
