@@ -39,6 +39,21 @@ const EMPLOYEE_WORKBOOK_SCHEMA = Object.freeze({
       },
     },
     {
+      name: 'ContactDetails',
+      entity: 'employeeContact',
+      key: 'employeeCode',
+      parent: { field: 'employeeCode', sheet: 'Employees', key: 'employeeCode' },
+      fields: {
+        employeeCode: { type: 'string', required: true, maxLength: 50, reference: 'Employees.employeeCode' },
+        phone: { type: 'string', maxLength: 30 },
+        personalEmail: { type: 'email', maxLength: 254 },
+        workEmail: { type: 'email', maxLength: 254 },
+        emergencyContactName: { type: 'string', maxLength: 150 },
+        emergencyContactPhone: { type: 'string', maxLength: 30 },
+        emergencyContactRel: { type: 'string', maxLength: 60 },
+      },
+    },
+    {
       name: 'Addresses',
       entity: 'employeeAddress',
       key: 'recordId',
