@@ -99,7 +99,7 @@ router.post('/kyc/check-duplicate', async (req, res) => {
     if (!/^\d{12}$/.test(clean))
       return sendError(res, ERROR_CODES.VALIDATION, 'Aadhaar must be 12 digits', 400);
 
-    const existing = await findKycByHash(hashAadhaar(clean));
+    const existing = await findKycByHash(req.user.centralTenantId || req.user.tenantId, hashAadhaar(clean));
     if (existing) {
       return sendSuccess(res, {
         isDuplicate:  true,
@@ -119,7 +119,7 @@ router.get('/kyc/:kycId', async (req, res) => {
   if (!HR.includes(req.user.role))
     return sendError(res, ERROR_CODES.FORBIDDEN, 'HR only', 403);
   try {
-    const rec = await findKycById(req.params.kycId);
+    const rec = await findKycById(req.user.centralTenantId || req.user.tenantId, req.params.kycId);
     if (!rec)
       return sendError(res, ERROR_CODES.NOT_FOUND, 'KYC record not found', 404);
 
@@ -182,7 +182,7 @@ router.get('/kyc/:kycId', async (req, res) => {
 router.post('/kyc/:kycId/verify-contact', async (req, res) => {
   try {
     const { mobile, email } = req.body;
-    const rec = await findKycById(req.params.kycId);
+    const rec = await findKycById(req.user.centralTenantId || req.user.tenantId, req.params.kycId);
     if (!rec) return sendError(res, ERROR_CODES.NOT_FOUND, 'KYC not found', 404);
     const mobileVerified = mobile ? verifyHash(mobile, rec.m) : null;
     const emailVerified  = email  ? verifyHash(email,  rec.e) : null;
@@ -203,9 +203,9 @@ router.post('/kyc/:kycId/link', async (req, res) => {
     const { employeeId } = req.body;
     if (!employeeId)
       return sendError(res, ERROR_CODES.VALIDATION, 'employeeId required', 400);
-    const rec = await findKycById(req.params.kycId);
+    const rec = await findKycById(req.user.centralTenantId || req.user.tenantId, req.params.kycId);
     if (!rec) return sendError(res, ERROR_CODES.NOT_FOUND, 'KYC record not found', 404);
-    await linkKycToEmployee(rec.id, employeeId);
+    await linkKycToEmployee(req.user.centralTenantId || req.user.tenantId, rec.id, employeeId);
     await audit(req.db, req.user.companyId, req.user.id, 'kyc_linked_to_employee',
       { kycId: rec.id, employeeId }, req.ip);
     return sendSuccess(res, null, 'KYC linked to employee');
@@ -347,7 +347,7 @@ router.post('/kyc/save-after-review', async (req, res) => {
     if (!kycData || !aadhaarHash)
       return sendError(res, ERROR_CODES.VALIDATION, 'kycData and aadhaarHash required', 400);
     const { encrypt } = require('../../shared/utils/encryption');
-    const kycRec = await upsertKycRecord(aadhaarHash, {
+    const kycRec = await upsertKycRecord(req.user.centralTenantId || req.user.tenantId, aadhaarHash, {
       method,
       kycTimestamp: kycData.kycTimestamp || null,
       name:    kycData.name    ? encrypt(kycData.name)    : null,
