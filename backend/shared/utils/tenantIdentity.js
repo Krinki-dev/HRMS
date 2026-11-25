@@ -11,11 +11,14 @@
 function resolveTenantIdentity({ claims = {}, requestTenantId = null, indexedTenantId = null } = {}) {
   const hasCompanyClaim = Boolean(claims.companyId);
   const legacyCompanyId = !hasCompanyClaim ? claims.tenantId : null;
+  const tokenCentralTenantId = claims.centralTenantId || (hasCompanyClaim ? claims.tenantId : null);
+  // Legacy tokens carry the operational company id in tenantId. Resolve their
+  // Central tenant only through the authenticated user's central index; never
+  // let an arbitrary request hostname rebind that token to another tenant.
   const centralTenantId =
-    requestTenantId ||
-    claims.centralTenantId ||
+    tokenCentralTenantId ||
     indexedTenantId ||
-    (hasCompanyClaim ? claims.tenantId : null) ||
+    (legacyCompanyId ? null : requestTenantId) ||
     null;
 
   return {
