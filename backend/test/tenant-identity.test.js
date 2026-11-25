@@ -37,6 +37,7 @@ test('legacy token is not rebound to a request tenant without central index reso
   });
   assert.equal(identity.companyId, 'old-company-id');
   assert.equal(identity.tenantId, null);
+  assert.equal(matchesTenantContext(identity, 'untrusted-request-tenant-id'), false);
 });
 
 test('does not promote a legacy company claim to a Central tenant without resolution', () => {
