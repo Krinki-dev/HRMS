@@ -28,4 +28,9 @@ function resolveTenantIdentity({ claims = {}, requestTenantId = null, indexedTen
   };
 }
 
-module.exports = { resolveTenantIdentity };
+function matchesTenantContext(identity, requestTenantId) {
+  if (!requestTenantId) return true;
+  return Boolean(identity?.centralTenantId) && identity.centralTenantId === requestTenantId;
+}
+
+module.exports = { resolveTenantIdentity, matchesTenantContext };
