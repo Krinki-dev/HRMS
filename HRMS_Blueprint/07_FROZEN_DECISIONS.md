@@ -98,7 +98,8 @@ Mobile:         React Native — Phase 2 only
 ```
 Pattern:          Modular Monolith
 Multi-tenant:     Free/Trial customers share the tenant operational public schema; every Paid customer gets a dedicated PostgreSQL schema. A dedicated PostgreSQL database/instance is an optional separately approved Enterprise tier.
-DB Modes:         cloud | external_cloud | local | hybrid
+DB Modes:         cloud | external_cloud | local (PostgreSQL only)
+Hybrid sync/failover: Rejected — no local/cloud data synchronization mode
 Schema isolation: tenant.schema_name → appends ?schema=<name> to DB URL
 Conflict rule:    Primary DB always wins on sync conflict — no exceptions
 Pagination:       Cursor-based ONLY — never offset, never
