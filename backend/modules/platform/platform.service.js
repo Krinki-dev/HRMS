@@ -49,7 +49,7 @@ async function provisionDefaultModules(tx, tenantId) {
  */
 const registerTenant = async (req, res) => {
   try {
-    const { company, subdomain, customDomain, dbMode: requestedDbMode, localDb, externalDbUrl, cloudBackupUrl, admin, consent } = req.body;
+    const { company, subdomain, customDomain, dbMode: requestedDbMode, localDb, externalDbUrl, admin, consent } = req.body;
     const dbMode = requestedDbMode || 'cloud';
     
     // 1. Validation
@@ -124,8 +124,6 @@ const registerTenant = async (req, res) => {
       return sendError(res, ERROR_CODES.VALIDATION, 'Local database host is required', 400);
     if (selectedDbMode === 'external_cloud' && !externalDbUrl)
       return sendError(res, ERROR_CODES.VALIDATION, 'Database connection URL is required', 400);
-    if (selectedDbMode === 'hybrid' && !cloudBackupUrl)
-      return sendError(res, ERROR_CODES.VALIDATION, 'Cloud backup URL is required for hybrid mode', 400);
 
     const existingSubdomain = await centralPrisma.$queryRaw`
       SELECT id FROM tenants WHERE subdomain = ${cleanSubdomain} AND deleted_at IS NULL LIMIT 1
@@ -285,7 +283,7 @@ const registerTenant = async (req, res) => {
       let initialBasePaise = (defaultPlan.price || 1499) * 100;
       let initialEmpCap = defaultPlan.baseEmployees || 25;
 
-      if (dbMode === 'local' || dbMode === 'hybrid' || dbMode === 'external_cloud') {
+      if (dbMode === 'local' || dbMode === 'external_cloud') {
         initialBasePaise = 250000; // Higher software fee for unlimited
         initialEmpCap = null;      // Unlimited employees
       }
