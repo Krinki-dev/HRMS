@@ -104,8 +104,8 @@ function resolveTenantStorageTarget(tenant, {
     }
     parsed.searchParams.set('schema', schemaName);
   } else if (tier === STORAGE_TIERS.DEDICATED_DATABASE) {
-    if (tenant.plan !== 'enterprise') {
-      throw new Error('Dedicated database storage requires an Enterprise plan.');
+    if (tenant.plan !== 'enterprise' && !['external_cloud', 'local'].includes(tenant.db_mode)) {
+      throw new Error('Platform-managed dedicated database storage requires an Enterprise plan. Customer-managed PostgreSQL databases are dedicated by design.');
     }
     if (tenant.schema_name) {
       throw new Error('Dedicated database storage must not specify a schema override.');
