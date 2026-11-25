@@ -36,6 +36,22 @@ test('backup allows a dedicated customer-managed PostgreSQL database without sch
     storage_tier: 'dedicated_database',
     storage_status: 'ready',
   }), null);
+  assert.equal(getSafeBackupTarget({
+    id,
+    plan: 'enterprise',
+    db_mode: 'cloud',
+    schema_name: null,
+    storage_tier: 'dedicated_database',
+    storage_status: 'ready',
+  }), null);
+  assert.throws(() => getSafeBackupTarget({
+    id,
+    plan: 'pro',
+    db_mode: 'cloud',
+    schema_name: null,
+    storage_tier: 'dedicated_database',
+    storage_status: 'ready',
+  }), /Enterprise-only/);
   assert.throws(() => getSafeBackupTarget({
     id,
     db_mode: 'external_cloud',
