@@ -56,7 +56,7 @@ function getRazorpay() {
 
 // Helper: resolve tenant id from JWT, req.tenant, or X-Tenant-Subdomain header
 async function resolveTenantId(req) {
-  const jwtTenantId = req.user?.tenantId;
+  const jwtTenantId = req.user?.centralTenantId || req.user?.tenantId;
   if (jwtTenantId) return jwtTenantId;
   if (req.tenant?.id) return req.tenant.id;
   const subdomain = req.headers['x-tenant-subdomain'] || req.headers['x-tenant'];
@@ -537,7 +537,7 @@ exports.handlePayoutWebhook = async (_req, res) => {
  */
 exports.createSubscriptionOrder = async (req, res) => {
   try {
-    const tenantId = req.user?.tenantId || req.user?.company_id;
+    const tenantId = req.user?.centralTenantId || req.user?.tenantId;
     if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Tenant session required', 401);
     const { planSlug, selectedAddons = [], billingMonths = 1, promoCode, method = 'razorpay', renewalMode = 'manual' } = req.body || {};
     if (method !== 'razorpay') return sendError(res, ERROR_CODES.VALIDATION, 'Only Razorpay is available at launch.', 503);
@@ -614,7 +614,7 @@ exports.createSubscriptionOrder = async (req, res) => {
 
 exports.verifySubscription = async (req, res) => {
   try {
-    const tenantId = req.user?.tenantId || req.user?.company_id;
+    const tenantId = req.user?.centralTenantId || req.user?.tenantId;
     if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Tenant session required', 401);
     const { razorpay_order_id: orderId, razorpay_payment_id: paymentId, razorpay_signature: signature } = req.body || {};
     const secret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
