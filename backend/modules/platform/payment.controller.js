@@ -552,7 +552,7 @@ exports.createSubscriptionOrder = async (req, res) => {
     }
     const tenant = await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.findUnique({
       where: { id: tenantId },
-      select: { id: true, name: true, admin_name: true, admin_email: true, is_active: true, db_mode: true, storage_tier: true, storage_status: true }
+      select: { id: true, name: true, admin_name: true, admin_email: true, is_active: true, db_mode: true, schema_name: true, storage_tier: true, storage_status: true }
     }));
     if (!tenant || !tenant.is_active) return sendError(res, ERROR_CODES.NOT_FOUND, 'Active company account not found.', 404);
 
@@ -671,7 +671,7 @@ exports.verifySubscription = async (req, res) => {
     if (!plan || !plan.is_active) return sendError(res, ERROR_CODES.VALIDATION, 'The selected plan is no longer available.', 409);
     const tenantStorage = await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.findUnique({
       where: { id: tenantId },
-      select: { db_mode: true, storage_tier: true, storage_status: true },
+      select: { id: true, db_mode: true, schema_name: true, storage_tier: true, storage_status: true },
     }));
     if (!isPaidStorageReady(tenantStorage, plan.slug)) {
       return sendError(res, ERROR_CODES.VALIDATION,
