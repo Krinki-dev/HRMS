@@ -30,6 +30,11 @@ test('clamps month-end renewal dates instead of overflowing into the following m
   assert.equal(addCalendarMonthsClamped('2028-01-31T09:00:00.000Z', 1).toISOString(), '2028-02-29T09:00:00.000Z');
 });
 
+test('uses the prior calendar day as the inclusive invoice period end for timed expiry', () => {
+  const period = getMonthlyRenewalPeriod('2026-11-25T10:30:00.000Z', '2026-11-25T10:30:00.000Z');
+  assert.equal(period.periodEnd.toISOString(), '2026-12-24T00:00:00.000Z');
+});
+
 test('uses a deterministic invoice number for duplicate daily cron runs', () => {
   const first = buildRenewalInvoiceNumber('acme-india', '2026-11-25T00:00:00.000Z');
   const second = buildRenewalInvoiceNumber('acme-india', '2026-11-25T00:00:00.000Z');
