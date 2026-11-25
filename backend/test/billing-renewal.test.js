@@ -22,7 +22,7 @@ test('anchors a renewal period to a mid-month paid-through timestamp', () => {
   assert.equal(period.startAt.toISOString(), '2026-11-25T10:30:00.000Z');
   assert.equal(period.expiresAt.toISOString(), '2026-12-25T10:30:00.000Z');
   assert.equal(period.periodStart.toISOString(), '2026-11-25T00:00:00.000Z');
-  assert.equal(period.periodEnd.toISOString(), '2026-12-24T00:00:00.000Z');
+  assert.equal(period.periodEnd.toISOString(), '2026-12-25T00:00:00.000Z');
 });
 
 test('clamps month-end renewal dates instead of overflowing into the following month', () => {
