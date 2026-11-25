@@ -24,7 +24,7 @@ Licence key generated → emailed to client
         ↓
 Client accesses their domain → First time setup wizard
         ↓
-Sets: company info, DB mode (local/cloud/hybrid), branding
+Sets: company info, DB mode (managed cloud/customer-managed PostgreSQL), branding
         ↓
 First admin user created → Client ready to use
 ```
@@ -298,7 +298,7 @@ Request arrives → tenant.js middleware runs:
    cloud:          CENTRAL tenant db_url (Supabase, schema-isolated if schema_name set)
    external_cloud: tenant.db_url (encrypted, decrypt first)
    local:          Build from local_db_host, local_db_port, local_db_name, etc.
-   hybrid:         Try local first → fallback to cloud
+   hybrid:         Not supported — no silent local/cloud fallback
 
 4. Create PrismaClient for tenant:
    new PrismaClient({ datasources: { db: { url: resolved_url } } })
