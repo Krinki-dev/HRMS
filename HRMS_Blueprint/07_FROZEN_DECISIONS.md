@@ -12,7 +12,8 @@ The decisions below supersede contradictory older lines later in this document a
 
 ### Database and tenant storage
 - Database engine: PostgreSQL ONLY. MySQL, MSSQL/SQL Server and SQLite are not supported target engines.
-- Storage modes: cloud, external_cloud and local PostgreSQL only. Hybrid is NOT an implemented sync mode; remove the old primary-database-wins sync statement. No sync feature is promised.
+- Storage modes: managed cloud, external_cloud and local PostgreSQL only. Hybrid sync/failover is rejected and is not promised.
+- Managed-cloud Free/Trial: shared `public` schema with mandatory company-level isolation. Managed-cloud paid plans: UUID-derived dedicated schema after a verified data migration. Customer-managed local/external PostgreSQL: dedicated customer-owned database regardless of subscription tier. Platform-managed dedicated database: Enterprise-only.
 - Free and Trial customers share the tenant operational public schema.
 - Every Paid customer receives an individually isolated schema derived from immutable Central tenants.id; optional Enterprise dedicated PostgreSQL database/instance requires separate approval.
 - Client-hosted/offline PostgreSQL remains a product requirement.
