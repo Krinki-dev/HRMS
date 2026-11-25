@@ -18,7 +18,7 @@ exports.checkDuplicate = async (req, res) => {
     if (clean.length !== 12)
       return sendError(res, ERROR_CODES.VALIDATION, 'Aadhaar must be exactly 12 digits', 400);
 
-    const result = await draftService.checkDuplicate(req.db, req.user.tenantId, clean);
+    const result = await draftService.checkDuplicate(req.db, req.user.companyId, clean);
     return sendSuccess(res, result);
   } catch (e) {
     console.error('[checkDuplicate] ERROR:', e.message);
@@ -28,7 +28,7 @@ exports.checkDuplicate = async (req, res) => {
 
 exports.listDrafts = async (req, res) => {
   try {
-    const rows = await draftService.listDrafts(req.db, req.user.tenantId, req.user.id);
+    const rows = await draftService.listDrafts(req.db, req.user.companyId, req.user.id);
     return sendSuccess(res, rows);
   } catch (e) {
     console.error('[listDrafts] ERROR:', e.message);
@@ -43,7 +43,7 @@ exports.createDraft = async (req, res) => {
       return sendError(res, ERROR_CODES.VALIDATION, 'aadhaarNumber is required', 400);
 
     const clean  = String(aadhaarNumber).replace(/\s/g, '');
-    const result = await draftService.createDraft(req.db, req.user.tenantId, req.user.id, clean);
+    const result = await draftService.createDraft(req.db, req.user.companyId, req.user.id, clean);
     return sendSuccess(res, result, 'Draft created');
   } catch (e) {
     console.error('[createDraft] ERROR:', e.message);
@@ -53,7 +53,7 @@ exports.createDraft = async (req, res) => {
 
 exports.getDraft = async (req, res) => {
   try {
-    const draft = await draftService.getDraft(req.db, req.user.tenantId, req.params.draftId);
+    const draft = await draftService.getDraft(req.db, req.user.companyId, req.params.draftId);
     if (!draft) return sendError(res, ERROR_CODES.NOT_FOUND, 'Draft not found', 404);
     return sendSuccess(res, draft);
   } catch (e) {
@@ -72,7 +72,7 @@ exports.saveDraftStep = async (req, res) => {
 
     const result = await draftService.saveStep(
       req.db,
-      req.user.tenantId,
+      req.user.companyId,
       req.params.draftId,
       step,
       req.body.data,
@@ -87,7 +87,7 @@ exports.saveDraftStep = async (req, res) => {
 
 exports.completeDraft = async (req, res) => {
   try {
-    const result = await draftService.completeDraft(req.db, req.user.tenantId, req.params.draftId);
+    const result = await draftService.completeDraft(req.db, req.user.companyId, req.params.draftId);
     return sendSuccess(res, result, 'Onboarding complete');
   } catch (e) {
     console.error('[completeDraft] ERROR:', e.message);
@@ -110,7 +110,7 @@ exports.checkAadhaar = async (req, res) => {
 
     const result = await checkAadhaar(
       req.db,
-      req.user.tenantId,
+      req.user.companyId,
       req.user.id,
       { aadhaarNumber, aadhaarHash }
     );
