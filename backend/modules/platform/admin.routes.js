@@ -11,12 +11,20 @@ const { centralPrisma } = require('../../shared/utils/centralPrisma');
 const logger = require('../../shared/utils/logger');
 const { THEME } = require('../../shared/utils/uiConstants');
 const { resolveTenantStorageTarget } = require('../../shared/utils/tenantStorageResolver');
+const { withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 const {
   getDeletionReadiness,
   permanentlyDeleteTenant,
 } = require('./tenantDeletion.service');
 
-const getCentral = () => centralPrisma;
+const getCentral = () => ({
+  $queryRaw: (strings, ...values) =>
+    withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw(strings, ...values)),
+  $queryRawUnsafe: (query, ...values) =>
+    withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRawUnsafe(query, ...values)),
+  $executeRaw: (strings, ...values) =>
+    withPlatformAdminRLS(centralPrisma, (tx) => tx.$executeRaw(strings, ...values)),
+});
 
 function resolveAdminTenantDbUrl(tenant) {
   return resolveTenantStorageTarget(tenant, {
