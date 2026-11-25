@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const requireSetupComplete = require('../../shared/middleware/requireSetupComplete');
 const ctrl   = require('./settings.controller');
 const { centralPrisma } = require('../../shared/utils/centralPrisma');
-const { resolveTenantId } = require('../../shared/utils/tenantResolver');
+const { resolveCentralTenantId } = require('../../shared/utils/tenantResolver');
 const {
   getDeletionReadiness,
   permanentlyDeleteTenant,
@@ -168,7 +168,7 @@ router.get(
   can('view'),
   async (req, res) => {
     try {
-      const tenantId = await resolveTenantId(req);
+      const tenantId = await resolveCentralTenantId(req);
       if (!tenantId) {
         return res.status(400).json({
           success: false,
@@ -194,7 +194,7 @@ router.post(
   can('delete'),
   async (req, res) => {
     try {
-      const tenantId = await resolveTenantId(req);
+      const tenantId = await resolveCentralTenantId(req);
       if (!tenantId) {
         return res.status(400).json({ success: false, code: 'TENANT_REQUIRED', message: 'Tenant ID could not be resolved' });
       }
