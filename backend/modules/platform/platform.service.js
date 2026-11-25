@@ -232,7 +232,7 @@ const registerTenant = async (req, res) => {
         requiredTables[0].companies && requiredTables[0].roles && requiredTables[0].users;
       if (!ready) {
         return sendError(res, ERROR_CODES.VALIDATION,
-          'The PostgreSQL database is reachable but the HRMS schema is not installed. Run the official PostgreSQL setup before registering this tenant.',
+          'The PostgreSQL database is reachable but the HRMS schema is not installed. This database cannot be registered until the supported PostgreSQL installation package has initialized it.',
           400, { code: 'TENANT_SCHEMA_NOT_INSTALLED' });
       }
     } catch (e) {
