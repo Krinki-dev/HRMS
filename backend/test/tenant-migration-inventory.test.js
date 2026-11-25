@@ -153,7 +153,7 @@ test('builds a read-only inventory using the verified operational company UUID',
           { table_name: 'employee_notes', column_name: 'employee_id', data_type: 'uuid', is_nullable: 'NO' },
         ] };
       }
-      if (sql.includes('tenant_owned_rows')) return { rows: [{ tenant_owned_rows: '2', orphan_rows: '0', nullable_reference_rows: '0' }] };
+      if (sql.includes('tenant_owned_rows')) return { rows: [{ tenant_owned_rows: '2', orphan_rows: '1', nullable_reference_rows: '1' }] };
       if (sql.includes('cross_tenant_rows')) return { rows: [{ cross_tenant_rows: '1' }] };
       if (sql.includes('pg_constraint')) {
         return { rows: [
@@ -167,7 +167,7 @@ test('builds a read-only inventory using the verified operational company UUID',
         return { rows: [{ id: '11111111-1111-4111-8111-111111111111' }] };
       }
       if (sql.includes('FROM "public".companies WHERE id = $1')) return { rows: [{ count: '1' }] };
-      if (sql.includes('FROM "public"."employee_notes"')) return { rows: [{ count: '4' }] };
+      if (sql.includes('FROM "public"."employee_notes"')) return { rows: [{ count: '4', unowned_rows: '1' }] };
       if (sql.includes('FROM "public"."employees"')) {
         assert.deepEqual(params, ['11111111-1111-4111-8111-111111111111']);
         return { rows: [{ count: '3' }] };
@@ -197,8 +197,9 @@ test('builds a read-only inventory using the verified operational company UUID',
   assert.equal(result.tables.find((row) => row.name === 'employees').sourceRows, 3);
   assert.equal(result.tables.find((row) => row.name === 'attendance').scope, 'dependent');
   assert.equal(result.tables.find((row) => row.name === 'attendance').sourceRows, 2);
-  assert.equal(result.tables.find((row) => row.name === 'attendance').orphanRows, 0);
-  assert.equal(result.tables.find((row) => row.name === 'attendance').nullableReferenceRows, 0);
+  assert.equal(result.tables.find((row) => row.name === 'attendance').orphanRows, 1);
+  assert.equal(result.tables.find((row) => row.name === 'attendance').nullableReferenceRows, 1);
+  assert.equal(result.tables.find((row) => row.name === 'employee_notes').unownedRows, 1);
   assert.equal(result.tables.find((row) => row.name === 'lookup_values').scope, 'unclassified');
   assert.equal(result.copyAllowed, false);
   assert.ok(result.blockers.some((item) => item.includes('Dependent tables')));
@@ -206,6 +207,9 @@ test('builds a read-only inventory using the verified operational company UUID',
   assert.ok(result.blockers.some((item) => item.includes('NOT VALID')));
   assert.ok(result.blockers.some((item) => item.includes('cross the source schema boundary')));
   assert.ok(result.blockers.some((item) => item.includes('reference records owned by another tenant')));
+  assert.ok(result.blockers.some((item) => item.includes('orphaned or unowned foreign-key records')));
+  assert.ok(result.blockers.some((item) => item.includes('nullable ownership references')));
+  assert.ok(result.blockers.some((item) => item.includes('NULL company_id')));
   assert.equal(result.tables.find((row) => row.name === 'employee_notes').sourceRows, 4);
   assert.deepEqual(result.crossTenantReferences, [{ table: 'employee_notes', referencesTable: 'employees', constraint: 'notes_employee_fk', rows: 1 }]);
   assert.equal(result.foreignKeys.length, 3);
