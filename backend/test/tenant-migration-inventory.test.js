@@ -15,8 +15,8 @@ test('classifies direct company tables and descendants through foreign keys', ()
       { table_name: 'lookup_values', column_name: 'id' },
     ],
     foreignKeys: [
-      { table_name: 'attendance', foreign_table_name: 'employees' },
-      { table_name: 'leave_applications', foreign_table_name: 'employees' },
+      { table_name: 'attendance', foreign_table_name: 'employees', constraint_name: 'attendance_employee_fk', child_columns: ['employee_id'], parent_columns: ['id'] },
+      { table_name: 'leave_applications', foreign_table_name: 'employees', constraint_name: 'leave_employee_fk', child_columns: ['employee_id'], parent_columns: ['id'] },
     ],
   });
   assert.equal(result.companies.scope, 'direct');
@@ -41,13 +41,58 @@ test('uses the shortest discoverable ownership path for dependent tables', () =>
     tables: ['employees', 'employee_documents', 'document_events'],
     columns: [{ table_name: 'employees', column_name: 'company_id' }],
     foreignKeys: [
-      { table_name: 'employee_documents', foreign_table_name: 'employees' },
-      { table_name: 'document_events', foreign_table_name: 'employee_documents' },
+      { table_name: 'employee_documents', foreign_table_name: 'employees', constraint_name: 'documents_employee_fk', child_columns: ['employee_id'], parent_columns: ['id'] },
+      { table_name: 'document_events', foreign_table_name: 'employee_documents', constraint_name: 'events_document_fk', child_columns: ['document_id'], parent_columns: ['id'] },
     ],
   });
   assert.deepEqual(result.document_events.via, ['employee_documents', 'employees']);
 });
 
+
+test('preserves composite FK column order and rejects ambiguous or cyclic ownership paths', () => {
+  const composite = classifyTenantTables({
+    tables: ['companies', 'employees', 'payroll_rows'],
+    columns: [
+      { table_name: 'companies', column_name: 'id' },
+      { table_name: 'employees', column_name: 'company_id' },
+    ],
+    foreignKeys: [{
+      table_name: 'payroll_rows',
+      foreign_table_name: 'employees',
+      constraint_name: 'payroll_employee_company_fk',
+      child_columns: ['employee_id', 'company_ref'],
+      parent_columns: ['id', 'company_id'],
+    }],
+  });
+  assert.equal(composite.payroll_rows.scope, 'dependent');
+  assert.deepEqual(composite.payroll_rows.relations[0].childColumns, ['employee_id', 'company_ref']);
+  assert.deepEqual(composite.payroll_rows.relations[0].parentColumns, ['id', 'company_id']);
+
+  const ambiguous = classifyTenantTables({
+    tables: ['companies', 'employees', 'departments', 'staff_assignments'],
+    columns: [
+      { table_name: 'companies', column_name: 'id' },
+      { table_name: 'employees', column_name: 'company_id' },
+      { table_name: 'departments', column_name: 'company_id' },
+    ],
+    foreignKeys: [
+      { table_name: 'staff_assignments', foreign_table_name: 'employees', child_columns: ['employee_id'], parent_columns: ['id'] },
+      { table_name: 'staff_assignments', foreign_table_name: 'departments', child_columns: ['department_id'], parent_columns: ['id'] },
+    ],
+  });
+  assert.equal(ambiguous.staff_assignments.scope, 'ambiguous');
+
+  const cycle = classifyTenantTables({
+    tables: ['companies', 'cyclic_a', 'cyclic_b'],
+    columns: [{ table_name: 'companies', column_name: 'id' }],
+    foreignKeys: [
+      { table_name: 'cyclic_a', foreign_table_name: 'cyclic_b', child_columns: ['b_id'], parent_columns: ['id'] },
+      { table_name: 'cyclic_b', foreign_table_name: 'cyclic_a', child_columns: ['a_id'], parent_columns: ['id'] },
+    ],
+  });
+  assert.equal(cycle.cyclic_a.scope, 'unclassified');
+  assert.equal(cycle.cyclic_b.scope, 'unclassified');
+});
 
 test('builds a read-only inventory using the verified operational company UUID', async () => {
   const calls = [];
