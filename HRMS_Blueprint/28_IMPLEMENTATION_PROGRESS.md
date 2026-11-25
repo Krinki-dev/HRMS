@@ -427,3 +427,15 @@ No DB connection, migration, staging, deployment, live payment or production cha
 GitHub Actions `Backend Tests` completed successfully on branch `architecture/postgres-tenant-isolation` at commit `4d9c0b1f37ab056324dece124950ba1d4ac01926`. Prisma client generation passed. `npm test` reported 118 tests: 114 passed, 0 failed, 4 skipped (the skipped integration tests require external tenant-database configuration). This verifies the backend unit/test suite in GitHub Actions; it does not verify live PostgreSQL RLS behavior, production migrations, browser E2E, or deployment.
 
 The CI failures were corrected: the KYC validation test now supplies a placeholder Central URL without connecting, storage-policy assertions match current error contracts, and the local-PostgreSQL resolver test uses the decryption dependency correctly. Central KYC employee linking now has an explicit nullable UUID column (no cross-database FK) and a dedicated migration; the route no longer silently reports a successful link when no row was updated.
+
+## 2026-11-25 — Paid tenant migration inventory hardening
+
+- The super-admin read-only migration preview now captures schema-qualified PostgreSQL FK metadata, ordered child/parent column mappings (including composite keys), constraint validation state, deferrability and match type.
+- Ownership classification now rejects missing FK column mappings, multiple ownership paths and unresolved cycles instead of choosing a table-name-only path.
+- The inventory captures inbound and outbound cross-schema FK dependencies and blocks migration when any are present.
+- Direct tables report tenant-owned row counts and NULL company_id rows. Dependent tables with a unique, validated ownership path report tenant row counts, orphan rows and nullable FK-reference rows.
+- Direct tenant-owned child tables are checked for FK references to another tenant's direct parent rows. Cross-tenant references are reported as explicit blockers.
+- Platform Admin Storage migration UI now shows ambiguous paths, cross-schema and cross-tenant FK counts, schema-qualified FK mappings, validation state, tenant rows, unowned rows, orphan rows and nullable references.
+- Added unit/inventory coverage for composite FK mappings, ambiguous paths, cycles, unvalidated constraints, cross-schema dependencies, cross-tenant references, dependent row counts, orphan rows and unowned direct rows.
+- GitHub Actions backend tests passed at commit 4e002466dde3ec9345d3900f73917f9e88db5c0a: 124 tests, 120 passed, 0 failed, 4 skipped. Frontend build passed at commit 8ca3c5a81e3a269355e34ea764f61c26ea26e881.
+- The inventory remains strictly read-only against tenant data. Copy execution, schema creation, storage metadata changes and paid activation remain disabled. Disposable-PostgreSQL integration tests, reviewed table ownership manifest, backup/restore plan and migration cutover design are still required before any copy engine can be enabled.
