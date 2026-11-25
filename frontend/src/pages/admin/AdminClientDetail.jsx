@@ -301,6 +301,7 @@ export default function AdminClientDetail() {
                   ['Dependent', migration.summary.dependentTables],
                   ['Unclassified', migration.summary.unclassifiedTables],
                   ['Ambiguous paths', migration.summary.ambiguousTables || 0],
+                  ['Cross-schema FKs', migration.summary.crossSchemaForeignKeyCount || 0],
                   ['FK relationships', migration.foreignKeyCount],
                   ['Destination schema', migration.summary.destinationSchemaExists ? 'Already exists' : 'Not created'],
                 ].map(([label, value]) => (
@@ -346,7 +347,7 @@ export default function AdminClientDetail() {
                         {migration.foreignKeys.map((fk, index) => (
                           <tr key={fk.constraint || index} style={{ borderTop: '1px solid var(--admin-border)' }}>
                             <td style={{ padding: 7, fontFamily: 'monospace' }}>{fk.constraint || '—'}</td>
-                            <td style={{ padding: 7 }}>{fk.table} → {fk.referencesTable}</td>
+                            <td style={{ padding: 7 }}>{fk.schema}.{fk.table} → {fk.referencesSchema}.{fk.referencesTable}</td>
                             <td style={{ padding: 7, fontFamily: 'monospace' }}>
                               {(fk.childColumns || []).map((column, columnIndex) => `${column} → ${fk.parentColumns?.[columnIndex] || '?'}`).join(', ')}
                             </td>
