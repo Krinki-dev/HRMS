@@ -64,7 +64,7 @@ function buildStorageDescriptor({ tenantId, plan, dbMode='cloud', dbUrl=null, re
   if (![STORAGE_TIERS.SHARED,STORAGE_TIERS.DEDICATED_SCHEMA,STORAGE_TIERS.DEDICATED_DATABASE].includes(tier)) {
     throw new Error(`Unsupported storage tier "${tier}".`);
   }
-  if (isFreeOrTrial && tier!==STORAGE_TIERS.SHARED) throw new Error('Free and trial plans must use the shared tenant schema.');
+  if (isFreeOrTrial && tier!==STORAGE_TIERS.SHARED) throw new Error('Free and Trial plans must use the shared public schema.');
   if (!isFreeOrTrial && tier===STORAGE_TIERS.SHARED) {
     throw new Error('Paid plans must receive a dedicated PostgreSQL schema or an explicitly approved dedicated database.');
   }
