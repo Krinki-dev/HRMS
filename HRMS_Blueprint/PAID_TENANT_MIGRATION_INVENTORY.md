@@ -30,7 +30,8 @@ This phase is intentionally inventory-only:
 | --- | --- |
 | `direct` | Table contains `company_id`; row count is filtered to the tenant UUID |
 | `dependent` | Table has a foreign-key path to a directly scoped table |
-| `ambiguous` | More than one FK path reaches tenant-owned roots; a reviewed rule is required |\n| `unclassified` | No provable ownership path was found; manual classification is required |
+| `ambiguous` | More than one FK path reaches tenant-owned roots; a reviewed rule is required |
+| `unclassified` | No provable ownership path was found; manual classification is required |
 
 The ownership path is displayed from the dependent table toward its tenant-owned parent.
 
