@@ -29,7 +29,7 @@ const FEATURE_DEFAULTS = [
   { icon: '🤖', title: 'Browser automation (unique)',     desc: 'Auto-file ECR on EPFO. Auto-file ESI challan. Aadhaar KYC auto-fill. No competitor has this.' },
   { icon: '📋', title: 'Compliance made simple',         desc: 'PF, ESI, PT, TDS, LWF — all states, all slabs, auto-computed.' },
   { icon: '♾', title: 'Unlimited employees',            desc: 'Keka charges per employee. We don\'t. Unlimited headcount on all plans.' },
-  { icon: '🔒', title: 'Your data, your control',        desc: 'Self-hosted option. Hybrid mode. Your DB, your server, your choice.' },
+  { icon: '🔒', title: 'Your data, your control',        desc: 'Self-hosted PostgreSQL. Your database, your server, your choice.' },
   { icon: '🌐', title: 'Your own domain',                desc: 'hr.yourcompany.com instead of yourcompany.syntern.in. Starter plan+.' },
 ];
 
