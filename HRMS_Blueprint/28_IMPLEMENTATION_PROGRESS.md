@@ -439,3 +439,10 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Added unit/inventory coverage for composite FK mappings, ambiguous paths, cycles, unvalidated constraints, cross-schema dependencies, cross-tenant references, dependent row counts, orphan rows and unowned direct rows.
 - GitHub Actions backend tests passed at commit 4e002466dde3ec9345d3900f73917f9e88db5c0a: 124 tests, 120 passed, 0 failed, 4 skipped. Frontend build passed at commit 8ca3c5a81e3a269355e34ea764f61c26ea26e881.
 - The inventory remains strictly read-only against tenant data. Copy execution, schema creation, storage metadata changes and paid activation remain disabled. Disposable-PostgreSQL integration tests, reviewed table ownership manifest, backup/restore plan and migration cutover design are still required before any copy engine can be enabled.
+
+## 2026-11-25 — Disposable PostgreSQL integration verification
+
+- Added a dedicated GitHub Actions workflow using an ephemeral PostgreSQL 16 service; it creates isolated test schemas and drops them after the test.
+- The real-database integration test passed at commit 26d1530fa7cc78cd3c9bc90db5d162342f606da3: 1 test, 1 passed, 0 failed. It verified catalog FK column-array parsing, direct and dependent row counts, nullable/orphan references, an unvalidated FK, cross-schema FK discovery and a cross-tenant direct-table reference.
+- Backend CI also passed on the same commit. The normal backend suite keeps the PostgreSQL integration test skipped unless its dedicated test URL is configured; the dedicated workflow supplies an ephemeral database.
+- This is disposable-database verification only. No live customer database, production migration, destination schema creation, tenant data copy or storage cutover was performed.
