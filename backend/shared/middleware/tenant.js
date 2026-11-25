@@ -12,6 +12,7 @@ const { PrismaClient } = require('@prisma/client');
 const { sendError, ERROR_CODES } = require('../utils/response');
 const { decrypt } = require('../utils/encryption');
 const { resolveTenantStorageTarget } = require('../utils/tenantStorageResolver');
+const { withPlatformAdminRLS } = require('../utils/rlsContext');
 const { normalizeHostname, isPlatformRootHost, buildHostnameCandidates } = require('../utils/domainRouting');
 
 // ── DB connection pool — one PrismaClient per unique DB URL ──────
@@ -139,7 +140,7 @@ const tenantMiddleware = async (req, res, next) => {
 
       // Known dev host/subdomain — look up central DB by subdomain or custom domain
       const centralDB = getCentralDB();
-      const rows = await centralDB.$queryRaw`
+      const rows = await withPlatformAdminRLS(centralDB, (tx) => tx.$queryRaw`
         SELECT
           t.*,
           COALESCE(
@@ -156,7 +157,7 @@ const tenantMiddleware = async (req, res, next) => {
           AND t.deleted_at IS NULL
         GROUP BY t.id
         LIMIT 1
-      `;
+      `);
       const tenant = rows[0];
 
       if (!tenant) {
@@ -198,7 +199,7 @@ const tenantMiddleware = async (req, res, next) => {
 
     const centralDB = getCentralDB();
     const normalizedHost = normalizeHostname(host);
-    const rows = await centralDB.$queryRaw`
+    const rows = await withPlatformAdminRLS(centralDB, (tx) => tx.$queryRaw`
       SELECT
         t.id, t.name, t.subdomain, t.custom_domain,
         t.db_mode, t.db_url, t.is_active, t.is_setup_complete,
@@ -220,7 +221,7 @@ const tenantMiddleware = async (req, res, next) => {
         AND t.deleted_at IS NULL
       GROUP BY t.id
       LIMIT 1
-    `;
+    `);
 
     const tenant = rows[0];
 
