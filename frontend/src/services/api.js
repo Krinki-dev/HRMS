@@ -91,12 +91,6 @@ api.interceptors.response.use(
       useAuthStore.getState().updateToken(newToken);
       api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
 
-      try {
-        const { useAuthStore } = await import('../store/authStore');
-        
-        useAuthStore.getState().updateToken(newToken);
-      } catch { /* ignore */ }
-
       processQueue(null, newToken);
 
       original.headers = original.headers || {};
