@@ -54,7 +54,6 @@ const authMiddleware = async (req, res, next) => {
 
     const tenantIdentity = resolveTenantIdentity({
       claims: decoded,
-      requestTenantId: req.tenant?.id || null,
       indexedTenantId,
     });
 
