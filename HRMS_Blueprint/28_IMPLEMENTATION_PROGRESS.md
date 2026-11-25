@@ -275,3 +275,15 @@ No DB connection, migration, staging, deployment, live payment or production cha
 - Require sample template downloads, schema-driven validation, preview-before-commit, sheet/row error reporting, downloadable error workbook, explicit create/update/upsert semantics, transaction-safe import, tenant-scoped references, audit summary, permission-gated exports and round-trip tests.
 - Preserve standard CSV; use separate files or ZIP bundle for relational CSV datasets. XLSX must preserve formats/dropdowns/frozen panes/filters/instructions, avoid macros/external links, and never trust formulas as imported data.
 - This is a frozen cross-module requirement. Build reusable engine during Employees, then apply to Attendance, Leave, Payroll, Compliance and all other applicable modules. Detailed acceptance criteria: `HRMS_Blueprint/32_PRODUCTION_READINESS_AND_MODULE_EXECUTION_PLAN.md`.
+
+
+## 2026-11-25 — Employees relational workbook foundation (source implementation started)
+
+- Audited the existing Employees import/export surface. It currently has a flat CSV template/export and a browser-side CSV parser; its bulk-import endpoint commits directly rather than exposing a server-side preview/confirm job. This is not yet compliant with the frozen preview-first workflow.
+- Confirmed the database has relational employee tables for addresses, family, education, previous employment, bank accounts and documents. Employee Code is unique per company; child records use immutable UUIDs and employee foreign keys.
+- Added `backend/modules/employees/employee-workbook.schema.js` as the initial module schema contract: Employees, Addresses, Family, Education and PreviousEmployment sheets, joined by Employee Code; child records can carry immutable record UUIDs for updates.
+- Sensitive bank details, Aadhaar/PAN and document binaries/references are excluded from the default workbook schema. They require separately authorised workflows.
+- Added reusable `backend/shared/import-export/workbookSchema.js` validation primitives for module sheet metadata, explicit create-only/update-only/upsert modes, typed fields, duplicate keys, parent-child references and formula/non-primitive rejection. Native Excel date values are accepted.
+- Added `backend/test/employee-workbook-schema.test.js` for relationship contracts, required stable keys, missing parent references, duplicates, enums, date/formula handling and conflict modes.
+- Commits: schema `2aab011e6f74fce7298e2e50906256321b275021`; generic validator `73f767d6d5589db940612a3831d670567b1009c0` (subsequently hardened in `a98814e164a2640a47712014eb2b3ce48f4ad934`, `f0b77a9bb3598ea962896bfad016f424210edf98`, `02989f8dd57b66c069bc73adba344b6a461989e5`); tests `466b7a8a41c45078d48ad4cff7b92fabb65a7333` and `def7e4880b3fe4fca6fd0f84abcb28e3c4855c01`.
+- Not yet implemented: XLSX file generation/parsing, CSV relational bundle, template downloads, import preview/job persistence, DB conflict detection, transaction-safe commit, error workbook, audit mapping, UI integration, export permission checks and round-trip tests. No tests have been executed yet.
