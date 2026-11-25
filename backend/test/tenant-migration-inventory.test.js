@@ -119,7 +119,7 @@ test('builds a read-only inventory using the verified operational company UUID',
       if (sql.includes('pg_constraint')) {
         return { rows: [
           { child_schema: 'public', table_name: 'attendance', foreign_schema: 'public', foreign_table_name: 'employees', constraint_name: 'attendance_employee_id_fkey', child_columns: ['employee_id'], parent_columns: ['id'], is_validated: true, is_deferrable: false, match_type: 's' },
-          { child_schema: 'public', table_name: 'audit_outbox', foreign_schema: 'shared', foreign_table_name: 'global_codes', constraint_name: 'audit_global_code_fk', child_columns: ['code_id'], parent_columns: ['id'], is_validated: true, is_deferrable: false, match_type: 's' },
+          { child_schema: 'public', table_name: 'audit_outbox', foreign_schema: 'shared', foreign_table_name: 'global_codes', constraint_name: 'audit_global_code_fk', child_columns: ['code_id'], parent_columns: ['id'], is_validated: false, is_deferrable: false, match_type: 's' },
         ] };
       }
       if (sql.includes('FROM "public".companies') && sql.includes('WHERE ($1::text IS NULL')) {
