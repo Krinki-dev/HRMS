@@ -6,7 +6,7 @@
 
 BEGIN;
 
-DO $
+DO $$
 BEGIN
   IF to_regclass('public.tenants') IS NULL THEN
     RAISE EXCEPTION 'Central schema prerequisite missing: public.tenants. Stop and verify the selected database.';
@@ -14,7 +14,7 @@ BEGIN
   IF to_regclass('public.invoices') IS NULL THEN
     RAISE EXCEPTION 'Central schema prerequisite missing: public.invoices. Apply/reconcile the central baseline before this upgrade.';
   END IF;
-END $;
+END $$;
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
