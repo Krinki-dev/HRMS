@@ -2,8 +2,8 @@
 // SYNTERN HRMS — TENANT MIDDLEWARE  (v5 — schema‑per‑tenant support)
 //
 // v5 CHANGES:
-//   • resolveTenantDB appends ?schema=<name> when tenant.schema_name
-//     is set, isolating that tenant inside a PostgreSQL schema.
+//   • Tenant routing uses the audited storage lifecycle and PostgreSQL resolver.
+//   • Legacy/unclassified tenants fail closed until their storage is reviewed.
 //   • DEV fallback supports DEV_TENANT_SCHEMA env var for schema tests.
 //   • req.tenant now always contains schema_name (null for dedicated DBs).
 // ================================================================
@@ -173,7 +173,9 @@ const tenantMiddleware = async (req, res, next) => {
         name:           tenant.name,
         subdomain:      tenant.subdomain,
         dbMode:         tenant.db_mode,
-        schema_name:    tenant.schema_name || null,   // ← NEW
+        schema_name:    tenant.schema_name || null,
+        storage_tier:   tenant.storage_tier || null,
+        storage_status: tenant.storage_status || null,
         enabledModules: Array.isArray(tenant.enabled_modules)
           ? tenant.enabled_modules
           : JSON.parse(tenant.enabled_modules || '[]'),
@@ -200,7 +202,7 @@ const tenantMiddleware = async (req, res, next) => {
       SELECT
         t.id, t.name, t.subdomain, t.custom_domain,
         t.db_mode, t.db_url, t.is_active, t.is_setup_complete,
-        t.schema_name,
+        t.schema_name, t.storage_tier, t.storage_status,
         t.local_db_type, t.local_db_host, t.local_db_port,
         t.local_db_name, t.local_db_user, t.local_db_pass,
         COALESCE(
@@ -248,7 +250,9 @@ const tenantMiddleware = async (req, res, next) => {
       name:           tenant.name,
       subdomain:      tenant.subdomain,
       dbMode:         tenant.db_mode,
-      schema_name:    tenant.schema_name || null,   // ← NEW
+      schema_name:    tenant.schema_name || null,
+      storage_tier:   tenant.storage_tier || null,
+      storage_status: tenant.storage_status || null,
       enabledModules: Array.isArray(tenant.enabled_modules)
         ? tenant.enabled_modules
         : JSON.parse(tenant.enabled_modules || '[]'),
