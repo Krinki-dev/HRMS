@@ -13,7 +13,7 @@ const EMPLOYEE_WORKBOOK_SCHEMA = Object.freeze({
       key: 'employeeCode',
       required: ['employeeCode', 'firstName', 'lastName'],
       fields: {
-        employeeCode: { type: 'string', maxLength: 50, immutable: true },
+        employeeCode: { type: 'string', required: true, maxLength: 50, immutable: true },
         firstName: { type: 'string', required: true, maxLength: 100 },
         lastName: { type: 'string', required: true, maxLength: 100 },
         middleName: { type: 'string', maxLength: 100 },
