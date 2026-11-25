@@ -6,6 +6,7 @@
  * FROZEN: uses stable slugs + fixed UUIDs so IDs never drift between restarts.
  */
 const { centralPrisma } = require('../../shared/utils/centralPrisma');
+const { withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 const { v4: uuidv4 }    = require('uuid');
 const logger            = require('../../shared/utils/logger');
 
@@ -117,9 +118,9 @@ const DEFAULT_DISCOUNTS = {
 // ── Generic DB helpers ────────────────────────────────────────────────────────
 async function _read(key) {
   try {
-    const rows = await centralPrisma.$queryRaw`
+    const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
       SELECT values FROM platform_settings WHERE id = ${key} LIMIT 1
-    `;
+    `);
     return rows[0]?.values || null;
   } catch (e) {
     logger.warn(`[plans.service] DB read "${key}" failed — using defaults:`, e.message);
@@ -132,21 +133,21 @@ async function _read(key) {
  * is unavailable. Doing so could replace a live catalog with defaults.
  */
 async function _readForWrite(key) {
-  const rows = await centralPrisma.$queryRaw`
+  const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
     SELECT values FROM platform_settings WHERE id = ${key} LIMIT 1
-  `;
+  `);
   return rows[0]?.values || null;
 }
 
 async function _write(key, payload) {
   const json = JSON.stringify(payload);
-  await centralPrisma.$executeRaw`
+  await withPlatformAdminRLS(centralPrisma, (tx) => tx.$executeRaw`
     INSERT INTO platform_settings (id, values, updated_at)
     VALUES (${key}, ${json}::jsonb, NOW())
     ON CONFLICT (id) DO UPDATE
       SET values     = ${json}::jsonb,
           updated_at = NOW()
-  `;
+  `);
 }
 
 // ── Plans ─────────────────────────────────────────────────────────────────────
@@ -461,7 +462,7 @@ async function saveSelectionToTenantConfig(tenantId, priceResult, meta = {}, db 
     billing_cycle:              billingMonths === 1 ? 'monthly' : `${billingMonths}_months`,
   });
 
-  await centralPrisma.$executeRaw`
+  await withPlatformAdminRLS(centralPrisma, (tx) => tx.$executeRaw`
     INSERT INTO tenant_pricing_configs (
       tenant_id,
       base_price_paise, per_employee_excess_paise,
@@ -490,7 +491,7 @@ async function saveSelectionToTenantConfig(tenantId, priceResult, meta = {}, db 
           billing_cycle             = ${billingMonths === 1 ? 'monthly' : `${billingMonths}_months`},
             discount_module_pct       = ${JSON.stringify(moduleDiscountMeta)}::jsonb,
             updated_at                = NOW()
-  `;
+  `);
 
   logger.info(`[plans.service] Saved pricing config for tenant ${tenantId} → plan "${plan.slug}", ${billingMonths}mo, total ₹${priceResult.total_inr}`);
 }
