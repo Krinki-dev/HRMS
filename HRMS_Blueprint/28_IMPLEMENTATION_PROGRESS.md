@@ -379,3 +379,10 @@ No DB connection, migration, staging, deployment, live payment or production cha
 - Added read-only tenant storage classification preview SQL and documented the rollout gate. Existing tenants default to `legacy_unclassified` and must not be routed until their actual data location and row ownership are verified.
 - **Remaining P0:** paid managed-cloud upgrade still needs a tested migration from shared `public` to UUID-derived schema with row/foreign-key ownership validation. Existing legacy tenants need individual inventory and migration. Do not activate this router in production until Central schema upgrade, classification, restore verification and CI pass.
 - No production database migration, tenant data movement, production deployment or destructive operation was performed.
+
+
+## 2026-11-25 — RLS context SQL hardening
+
+- Replaced string-built `SET LOCAL app.current_tenant = '${tenantId}'` with parameterized `set_config('app.current_tenant', $1, true)` inside the same Prisma transaction. Platform-admin RLS context now uses the same transaction-local `set_config` pattern.
+- Added unit coverage for parameter binding (including a hostile tenant-id string), missing-tenant rejection and platform-admin transaction scope. The tests are committed but CI execution is not yet confirmed.
+- No RLS policy or production database was changed. Existing database-role/RLS policy verification remains a separate release gate.
