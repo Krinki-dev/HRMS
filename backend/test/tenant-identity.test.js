@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { resolveTenantIdentity } = require('../shared/utils/tenantIdentity');
+const { resolveTenantIdentity, matchesTenantContext } = require('../shared/utils/tenantIdentity');
 
 test('maps legacy tenantId claim to companyId, not Central tenantId', () => {
   const identity = resolveTenantIdentity({
@@ -47,4 +47,11 @@ test('does not promote a legacy company claim to a Central tenant without resolu
   assert.equal(identity.companyId, 'company-id');
   assert.equal(identity.centralTenantId, null);
   assert.equal(identity.tenantId, null);
+});
+
+test('tenant host must match the authenticated Central tenant', () => {
+  const identity = { centralTenantId: 'tenant-a' };
+  assert.equal(matchesTenantContext(identity, 'tenant-a'), true);
+  assert.equal(matchesTenantContext(identity, 'tenant-b'), false);
+  assert.equal(matchesTenantContext({ centralTenantId: null }, 'tenant-a'), false);
 });
