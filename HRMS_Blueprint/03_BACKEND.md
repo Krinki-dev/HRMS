@@ -315,7 +315,7 @@ Tenant DB (per client):
   - DB isolation modes:
     cloud      → Supabase/shared cloud (schema isolation via schema_name)
     local      → Client's own PostgreSQL
-    hybrid     → Local primary, cloud fallback
+    hybrid     → Not supported; no local/cloud synchronization or fallback
     external_cloud → Client's own cloud DB
 ```
 
