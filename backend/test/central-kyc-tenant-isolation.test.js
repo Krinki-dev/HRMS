@@ -2,6 +2,12 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+
+// The helper module constructs a Prisma client at import time. Supply a valid
+// placeholder URL so these pure argument-validation tests do not require a
+// configured Central database or open a network connection.
+process.env.CENTRAL_DATABASE_URL ||= 'postgresql://test:test@127.0.0.1:5432/hrms_test';
+
 const {
   findKycByHash,
   findKycById,
