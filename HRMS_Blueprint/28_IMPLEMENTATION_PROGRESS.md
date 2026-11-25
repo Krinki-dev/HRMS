@@ -444,5 +444,5 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 
 - Added a dedicated GitHub Actions workflow using an ephemeral PostgreSQL 16 service; it creates isolated test schemas and drops them after the test.
 - The real-database integration test passed at commit 26d1530fa7cc78cd3c9bc90db5d162342f606da3: 1 test, 1 passed, 0 failed. It verified catalog FK column-array parsing, direct and dependent row counts, nullable/orphan references, an unvalidated FK, cross-schema FK discovery and a cross-tenant direct-table reference.
-- Backend CI also passed on the same commit. The normal backend suite keeps the PostgreSQL integration test skipped unless its dedicated test URL is configured; the dedicated workflow supplies an ephemeral database.
+- Backend CI also passed on the same commit: 125 tests, 120 passed, 0 failed, 5 skipped (including the opt-in PostgreSQL integration test). The normal backend suite keeps the PostgreSQL integration test skipped unless its dedicated test URL is configured; the dedicated workflow supplies an ephemeral database.
 - This is disposable-database verification only. No live customer database, production migration, destination schema creation, tenant data copy or storage cutover was performed.
