@@ -157,7 +157,7 @@ router.get('/:kycId', async (req, res) => {
       district:      d(rec.dist),
     };
 
-    await audit(req.db, req.user.tenantId, req.user.id, 'kyc_record_accessed',
+    await audit(req.db, req.user.companyId, req.user.id, 'kyc_record_accessed',
       { kycId: rec.id, method: rec.method }, req.ip);
 
     return sendSuccess(res, safe);
@@ -199,7 +199,7 @@ router.post('/:kycId/link', async (req, res) => {
     if (!rec) return sendError(res, ERROR_CODES.NOT_FOUND, 'KYC record not found', 404);
 
     await linkKycToEmployee(rec.id, employeeId);
-    await audit(req.db, req.user.tenantId, req.user.id, 'kyc_linked_to_employee',
+    await audit(req.db, req.user.companyId, req.user.id, 'kyc_linked_to_employee',
       { kycId: rec.id, employeeId }, req.ip);
 
     return sendSuccess(res, null, 'KYC linked to employee');
@@ -219,7 +219,7 @@ router.post('/start-otp', async (req, res) => {
     if (!/^\d{12}$/.test(clean))
       return sendError(res, ERROR_CODES.VALIDATION, 'Aadhaar must be 12 digits', 400);
 
-    const companyId = req.user.tenantId;
+    const companyId = req.user.companyId;
     const db        = req.db;
 
     const running = await db.automation_tasks.findFirst({
@@ -283,7 +283,7 @@ router.post('/upload-xml',
     try {
       const { shareCode: userCode, mode = 'direct', aadhaarNumber = '' } = req.body;
       const cleanAadhaar = (aadhaarNumber || '').replace(/\s/g, '');
-      const companyId = req.user.tenantId;
+      const companyId = req.user.companyId;
       const now       = new Date();
       const shareCode = userCode?.trim() ||
         String(now.getDate()).padStart(2, '0') + String(now.getMonth() + 1).padStart(2, '0');
@@ -387,7 +387,7 @@ router.post('/save-after-review', async (req, res) => {
       taskId:           null,
     });
 
-    await audit(req.db, req.user.tenantId, req.user.id, `kyc_${method}_confirmed`,
+    await audit(req.db, req.user.companyId, req.user.id, `kyc_${method}_confirmed`,
       { kycId: kycRec?.id, method, mode }, req.ip);
 
     return sendSuccess(res, { kycId: kycRec?.id, mode }, 'KYC saved to central database');
