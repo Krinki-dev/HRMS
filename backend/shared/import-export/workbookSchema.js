@@ -10,6 +10,7 @@ function isBlank(value) {
 function validateField(value, rule) {
   if (isBlank(value)) return rule.required ? 'Required value is missing' : null;
   // Excel formula cells are never accepted as authoritative import values.
+  if (value && typeof value === 'object' && !(rule.type === 'date' && value instanceof Date)) return 'Formula or non-primitive cell values are not accepted';
   const v = typeof value === 'string' ? value.trim() : value;
   if (rule.type === 'string' && typeof v !== 'string') return 'Must be text';
   if (rule.type === 'date' && !(v instanceof Date) && (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(v)) || new Date(v).toISOString().slice(0, 10) !== v)) return 'Must be a valid date';
