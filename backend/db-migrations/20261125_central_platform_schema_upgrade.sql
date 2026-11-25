@@ -198,6 +198,7 @@ SELECT
   to_regclass('public.payment_orders') IS NOT NULL AS payment_orders_present,
   to_regclass('public.payment_webhook_events') IS NOT NULL AS payment_webhook_events_present,
   to_regclass('public.company_documents') IS NOT NULL AS company_documents_present,
-  to_regclass('public.company_document_reviews') IS NOT NULL AS company_document_reviews_present;
+  to_regclass('public.company_document_reviews') IS NOT NULL AS company_document_reviews_present,
+  to_regclass('public.billing_events') IS NOT NULL AS billing_events_present;
 
 COMMIT;
