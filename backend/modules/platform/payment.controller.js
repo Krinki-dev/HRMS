@@ -56,6 +56,7 @@ function getRazorpay() {
 
 // Helper: resolve tenant id from JWT, req.tenant, or X-Tenant-Subdomain header
 async function resolveTenantId(req) {
+  if (req.user?.is_platform_admin && req.tenant?.id) return req.tenant.id;
   const jwtTenantId = req.user?.centralTenantId || req.user?.tenantId;
   if (jwtTenantId) return jwtTenantId;
   if (req.tenant?.id) return req.tenant.id;
