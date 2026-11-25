@@ -6,7 +6,7 @@ exports.submit = async (req, res) => {
     const db          = req.db;
     const { id: employeeId } = req.params;
     const requestedBy = req.user.id;
-    const companyId   = req.user.tenantId;
+    const companyId   = req.user.companyId;
 
     const emp = await db.employees.findFirst({
       where:  { id: employeeId, company_id: companyId, deleted_at: null },
@@ -46,7 +46,7 @@ exports.submit = async (req, res) => {
 exports.listPending = async (req, res) => {
   try {
     const db        = req.db;
-    const companyId = req.user.tenantId;
+    const companyId = req.user.companyId;
 
     const rows = await db.audit_logs.findMany({
       where: {
@@ -83,7 +83,7 @@ exports.approve = async (req, res) => {
   try {
     const db            = req.db;
     const { requestId } = req.params;
-    const companyId     = req.user.tenantId;
+    const companyId     = req.user.companyId;
 
     const logEntry = await db.audit_logs.findFirst({
       where: { id: requestId, company_id: companyId, action: 'update_request' },
@@ -148,7 +148,7 @@ exports.reject = async (req, res) => {
   try {
     const db            = req.db;
     const { requestId } = req.params;
-    const companyId     = req.user.tenantId;
+    const companyId     = req.user.companyId;
 
     const logEntry = await db.audit_logs.findFirst({
       where: { id: requestId, company_id: companyId, action: 'update_request' },
