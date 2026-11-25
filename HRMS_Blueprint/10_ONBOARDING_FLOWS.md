@@ -249,23 +249,20 @@ Step 6: Finish & Launch
 |--------------|-------------|--------------|
 | Progress bar: Step 3 of 6 | | |
 | **DB Mode selection:** | | |
-| ○ Local Only | | |
-| ○ Cloud Only | | |
-| ○ Local Primary + Cloud Backup | | |
-| ○ Cloud Primary + Local Backup | | |
-| ○ Hybrid Realtime Sync | | |
+| ○ Managed Cloud PostgreSQL | | |
+| ○ Customer-managed PostgreSQL (online/offline) | | |
 | Based on selection show relevant fields: | | |
 | **If Local:** | | |
-| DB Type: PostgreSQL / MySQL / MSSQL | | |
+| Database engine: PostgreSQL only | | |
 | Host, Port, Database name, Username, Password | | |
 | Test Connection button → POST /api/v1/platform/setup/test-db | BE tries connection | No write yet |
 | Green tick or error shown | Return: { connected: true/false, error } | |
 | **If Cloud:** | | |
 | Supabase URL + Key (or other provider) | | |
 | Test Connection button | | |
-| **If Hybrid:** | | |
-| Both local + cloud fields | | |
-| Sync interval selector (5/15/30/60 minutes) | | |
+| **Customer-managed PostgreSQL:** | | |
+| PostgreSQL host, port, database name, username and password | | |
+| No cloud fallback or data synchronization | | |
 | Save & Connect → migrate schema to chosen DB | POST /api/v1/platform/setup/configure-db | WRITE: tenant_db_config (db connection settings) |
 | Progress bar during migration | BE runs Prisma migrations | CREATE TABLES in tenant DB |
 | Success → automatically move to Step 4 | | |
