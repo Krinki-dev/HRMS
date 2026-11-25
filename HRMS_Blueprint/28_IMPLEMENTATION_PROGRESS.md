@@ -413,6 +413,8 @@ No DB connection, migration, staging, deployment, live payment or production cha
 
 ## 2026-11-25 — Shared-tenant backup release gate
 
+- Dedicated customer-managed PostgreSQL databases (and Enterprise managed-cloud dedicated databases) are now eligible for whole-database backups with no schema override. Managed-cloud shared `public` backups remain blocked until tenant-filtered backup/restore exists.
+
 - The backup target resolver intentionally rejects shared `public` storage for tenant-specific backups. A whole-public-schema dump would include multiple tenants and must never be delivered as an individual customer's backup.
 - Therefore managed-cloud Free/Trial tenant-level backup/restore is not production-ready yet. It requires a company_id-filtered relational export/restore or a separately controlled platform-wide encrypted backup with tenant-scoped restore. Do not weaken `getSafeBackupTarget` to permit a whole-public-schema tenant backup.
 - This is a P0 release blocker alongside the paid shared-to-dedicated data migration and the fresh customer-managed PostgreSQL installer.
