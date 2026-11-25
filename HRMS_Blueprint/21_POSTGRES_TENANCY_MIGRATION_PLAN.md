@@ -25,15 +25,15 @@ PostgreSQL database (default cloud deployment)
 |   +-- invoices / payment events / schema assignments
 |   +-- migration jobs / migration audit records
 |
-+-- shared
-|   +-- tenant business tables for free and trial tenants
++-- public
+|   +-- shared tenant business tables for Free and Trial customers
 |       (every tenant-owned row must be scoped by tenant_id)
 |
 +-- tenant_<stable_id>
     +-- tenant business tables for each paid tenant
 ```
 
-The exact platform schema name must be reconciled with the existing central Prisma schema and current use of PostgreSQL's public schema before implementation. Do not blindly rename or move existing tables.
+Confirmed by the user: the shared Free/Trial tenant-data schema is PostgreSQL public in the tenant operational database. Keep Central/platform data on its configured connection/schema; do not rename or move central tables as part of this tenant-schema decision. Do not blindly rename or move existing tables.
 
 ## 3. Deployment modes
 
