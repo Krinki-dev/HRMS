@@ -11,6 +11,8 @@ const { centralPrisma } = require('../../shared/utils/centralPrisma');
 const logger = require('../../shared/utils/logger');
 const { THEME } = require('../../shared/utils/uiConstants');
 const { resolveTenantStorageTarget } = require('../../shared/utils/tenantStorageResolver');
+const { deriveTenantSchemaName } = require('../../shared/utils/tenantStorageConfig');
+const { inspectTenantMigration } = require('./tenantMigrationInventory');
 const { withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 const {
   getDeletionReadiness,
@@ -1012,6 +1014,52 @@ router.post('/test-smtp', async (req, res) => {
   } catch (err) {
     logger.error(`${THEME.ICONS.ERROR} [Admin/test-smtp] Failure:`, err);
     return sendError(res, ERROR_CODES.SERVER, `${THEME.ICONS.ERROR} SMTP test failed: ${err.message}`, 500);
+  }
+});
+
+
+// ================================================================
+// GET /tenants/:id/migration-preview
+// Read-only inventory for shared-schema to paid dedicated-schema migration.
+// No schema creation, data copy, or tenant activation is performed.
+// ================================================================
+router.get('/tenants/:id/migration-preview', async (req, res) => {
+  try {
+    const tenantId = req.params.id;
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(tenantId)) {
+      return sendError(res, ERROR_CODES.NOT_FOUND, 'Invalid tenant ID format', 404);
+    }
+
+    const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
+      SELECT id, plan, db_mode, db_url, schema_name, storage_tier, storage_status,
+             local_db_type, local_db_host, local_db_port, local_db_name, local_db_user, local_db_pass
+      FROM tenants
+      WHERE id = ${tenantId}::uuid AND deleted_at IS NULL
+      LIMIT 1
+    `);
+    if (!rows.length) return sendError(res, ERROR_CODES.NOT_FOUND, 'Tenant not found', 404);
+
+    const tenant = rows[0];
+    if (tenant.db_mode !== 'cloud' || tenant.storage_tier !== 'shared') {
+      return sendError(res, ERROR_CODES.VALIDATION,
+        'Migration preview is currently for managed-cloud tenants moving from shared public storage to a dedicated schema.',
+        409, { code: 'TENANT_STORAGE_NOT_MIGRATABLE' });
+    }
+
+    const source = resolveTenantStorageTarget(tenant, {
+      cloudDatabaseUrl: process.env.CLOUD_TENANT_DATABASE_URL,
+      decryptValue: (value) => decrypt(value) || value,
+    });
+    const inventory = await inspectTenantMigration({
+      databaseUrl: source.databaseUrl,
+      tenantId,
+      sourceSchema: source.schemaName,
+      destinationSchema: deriveTenantSchemaName(tenantId),
+    });
+    return sendSuccess(res, inventory, 'Read-only migration inventory generated');
+  } catch (err) {
+    logger.error('[Admin/tenant-migration-preview] Failure:', err);
+    return sendError(res, ERROR_CODES.SERVER, 'Unable to generate tenant migration inventory', 500);
   }
 });
 
