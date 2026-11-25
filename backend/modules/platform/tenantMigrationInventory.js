@@ -156,6 +156,7 @@ async function inspectTenantMigration({
     const blockers = [];
     if (!summary.directlyScoped) blockers.push('No company_id-owned tables were discovered; tenant ownership cannot be proven.');
     if (summary.unclassifiedTables) blockers.push('Some tables have no proven tenant ownership path and require explicit classification.');
+    if (summary.dependentTables) blockers.push('Dependent tables were discovered; relation-scoped row counts and foreign-key validation are not yet implemented.');
     if (summary.destinationSchemaExists) blockers.push('The destination schema already exists; automatic migration is disabled to prevent overwriting data.');
 
     return {
