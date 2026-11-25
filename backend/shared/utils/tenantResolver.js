@@ -1,29 +1,36 @@
-const { centralPrisma } = require('../utils/centralPrisma');
-const logger = require('../utils/logger');
-const { withPlatformAdminRLS } = require('./rlsContext');
+'use strict';
 
-async function resolveTenantId(req) {
-  // Prefer JWT claim
-  const jwtTenant = req.user?.centralTenantId || req.user?.tenantId;
-  if (jwtTenant) return jwtTenant;
-
-  // Then request-scoped tenant (set by tenantMiddleware)
-  if (req.tenant?.id) return req.tenant.id;
-
-  // Fallback: header subdomain lookup
-  const subdomain = req.headers['x-tenant-subdomain'] || req.headers['x-tenant'];
-  if (subdomain) {
-    try {
-      // No tenant is known yet (that's what we're resolving), so this runs
-      // under the platform-admin RLS predicate — see shared/utils/rlsContext.js.
-      const t = await withPlatformAdminRLS(centralPrisma, (tx) => tx.tenants.findFirst({ where: { subdomain } }));
-      if (t) return t.id;
-    } catch (e) {
-      logger.error('tenantResolver: failed to lookup tenant by subdomain', e);
-    }
+/**
+ * Operational HR tables use companies.id from the tenant database.
+ * Central SaaS tables use tenants.id from the platform database.
+ * Keep these resolvers explicit: req.tenant.id is always a Central tenant id.
+ */
+function resolveCompanyId(req) {
+  const companyId = req.user?.companyId;
+  if (!companyId) {
+    const error = new Error('Authenticated company context is required.');
+    error.status = 403;
+    error.code = 'COMPANY_CONTEXT_REQUIRED';
+    throw error;
   }
-
-  return null;
+  return companyId;
 }
 
-module.exports = { resolveTenantId };
+function resolveCentralTenantId(req) {
+  const tenantId = req.user?.centralTenantId || req.tenant?.id || req.user?.tenantId;
+  if (!tenantId) {
+    const error = new Error('Central tenant context is required.');
+    error.status = 400;
+    error.code = 'TENANT_REQUIRED';
+    throw error;
+  }
+  return tenantId;
+}
+
+// Compatibility export for any remaining operational imports. New code must
+// choose the explicit resolver that matches the database being queried.
+module.exports = {
+  resolveCompanyId,
+  resolveCentralTenantId,
+  resolveTenantId: resolveCompanyId,
+};
