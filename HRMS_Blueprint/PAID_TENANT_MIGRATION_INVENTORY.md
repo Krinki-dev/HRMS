@@ -44,3 +44,8 @@ The ownership path is displayed from the dependent table toward its tenant-owned
 ## Operational policy
 
 Do not run this preview as a substitute for a backup. Do not execute data migration, schema DDL, production migrations, payment capture, or deployment without explicit approval and a verified recovery plan.
+
+
+## Audit history
+
+Each inventory request is written to Central DB as a `tenant_migration_jobs` record with status `blocked` or `inventory_only`, the source and destination schema names, the complete inventory snapshot, blockers, requester email, and timestamp. Platform Admin can review the latest 20 records from the tenant's Storage migration tab. This history is an audit trail, not a resumable copy-job engine.
