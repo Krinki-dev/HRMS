@@ -71,7 +71,7 @@ test('builds a read-only inventory using the verified operational company UUID',
         ] };
       }
       if (sql.includes('pg_constraint')) {
-        return { rows: [{ table_name: 'attendance', foreign_table_name: 'employees' }] };
+        return { rows: [{ table_name: 'attendance', foreign_table_name: 'employees', constraint_name: 'attendance_employee_id_fkey', child_columns: ['employee_id'], parent_columns: ['id'], is_validated: false, is_deferrable: false, match_type: 's' }] };
       }
       if (sql.includes('FROM "public".companies') && sql.includes('WHERE ($1::text IS NULL')) {
         assert.deepEqual(params, ['29ABCDE1234F1Z5', 'ABCDE1234F']);
@@ -107,5 +107,16 @@ test('builds a read-only inventory using the verified operational company UUID',
   assert.equal(result.copyAllowed, false);
   assert.ok(result.blockers.some((item) => item.includes('Dependent tables')));
   assert.ok(result.blockers.some((item) => item.includes('no proven tenant ownership path')));
+  assert.ok(result.blockers.some((item) => item.includes('NOT VALID')));
+  assert.deepEqual(result.foreignKeys[0], {
+    table: 'attendance',
+    referencesTable: 'employees',
+    constraint: 'attendance_employee_id_fkey',
+    childColumns: ['employee_id'],
+    parentColumns: ['id'],
+    validated: false,
+    deferrable: false,
+    matchType: 's',
+  });
   assert.ok(calls.some((call) => call.params?.[0] === '11111111-1111-4111-8111-111111111111'));
 });
