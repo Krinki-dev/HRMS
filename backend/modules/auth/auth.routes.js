@@ -66,13 +66,15 @@ const safeParseJSON = (str, fallback = {}) => {
   try { return JSON.parse(str); } catch { return fallback; }
 };
 
-function signAccessToken(user, permissions) {
+function signAccessToken(user, permissions, centralTenantId = null) {
   if (!process.env.JWT_ACCESS_SECRET) throw new Error('SERVER_CONFIG_ERROR: JWT_ACCESS_SECRET is not set');
   return jwt.sign(
     {
       id:         user.id,
       employeeId: user.employee_id,
-      tenantId:   user.company_id,
+      companyId:  user.company_id,
+      centralTenantId: centralTenantId || null,
+      tenantId:   centralTenantId || null,
       role:       user.role?.name || 'employee',
       permissions,
       email:      user.email,
@@ -317,7 +319,7 @@ router.post('/verify-otp', otpLimiter, async (req, res) => {
         include: { role: true, employee: true },
       });
       const permissions = safeParseJSON(user.role?.permissions);
-      const accessToken = authService.signAccessToken(user, permissions);
+      const accessToken = authService.signAccessToken(user, permissions, tenantId || null);
       const refreshToken = authService.signRefreshToken(user.id);
       setRefreshCookie(res, refreshToken);
       const tenantInfo = await authService.getTenantInfo(tenantId || user.company_id);
@@ -360,7 +362,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     }
     const { user } = result;
     const permissions = safeParseJSON(user.role?.permissions);
-    const accessToken = authService.signAccessToken(user, permissions);
+    const accessToken = authService.signAccessToken(user, permissions, resolvedCentralTenantId);
     const refreshToken = authService.signRefreshToken(user.id);
     setRefreshCookie(res, refreshToken);
     const tenantInfo = await authService.getTenantInfo(tenantId || user.company_id);
@@ -394,6 +396,7 @@ router.post('/refresh', async (req, res) => {
     }
     let activeDb = req.db;
     let isTemporary = false;
+    let resolvedCentralTenantId = req.tenant?.id || null;
     if (!activeDb) {
       // No tenant is known yet at this point, so this lookup runs with the
       // platform-admin RLS predicate (SET LOCAL scoped to this transaction —
@@ -401,6 +404,7 @@ router.post('/refresh', async (req, res) => {
       const userIndex = await withPlatformAdminRLS(centralPrisma, (tx) => tx.central_user_index.findFirst({
         where: { user_id: decoded.id, is_active: true }
       }));
+      resolvedCentralTenantId = userIndex?.company_id || resolvedCentralTenantId;
       if (userIndex?.is_platform_admin) {
         activeDb = centralPrisma;
       } else if (userIndex?.company_id) {
@@ -700,7 +704,7 @@ router.post('/ott/exchange', async (req, res) => {
       });
       if (user) {
         const permissions  = safeParseJSON(user.role?.permissions);
-        const accessToken  = signAccessToken(user, permissions);
+        const accessToken  = signAccessToken(user, permissions, req.tenant?.id || null);
         const refreshToken = signRefreshToken(user.id);
         setRefreshCookie(res, refreshToken);
         const tenantInfo = await authService.getTenantInfo(req.tenant?.id || user.company_id);
