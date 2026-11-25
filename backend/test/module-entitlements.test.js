@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { checkModuleEnabled, isModuleEnabled } = require('../shared/middleware/permission');
+const { checkModuleEnabled, checkSensitivePermission, isModuleEnabled } = require('../shared/middleware/permission');
 
 test('module entitlement matching is case-insensitive and exact', () => {
   assert.equal(isModuleEnabled(['Employees', 'attendance'], 'employees'), true);
@@ -38,4 +38,35 @@ test('module middleware fails closed when tenant entitlement metadata is missing
   const res = { status(code) { statusCode = code; return this; }, json() { return this; } };
   checkModuleEnabled('attendance')({ user: { is_platform_admin: false }, tenant: null }, res, () => {});
   assert.equal(statusCode, 403);
+});
+
+test('sensitive employee data is not implicitly available to built-in tenant admin roles', () => {
+  let statusCode;
+  let nextCalled = false;
+  const res = { status(code) { statusCode = code; return this; }, json() { return this; } };
+  checkSensitivePermission('employees', 'view_sensitive')(
+    { user: { id: 'admin-1', role: 'Admin', permissions: {} } },
+    res,
+    () => { nextCalled = true; }
+  );
+  assert.equal(nextCalled, false);
+  assert.equal(statusCode, 403);
+});
+
+test('sensitive employee data requires an explicit permission or platform-level access', () => {
+  let granted = false;
+  checkSensitivePermission('employees', 'view_sensitive')(
+    { user: { role: 'HR Admin', permissions: { employees: { view_sensitive: true } } } },
+    {},
+    () => { granted = true; }
+  );
+  assert.equal(granted, true);
+
+  let platformGranted = false;
+  checkSensitivePermission('employees', 'view_sensitive')(
+    { user: { is_platform_admin: true, permissions: {} } },
+    {},
+    () => { platformGranted = true; }
+  );
+  assert.equal(platformGranted, true);
 });
