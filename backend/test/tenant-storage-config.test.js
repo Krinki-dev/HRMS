@@ -34,7 +34,7 @@ test('requires external/local URLs and a valid tenant UUID',()=>{
   assert.throws(()=>deriveTenantSchemaName('not-a-uuid'),/valid tenant UUID/);
 });
 test('rejects paid shared-schema allocations and non-enterprise dedicated DBs',()=>{
-  assert.throws(()=>buildStorageDescriptor({plan:'starter',requestedTier:STORAGE_TIERS.SHARED,dbUrl:pgUrl}),/Paid plans must receive/);
+  assert.throws(()=>buildStorageDescriptor({plan:'starter',requestedTier:STORAGE_TIERS.SHARED,dbUrl:pgUrl}),/Paid managed-cloud plans must receive/);
   assert.throws(()=>buildStorageDescriptor({plan:'pro',requestedTier:STORAGE_TIERS.DEDICATED_DATABASE,dbUrl:pgUrl}),/reserved for/);
 });
 test('validates PostgreSQL schema identifiers',()=>{
