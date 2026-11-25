@@ -33,6 +33,31 @@ const checkPermission = (module, action) => {
   };
 };
 
+
+/**
+ * Sensitive-data access is intentionally stricter than ordinary module actions:
+ * built-in tenant admin roles do not implicitly receive this permission.
+ */
+const checkSensitivePermission = (module, action) => {
+  return (req, res, next) => {
+    if (req.user?.is_platform_admin === true) return next();
+
+    let permissions = req.user?._parsedPermissions || req.user?.permissions;
+    if (typeof permissions === 'string') {
+      try {
+        permissions = JSON.parse(permissions);
+        req.user._parsedPermissions = permissions;
+      } catch {
+        permissions = {};
+      }
+    }
+
+    if (permissions?.[module]?.[action] === true) return next();
+    logger.warn(`${THEME.ICONS.LOCK} Sensitive access denied: user=${req.user?.id || 'unknown'} permission=${module}/${action}`);
+    return sendError(res, ERROR_CODES.FORBIDDEN, 'A separate sensitive-data permission is required.', 403);
+  };
+};
+
 function isModuleEnabled(enabledModules, moduleName) {
   if (!Array.isArray(enabledModules) || typeof moduleName !== 'string' || !moduleName.trim()) return false;
   const normalized = new Set(enabledModules.filter((item) => typeof item === 'string').map((item) => item.trim().toLowerCase()));
@@ -53,5 +78,5 @@ const checkModuleEnabled = (moduleName) => {
   };
 };
 
-module.exports = { checkPermission, checkModuleEnabled, isModuleEnabled };
+module.exports = { checkPermission, checkSensitivePermission, checkModuleEnabled, isModuleEnabled };
 
