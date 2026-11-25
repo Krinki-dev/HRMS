@@ -226,5 +226,5 @@ test('builds a read-only inventory using the verified operational company UUID',
     matchType: 's',
   });
   assert.ok(calls.some((call) => call.params?.[0] === '11111111-1111-4111-8111-111111111111'));
-  assert.ok(calls.every((call) => /^\\s*SELECT/i.test(call.sql)), 'tenant data inventory must remain SELECT-only');
+  assert.ok(calls.every((call) => /^\s*SELECT/i.test(call.sql)), 'tenant data inventory must remain SELECT-only');
 });
