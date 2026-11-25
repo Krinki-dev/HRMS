@@ -605,6 +605,21 @@ CREATE INDEX IF NOT EXISTS idx_tenant_migration_jobs_tenant_created
 CREATE INDEX IF NOT EXISTS idx_tenant_migration_jobs_status_created
   ON public.tenant_migration_jobs (status, created_at DESC);
 
+CREATE OR REPLACE FUNCTION public.prevent_tenant_migration_job_mutation()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $
+BEGIN
+  RAISE EXCEPTION 'Tenant migration inventory audit records are immutable';
+END;
+$;
+DROP TRIGGER IF EXISTS trg_tenant_migration_jobs_immutable
+  ON public.tenant_migration_jobs;
+CREATE TRIGGER trg_tenant_migration_jobs_immutable
+  BEFORE UPDATE OR DELETE ON public.tenant_migration_jobs
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_tenant_migration_job_mutation();
+
+
 -- VERIFY: List created tables
 -- ================================================================
 SELECT
