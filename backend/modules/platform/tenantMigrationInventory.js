@@ -154,7 +154,7 @@ async function inspectTenantMigration({
            ON parent_attr.attrelid = parent.oid AND parent_attr.attnum = key_columns.parent_attnum
          WHERE c.contype = 'f'
            AND (child_ns.nspname = $1 OR parent_ns.nspname = $1)
-         GROUP BY child.relname, parent.relname, c.conname,
+         GROUP BY child_ns.nspname, child.relname, parent_ns.nspname, parent.relname, c.conname,
            c.convalidated, c.condeferrable, c.confmatchtype
          ORDER BY child_ns.nspname, child.relname, c.conname`,
         [sourceSchema]
