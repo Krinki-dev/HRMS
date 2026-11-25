@@ -10,9 +10,13 @@ ALTER TABLE public.central_kyc_records
 ALTER TABLE public.central_kyc_records
   DROP CONSTRAINT IF EXISTS central_kyc_records_aadhaar_hash_key;
 
-CREATE UNIQUE INDEX IF NOT EXISTS central_kyc_records_tenant_aadhaar_hash_uq
-  ON public.central_kyc_records (tenant_id, aadhaar_hash)
-  WHERE tenant_id IS NOT NULL;
+DROP INDEX IF EXISTS public.central_kyc_records_tenant_aadhaar_hash_uq;
+
+CREATE UNIQUE INDEX IF NOT EXISTS central_kyc_records_tenant_id_aadhaar_hash_key
+  ON public.central_kyc_records (tenant_id, aadhaar_hash);
+
+CREATE INDEX IF NOT EXISTS central_kyc_records_aadhaar_hash_idx
+  ON public.central_kyc_records (aadhaar_hash);
 
 CREATE INDEX IF NOT EXISTS central_kyc_records_tenant_id_idx
   ON public.central_kyc_records (tenant_id);
