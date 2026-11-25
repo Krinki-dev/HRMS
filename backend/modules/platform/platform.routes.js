@@ -94,9 +94,9 @@ router.get('/gstin-lookup/:gstin', async (req, res) => {
 
   // 1. CACHE CHECK: Query central database before running Scraper/API to save resources
   try {
-    const cached = await centralPrisma.central_gst_records.findUnique({
+    const cached = await withPlatformAdminRLS(centralPrisma, (tx) => tx.central_gst_records.findUnique({
       where: { gstin: gstinUpper }
-    });
+    }));
     if (cached) {
       logger.info(`[gstin-lookup] Cache hit for ${gstinUpper}`);
       return sendSuccess(res, {
@@ -154,7 +154,7 @@ router.get('/gstin-lookup/:gstin', async (req, res) => {
           .filter(Boolean);
 
         // 2. CACHE SAVE: Persist new lookup results for future visitors
-        centralPrisma.central_gst_records.upsert({
+        withPlatformAdminRLS(centralPrisma, (tx) => tx.central_gst_records.upsert({
           where: { gstin: gstinUpper },
           update: { raw: raw, updated_at: new Date() },
           create: {
@@ -169,7 +169,7 @@ router.get('/gstin-lookup/:gstin', async (req, res) => {
             raw: raw,
             data_source: 'gst-api'
           }
-        }).catch(e => logger.error(`[gstin-lookup] Cache save failed: ${e.message}`));
+        })).catch(e => logger.error(`[gstin-lookup] Cache save failed: ${e.message}`));
 
         logger.info(`[gstin-lookup] ✅ API success: ${gstinUpper} → ${info.lgnm || info.tradeNam}`);
         return sendSuccess(res, {
@@ -229,11 +229,11 @@ router.get('/gstin-lookup/:gstin', async (req, res) => {
 router.get('/sitemap.xml', async (req, res) => {
   try {
     // 1. Fetch all cached GST records to create dynamic SEO-friendly links
-    const gstRecords = await centralPrisma.central_gst_records.findMany({
+    const gstRecords = await withPlatformAdminRLS(centralPrisma, (tx) => tx.central_gst_records.findMany({
       select: { gstin: true, updated_at: true },
       orderBy: { updated_at: 'desc' },
       take: 5000 // Limit to prevent massive XML files
-    });
+    }));
 
     const host = req.get('host') || 'syntern.in';
     const protocol = req.protocol || 'https';
