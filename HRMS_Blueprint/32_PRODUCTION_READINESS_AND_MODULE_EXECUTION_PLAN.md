@@ -200,3 +200,24 @@ Use a shared import/export framework and module-specific workbook schemas, not o
 
 ### Execution rule
 Build a reusable, secure workbook engine and template/schema contract during the Employees module. Then reuse it module-by-module. Do not postpone the workbook option until after all modules are completed; design module work around both CSV and relational XLSX from the start. Keep the standard CSV path intact.
+
+
+## 2026-11-25 — Employees import/export implementation checkpoint
+
+The first implementation slice is committed on the working branch:
+- Existing Employees import/export is CSV-only. Current frontend parsing is local; current bulk-import endpoint validates only basic fields and immediately writes records. Replace this path incrementally with server-side preview/confirm while preserving backward-compatible CSV support until migration is complete.
+- Existing related Prisma models confirmed: employees, employee_addresses, employee_family, employee_education, employee_prev_employment, employee_bank_accounts and employee_documents.
+- Added a schema-driven workbook contract for Employees, Addresses, Family, Education and PreviousEmployment. All child rows join via Employee Code, never worksheet row number or display name. Existing child UUIDs are optional stable identifiers for updates.
+- Added reusable schema validation primitives for required/type/enum/date/range checks, duplicate sheet keys, child-to-parent reference checks, explicit create-only/update-only/upsert modes, and rejection of formula/non-primitive values.
+- Default export excludes bank account data, Aadhaar/PAN and private document content. Separate sensitive-data permissions must be enforced before any such sheet is offered.
+- Added unit tests for the contract and validator; execution is pending.
+
+### Remaining Employees import/export delivery steps
+1. Confirm dependency choice and add an XLSX library with a correctly regenerated `package-lock.json`; do not hand-edit lockfile integrity metadata.
+2. Generate a formatted sample workbook from the same schema (Instructions, dropdowns, date formats, frozen headers, filters, widths; no macros/external links).
+3. Implement bounded, defensive XLSX parsing and CSV parsing on the server; formulas must not be used as import values.
+4. Add tenant-scoped preview endpoint that validates all sheets, checks references and create/update conflicts, returns row/sheet errors and a preview token/checksum.
+5. Add explicit confirmation endpoint that revalidates token/checksum and commits parent/child writes transactionally or in documented bounded batches. Never replace/delete existing child rows silently.
+6. Add downloadable error workbook and import summary/audit log including generated ID mappings.
+7. Integrate side-by-side CSV and Excel template/import/export actions in the Employees UI; then reuse the engine for Attendance, Leave, Payroll, Compliance and remaining modules.
+8. Add CSV and XLSX round-trip tests and PostgreSQL integration tests for tenant ownership, permissions and transaction rollback.
