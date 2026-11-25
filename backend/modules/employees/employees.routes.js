@@ -9,7 +9,7 @@ const extCtrl = require('./employees.extended.controller');
 const reqCtrl = require('./employees.update-request');
 const auth    = require('../../shared/middleware/auth');
 const requireSetupComplete = require('../../shared/middleware/requireSetupComplete');
-const { checkPermission, checkModuleEnabled } = require('../../shared/middleware/permission');
+const { checkPermission, checkSensitivePermission, checkModuleEnabled } = require('../../shared/middleware/permission');
 const { sendError }       = require('../../shared/utils/response');
 
 const UPLOAD_DIR = path.join(__dirname, '../../../uploads/employees');
@@ -146,7 +146,7 @@ router.delete(
   checkPermission('employees', 'delete'),
   ctrl.softDelete
 );
-router.get('/:id/unmask', checkPermission('employees', 'view'), ctrl.unmask);
+router.get('/:id/unmask', checkSensitivePermission('employees', 'view_sensitive'), ctrl.unmask);
 
 router.post(
   '/:id/restore',
@@ -169,7 +169,7 @@ router.put(
 
 router.post('/:id/update-request', reqCtrl.submit);
 
-router.get('/:id/bank', checkPermission('employees', 'view'), ctrl.getBankAccounts);
+router.get('/:id/bank', checkSensitivePermission('employees', 'view_sensitive'), ctrl.getBankAccounts);
 router.post(
   '/:id/bank',
   requireSetupComplete,
