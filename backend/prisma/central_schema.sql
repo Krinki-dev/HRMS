@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS tenants (
   local_db_name       TEXT,
   local_db_user       TEXT,                                            -- encrypted
   local_db_pass       TEXT,                                            -- encrypted
-  sync_interval_min   INT           DEFAULT 60,                        -- for hybrid: how often to sync
+  sync_interval_min   INT           DEFAULT 60,                        -- legacy-only field; current PostgreSQL modes do not sync databases
 
   -- Company info (from GST auto-fill on registration)
   gstin               TEXT,
