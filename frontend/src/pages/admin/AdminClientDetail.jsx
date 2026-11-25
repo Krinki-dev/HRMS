@@ -300,6 +300,7 @@ export default function AdminClientDetail() {
                   ['Directly scoped', migration.summary.directlyScoped],
                   ['Dependent', migration.summary.dependentTables],
                   ['Unclassified', migration.summary.unclassifiedTables],
+                  ['Ambiguous paths', migration.summary.ambiguousTables || 0],
                   ['FK relationships', migration.foreignKeyCount],
                   ['Destination schema', migration.summary.destinationSchemaExists ? 'Already exists' : 'Not created'],
                 ].map(([label, value]) => (
@@ -333,6 +334,32 @@ export default function AdminClientDetail() {
                   </tbody>
                 </table>
               </div>
+              {!!migration.foreignKeys?.length && (
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600 }}>Foreign-key column mappings</div>
+                  <div style={{ overflowX: 'auto', marginTop: 7 }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
+                      <thead><tr style={{ textAlign: 'left', color: 'var(--admin-text-soft)' }}>
+                        <th style={{ padding: 7 }}>Constraint</th><th style={{ padding: 7 }}>Child → parent</th><th style={{ padding: 7 }}>Column mapping</th><th style={{ padding: 7 }}>Validation</th>
+                      </tr></thead>
+                      <tbody>
+                        {migration.foreignKeys.map((fk, index) => (
+                          <tr key={fk.constraint || index} style={{ borderTop: '1px solid var(--admin-border)' }}>
+                            <td style={{ padding: 7, fontFamily: 'monospace' }}>{fk.constraint || '—'}</td>
+                            <td style={{ padding: 7 }}>{fk.table} → {fk.referencesTable}</td>
+                            <td style={{ padding: 7, fontFamily: 'monospace' }}>
+                              {(fk.childColumns || []).map((column, columnIndex) => `${column} → ${fk.parentColumns?.[columnIndex] || '?'}`).join(', ')}
+                            </td>
+                            <td style={{ padding: 7, color: fk.validated ? 'var(--admin-success)' : 'var(--admin-danger)' }}>
+                              {fk.validated ? 'Validated' : 'NOT VALID'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
               <div style={{ marginTop: 12, color: 'var(--admin-text-soft)', fontSize: 10 }}>Audit job: {migration.jobId || 'not recorded'} · Status: {migration.jobStatus || 'unknown'}</div>
               <div style={{ marginTop: 12, color: 'var(--admin-text-soft)', fontSize: 10 }}>
                 Inventory generated {migration.generatedAt ? new Date(migration.generatedAt).toLocaleString('en-IN') : '—'}. Copy execution remains disabled until every table has a verified ownership rule, dependency order, destination validation, and recovery plan.
