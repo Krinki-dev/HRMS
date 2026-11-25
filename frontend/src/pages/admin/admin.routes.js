@@ -59,7 +59,7 @@ function isManagedTenantDb(tenant) {
 }
 
 function isExternalTenantDb(tenant) {
-  return tenant && ['external_cloud', 'local', 'hybrid'].includes(tenant.db_mode);
+  return tenant && ['external_cloud', 'local'].includes(tenant.db_mode);
 }
 
 const ALL_MODULES = [
