@@ -294,7 +294,8 @@ async function run(taskId, payload, helpers) {
     throw new Error(msg);
   }
 
-  const { aadhaarNumber, companyId, mode = 'direct' } = payload;
+  const { aadhaarNumber, companyId, centralTenantId, mode = 'direct' } = payload;
+  if (!centralTenantId) throw new Error('Central tenant context is required to persist KYC data.');
   const clean = (aadhaarNumber || '').replace(/\s/g, '');
   await log(`${THEME.ICONS.AADHAAR} Initializing KYC for Aadhaar: ${clean.slice(0,4)}...${clean.slice(-4)}`);
   if (!/^\d{12}$/.test(clean)) throw new Error('Aadhaar must be 12 digits');
@@ -373,7 +374,7 @@ async function run(taskId, payload, helpers) {
     await updateTask(taskId, { status: 'review_required', result_data: JSON.stringify(reviewData) });
     const confirmation = await pollForInput(log, prisma, taskId, 'confirm', T.REVIEW_TIMEOUT);
     if (confirmation.confirm !== 'YES') throw new Error('Review not confirmed');
-    const kycRecord = await upsertKycRecord(kyc.aadhaarHash, {
+    const kycRecord = await upsertKycRecord(centralTenantId, kyc.aadhaarHash, {
       method: 'otp_based',
       name: kyc.name ? encrypt(kyc.name) : null,
       dob: kyc.dob ? encrypt(kyc.dob) : null,
