@@ -62,7 +62,7 @@ Mobile:         React Native — Phase 2 only
 
 ```
 Pattern:          Modular Monolith
-Multi-tenant:     Yes — every client has own separate database (or schema)
+Multi-tenant:     Free/Trial customers share the tenant operational public schema; every Paid customer gets a dedicated PostgreSQL schema. A dedicated PostgreSQL database/instance is an optional separately approved Enterprise tier.
 DB Modes:         cloud | external_cloud | local | hybrid
 Schema isolation: tenant.schema_name → appends ?schema=<name> to DB URL
 Conflict rule:    Primary DB always wins on sync conflict — no exceptions
@@ -357,7 +357,7 @@ Phase 19:  Mobile App (React Native)    ❌ Phase 2 — not started
 ❌ GraphQL                       → REST only, decided
 ❌ MongoDB or any NoSQL          → relational DBs only
 ❌ Any paid service              → verify free alternative first
-❌ Mixing tenant databases       → every client has own DB, always
+❌ Cross-tenant data mixing       → Free/Trial share public only with strict tenant/company scoping; every Paid customer has a dedicated PostgreSQL schema; never cross-route records.
 ❌ Full accounting module        → export only approach, decided
 ❌ Employee count limits         → unlimited on all plans, decided
 ❌ Hardcoded product name        → always use PRODUCT_NAME env var
