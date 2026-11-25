@@ -2,7 +2,7 @@
 
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const {STORAGE_TIERS,STORAGE_STATUSES}=require('../shared/utils/tenantStorageConfig');
+const {STORAGE_TIERS,STORAGE_STATUSES,buildStorageDescriptor}=require('../shared/utils/tenantStorageConfig');
 const {resolveTenantStorageTarget}=require('../shared/utils/tenantStorageResolver');
 
 const tenantId='2c6b9b7a-8d52-4b2f-9d47-8c1e6b8b1a10';
@@ -27,13 +27,26 @@ test('resolves a ready dedicated-schema tenant to its exact PostgreSQL schema',(
   assert.equal(result.schemaName,tenant().schema_name);
   assert.equal(new URL(result.databaseUrl).searchParams.get('schema'),tenant().schema_name);
 });
-test('resolves Free/Trial tenants only to public',()=>{
-  const result=resolveTenantStorageTarget(tenant({
-    plan:'free',
-    storage_tier:STORAGE_TIERS.SHARED,
-    schema_name:'public',
-  }),{cloudDatabaseUrl:cloudUrl});
-  assert.equal(result.schemaName,'public');
+test('resolves Free and Trial tenants only to public',()=>{
+  for (const plan of ['free','trial']) {
+    const result=resolveTenantStorageTarget(tenant({
+      plan,
+      storage_tier:STORAGE_TIERS.SHARED,
+      schema_name:'public',
+    }),{cloudDatabaseUrl:cloudUrl});
+    assert.equal(result.schemaName,'public');
+    assert.equal(new URL(result.databaseUrl).searchParams.get('schema'),'public');
+  }
+});
+test('builds public storage for Free/Trial and UUID-owned schemas for paid plans',()=>{
+  for (const plan of ['free','trial']) {
+    const shared=buildStorageDescriptor({tenantId,plan,dbMode:'cloud'});
+    assert.equal(shared.schemaName,'public');
+    assert.equal(shared.storageTier,STORAGE_TIERS.SHARED);
+  }
+  const paid=buildStorageDescriptor({tenantId,plan:'pro',dbMode:'cloud'});
+  assert.equal(paid.schemaName,'tenant_2c6b9b7a8d524b2f9d478c1e6b8b1a10');
+  assert.equal(paid.storageTier,STORAGE_TIERS.DEDICATED_SCHEMA);
 });
 test('requires explicit audited classification for legacy rows',()=>{
   assert.throws(()=>resolveTenantStorageTarget(tenant({
@@ -86,7 +99,7 @@ test('rejects schema-tier mismatch instead of selecting another schema',()=>{
   assert.throws(()=>resolveTenantStorageTarget(tenant({
     storage_tier:STORAGE_TIERS.SHARED,
     schema_name:'tenant_wrong',
-  }),{cloudDatabaseUrl:cloudUrl}),/Shared storage must use/);
+  }),{cloudDatabaseUrl:cloudUrl}),/Free and Trial storage must use the public schema/);
 });
 
 test('rejects another tenant schema even when it has a valid identifier',()=>{
