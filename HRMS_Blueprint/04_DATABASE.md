@@ -36,10 +36,10 @@ plan                  VARCHAR     DEFAULT "free"
 plan_expires_at       TIMESTAMPTZ?
 max_employees         INT         DEFAULT 50
 db_mode               VARCHAR     DEFAULT "cloud"
-                                  (cloud | external_cloud | local | hybrid)
+                                  (cloud | external_cloud | local)
 db_url                VARCHAR?    Encrypted connection string
 schema_name           VARCHAR?    For schema-isolated tenants
-local_db_type         VARCHAR?    postgres | mysql | mssql | sqlite
+local_db_type         VARCHAR?    postgres only
 local_db_host         VARCHAR?    Encrypted
 local_db_port         INT         DEFAULT 5432
 local_db_name         VARCHAR?
