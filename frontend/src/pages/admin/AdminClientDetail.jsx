@@ -364,6 +364,16 @@ export default function AdminClientDetail() {
                   </div>
                 </div>
               )}
+              {!!migration.crossTenantReferences?.length && (
+                <div style={{ marginTop: 12, padding: 10, borderRadius: 7, background: 'var(--admin-danger-soft)', color: 'var(--admin-danger)', fontSize: 10 }}>
+                  <strong>Cross-tenant references detected</strong>
+                  {migration.crossTenantReferences.map((item) => (
+                    <div key={item.constraint} style={{ marginTop: 4 }}>
+                      {item.table} → {item.referencesTable}: {item.rows} row(s) · {item.constraint}
+                    </div>
+                  ))}
+                </div>
+              )}
               <div style={{ marginTop: 12, color: 'var(--admin-text-soft)', fontSize: 10 }}>Audit job: {migration.jobId || 'not recorded'} · Status: {migration.jobStatus || 'unknown'}</div>
               <div style={{ marginTop: 12, color: 'var(--admin-text-soft)', fontSize: 10 }}>
                 Inventory generated {migration.generatedAt ? new Date(migration.generatedAt).toLocaleString('en-IN') : '—'}. Copy execution remains disabled until every table has a verified ownership rule, dependency order, destination validation, and recovery plan.
