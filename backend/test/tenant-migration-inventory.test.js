@@ -19,6 +19,7 @@ test('classifies direct company tables and descendants through foreign keys', ()
       { table_name: 'leave_applications', foreign_table_name: 'employees' },
     ],
   });
+  assert.equal(result.companies.scope, 'direct');
   assert.equal(result.employees.scope, 'direct');
   assert.equal(result.attendance.scope, 'dependent');
   assert.deepEqual(result.attendance.via, ['employees']);
