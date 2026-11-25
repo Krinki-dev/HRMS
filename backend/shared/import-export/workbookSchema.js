@@ -13,9 +13,9 @@ function validateField(value, rule) {
   if (value && typeof value === 'object' && !(rule.type === 'date' && value instanceof Date)) return 'Formula or non-primitive cell values are not accepted';
   const v = typeof value === 'string' ? value.trim() : value;
   if (rule.type === 'string' && typeof v !== 'string') return 'Must be text';
-  if (rule.type === 'email' && (typeof v !== 'string' || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v))) return 'Invalid email address';
+  if (rule.type === 'email' && (typeof v !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))) return 'Invalid email address';
   if (rule.type === 'uuid' && (typeof v !== 'string' || !UUID_RE.test(v))) return 'Must be a valid record UUID';
-  if (rule.type === 'date' && !(v instanceof Date) && (typeof v !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(v) || Number.isNaN(Date.parse(v)))) return 'Must be a valid date';
+  if (rule.type === 'date' && !(v instanceof Date) && (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(v)))) return 'Must be a valid date';
   if (rule.type === 'boolean' && typeof v !== 'boolean' && !['true', 'false', '1', '0', 'yes', 'no'].includes(String(v).toLowerCase())) return 'Must be true or false';
   if (rule.type === 'integer' && (!Number.isInteger(Number(v)))) return 'Must be a whole number';
   if (rule.type === 'number' && !Number.isFinite(Number(v))) return 'Must be a number';
