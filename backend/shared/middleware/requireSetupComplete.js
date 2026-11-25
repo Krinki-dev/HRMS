@@ -1,5 +1,6 @@
 ﻿const { PrismaClient } = require('@prisma/client');
 const logger = require('../utils/logger');
+const { withPlatformAdminRLS } = require('../utils/rlsContext');
 const { THEME } = require('../utils/uiConstants');
 
 let _centralPrisma = null;
@@ -23,13 +24,13 @@ module.exports = async function requireSetupComplete(req, res, next) {
 
   try {
     const central = getCentralPrisma();
-    const rows = await central.$queryRaw`
+    const rows = await withPlatformAdminRLS(central, (tx) => tx.$queryRaw`
       SELECT is_setup_complete
       FROM   tenants
       WHERE  id = ${tenantId}::uuid
         AND  deleted_at IS NULL
       LIMIT  1
-    `;
+    `);
 
     if (!rows.length) {
       return res.status(403).json({
