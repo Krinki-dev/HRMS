@@ -6,6 +6,16 @@
 
 BEGIN;
 
+DO $
+BEGIN
+  IF to_regclass('public.tenants') IS NULL THEN
+    RAISE EXCEPTION 'Central schema prerequisite missing: public.tenants. Stop and verify the selected database.';
+  END IF;
+  IF to_regclass('public.invoices') IS NULL THEN
+    RAISE EXCEPTION 'Central schema prerequisite missing: public.invoices. Apply/reconcile the central baseline before this upgrade.';
+  END IF;
+END $;
+
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- 1. Tenant storage lifecycle and onboarding metadata.
@@ -199,6 +209,12 @@ SELECT
   to_regclass('public.payment_webhook_events') IS NOT NULL AS payment_webhook_events_present,
   to_regclass('public.company_documents') IS NOT NULL AS company_documents_present,
   to_regclass('public.company_document_reviews') IS NOT NULL AS company_document_reviews_present,
-  to_regclass('public.billing_events') IS NOT NULL AS billing_events_present;
+  to_regclass('public.billing_events') IS NOT NULL AS billing_events_present,
+  EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='tenants' AND column_name='storage_tier') AS has_storage_tier,
+  EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='tenants' AND column_name='storage_status') AS has_storage_status,
+  EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='tenants' AND column_name='storage_provisioned_at') AS has_storage_provisioned_at,
+  EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='tenants' AND column_name='storage_verified_at') AS has_storage_verified_at,
+  EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='tenants' AND column_name='storage_error_code') AS has_storage_error_code,
+  EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='tenants' AND column_name='onboarding_progress') AS has_onboarding_progress;
 
 COMMIT;
