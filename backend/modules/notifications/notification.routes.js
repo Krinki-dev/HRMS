@@ -12,7 +12,7 @@ const can = (action) => checkPermission('settings', action);
 
 router.get('/notifications', auth, can('view'), async (req, res) => {
   try {
-    const config = await configService.getConfig(req.db, req.user.tenantId);
+    const config = await configService.getConfig(req.db, req.user.companyId);
     return sendSuccess(res, { config });
   } catch (err) {
     console.error('[Notifications/get]', err);
@@ -22,7 +22,7 @@ router.get('/notifications', auth, can('view'), async (req, res) => {
 
 router.put('/notifications', auth, can('edit'), async (req, res) => {
   try {
-    await configService.saveConfig(req.db, req.user.tenantId, req.body);
+    await configService.saveConfig(req.db, req.user.companyId, req.body);
     return sendSuccess(res, null, 'Notification settings saved');
   } catch (err) {
     console.error('[Notifications/put]', err);
@@ -45,7 +45,7 @@ router.post('/notifications/test-email', auth, can('edit'), (req, res, next) => 
 async function testEmailHandler(req, res) {
   try {
     const toEmail   = req.body.toEmail || req.user.email;
-    const result = await configService.sendTestEmail(req.db, req.user.tenantId, toEmail);
+    const result = await configService.sendTestEmail(req.db, req.user.companyId, toEmail);
     return sendSuccess(res, { sentTo: result }, `Test email sent to ${result}`);
   } catch (err) {
     console.error('[Notifications/test-email]', err);
@@ -57,7 +57,7 @@ async function testEmailHandler(req, res) {
 router.post('/notifications/test-sms', auth, can('edit'), async (req, res) => {
   try {
     const db        = req.db;
-    const companyId = req.user.tenantId;
+    const companyId = req.user.companyId;
     const { toPhone } = req.body;
 
     if (!toPhone) {
