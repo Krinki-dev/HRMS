@@ -19,7 +19,7 @@ router.get('/notifications', auth, can('view'), async (req, res) => {
   try {
     const db = req.db;
     const cfg = await db.notification_config.findFirst({
-      where: { company_id: req.user.tenantId },
+      where: { company_id: req.user.companyId },
     });
 
     if (!cfg) {
@@ -53,7 +53,7 @@ router.get('/notifications', auth, can('view'), async (req, res) => {
 router.put('/notifications', auth, can('edit'), async (req, res) => {
   try {
     const db        = req.db;
-    const companyId = req.user.tenantId;
+    const companyId = req.user.companyId;
 
     const {
       emailProvider = 'smtp',
@@ -119,7 +119,7 @@ router.post('/notifications/test-email', auth, can('edit'), (req, res, next) => 
 async function testEmailHandler(req, res) {
   try {
     const db        = req.db;
-    const companyId = req.user.tenantId;
+    const companyId = req.user.companyId;
     const toEmail   = req.body.toEmail || req.user.email;
 
     if (!toEmail) {
@@ -182,7 +182,7 @@ async function testEmailHandler(req, res) {
 router.post('/notifications/test-sms', auth, can('edit'), async (req, res) => {
   try {
     const db        = req.db;
-    const companyId = req.user.tenantId;
+    const companyId = req.user.companyId;
     const { toPhone } = req.body;
 
     if (!toPhone) {
