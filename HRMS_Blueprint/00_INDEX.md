@@ -111,6 +111,8 @@ Never paste everything at once — keep context focused.
 | All final decisions | 07_FROZEN_DECISIONS.md |
 | Current architecture status & blockers | 33_MASTER_CODEBASE_ARCHITECTURE_AUDIT.md |
 | Owner decisions still required | 34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md |
+| Paid tenant migration inventory and safety gates | PAID_TENANT_MIGRATION_INVENTORY.md |
+| Latest implementation/CI progress | 28_IMPLEMENTATION_PROGRESS.md |
 | Any page's FE/BE/DB steps | Relevant flow doc (09–20) |
 
 ---
