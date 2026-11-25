@@ -38,22 +38,22 @@ const actor = (req) => ({ userId: req.user?.id, ip: req.ip });
 module.exports = {
 
   list: wrap(async (req, res) => {
-    const result = await svc.list(req.db, req.user.tenantId, req.query);
+    const result = await svc.list(req.db, req.user.companyId, req.query);
     res.json({ success: true, ...result });
   }),
 
   getOne: wrap(async (req, res) => {
-    sendSuccess(res, await svc.getOne(req.db, req.user.tenantId, req.params.id));
+    sendSuccess(res, await svc.getOne(req.db, req.user.companyId, req.params.id));
   }),
 
   create: wrap(async (req, res) => {
     const { firstName, lastName } = req.body;
     if (!firstName?.trim()) return sendError(res, ERROR_CODES.VALIDATION, 'First name is required.', 400);
     if (!lastName?.trim())  return sendError(res, ERROR_CODES.VALIDATION, 'Last name is required.', 400);
-    const created = await svc.create(req.db, req.user.tenantId, req.body, actor(req));
+    const created = await svc.create(req.db, req.user.companyId, req.body, actor(req));
     eventNotifier.notifyEmployeeCreated({
       db: req.db,
-      companyId: req.user.tenantId,
+      companyId: req.user.companyId,
       employee: created,
       actorLabel: req.user?.email,
     }).catch((err) => logger.warn('[Employees/Create] Notification failed', { error: err.message }));
@@ -61,10 +61,10 @@ module.exports = {
   }),
 
   update: wrap(async (req, res) => {
-    const updated = await svc.update(req.db, req.user.tenantId, req.params.id, req.body, actor(req));
+    const updated = await svc.update(req.db, req.user.companyId, req.params.id, req.body, actor(req));
     eventNotifier.notifyEmployeeUpdated({
       db: req.db,
-      companyId: req.user.tenantId,
+      companyId: req.user.companyId,
       employee: updated,
       actorLabel: req.user?.email,
     }).catch((err) => logger.warn('[Employees/Update] Notification failed', { error: err.message }));
@@ -72,60 +72,60 @@ module.exports = {
   }),
 
   softDelete: wrap(async (req, res) => {
-    await svc.softDelete(req.db, req.user.tenantId, req.params.id, actor(req));
+    await svc.softDelete(req.db, req.user.companyId, req.params.id, actor(req));
     sendSuccess(res, null, 'Employee removed.');
   }),
 
   restore: wrap(async (req, res) => {
-    await svc.restore(req.db, req.user.tenantId, req.params.id, actor(req));
+    await svc.restore(req.db, req.user.companyId, req.params.id, actor(req));
     sendSuccess(res, null, 'Employee restored.');
   }),
 
   listDeleted: wrap(async (req, res) => {
-    sendSuccess(res, await svc.listDeleted(req.db, req.user.tenantId, req.query));
+    sendSuccess(res, await svc.listDeleted(req.db, req.user.companyId, req.query));
   }),
 
   unmask: wrap(async (req, res) => {
-    sendSuccess(res, await svc.unmask(req.db, req.user.tenantId, req.params.id, actor(req)));
+    sendSuccess(res, await svc.unmask(req.db, req.user.companyId, req.params.id, actor(req)));
   }),
 
   uploadPhoto: wrap(async (req, res) => {
     if (!req.file) return sendError(res, ERROR_CODES.VALIDATION, 'No file uploaded.', 400);
     const photoPath = `/uploads/employees/${req.file.filename}`;
-    sendSuccess(res, await svc.updatePhoto(req.db, req.user.tenantId, req.params.id, photoPath, actor(req)), 'Photo updated.');
+    sendSuccess(res, await svc.updatePhoto(req.db, req.user.companyId, req.params.id, photoPath, actor(req)), 'Photo updated.');
   }),
 
   getBankAccounts: wrap(async (req, res) => {
-    sendSuccess(res, await svc.getBankAccounts(req.db, req.user.tenantId, req.params.id));
+    sendSuccess(res, await svc.getBankAccounts(req.db, req.user.companyId, req.params.id));
   }),
   addBankAccount: wrap(async (req, res) => {
     if (!req.body.bankName || !req.body.accountNumber)
       return sendError(res, ERROR_CODES.VALIDATION, 'Bank name and account number are required.', 400);
-    sendSuccess(res, await svc.addBankAccount(req.db, req.user.tenantId, req.params.id, req.body), 'Bank account added.');
+    sendSuccess(res, await svc.addBankAccount(req.db, req.user.companyId, req.params.id, req.body), 'Bank account added.');
   }),
   updateBankAccount: wrap(async (req, res) => {
-    sendSuccess(res, await svc.updateBankAccount(req.db, req.user.tenantId, req.params.id, req.params.bid, req.body), 'Updated.');
+    sendSuccess(res, await svc.updateBankAccount(req.db, req.user.companyId, req.params.id, req.params.bid, req.body), 'Updated.');
   }),
   deleteBankAccount: wrap(async (req, res) => {
-    await svc.deleteBankAccount(req.db, req.user.tenantId, req.params.id, req.params.bid);
+    await svc.deleteBankAccount(req.db, req.user.companyId, req.params.id, req.params.bid);
     sendSuccess(res, null, 'Bank account removed.');
   }),
 
   getDocuments: wrap(async (req, res) => {
-    sendSuccess(res, await svc.getDocuments(req.db, req.user.tenantId, req.params.id));
+    sendSuccess(res, await svc.getDocuments(req.db, req.user.companyId, req.params.id));
   }),
   addDocument: wrap(async (req, res) => {
     if (!req.body.documentType || !req.body.documentName)
       return sendError(res, ERROR_CODES.VALIDATION, 'Document type and name are required.', 400);
-    sendSuccess(res, await svc.addDocument(req.db, req.user.tenantId, req.params.id, req.body), 'Document added.');
+    sendSuccess(res, await svc.addDocument(req.db, req.user.companyId, req.params.id, req.body), 'Document added.');
   }),
   deleteDocument: wrap(async (req, res) => {
-    await svc.deleteDocument(req.db, req.user.tenantId, req.params.id, req.params.did);
+    await svc.deleteDocument(req.db, req.user.companyId, req.params.id, req.params.did);
     sendSuccess(res, null, 'Document removed.');
   }),
 
   createLogin: wrap(async (req, res) => {
-    const loginResult = await svc.createLogin(req.db, req.user.tenantId, req.params.id, req.body, actor(req));
+    const loginResult = await svc.createLogin(req.db, req.user.companyId, req.params.id, req.body, actor(req));
 
     const loginUrl = process.env.FRONTEND_URL
       || (req.tenant?.subdomain
@@ -133,7 +133,7 @@ module.exports = {
         : 'http://localhost:5173/login');
 
     try {
-      await emailSvc.sendWelcome(req.db, req.user.tenantId, {
+      await emailSvc.sendWelcome(req.db, req.user.companyId, {
         name:         loginResult.email,
         email:        loginResult.email,
         tempPassword: loginResult.tempPassword,
@@ -145,7 +145,7 @@ module.exports = {
 
     eventNotifier.notifyEmployeeLoginProvisioned({
       db: req.db,
-      companyId: req.user.tenantId,
+      companyId: req.user.companyId,
       employeeId: req.params.id,
       loginEmail: loginResult.email,
       actorLabel: req.user?.email,
@@ -154,10 +154,10 @@ module.exports = {
     sendSuccess(res, loginResult, 'Login created and welcome email triggered.');
   }),
   toggleLogin: wrap(async (req, res) => {
-    const result = await svc.toggleLogin(req.db, req.user.tenantId, req.params.id);
+    const result = await svc.toggleLogin(req.db, req.user.companyId, req.params.id);
     eventNotifier.notifyEmployeeLoginToggled({
       db: req.db,
-      companyId: req.user.tenantId,
+      companyId: req.user.companyId,
       employeeId: req.params.id,
       isActive: result.isActive,
       actorLabel: req.user?.email,
@@ -186,7 +186,7 @@ module.exports = {
     if (errors.length > 0)
       return sendError(res, ERROR_CODES.VALIDATION, `Validation errors: ${errors.join('; ')}`, 400);
 
-    const result = await svc.bulkImport(req.db, req.user.tenantId, rows, actor(req));
+    const result = await svc.bulkImport(req.db, req.user.companyId, rows, actor(req));
     sendSuccess(res, result, `Imported ${result.success} employees successfully.`, 201);
   }),
 
@@ -218,7 +218,7 @@ module.exports = {
 
   downloadExportCsv: wrap(async (req, res) => {
     const { search, status, type } = req.query;
-    const employees = await svc.exportList(req.db, req.user.tenantId, { search, status, type });
+    const employees = await svc.exportList(req.db, req.user.companyId, { search, status, type });
     const headers = [
       'employeeCode', 'firstName', 'lastName', 'middleName',
       'phone', 'personalEmail', 'workEmail',
@@ -264,9 +264,9 @@ module.exports = {
     res.send([headers.join(','), ...rows].join('\n'));
   }),
 
-  getDepartments:  wrap(async (req, res) => sendSuccess(res, await svc.getDepartments(req.db, req.user.tenantId))),
-  getDesignations: wrap(async (req, res) => sendSuccess(res, await svc.getDesignations(req.db, req.user.tenantId))),
-  getBranches:     wrap(async (req, res) => sendSuccess(res, await svc.getBranches(req.db, req.user.tenantId))),
-  getManagers:     wrap(async (req, res) => sendSuccess(res, await svc.getManagers(req.db, req.user.tenantId))),
+  getDepartments:  wrap(async (req, res) => sendSuccess(res, await svc.getDepartments(req.db, req.user.companyId))),
+  getDesignations: wrap(async (req, res) => sendSuccess(res, await svc.getDesignations(req.db, req.user.companyId))),
+  getBranches:     wrap(async (req, res) => sendSuccess(res, await svc.getBranches(req.db, req.user.companyId))),
+  getManagers:     wrap(async (req, res) => sendSuccess(res, await svc.getManagers(req.db, req.user.companyId))),
 };
 
