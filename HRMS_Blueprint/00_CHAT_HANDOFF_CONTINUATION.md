@@ -600,3 +600,19 @@ Important source findings to retain:
 8. Employee relational workbook contract exists, but full XLSX import/export pipeline is pending.
 
 Resume from Section 10 of 33_MASTER_CODEBASE_ARCHITECTURE_AUDIT.md. Do not ask the user to repeat confirmed tenancy or CSV/XLSX decisions. Do not ask for another SQL run before source-code audit is complete. First resolve or get owner input on the items in 34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md; then continue with P0 identity and shared-schema isolation.
+
+
+### Additional findings from extended historical/source review — 2026-11-25
+
+- Frontend access tokens are currently persisted to localStorage by authStore.js and api.js. This conflicts with the frozen security rule. Move access tokens to memory-only state; keep refresh token only in the httpOnly cookie.
+- Central user index uniqueness is (email, company_id), but email/phone/employee-ID login lookup can query across tenants with LIMIT 1. Require explicit tenant context or tenant choice and add cross-tenant duplicate identity tests.
+- Unauthenticated lookup endpoints return tenant metadata; employee-ID lookup also returns email. IP rate limiting exists, but data minimization and enumeration defenses need review.
+- Current auth middleware directly queries central_user_index without withPlatformAdminRLS; complete the Central RLS call-site audit.
+- Current BillingConfigTab.jsx retains a fabricated mock subscription checkout branch; backend rejects mock activation. Remove stale front-end path once automated test dependencies are checked.
+- Historical Git commits included an old backend/.env snapshot with database-URL-shaped values and an old frontend/certs/server.key file. Current tree/.gitignore no longer includes these, but old public commit history can retain them. User previously described .env values as dummy; live validity of those values/key was not verified. Rotate anything that was ever real. Do not expose values in chat/docs.
+- App.jsx routes tenant hosts through the legacy HRAppLayout while the wider module UI route tree is under IS_PLATFORM_ROOT; verify intended tenant host routes with E2E before calling every module available.
+- frontend/src/router/clientRoutes.jsx is not imported by current App.jsx and is a dead-code candidate, but delete only after reference/build audit.
+- migrate_user_index.js is an operator-only one-off script that reads tenant connection fields; never add it to automatic startup or run it without allowlist/dry-run/secret-handling review.
+- Historical deployment code made canonical migration failure non-fatal to server start; require migration-compatible readiness rather than treating process startup as deployment success.
+
+Extended historical commit review continues. The 99 old commits are not all claimed as individually line-by-line reviewed; continue source patch review for remaining unresolved areas before declaring the legacy audit complete.
