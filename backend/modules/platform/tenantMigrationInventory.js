@@ -100,13 +100,32 @@ async function inspectTenantMigration({
         [sourceSchema]
       ),
       pool.query(
-        `SELECT child.relname AS table_name, parent.relname AS foreign_table_name
+        `SELECT
+           child.relname AS table_name,
+           parent.relname AS foreign_table_name,
+           c.conname AS constraint_name,
+           c.convalidated AS is_validated,
+           c.condeferrable AS is_deferrable,
+           c.confmatchtype AS match_type,
+           array_agg(child_attr.attname ORDER BY key_columns.ordinality) AS child_columns,
+           array_agg(parent_attr.attname ORDER BY key_columns.ordinality) AS parent_columns
          FROM pg_constraint c
          JOIN pg_class child ON child.oid = c.conrelid
          JOIN pg_namespace child_ns ON child_ns.oid = child.relnamespace
          JOIN pg_class parent ON parent.oid = c.confrelid
          JOIN pg_namespace parent_ns ON parent_ns.oid = parent.relnamespace
-         WHERE c.contype = 'f' AND child_ns.nspname = $1 AND parent_ns.nspname = $1`,
+         JOIN LATERAL unnest(c.conkey, c.confkey) WITH ORDINALITY
+           AS key_columns(child_attnum, parent_attnum, ordinality) ON TRUE
+         JOIN pg_attribute child_attr
+           ON child_attr.attrelid = child.oid AND child_attr.attnum = key_columns.child_attnum
+         JOIN pg_attribute parent_attr
+           ON parent_attr.attrelid = parent.oid AND parent_attr.attnum = key_columns.parent_attnum
+         WHERE c.contype = 'f'
+           AND child_ns.nspname = $1
+           AND parent_ns.nspname = $1
+         GROUP BY child.relname, parent.relname, c.conname,
+           c.convalidated, c.condeferrable, c.confmatchtype
+         ORDER BY child.relname, c.conname`,
         [sourceSchema]
       ),
     ]);
@@ -156,7 +175,8 @@ async function inspectTenantMigration({
     const blockers = [];
     if (!summary.directlyScoped) blockers.push('No company_id-owned tables were discovered; tenant ownership cannot be proven.');
     if (summary.unclassifiedTables) blockers.push('Some tables have no proven tenant ownership path and require explicit classification.');
-    if (summary.dependentTables) blockers.push('Dependent tables were discovered; relation-scoped row counts and foreign-key validation are not yet implemented.');
+    if (summary.dependentTables) blockers.push('Dependent tables were discovered; relation-scoped row counts and cross-tenant foreign-key validation are not yet implemented.');
+    if (fkResult.rows.some((fk) => !fk.is_validated)) blockers.push('One or more foreign-key constraints are NOT VALID and must be validated before migration.');
     if (summary.destinationSchemaExists) blockers.push('The destination schema already exists; automatic migration is disabled to prevent overwriting data.');
 
     return {
@@ -175,6 +195,16 @@ async function inspectTenantMigration({
         sourceRows: directCounts[name] ?? null,
       })),
       foreignKeyCount: fkResult.rows.length,
+      foreignKeys: fkResult.rows.map((fk) => ({
+        table: fk.table_name,
+        referencesTable: fk.foreign_table_name,
+        constraint: fk.constraint_name,
+        childColumns: fk.child_columns,
+        parentColumns: fk.parent_columns,
+        validated: fk.is_validated,
+        deferrable: fk.is_deferrable,
+        matchType: fk.match_type,
+      })),
       generatedAt: new Date().toISOString(),
     };
   } finally {
