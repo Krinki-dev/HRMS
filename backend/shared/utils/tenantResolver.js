@@ -17,7 +17,9 @@ function resolveCompanyId(req) {
 }
 
 function resolveCentralTenantId(req) {
-  const tenantId = req.user?.centralTenantId || req.tenant?.id || req.user?.tenantId;
+  const tenantId = req.user?.is_platform_admin && req.tenant?.id
+    ? req.tenant.id
+    : (req.user?.centralTenantId || req.tenant?.id || req.user?.tenantId);
   if (!tenantId) {
     const error = new Error('Central tenant context is required.');
     error.status = 400;
