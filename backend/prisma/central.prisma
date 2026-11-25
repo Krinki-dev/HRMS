@@ -179,7 +179,8 @@ model tenant_branch_links {
 
 model central_kyc_records {
   id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  aadhaar_hash     String    @unique
+  tenant_id        String?   @db.Uuid
+  aadhaar_hash     String
   method           String
   kyc_timestamp    DateTime? @db.Timestamptz
   name             String?
@@ -202,7 +203,9 @@ model central_kyc_records {
   task_id          String?
   created_at       DateTime  @default(now()) @db.Timestamptz
 
+  @@index([tenant_id])
   @@index([aadhaar_hash])
+  @@unique([tenant_id, aadhaar_hash])
 }
 
 model central_gst_records {
