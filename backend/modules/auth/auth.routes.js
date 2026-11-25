@@ -16,7 +16,7 @@ const authService = require('./auth.service');
 const logger   = require('../../shared/utils/logger');
 const eventNotifier = require('../notifications/event-notifier.service');
 const { centralPrisma } = require('../../shared/utils/centralPrisma');
-const { resolveTenantDbUrl } = require('../platform/platform.service');
+
 const { issueTicket } = require('../../shared/utils/wsTicket');
 const { withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 
@@ -547,10 +547,10 @@ router.post('/forgot-password', async (req, res) => {
             subdomain = tenantRecord.subdomain || subdomain;
             tenantId = tenantRecord.id || tenantId;
             try {
-              const tenantUrl = resolveTenantDbUrl(tenantRecord.db_mode, tenantRecord);
-              if (tenantUrl) {
+              const tenantContext = await authService.resolveTenantDbById(tenantRecord.id);
+              if (tenantContext?.url) {
                 const { PrismaClient: TenantClient } = require('@prisma/client');
-                activeDb = new TenantClient({ datasources: { db: { url: tenantUrl } } });
+                activeDb = new TenantClient({ datasources: { db: { url: tenantContext.url } } });
                 isTemporaryClient = true;
               }
             } catch (dbErr) {
