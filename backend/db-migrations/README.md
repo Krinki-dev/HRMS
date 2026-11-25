@@ -81,3 +81,5 @@ Existing rows are intentionally left with `tenant_id IS NULL`. They are not visi
 
 
 Shared `public` schema tenant backups are also a release blocker: the current backup target resolver intentionally refuses to dump a shared schema as an individual tenant backup. Never remove that guard or deliver a whole-public-schema dump to one customer. A tenant-filtered relational backup/restore or platform-wide protected backup design must be implemented first.
+
+Dedicated customer-managed PostgreSQL databases and Enterprise managed-cloud dedicated databases can be backed up as whole databases without a schema override. Shared managed-cloud `public` schema backups remain blocked pending tenant-filtered export/restore.
