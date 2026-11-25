@@ -151,3 +151,22 @@ test('rejects non-PostgreSQL local database types and incomplete local credentia
     local_db_name: 'hrms',
   }), /requires host, database name and username/);
 });
+
+
+test('resolves a trial customer-managed database without a schema override', () => {
+  const result = resolveTenantStorageTarget(tenant({
+    plan: 'trial',
+    db_mode: 'local',
+    storage_tier: STORAGE_TIERS.DEDICATED_DATABASE,
+    schema_name: null,
+    local_db_type: 'postgres',
+    local_db_host: '127.0.0.1',
+    local_db_port: 5432,
+    local_db_name: 'customer_hrms',
+    local_db_user: 'hrms_app',
+    local_db_pass: 'secret',
+  }), { decryptValue });
+  assert.equal(result.storageTier, STORAGE_TIERS.DEDICATED_DATABASE);
+  assert.equal(result.schemaName, null);
+  assert.equal(new URL(result.databaseUrl).searchParams.has('schema'), false);
+});
