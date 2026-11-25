@@ -33,7 +33,7 @@ function fmtTask(t, full = false) {
 router.get('/tasks', async (req, res) => {
   try {
     const { status } = req.query;
-    const where = { company_id: req.user.tenantId };
+    const where = { company_id: req.user.companyId };
     if (status) where.status = status;
 
     const tasks = await req.db.automation_tasks.findMany({
@@ -53,7 +53,7 @@ router.get('/tasks', async (req, res) => {
 router.get('/task/:taskId', async (req, res) => {
   try {
     const task = await req.db.automation_tasks.findFirst({
-      where:   { id: req.params.taskId, company_id: req.user.tenantId },
+      where:   { id: req.params.taskId, company_id: req.user.companyId },
       include: { logs: { orderBy: { step_number: 'asc' } } },
     });
     if (!task) return sendError(res, ERROR_CODES.NOT_FOUND, 'Task not found', 404);
@@ -71,7 +71,7 @@ router.post('/task/:taskId/captcha', async (req, res) => {
       return sendError(res, ERROR_CODES.VALIDATION, 'captcha required', 400);
 
     const task = await req.db.automation_tasks.findFirst({
-      where: { id: req.params.taskId, company_id: req.user.tenantId },
+      where: { id: req.params.taskId, company_id: req.user.companyId },
     });
     if (!task) return sendError(res, ERROR_CODES.NOT_FOUND, 'Task not found', 404);
     if (task.status !== 'captcha_required')
@@ -96,7 +96,7 @@ router.post('/task/:taskId/otp', async (req, res) => {
       return sendError(res, ERROR_CODES.VALIDATION, 'OTP must be 6 digits', 400);
 
     const task = await req.db.automation_tasks.findFirst({
-      where: { id: req.params.taskId, company_id: req.user.tenantId },
+      where: { id: req.params.taskId, company_id: req.user.companyId },
     });
     if (!task) return sendError(res, ERROR_CODES.NOT_FOUND, 'Task not found', 404);
     if (task.status !== 'otp_required')
@@ -123,7 +123,7 @@ router.post('/task/:taskId/confirm', async (req, res) => {
       return sendError(res, ERROR_CODES.VALIDATION, 'Mobile and email required', 400);
 
     const task = await req.db.automation_tasks.findFirst({
-      where: { id: req.params.taskId, company_id: req.user.tenantId },
+      where: { id: req.params.taskId, company_id: req.user.companyId },
     });
     if (!task) return sendError(res, ERROR_CODES.NOT_FOUND, 'Task not found', 404);
     if (task.status !== 'review_required')
@@ -166,7 +166,7 @@ router.post('/task/:taskId/cancel', async (req, res) => {
 router.post('/task/:taskId/refresh-captcha', async (req, res) => {
   try {
     const task = await req.db.automation_tasks.findFirst({
-      where: { id: req.params.taskId, company_id: req.user.tenantId },
+      where: { id: req.params.taskId, company_id: req.user.companyId },
     });
     if (!task) return sendError(res, ERROR_CODES.NOT_FOUND, 'Task not found', 404);
     if (task.status !== 'captcha_required')
