@@ -1,7 +1,7 @@
 ﻿const jwt = require('jsonwebtoken');
 const { sendError, ERROR_CODES } = require('../utils/response');
 const { PrismaClient } = require('@prisma/client');
-const { resolveTenantIdentity } = require('../utils/tenantIdentity');
+const { resolveTenantIdentity, matchesTenantContext } = require('../utils/tenantIdentity');
 
 // ── Singleton Prisma client for the central (platform-level) database ─────────
 function getCentralClient() {
@@ -58,7 +58,7 @@ const authMiddleware = async (req, res, next) => {
       indexedTenantId,
     });
 
-    if (req.tenant?.id && tenantIdentity.centralTenantId !== req.tenant.id) {
+    if (!matchesTenantContext(tenantIdentity, req.tenant?.id)) {
       return sendError(res, ERROR_CODES.FORBIDDEN, 'Tenant context does not match the authenticated session.', 403);
     }
 
