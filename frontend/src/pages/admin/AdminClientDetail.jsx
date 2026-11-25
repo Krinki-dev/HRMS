@@ -302,6 +302,7 @@ export default function AdminClientDetail() {
                   ['Unclassified', migration.summary.unclassifiedTables],
                   ['Ambiguous paths', migration.summary.ambiguousTables || 0],
                   ['Cross-schema FKs', migration.summary.crossSchemaForeignKeyCount || 0],
+                  ['Cross-tenant refs', migration.summary.crossTenantReferenceCount || 0],
                   ['FK relationships', migration.foreignKeyCount],
                   ['Destination schema', migration.summary.destinationSchemaExists ? 'Already exists' : 'Not created'],
                 ].map(([label, value]) => (
