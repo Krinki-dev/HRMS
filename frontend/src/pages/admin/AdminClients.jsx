@@ -349,7 +349,7 @@ export default function AdminClients() {
                 )}
               </div>
             )}
-            {['external_cloud', 'local', 'hybrid'].includes(deleteModal?.dbMode) && (
+            {['external_cloud', 'local'].includes(deleteModal?.dbMode) && (
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, marginBottom: 16 }}>
                 <input
                   type="checkbox"
@@ -373,7 +373,7 @@ export default function AdminClients() {
                     !backupClientSecret ||
                     (backupProvider === 'gdrive' && !backupRefreshToken)
                   )) ||
-                  (['external_cloud', 'local', 'hybrid'].includes(deleteModal?.dbMode) && !deleteConfirmExternal)
+                  (['external_cloud', 'local'].includes(deleteModal?.dbMode) && !deleteConfirmExternal)
                 }
                 onClick={() => deleteM.mutate({
                   id: deleteModal.id,
