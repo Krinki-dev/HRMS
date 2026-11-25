@@ -6,6 +6,7 @@ const logger = require('../../shared/utils/logger');
 const { generateInvoicePDF } = require('../../shared/utils/pdf.service');
 const { withTenantRLS, withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 const plansService = require('./plans.service');
+const { resolveCentralTenantId } = require('../../shared/utils/tenantResolver');
 const { buildFreePlanEntitlements, buildTrialPlanEntitlements } = require('./subscriptionEntitlements');
 
 /**
@@ -172,7 +173,7 @@ exports.downloadInvoicePDF = async (req, res) => {
  */
 exports.getMySubscription = async (req, res) => {
   // Identify tenant from the auth token
-  req.params.tenantId = req.user.centralTenantId || req.user.tenantId;
+  req.params.tenantId = resolveCentralTenantId(req);
   return exports.getTenantPricing(req, res);
 };
 
@@ -181,7 +182,7 @@ exports.getMySubscription = async (req, res) => {
  */
 exports.getMyInvoices = async (req, res) => {
   // Identify tenant from the auth token
-  req.params.tenantId = req.user.centralTenantId || req.user.tenantId;
+  req.params.tenantId = resolveCentralTenantId(req);
   return exports.getTenantInvoices(req, res);
 };
 
@@ -192,7 +193,7 @@ exports.getMyInvoices = async (req, res) => {
  * This path never creates a payment order or invoice.
  */
 exports.activateFreePlan = async (req, res) => {
-  const tenantId = req.user?.centralTenantId || req.user?.tenantId;
+  const tenantId = resolveCentralTenantId(req);
   if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Tenant session required', 401);
 
   try {
@@ -275,7 +276,7 @@ exports.activateFreePlan = async (req, res) => {
  * managed cloud, 14 days for self-hosted); this endpoint does not extend it.
  */
 exports.activateTrial = async (req, res) => {
-  const tenantId = req.user?.centralTenantId || req.user?.tenantId;
+  const tenantId = resolveCentralTenantId(req);
   if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Tenant session required', 401);
 
   try {
