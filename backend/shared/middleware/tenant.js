@@ -50,7 +50,7 @@ function getCentralDB() {
 // before this router is enabled for production traffic.
 async function resolveTenantDB(tenant) {
   const target = resolveTenantStorageTarget(tenant, {
-    cloudDatabaseUrl: process.env.CLOUD_TENANT_DATABASE_URL || process.env.DEV_TENANT_DATABASE_URL,
+    cloudDatabaseUrl: process.env.CLOUD_TENANT_DATABASE_URL || (process.env.NODE_ENV === 'development' ? process.env.DEV_TENANT_DATABASE_URL : null),
     // Supports both previously encrypted values and explicitly configured
     // plaintext URLs during a controlled migration; invalid ciphertext fails
     // URL validation rather than being used as a connection string.
