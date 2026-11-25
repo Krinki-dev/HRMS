@@ -420,3 +420,70 @@ The purpose of this register is to make the architecture coherent before further
 ---
 
 This document is an architecture audit and execution baseline. The source tree and the latest verified branch head remain authoritative when a future code change supersedes a written status.
+
+
+## 15. Additional historical + current-source findings — 2026-11-25
+
+This section adds findings from direct old-commit patch inspection and follow-through into current callers. It is not based on commit titles alone.
+
+### 15.1 Actual old baseline shape
+
+At common base cd400a602eb255029c1daeeae1d35f0c7b7ee948, the repository contained 336 tracked files and 19 backend module families: assets, attendance, audit, auth, automation, compliance, dashboard, employees, expenses, leave, notifications, payroll, performance, platform, recruitment, reports, roles, settings and training. The current tree contains 388 tracked files; tree comparison shows 52 additions and no paths deleted relative to that common base. This indicates the recent branch changes are largely additive; old implementation files and competing paths were not comprehensively removed.
+
+The frontend also contains two route/layout generations:
+- On tenant domains, App.jsx mounts HRAppLayout and the legacy HR page set.
+- The richer module route set (employee import/edit/profile, attendance shifts/corrections, leave workflows, payroll setup/reports, recruitment sub-pages, assets, expenses and training) is gated under IS_PLATFORM_ROOT in the current App.jsx.
+- frontend/src/router/clientRoutes.jsx defines another older limited route tree and is not imported by App.jsx in the checked source. GitHub search found only its own definition.
+This split may be intentional for the platform-root deployment, but the actual tenant-host experience must be confirmed with route-level E2E tests before considering modules complete. Do not delete either layout without proving every route and user role has a replacement.
+
+### 15.2 P0 security regression — access token persisted in localStorage
+
+Current source:
+- frontend/src/store/authStore.js persists accessToken in Zustand persist state, and explicitly writes it to localStorage.
+- frontend/src/services/api.js reads localStorage.accessToken for every Authorization header, writes refreshed tokens back to localStorage, and removes them on refresh failure.
+- The refresh token is also held in an httpOnly cookie, which is the intended half of the contract.
+
+This contradicts the frozen security rule that tokens must not be stored in localStorage. A script running under the origin can read the access token. Required correction: keep the access token only in memory, refresh silently through the httpOnly cookie, do not persist it in Zustand/localStorage/sessionStorage, and add tests for reload/refresh/logout and concurrent 401 handling. Re-audit CSRF and cookie scope while doing this. Until fixed, the storage policy must not be described as fully compliant.
+
+### 15.3 P0/P1 — central login lookup can select an ambiguous tenant
+
+Current Central schema defines a composite uniqueness rule for central_user_index on (email, company_id), not a global unique email. Current auth.service.js lookupEmail() and resolveTenantDb(email) query central_user_index by email alone with LIMIT 1. Therefore the database allows the same email to be indexed under multiple tenants, while authentication lookup may select an arbitrary first row. The same global-resolution pattern exists in phone/employee-ID lookup paths.
+
+Required correction:
+- Resolve by explicit tenant/domain context where available.
+- Where a user is genuinely a member of multiple tenants, return a tenant-choice result rather than choosing LIMIT 1.
+- Enforce membership before resolving the operational database.
+- Do not expose a user's email, company details or tenant membership to unauthenticated callers unnecessarily.
+- Add tests for the same email in two tenants, the same phone in two tenants and the same employee ID in two companies.
+
+### 15.4 Lookup enumeration and Central RLS call-site audit
+
+Current auth routes return tenant subdomain, company name, logo and plan from unauthenticated email/phone/employee-ID lookup endpoints; employee-ID lookup also returns email. These routes have IP rate limiting (20 lookups/minute), but rate limiting alone does not eliminate account or tenant enumeration. Review data minimization, uniform responses and OTP proof before returning tenant-specific details.
+
+Current shared/middleware/auth.js queries central_user_index directly with raw Central Prisma SQL to discover is_platform_admin and catches errors non-fatally. The query is not wrapped with withPlatformAdminRLS. A Central database error therefore falls back to is_platform_admin=false; more importantly, the Central RLS call-site audit is incomplete. Route all protected Central reads through the transaction-scoped RLS helper or a deliberately documented least-privilege access path, and test the production DB role.
+
+### 15.5 Stale development checkout path remains in current frontend
+
+frontend/src/pages/platform/BillingConfigTab.jsx still contains an orderData.mock branch that posts fabricated order/payment/signature values to /platform/subscribe/verify and then shows a dev-mode activation toast. Current server-side verification rejects mock payment paths, so this should not activate a real subscription, but it is stale and misleading code. Remove the branch after confirming no controlled automated test depends on it. Never restore server-side mock activation.
+
+### 15.6 Historical secrets and local artifacts in Git history
+
+Direct historical patch review found:
+- An older tracked backend/.env snapshot containing database-URL-shaped credential values. The user previously reported this file used dummy values, so this audit does not assume they were live.
+- An older tracked frontend/certs/server.key file, later removed from the repository tip.
+- These files are absent from the current source tree and the current .gitignore excludes .env and private-key/certificate patterns. However, deleting a file from a later commit does not erase earlier public Git history.
+
+Do not reproduce historical values in documentation or logs. Verify offline whether any historical value/key was ever valid. If so, rotate the associated database credential/certificate private key and review provider access logs. History rewriting is optional only after rotation and team coordination; it does not replace rotation.
+
+### 15.7 Other source-level history conclusions
+
+- July billing UI introduced a mock subscription verification path and automatic-renewal messaging; current Razorpay/manual-renewal policy and server rejection supersede it. One admin BillingConfigTab mock branch still remains as documented above.
+- Historical 2026-07-10 payment handlers included PhonePe/JioPay invoice-paid behavior; current source disables those provider callback paths. Do not treat old gateway code or docs as launch-ready integrations.
+- Historical HR UI and frontend source were gradually changed through separate HR and modular page trees. The current App.jsx still mounts both generations depending on hostname, which is why frontend E2E coverage must be host-specific.
+- Historical one-off migrate_user_index.js scans Central tenant records and reads per-tenant connection properties to build an index. Treat as an operator-only migration utility; do not run automatically or against production without code review, explicit tenant allowlist, secret-handling review and dry-run.
+- Prisma's generated Central client has been committed in Git history and is also regenerated by backend postinstall. Treat prisma/central.prisma and prisma/schema.prisma as source-of-truth; regenerate clients rather than hand-editing generated artifacts.
+- Historical deployment code made one canonical migration failure non-fatal to server startup. A deployment must not be considered ready merely because the web process starts; migration/schema compatibility must be a hard readiness gate.
+
+### 15.8 Review scope boundary
+
+The baseline file tree and major security/data paths have now been inspected, and additional old commit patches were checked directly. The 99 historical baseline commits have not all been independently reviewed line by line. Remaining work is limited to the commit patches and module/service call paths whose behavior is not established by the present source or later tests; that work remains open in Section 13. This document must not be read as a claim that every legacy feature has passed a functional or legal compliance audit.
