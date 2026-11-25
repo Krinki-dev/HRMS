@@ -20,12 +20,12 @@ const { normalizeHostname, buildHostnameCandidates } = require('../../shared/uti
  */
 router.get('/marketing', async (req, res) => {
   try {
-    const rows = await centralPrisma.$queryRaw`
+    const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
       SELECT values
       FROM platform_settings
       WHERE id = 'Marketing'
       LIMIT 1
-    `;
+    `);
     const values = rows[0]?.values || {};
     return sendSuccess(res, {
       heroHeading: typeof values.heroHeading === 'string' ? values.heroHeading : null,
@@ -213,14 +213,14 @@ router.post('/onboarding/save-step', auth, async (req, res) => {
       if (!/^https:\/\//i.test(logoUrl)) {
         return sendError(res, ERROR_CODES.VALIDATION, 'Logo must use a secure HTTPS URL', 400);
       }
-      await centralPrisma.$executeRaw`
+      await withPlatformAdminRLS(centralPrisma, (tx) => tx.$executeRaw`
         UPDATE tenants SET logo_url = ${logoUrl}, updated_at = NOW()
         WHERE id = ${tenantId}::uuid AND deleted_at IS NULL
-      `;
+      `);
     }
 
     if (step === 'backup' && !skipped) {
-      await upsertBackupConfigForTenant(centralPrisma, tenantId, data);
+      await withPlatformAdminRLS(centralPrisma, (tx) => upsertBackupConfigForTenant(tx, tenantId, data));
     }
 
     // Record only status metadata; never persist passwords, OAuth tokens, SMTP
