@@ -104,3 +104,18 @@ test('ordinary tenant users cannot override their token Central tenant through r
     tenant: { id: 'other-tenant-id' },
   }), 'token-tenant-id');
 });
+
+
+test('ordinary users cannot derive Central tenant identity from request host context', () => {
+  assert.throws(() => resolveCentralTenantId({
+    user: { is_platform_admin: false, companyId: 'company-id', tenantId: 'legacy-company-id' },
+    tenant: { id: 'host-selected-tenant-id' },
+  }), { code: 'TENANT_REQUIRED' });
+});
+
+test('platform admins require an explicitly resolved selected tenant', () => {
+  assert.throws(() => resolveCentralTenantId({
+    user: { is_platform_admin: true, centralTenantId: 'admin-home-tenant' },
+    tenant: null,
+  }), { code: 'TENANT_REQUIRED' });
+});
