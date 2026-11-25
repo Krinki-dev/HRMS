@@ -306,3 +306,12 @@ No DB connection, migration, staging, deployment, live payment or production cha
 - CI revealed a pre-existing billing renewal period-end expectation/implementation mismatch. Corrected invoice period_end to the inclusive prior calendar day and aligned its regression test. A backend Actions run for commit 3388326dc14305f58487e26b578f2e613896bddb passed (including install, Prisma generation and backend tests); later commits added more workbook validation/security changes and their latest CI run is still pending at this checkpoint.
 - Several intermediate CI runs failed because of test/validator changes during this session; the formula-cell and strict-date validator fixes are now committed in 9d93d7394e397c4f0b142d86a7daef0cd99267ba. Do not treat the latest code as fully green until its Actions run completes.
 - Still outstanding: XLSX read/write and formatted template generation, server-side CSV/XLSX preview and confirmation APIs, database conflict checks, transaction-safe parent/child persistence, error workbook, UI integration, relational CSV ZIP export and end-to-end round-trip tests. No XLSX package has yet been added to the backend dependency lockfile.
+
+
+## Session update — 2026-11-25
+
+- Revalidated exact prior HEAD `a00e885a7b35a531a1df788821ba5b0518e71f9c` Backend Tests: 89 passed, 1 failed, 4 skipped out of 94.
+- The single failure was stale test-only expectation `shared_tenants`; the approved shared schema is `public`. Updated test title and both schema assertions.
+- Test-only commit: `62d56b43dec7d51f38863d10661fa1ca4428577d`. CI for this new commit remains unverified at the time of this update.
+- No runtime behavior, migrations, live DB, payment, deployment, or tenant data was changed.
+- P0 audit still open: distinct `tenantId` / `companyId` token context, fail-closed resolver integration, Free/Trial signup to `public`, Paid provisioning, public RLS, PostgreSQL tenant migration baseline, and legacy routing removal after classification.
