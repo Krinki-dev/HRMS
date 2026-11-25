@@ -5,7 +5,7 @@ const ctrl = {
 
   dashboard: async (req, res) => {
     try {
-      sendSuccess(res, await svc.dashboard(req.db, req.user.tenantId));
+      sendSuccess(res, await svc.dashboard(req.db, req.user.companyId));
     } catch (e) {
       console.error('[Compliance/dashboard]', e.message);
       sendError(res, ERROR_CODES.SERVER, 'Dashboard load failed.', 500);
@@ -14,7 +14,7 @@ const ctrl = {
 
   calendar: async (req, res) => {
     try {
-      sendSuccess(res, await svc.calendar(req.db, req.user.tenantId, parseInt(req.query.year)));
+      sendSuccess(res, await svc.calendar(req.db, req.user.companyId, parseInt(req.query.year)));
     } catch (e) {
       console.error('[Compliance/calendar]', e.message);
       sendError(res, ERROR_CODES.SERVER, 'Calendar load failed.', 500);
@@ -24,7 +24,7 @@ const ctrl = {
   pfSummary: async (req, res) => {
     try {
       const { month, year } = req.query;
-      sendSuccess(res, await svc.pfSummary(req.db, req.user.tenantId, parseInt(month), parseInt(year)));
+      sendSuccess(res, await svc.pfSummary(req.db, req.user.companyId, parseInt(month), parseInt(year)));
     } catch (e) {
       console.error('[Compliance/pfSummary]', e.message);
       sendError(res, ERROR_CODES.SERVER, 'PF summary failed.', 500);
@@ -35,7 +35,7 @@ const ctrl = {
     try {
       const { month, year } = req.body;
       if (!month || !year) return sendError(res, ERROR_CODES.VALIDATION, 'Month and year required.');
-      sendSuccess(res, await svc.generateECR(req.db, req.user.tenantId, parseInt(month), parseInt(year)));
+      sendSuccess(res, await svc.generateECR(req.db, req.user.companyId, parseInt(month), parseInt(year)));
     } catch (e) {
       if (e.message === 'NO_PAYROLL')         return sendError(res, ERROR_CODES.NOT_FOUND, 'No payroll run found for this period.', 404);
       if (e.message === 'PAYROLL_NOT_LOCKED') return sendError(res, ERROR_CODES.VALIDATION, 'Payroll must be processed before generating ECR.');
@@ -46,7 +46,7 @@ const ctrl = {
 
   missingUAN: async (req, res) => {
     try {
-      sendSuccess(res, await svc.missingUAN(req.db, req.user.tenantId));
+      sendSuccess(res, await svc.missingUAN(req.db, req.user.companyId));
     } catch (e) {
       console.error('[Compliance/missingUAN]', e.message);
       sendError(res, ERROR_CODES.SERVER, 'Failed to load missing UAN list.', 500);
@@ -57,7 +57,7 @@ const ctrl = {
     try {
       const { updates } = req.body;
       if (!updates?.length) return sendError(res, ERROR_CODES.VALIDATION, 'No updates provided.');
-      sendSuccess(res, await svc.updateUAN(req.db, req.user.tenantId, updates), 'UAN updated.');
+      sendSuccess(res, await svc.updateUAN(req.db, req.user.companyId, updates), 'UAN updated.');
     } catch (e) {
       console.error('[Compliance/updateUAN]', e.message);
       sendError(res, ERROR_CODES.SERVER, 'Failed to update UAN.', 500);
@@ -67,7 +67,7 @@ const ctrl = {
   esiSummary: async (req, res) => {
     try {
       const { month, year } = req.query;
-      sendSuccess(res, await svc.esiSummary(req.db, req.user.tenantId, parseInt(month), parseInt(year)));
+      sendSuccess(res, await svc.esiSummary(req.db, req.user.companyId, parseInt(month), parseInt(year)));
     } catch (e) {
       console.error('[Compliance/esiSummary]', e.message);
       sendError(res, ERROR_CODES.SERVER, 'ESI summary failed.', 500);
@@ -78,7 +78,7 @@ const ctrl = {
     try {
       const { month, year } = req.body;
       if (!month || !year) return sendError(res, ERROR_CODES.VALIDATION, 'Month and year required.');
-      sendSuccess(res, await svc.generateESIChallan(req.db, req.user.tenantId, parseInt(month), parseInt(year)));
+      sendSuccess(res, await svc.generateESIChallan(req.db, req.user.companyId, parseInt(month), parseInt(year)));
     } catch (e) {
       if (e.message === 'NO_PAYROLL')         return sendError(res, ERROR_CODES.NOT_FOUND, 'No payroll found for this period.', 404);
       if (e.message === 'PAYROLL_NOT_LOCKED') return sendError(res, ERROR_CODES.VALIDATION, 'Payroll must be processed first.');
@@ -99,7 +99,7 @@ const ctrl = {
   ptSummary: async (req, res) => {
     try {
       const { month, year } = req.query;
-      sendSuccess(res, await svc.ptSummary(req.db, req.user.tenantId, parseInt(month), parseInt(year)));
+      sendSuccess(res, await svc.ptSummary(req.db, req.user.companyId, parseInt(month), parseInt(year)));
     } catch (e) {
       console.error('[Compliance/ptSummary]', e.message);
       sendError(res, ERROR_CODES.SERVER, 'PT summary failed.', 500);
@@ -110,7 +110,7 @@ const ctrl = {
     try {
       const { month, year } = req.body;
       if (!month || !year) return sendError(res, ERROR_CODES.VALIDATION, 'Month and year required.');
-      sendSuccess(res, await svc.generatePTChallan(req.db, req.user.tenantId, parseInt(month), parseInt(year)));
+      sendSuccess(res, await svc.generatePTChallan(req.db, req.user.companyId, parseInt(month), parseInt(year)));
     } catch (e) {
       if (e.message === 'NO_PAYROLL')         return sendError(res, ERROR_CODES.NOT_FOUND, 'No payroll found for this period.', 404);
       if (e.message === 'PAYROLL_NOT_LOCKED') return sendError(res, ERROR_CODES.VALIDATION, 'Payroll must be processed first.');
@@ -122,7 +122,7 @@ const ctrl = {
   tdsSummary: async (req, res) => {
     try {
       const { month, year } = req.query;
-      sendSuccess(res, await svc.tdsSummary(req.db, req.user.tenantId, parseInt(month), parseInt(year)));
+      sendSuccess(res, await svc.tdsSummary(req.db, req.user.companyId, parseInt(month), parseInt(year)));
     } catch (e) {
       console.error('[Compliance/tdsSummary]', e.message);
       sendError(res, ERROR_CODES.SERVER, 'TDS summary failed.', 500);
@@ -154,7 +154,7 @@ const ctrl = {
   generateForm16: async (req, res) => {
     try {
       const { financialYear } = req.body;
-      sendSuccess(res, await svc.generateForm16(req.db, req.user.tenantId, financialYear));
+      sendSuccess(res, await svc.generateForm16(req.db, req.user.companyId, financialYear));
     } catch (e) {
       console.error('[Compliance/generateForm16]', e.message);
       sendError(res, ERROR_CODES.SERVER, 'Form 16 generation failed.', 500);
@@ -173,7 +173,7 @@ const ctrl = {
   lwfSummary: async (req, res) => {
     try {
       const { month, year } = req.query;
-      sendSuccess(res, await svc.lwfSummary(req.db, req.user.tenantId, parseInt(month), parseInt(year)));
+      sendSuccess(res, await svc.lwfSummary(req.db, req.user.companyId, parseInt(month), parseInt(year)));
     } catch (e) {
       console.error('[Compliance/lwfSummary]', e.message);
       sendError(res, ERROR_CODES.SERVER, 'LWF summary failed.', 500);
@@ -184,7 +184,7 @@ const ctrl = {
     try {
       const { month, year } = req.body;
       if (!month || !year) return sendError(res, ERROR_CODES.VALIDATION, 'Month and year required.');
-      sendSuccess(res, await svc.generateLWFReturn(req.db, req.user.tenantId, parseInt(month), parseInt(year)));
+      sendSuccess(res, await svc.generateLWFReturn(req.db, req.user.companyId, parseInt(month), parseInt(year)));
     } catch (e) {
       if (e.message === 'NO_PAYROLL') return sendError(res, ERROR_CODES.NOT_FOUND, 'No payroll found for this period.', 404);
       console.error('[Compliance/generateLWFReturn]', e.message);
@@ -195,7 +195,7 @@ const ctrl = {
   listFilings: async (req, res) => {
     try {
       const { month, year } = req.query;
-      sendSuccess(res, await svc.listFilings(req.db, req.user.tenantId, parseInt(month), parseInt(year)));
+      sendSuccess(res, await svc.listFilings(req.db, req.user.companyId, parseInt(month), parseInt(year)));
     } catch (e) {
       console.error('[Compliance/listFilings]', e.message);
       sendError(res, ERROR_CODES.SERVER, 'Failed to load filings.', 500);
@@ -204,7 +204,7 @@ const ctrl = {
 
   markFiled: async (req, res) => {
     try {
-      sendSuccess(res, await svc.markFiled(req.db, req.user.tenantId, req.params.id, req.body), 'Marked as filed.');
+      sendSuccess(res, await svc.markFiled(req.db, req.user.companyId, req.params.id, req.body), 'Marked as filed.');
     } catch (e) {
       if (e.message === 'NOT_FOUND') return sendError(res, ERROR_CODES.NOT_FOUND, 'Filing not found.', 404);
       console.error('[Compliance/markFiled]', e.message);
@@ -215,7 +215,7 @@ const ctrl = {
   ensureFilings: async (req, res) => {
     try {
       const { month, year } = req.body;
-      await svc.ensureFilings(req.db, req.user.tenantId, parseInt(month) || undefined, parseInt(year) || undefined);
+      await svc.ensureFilings(req.db, req.user.companyId, parseInt(month) || undefined, parseInt(year) || undefined);
       sendSuccess(res, null, 'Filings ensured.');
     } catch (e) {
       console.error('[Compliance/ensureFilings]', e.message);
