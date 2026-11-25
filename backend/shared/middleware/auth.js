@@ -2,6 +2,7 @@
 const { sendError, ERROR_CODES } = require('../utils/response');
 const { PrismaClient } = require('@prisma/client');
 const { resolveTenantIdentity, matchesTenantContext } = require('../utils/tenantIdentity');
+const { withPlatformAdminRLS } = require('../utils/rlsContext');
 
 // ── Singleton Prisma client for the central (platform-level) database ─────────
 function getCentralClient() {
@@ -38,11 +39,11 @@ const authMiddleware = async (req, res, next) => {
     let indexedTenantId = null;
     try {
       const central = getCentralClient();
-      const rows = await central.$queryRaw`
+      const rows = await withPlatformAdminRLS(central, (tx) => tx.$queryRaw`
         SELECT is_platform_admin, company_id FROM central_user_index
         WHERE user_id = ${decoded.id}::uuid AND is_active = true
         LIMIT 1
-      `;
+      `);
       if (rows.length > 0) {
         isPlatformAdmin = rows[0].is_platform_admin;
         indexedTenantId = rows[0].company_id || null;
