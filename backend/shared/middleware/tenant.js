@@ -213,7 +213,7 @@ const tenantMiddleware = async (req, res, next) => {
       FROM tenants t
       LEFT JOIN tenant_modules tm ON tm.tenant_id = t.id
       WHERE (
-        (${lookupSubdomain ? centralDB.$queryRaw`LOWER(t.subdomain) = LOWER(${lookupSubdomain})` : centralDB.$queryRaw`FALSE`})
+        (${Boolean(lookupSubdomain)} = true AND LOWER(t.subdomain) = LOWER(${lookupSubdomain || ''}))
         OR LOWER(t.custom_domain) = LOWER(${normalizedHost})
         OR LOWER(t.custom_domain) = LOWER(${normalizedHost.replace(/^www\./, '')})
         OR LOWER(t.custom_domain) = LOWER(${normalizedHost.startsWith('hrms.') ? normalizedHost.slice('hrms.'.length) : `hrms.${normalizedHost}`})
