@@ -34,4 +34,19 @@ CREATE POLICY tenant_migration_jobs_platform_admin
   USING (current_setting('jwt.claims.is_platform_admin', true) = 'true')
   WITH CHECK (current_setting('jwt.claims.is_platform_admin', true) = 'true');
 
+CREATE OR REPLACE FUNCTION public.prevent_tenant_migration_job_mutation()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $
+BEGIN
+  RAISE EXCEPTION 'Tenant migration inventory audit records are immutable';
+END;
+$;
+
+DROP TRIGGER IF EXISTS trg_tenant_migration_jobs_immutable
+  ON public.tenant_migration_jobs;
+CREATE TRIGGER trg_tenant_migration_jobs_immutable
+  BEFORE UPDATE OR DELETE ON public.tenant_migration_jobs
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_tenant_migration_job_mutation();
+
 COMMIT;
