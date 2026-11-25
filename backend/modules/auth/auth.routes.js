@@ -362,10 +362,10 @@ router.post('/login', loginLimiter, async (req, res) => {
     }
     const { user } = result;
     const permissions = safeParseJSON(user.role?.permissions);
-    const accessToken = authService.signAccessToken(user, permissions, resolvedCentralTenantId);
+    const accessToken = authService.signAccessToken(user, permissions, tenantId || null);
     const refreshToken = authService.signRefreshToken(user.id);
     setRefreshCookie(res, refreshToken);
-    const tenantInfo = await authService.getTenantInfo(tenantId || user.company_id);
+    const tenantInfo = await authService.getTenantInfo(tenantId || null);
     const isPlatformAdmin = await authService.isPlatformAdmin(user.id);
     const payload = authService.buildUserPayload(user, permissions, tenantInfo, isPlatformAdmin);
     eventNotifier.notifyLogin({
@@ -707,7 +707,7 @@ router.post('/ott/exchange', async (req, res) => {
         const accessToken  = signAccessToken(user, permissions, req.tenant?.id || null);
         const refreshToken = signRefreshToken(user.id);
         setRefreshCookie(res, refreshToken);
-        const tenantInfo = await authService.getTenantInfo(req.tenant?.id || user.company_id);
+        const tenantInfo = await authService.getTenantInfo(req.tenant?.id || null);
         const payload = buildUserPayload(user, permissions, tenantInfo);
         payload.is_platform_admin = req.user?.is_platform_admin || false;
         return sendSuccess(res, { accessToken, user: payload });
