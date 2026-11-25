@@ -103,7 +103,7 @@ test('builds a read-only inventory using the verified operational company UUID',
         return { rows: [{ schema_name: 'public' }] };
       }
       if (sql.includes('information_schema.tables')) {
-        return { rows: ['companies', 'employees', 'attendance', 'lookup_values'].map((table_name) => ({ table_name })) };
+        return { rows: ['companies', 'employees', 'attendance', 'lookup_values', 'employee_notes'].map((table_name) => ({ table_name })) };
       }
       if (sql.includes('information_schema.columns')) {
         return { rows: [
@@ -113,13 +113,17 @@ test('builds a read-only inventory using the verified operational company UUID',
           { table_name: 'employees', column_name: 'company_id', data_type: 'uuid' },
           { table_name: 'attendance', column_name: 'employee_id', data_type: 'uuid', is_nullable: 'NO' },
           { table_name: 'lookup_values', column_name: 'id', data_type: 'uuid' },
+          { table_name: 'employee_notes', column_name: 'company_id', data_type: 'uuid', is_nullable: 'NO' },
+          { table_name: 'employee_notes', column_name: 'employee_id', data_type: 'uuid', is_nullable: 'NO' },
         ] };
       }
       if (sql.includes('tenant_owned_rows')) return { rows: [{ tenant_owned_rows: '2', orphan_rows: '0', nullable_reference_rows: '0' }] };
+      if (sql.includes('cross_tenant_rows')) return { rows: [{ cross_tenant_rows: '1' }] };
       if (sql.includes('pg_constraint')) {
         return { rows: [
           { child_schema: 'public', table_name: 'attendance', foreign_schema: 'public', foreign_table_name: 'employees', constraint_name: 'attendance_employee_id_fkey', child_columns: ['employee_id'], parent_columns: ['id'], is_validated: true, is_deferrable: false, match_type: 's' },
           { child_schema: 'public', table_name: 'audit_outbox', foreign_schema: 'shared', foreign_table_name: 'global_codes', constraint_name: 'audit_global_code_fk', child_columns: ['code_id'], parent_columns: ['id'], is_validated: false, is_deferrable: false, match_type: 's' },
+          { child_schema: 'public', table_name: 'employee_notes', foreign_schema: 'public', foreign_table_name: 'employees', constraint_name: 'notes_employee_fk', child_columns: ['employee_id'], parent_columns: ['id'], is_validated: true, is_deferrable: false, match_type: 's' },
         ] };
       }
       if (sql.includes('FROM "public".companies') && sql.includes('WHERE ($1::text IS NULL')) {
@@ -127,6 +131,7 @@ test('builds a read-only inventory using the verified operational company UUID',
         return { rows: [{ id: '11111111-1111-4111-8111-111111111111' }] };
       }
       if (sql.includes('FROM "public".companies WHERE id = $1')) return { rows: [{ count: '1' }] };
+      if (sql.includes('FROM "public"."employee_notes"')) return { rows: [{ count: '4' }] };
       if (sql.includes('FROM "public"."employees"')) {
         assert.deepEqual(params, ['11111111-1111-4111-8111-111111111111']);
         return { rows: [{ count: '3' }] };
@@ -151,6 +156,7 @@ test('builds a read-only inventory using the verified operational company UUID',
   assert.equal(result.summary.destinationSchemaExists, false);
   assert.equal(result.summary.ambiguousTables, 0);
   assert.equal(result.summary.crossSchemaForeignKeyCount, 1);
+  assert.equal(result.summary.crossTenantReferenceCount, 1);
   assert.equal(result.tables.find((row) => row.name === 'companies').sourceRows, 1);
   assert.equal(result.tables.find((row) => row.name === 'employees').sourceRows, 3);
   assert.equal(result.tables.find((row) => row.name === 'attendance').scope, 'dependent');
@@ -163,7 +169,10 @@ test('builds a read-only inventory using the verified operational company UUID',
   assert.ok(result.blockers.some((item) => item.includes('no proven tenant ownership path')));
   assert.ok(result.blockers.some((item) => item.includes('NOT VALID')));
   assert.ok(result.blockers.some((item) => item.includes('cross the source schema boundary')));
-  assert.equal(result.foreignKeys.length, 2);
+  assert.ok(result.blockers.some((item) => item.includes('reference records owned by another tenant')));
+  assert.equal(result.tables.find((row) => row.name === 'employee_notes').sourceRows, 4);
+  assert.deepEqual(result.crossTenantReferences, [{ table: 'employee_notes', referencesTable: 'employees', constraint: 'notes_employee_fk', rows: 1 }]);
+  assert.equal(result.foreignKeys.length, 3);
   assert.deepEqual(result.foreignKeys[0], {
     schema: 'public',
     table: 'attendance',
