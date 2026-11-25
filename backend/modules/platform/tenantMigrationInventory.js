@@ -29,11 +29,13 @@ function classifyTenantTables({ tables, columns, foreignKeys, sourceSchema = nul
     // mapping is required, including every member of a composite key.
     if (!childColumns.length || childColumns.length !== parentColumns.length) continue;
     if (!parents.has(fk.table_name)) parents.set(fk.table_name, []);
+    const columnByName = new Map(columns.filter((column) => column.table_name === fk.table_name).map((column) => [column.column_name, column]));
     parents.get(fk.table_name).push({
       table: fk.foreign_table_name,
       constraint: fk.constraint_name || null,
       childColumns,
       parentColumns,
+      childNullable: childColumns.map((column) => columnByName.get(column)?.is_nullable !== 'NO'),
       validated: fk.is_validated !== false,
     });
   }
@@ -58,6 +60,7 @@ function classifyTenantTables({ tables, columns, foreignKeys, sourceSchema = nul
           constraint: relation.constraint,
           childColumns: relation.childColumns,
           parentColumns: relation.parentColumns,
+          childNullable: relation.childNullable,
           validated: relation.validated,
         }];
         if (direct.has(relation.table)) {
@@ -84,6 +87,40 @@ function classifyTenantTables({ tables, columns, foreignKeys, sourceSchema = nul
     }
   }
   return classification;
+}
+
+function buildDependentInventoryQuery({ sourceSchema, table, relations, rootTable }) {
+  if (!Array.isArray(relations) || !relations.length) throw new Error('A verified ownership relation path is required.');
+  const aliases = relations.map((_, index) => `t${index}`);
+  let from = `${quoteIdentifier(sourceSchema)}.${quoteIdentifier(table)} AS ${aliases[0]}`;
+  for (let index = 0; index < relations.length; index += 1) {
+    const relation = relations[index];
+    if (!relation.validated) throw new Error('Unvalidated foreign keys cannot be used for tenant row counting.');
+    if (!relation.childColumns?.length || relation.childColumns.length !== relation.parentColumns?.length) {
+      throw new Error('Foreign-key column mappings are incomplete.');
+    }
+    const nextAlias = `t${index + 1}`;
+    const join = relation.childColumns.map((column, columnIndex) =>
+      `${aliases[index]}.${quoteIdentifier(column)} = ${nextAlias}.${quoteIdentifier(relation.parentColumns[columnIndex])}`
+    ).join(' AND ');
+    from += ` LEFT JOIN ${quoteIdentifier(sourceSchema)}.${quoteIdentifier(relation.toTable)} AS ${nextAlias} ON ${join}`;
+  }
+  const rootAlias = `t${relations.length}`;
+  const rootKey = relations[relations.length - 1].parentColumns[0];
+  const ownerPredicate = rootTable === 'companies'
+    ? `${rootAlias}.${quoteIdentifier('id')} = $1`
+    : `${rootAlias}.${quoteIdentifier('company_id')} = $1`;
+  const nullableChecks = relations.flatMap((relation, index) =>
+    relation.childColumns.map((column) => `${aliases[index]}.${quoteIdentifier(column)} IS NULL`)
+  );
+  const nullablePredicate = nullableChecks.length ? nullableChecks.join(' OR ') : 'FALSE';
+  return {
+    sql: `SELECT
+      COUNT(*) FILTER (WHERE ${ownerPredicate})::text AS tenant_owned_rows,
+      COUNT(*) FILTER (WHERE ${rootAlias}.${quoteIdentifier(rootKey)} IS NULL)::text AS orphan_rows,
+      COUNT(*) FILTER (WHERE ${nullablePredicate})::text AS nullable_reference_rows
+      FROM ${from}`,
+  };
 }
 
 async function inspectTenantMigration({
@@ -184,6 +221,7 @@ async function inspectTenantMigration({
     });
 
     const directCounts = {};
+    const dependentCounts = {};
     for (const table of tables) {
       if (classification[table].scope !== 'direct') continue;
       const count = table === 'companies'
@@ -196,6 +234,20 @@ async function inspectTenantMigration({
             [companyId]
           );
       directCounts[table] = Number(count.rows[0].count);
+    }
+
+    for (const table of tables) {
+      if (classification[table].scope !== 'dependent') continue;
+      const relations = classification[table].relations;
+      if (relations.some((relation) => !relation.validated)) continue;
+      const rootTable = classification[table].via[classification[table].via.length - 1];
+      const inventoryQuery = buildDependentInventoryQuery({ sourceSchema, table, relations, rootTable });
+      const count = await pool.query(inventoryQuery.sql, [companyId]);
+      dependentCounts[table] = {
+        tenantRows: Number(count.rows[0].tenant_owned_rows),
+        orphanRows: Number(count.rows[0].orphan_rows),
+        nullableReferenceRows: Number(count.rows[0].nullable_reference_rows),
+      };
     }
 
     const summary = {
@@ -211,7 +263,9 @@ async function inspectTenantMigration({
     if (!summary.directlyScoped) blockers.push('No company_id-owned tables were discovered; tenant ownership cannot be proven.');
     if (summary.unclassifiedTables) blockers.push('Some tables have no proven tenant ownership path and require explicit classification.');
     if (summary.ambiguousTables) blockers.push('Some tables have multiple foreign-key ownership paths; explicit reviewed ownership rules are required.');
-    if (summary.dependentTables) blockers.push('Dependent tables were discovered; relation-scoped row counts and cross-tenant foreign-key validation are not yet implemented.');
+    if (summary.dependentTables) blockers.push('Dependent tables were discovered; migration copy remains disabled until cross-tenant reference validation and per-table verification are implemented.');
+    if (Object.values(dependentCounts).some((item) => item.orphanRows > 0)) blockers.push('Dependent tables contain orphaned foreign-key records that cannot be assigned to a tenant safely.');
+    if (Object.values(dependentCounts).some((item) => item.nullableReferenceRows > 0)) blockers.push('Dependent tables contain nullable ownership references; rows without a complete ownership path require manual classification.');
     if (fkResult.rows.some((fk) => !fk.is_validated)) blockers.push('One or more foreign-key constraints are NOT VALID and must be validated before migration.');
     if (summary.crossSchemaForeignKeyCount) blockers.push('Foreign-key relationships cross the source schema boundary; external dependencies must be reviewed before migration.');
     if (summary.destinationSchemaExists) blockers.push('The destination schema already exists; automatic migration is disabled to prevent overwriting data.');
@@ -230,7 +284,9 @@ async function inspectTenantMigration({
         scope: classification[name].scope,
         ownershipPath: classification[name].via,
         ownershipRelations: classification[name].relations,
-        sourceRows: directCounts[name] ?? null,
+        sourceRows: directCounts[name] ?? dependentCounts[name]?.tenantRows ?? null,
+        orphanRows: dependentCounts[name]?.orphanRows ?? null,
+        nullableReferenceRows: dependentCounts[name]?.nullableReferenceRows ?? null,
       })),
       foreignKeyCount: fkResult.rows.length,
       crossSchemaForeignKeyCount: fkResult.rows.filter((fk) => fk.child_schema !== sourceSchema || fk.foreign_schema !== sourceSchema).length,
@@ -253,4 +309,4 @@ async function inspectTenantMigration({
   }
 }
 
-module.exports = { classifyTenantTables, inspectTenantMigration };
+module.exports = { classifyTenantTables, buildDependentInventoryQuery, inspectTenantMigration };
