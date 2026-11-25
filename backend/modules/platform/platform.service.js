@@ -10,6 +10,7 @@ const { buildStorageDescriptor } = require('../../shared/utils/tenantStorageConf
 const { buildLocalPostgresUrl, resolveTenantStorageTarget } = require('../../shared/utils/tenantStorageResolver');
 const { sendSuccess, sendError, ERROR_CODES } = require('../../shared/utils/response');
 const { centralPrisma } = require('../../shared/utils/centralPrisma');
+const { withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 const emailService = require('../../shared/utils/emailService');
 const logger = require('../../shared/utils/logger');
 
