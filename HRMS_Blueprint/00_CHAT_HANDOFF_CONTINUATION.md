@@ -616,3 +616,11 @@ Resume from Section 10 of 33_MASTER_CODEBASE_ARCHITECTURE_AUDIT.md. Do not ask t
 - Historical deployment code made canonical migration failure non-fatal to server start; require migration-compatible readiness rather than treating process startup as deployment success.
 
 Extended historical commit review continues. The 99 old commits are not all claimed as individually line-by-line reviewed; continue source patch review for remaining unresolved areas before declaring the legacy audit complete.
+
+### Encryption and deployment migration blockers — verified 2026-11-25
+
+- backend/shared/utils/encryption.js still includes a static fallback key if ENCRYPTION_KEY is absent. Current server startServer() does require ENCRYPTION_KEY and production length >=16, but helper scripts/dev processes that import encryption without server startup could still use the fallback. Remove fallback; use one canonical key format and validate everywhere.
+- backend/shared/utils/piiEncryption.js uses a different ENC:<base64> ciphertext format and strict 32-byte key requirement. Search found no live Employee service using decryptPII(); current Employee services use shared/utils/encryption.js colon-separated GCM/CBC format.
+- backend/scripts/migrate-pii-encryption.js rewrites employee Aadhaar/PAN/bank fields into ENC:. This is incompatible with the live Employee decrypt() function and may make the fields unreadable in the app. **Do not run this script** until a compatibility migration is redesigned and round-trip tested.
+- backend/scripts/apply_canonical_schema_migration.js catches migration errors and continues server startup. This was intentionally introduced historically. Treat migration success as a separate hard readiness gate; process startup is not schema readiness.
+- migrate_user_index.js and other full-tenant sweeps are operator-only; require a tenant allowlist, dry-run, backup, audit and secret-safe handling. Never add them to startup.
