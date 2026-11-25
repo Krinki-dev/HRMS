@@ -552,7 +552,7 @@ Recommendation:
 - Added a fail-closed tenant-host/session mismatch check so a token cannot be rebound to another tenant by changing the request host.
 - Migrated operational scoping from `req.user.tenantId` to `req.user.companyId` across audit, employees, leave, attendance, payroll, compliance, assets, expenses, performance, notifications, automation/KYC and dashboard handlers. Central platform consumers continue to use the canonical Central tenant id.
 - Added six tenant-identity regression tests covering legacy token mapping, explicit new claims, host-rebinding prevention and unresolved legacy claims. The isolated identity-normalization cases were executed locally: 6 passed, 0 failed. Full backend CI and live browser/session tests remain pending; no database migration or production change was run.
-- Next gate: run the complete backend test workflow, add middleware-level cross-tenant tests, then audit the PostgreSQL tenant storage resolver and schema isolation before touching any live database.
+- Middleware now fails closed when a tenant host cannot be matched to the authenticated Central tenant. Next gate: run the complete backend test workflow, add route-level cross-tenant tests, then audit the PostgreSQL tenant storage resolver and schema isolation before touching any live database.
 
 
 ## 2026-11-25 — Storage-routing cutover blockers found (do not enable yet)
