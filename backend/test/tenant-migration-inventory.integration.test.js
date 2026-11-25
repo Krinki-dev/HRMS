@@ -62,12 +62,13 @@ test('inspects real PostgreSQL FK ownership, cross-tenant links and orphan rows'
       );
       CREATE TABLE ${quoteIdentifier(sourceSchema)}.unvalidated_refs (
         id UUID PRIMARY KEY,
-        employee_id UUID,
-        CONSTRAINT unvalidated_employee_fk
-          FOREIGN KEY (employee_id)
-          REFERENCES ${quoteIdentifier(sourceSchema)}.employees(id)
-          NOT VALID
+        employee_id UUID
       );
+      ALTER TABLE ${quoteIdentifier(sourceSchema)}.unvalidated_refs
+        ADD CONSTRAINT unvalidated_employee_fk
+        FOREIGN KEY (employee_id)
+        REFERENCES ${quoteIdentifier(sourceSchema)}.employees(id)
+        NOT VALID;
     `);
 
     await setupPool.query(
