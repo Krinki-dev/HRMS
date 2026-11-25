@@ -422,3 +422,15 @@ User should not be asked to repeat technical decisions. Ask for their involvemen
 - Apply to Employees, Attendance, Leave, Payroll, Compliance, Recruitment, Performance, Training, Assets, Expenses and all other applicable modules.
 - Build reusable import/export engine and schema-driven templates during Employees; reuse the framework for each subsequent module. Include sample/template download links in UI and round-trip tests for CSV and XLSX.
 - Detailed rules are recorded in `HRMS_Blueprint/32_PRODUCTION_READINESS_AND_MODULE_EXECUTION_PLAN.md`. This requirement is frozen; do not ask the user to repeat it.
+
+
+## 13. 2026-11-25 — Employees workbook implementation checkpoint
+
+- Current work remains on `architecture/postgres-tenant-isolation`; do not touch `main`.
+- Employees source audit: current import/export is flat CSV only. Frontend parses CSV locally and sends rows to the bulk-import endpoint; the endpoint validates only a small subset and commits immediately. It does not yet provide the required backend preview/confirm workflow.
+- Existing employee-related DB models include employees, employee_addresses, employee_family, employee_education, employee_prev_employment, employee_bank_accounts and employee_documents. Employee Code is unique per company; child rows reference employee IDs.
+- Initial code added: `backend/modules/employees/employee-workbook.schema.js` (Employees, Addresses, Family, Education, PreviousEmployment relational sheet definitions) and reusable `backend/shared/import-export/workbookSchema.js` validation primitives. Stable Employee Code joins child tabs; optional immutable child UUIDs support later update workflows.
+- Default workbook intentionally excludes bank account details and Aadhaar/PAN. Document binaries and private file URLs are not exported by the default workbook.
+- Tests added in `backend/test/employee-workbook-schema.test.js`; they have not yet been run. CI status for the newest head has not yet been checked.
+- Important: this is schema/validation groundwork, not a completed Excel feature. XLSX reader/writer, template formatting, API preview/commit, transaction-safe persistence, error workbook, UI options, and end-to-end tests remain.
+- Next actions: (1) check current branch head and CI; (2) run focused tests in CI; (3) map each workbook sheet to existing Prisma models and permissions; (4) add XLSX reader/writer dependency and lockfile correctly; (5) implement backend preview then explicit commit transaction; (6) preserve and improve the existing CSV path; (7) integrate CSV + Excel options into EmployeeImportPage and export UI.
