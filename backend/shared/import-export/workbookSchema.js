@@ -53,6 +53,15 @@ function validateWorkbookData(schema, sheets, options = {}) {
         const message = validateField(row[field], rule);
         if (message) errors.push({ sheet: definition.name, row: rowNumber, field, message });
       }
+      if (definition.parent) {
+        const hasRecordId = !isBlank(row.recordId);
+        if (mode === 'create-only' && hasRecordId) {
+          errors.push({ sheet: definition.name, row: rowNumber, field: 'recordId', message: 'Record ID is not allowed in create-only mode' });
+        }
+        if (mode === 'update-only' && !hasRecordId) {
+          errors.push({ sheet: definition.name, row: rowNumber, field: 'recordId', message: 'Record ID is required in update-only mode' });
+        }
+      }
       const key = row[definition.key];
       if (!isBlank(key)) {
         const normalizedKey = String(key).trim().toLowerCase();
