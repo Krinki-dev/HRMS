@@ -520,9 +520,9 @@ router.post('/forgot-password', async (req, res) => {
       tenantId = req.tenant.id;
     } else {
       try {
-        const indexRows = await centralPrisma.$queryRaw`
+        const indexRows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
           SELECT * FROM central_user_index WHERE email = ${normalizedEmail} AND is_active = true LIMIT 1
-        `;
+        `);
         const idx = indexRows[0];
         if (idx?.company_id) {
           const ctx = await authService.resolveTenantDbById(idx.company_id);
@@ -534,14 +534,14 @@ router.post('/forgot-password', async (req, res) => {
             tenantId = ctx.tenantId || tenantId;
           }
         } else {
-          const tenantRows = await centralPrisma.$queryRaw`
+          const tenantRows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
             SELECT id, subdomain, db_mode, db_url, schema_name, local_db_type,
                    local_db_host, local_db_port, local_db_name, local_db_user, local_db_pass
             FROM tenants
             WHERE LOWER(admin_email) = LOWER(${normalizedEmail})
               AND deleted_at IS NULL AND is_active = true
             LIMIT 1
-          `;
+          `);
           const tenantRecord = tenantRows[0];
           if (tenantRecord) {
             subdomain = tenantRecord.subdomain || subdomain;
