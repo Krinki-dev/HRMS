@@ -266,3 +266,12 @@ No DB connection, migration, staging, deployment, live payment or production cha
 - Payroll has an integration test for payroll calculations, lifecycle guards and company scoping. Compliance has a PostgreSQL integration test for cross-company data-leak regression. Both require configured test PostgreSQL and may skip in ordinary CI.
 - Frontend module completeness and browser workflows have not yet been verified. The old module blueprint's June 2026 "Live" labels are historical, not current production certification.
 - Next module work should audit Employees first, then Attendance/Shift, Leave, Payroll and Compliance as one connected flow. Prioritize security and persistence gaps over new feature breadth.
+
+
+## 2026-11-25 — Product requirement captured: dual CSV + relational Excel import/export
+
+- User confirmed all HRMS modules must offer standard CSV import/export plus advanced multi-sheet relational Excel (.xlsx) import/export as a second option.
+- Workbook example for Employees includes separate related tabs for basic details, contact, family, education, employment/lifecycle and permission-gated sensitive data/reference sheets. Stable keys link parent and child sheets.
+- Require sample template downloads, schema-driven validation, preview-before-commit, sheet/row error reporting, downloadable error workbook, explicit create/update/upsert semantics, transaction-safe import, tenant-scoped references, audit summary, permission-gated exports and round-trip tests.
+- Preserve standard CSV; use separate files or ZIP bundle for relational CSV datasets. XLSX must preserve formats/dropdowns/frozen panes/filters/instructions, avoid macros/external links, and never trust formulas as imported data.
+- This is a frozen cross-module requirement. Build reusable engine during Employees, then apply to Attendance, Leave, Payroll, Compliance and all other applicable modules. Detailed acceptance criteria: `HRMS_Blueprint/32_PRODUCTION_READINESS_AND_MODULE_EXECUTION_PLAN.md`.
