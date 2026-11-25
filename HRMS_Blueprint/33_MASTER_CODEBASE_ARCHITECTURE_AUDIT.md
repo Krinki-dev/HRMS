@@ -487,3 +487,47 @@ Do not reproduce historical values in documentation or logs. Verify offline whet
 ### 15.8 Review scope boundary
 
 The baseline file tree and major security/data paths have now been inspected, and additional old commit patches were checked directly. The 99 historical baseline commits have not all been independently reviewed line by line. Remaining work is limited to the commit patches and module/service call paths whose behavior is not established by the present source or later tests; that work remains open in Section 13. This document must not be read as a claim that every legacy feature has passed a functional or legal compliance audit.
+
+## 16. Encryption and schema-migration script safety — additional P0/P1 findings
+
+### 16.1 Existing shared encryption helper has a static development fallback
+
+- backend/shared/utils/encryption.js uses process.env.ENCRYPTION_KEY with a static fallback and derives its AES-GCM/CBC compatibility key via scrypt.
+- The current server startServer() requires ENCRYPTION_KEY to exist before listening and checks a minimum of 16 characters in production. Therefore the static fallback should not be used in a normal server boot where the guard executes, but it can still be used by development/test scripts or any process that imports the utility without calling startServer().
+- backend/shared/utils/piiEncryption.js has a separate requirement: exactly 32 decoded bytes (64-char hex or 44-char base64).
+- There are now two inconsistent key contracts and two separate ciphertext formats.
+
+Recommendation:
+- Remove the static fallback and fail closed whenever encryption/decryption is invoked without a valid configured key.
+- Define one explicit key format/length, key version, rotation procedure and backward-compatible re-encryption plan.
+- Ensure every background worker, script and CLI process validates the key before accessing encrypted fields.
+- Add boot and unit tests for missing/invalid keys, wrong key, legacy CBC decrypt and authenticated GCM tamper rejection.
+
+### 16.2 P0 data migration incompatibility — do not run migrate-pii-encryption.js
+
+Direct source inspection found:
+- backend/scripts/migrate-pii-encryption.js imports encryptPII() from backend/shared/utils/piiEncryption.js. It rewrites employees.aadhaar_number, pan_number and bank_account_number with ENC:<base64> strings.
+- The live Employee services currently import backend/shared/utils/encryption.js and call its decrypt(), which accepts only two-part legacy CBC or three-part GCM colon-separated values. It does not recognize the ENC: prefix.
+- Repository search found no live production service using decryptPII(); the only other encryptPII() reference is its own module and the migration script.
+
+Therefore running the existing script can make the app's normal employee read/decrypt path unable to read those migrated fields. This is a data integrity risk, not a cosmetic mismatch.
+
+**Do not execute backend/scripts/migrate-pii-encryption.js.** Replace it only after choosing one canonical encryption codec, implementing dual-read/compatible conversion, preserving old ciphertext/plaintext until validation, adding a dry-run and backup/restore path, and proving round-trip tests against the actual Employee services.
+
+### 16.3 Canonical schema migration may fail while server still starts
+
+- backend/scripts/apply_canonical_schema_migration.js executes Central SQL migration statements and catches failures.
+- On failure, it logs the error and continues; historical commit 98ae97b explicitly changed this behavior to non-fatal deployment startup.
+- Railway startup chains this migration before node server.js, but a successful process start is therefore not proof that the canonical schema upgrade succeeded.
+
+Recommendation:
+- Migrations must be an explicit deployment/release step with durable success state.
+- Production readiness must fail when required schema version is missing.
+- Keep server liveness separate from schema readiness, but never advertise a tenant/feature as ready when its required migration is incomplete.
+- Do not silently swallow migration errors for schema required by current application code.
+
+### 16.4 Operator migration scripts — never automatic
+
+- migrate_user_index.js scans active Central tenants and reads connection fields to enumerate operational users. Treat it as a one-off operator utility requiring allowlist, dry run, scoped access, audit and secret-handling review.
+- migrate-pii-encryption.js loops all active tenants and rewrites employee fields; it is currently format-incompatible with the live Employee codec and must remain blocked.
+- The tenant operational migration directory is SQL Server-based. The existing generic npm run migrate script is unsafe for the current PostgreSQL target until replaced by a reviewed PostgreSQL migration baseline.
