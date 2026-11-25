@@ -9,10 +9,15 @@ const { createWriteStream } = require('fs');
 const { decrypt, encrypt } = require('./encryption');
 const emailService       = require('./emailService');
 const { centralPrisma }  = require('./centralPrisma');
+const { withPlatformAdminRLS } = require('./rlsContext');
 
 function tryDecrypt(val) {
   if (!val) return val;
   try { return decrypt(val); } catch { return val; }
+}
+
+function withBackupRLS(db, callback) {
+  return db === centralPrisma ? withPlatformAdminRLS(db, callback) : callback(db);
 }
 
 function tmpPath(filename) {
@@ -273,7 +278,7 @@ async function cleanOldBackups(config, provider) {
 async function runBackup(db, companyId) {
   const startTime = Date.now();
 
-  const config = await db.backup_config.findUnique({ where: { company_id: companyId } });
+  const config = await withBackupRLS(db, (tx) => tx.backup_config.findUnique({ where: { company_id: companyId } }));
   if (!config || !config.enabled || config.provider === 'none') {
     logger.info(`[Backup] Backup not configured or disabled for company ${companyId}`);
     return { skipped: true };
@@ -281,13 +286,13 @@ async function runBackup(db, companyId) {
 
   // Never dump an entire multi-tenant database as a tenant-specific backup.
   // Legacy and shared storage need their own audited backup/restore implementation.
-  const tenant = await db.tenants.findUnique({
+  const tenant = await withBackupRLS(db, (tx) => tx.tenants.findUnique({
     where: { id: companyId },
     select: { id: true, db_mode: true, db_url: true, schema_name: true, storage_tier: true, storage_status: true },
-  });
+  }));
   const { getSafeBackupTarget } = require('./tenantBackupTarget');
   const schemaName = getSafeBackupTarget(tenant);
-  const tenantCfg = await db.tenant_db_config.findUnique({ where: { company_id: companyId } });
+  const tenantCfg = await withBackupRLS(db, (tx) => tx.tenant_db_config.findUnique({ where: { company_id: companyId } }));
   const configuredUrl = tenantCfg?.cloud_db_url
     ? tryDecrypt(tenantCfg.cloud_db_url)
     : (tenant?.db_url ? tryDecrypt(tenant.db_url) : process.env.CLOUD_TENANT_DATABASE_URL);
@@ -298,10 +303,10 @@ async function runBackup(db, companyId) {
 
   const dbType = 'postgres';
 
-  await db.backup_config.update({
+  await withBackupRLS(db, (tx) => tx.backup_config.update({
     where: { company_id: companyId },
     data:  { last_backup_status: 'running' },
-  });
+  }));
 
   let filePath, filename, sizeBytes, uploadResult;
 
@@ -326,7 +331,7 @@ async function runBackup(db, companyId) {
 
     const duration = Math.round((Date.now() - startTime) / 1000);
 
-    await db.backup_config.update({
+    await withBackupRLS(db, (tx) => tx.backup_config.update({
       where: { company_id: companyId },
       data: {
         last_backup_at:       new Date(),
@@ -335,13 +340,13 @@ async function runBackup(db, companyId) {
         last_backup_file_url: uploadResult?.fileUrl || null,
         last_error:           null,
       },
-    });
+    }));
 
-    const company = db.companies
-      ? await db.companies.findFirst({ where: { id: companyId } })
-      : db.tenants
-        ? await db.tenants.findUnique({ where: { id: companyId }, select: { admin_email: true } })
-        : null;
+    const company = await withBackupRLS(db, (tx) => tx.companies
+      ? tx.companies.findFirst({ where: { id: companyId } })
+      : tx.tenants
+        ? tx.tenants.findUnique({ where: { id: companyId }, select: { admin_email: true } })
+        : null);
     const companyEmail = company?.email || company?.admin_email;
     if (companyEmail) {
       await emailService.sendBackupNotification(db, companyId, {
@@ -359,7 +364,7 @@ async function runBackup(db, companyId) {
   } catch (err) {
     logger.error(`[Backup] ✗ Failed for ${companyId}:`, err.message);
 
-    await db.backup_config.update({
+    await withBackupRLS(db, (tx) => tx.backup_config.update({
       where: { company_id: companyId },
       data: {
         last_backup_at:     new Date(),
@@ -407,7 +412,7 @@ function scheduleAll() {
     logger.debug(`[Backup] Scheduler tick at ${currentTime} IST`);
 
     try {
-      const configs = await centralPrisma.backup_config.findMany({
+      const configs = await withPlatformAdminRLS(centralPrisma, (tx) => tx.backup_config.findMany({
         where: { enabled: true },
       });
 
