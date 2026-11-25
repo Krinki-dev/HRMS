@@ -47,26 +47,6 @@ WHERE c.relkind = 'r'
   AND c.relname = '_prisma_migrations'
 ORDER BY n.nspname;
 
-SELECT
-  '5) Prisma migration history records (metadata only)' AS section,
-  table_schema AS schema_name,
-  migration_name,
-  checksum,
-  started_at,
-  finished_at,
-  rolled_back_at,
-  applied_steps_count,
-  CASE
-    WHEN rolled_back_at IS NOT NULL THEN 'rolled_back'
-    WHEN finished_at IS NOT NULL THEN 'finished'
-    ELSE 'incomplete_or_failed'
-  END AS migration_state
-FROM information_schema.columns
-CROSS JOIN LATERAL (
-  SELECT 1
-) AS guard
-WHERE false;
-
 -- If section 4 shows a _prisma_migrations table, run this separate read-only
 -- query in that schema, replacing public only if the table is elsewhere:
 -- SELECT migration_name, checksum, started_at, finished_at, rolled_back_at,
