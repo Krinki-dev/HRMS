@@ -45,7 +45,7 @@ router.get('/', checkPermission('settings', 'view'), async (req, res) => {
     } = req.query;
 
     const canSeeSensitive = ADMIN_ROLES.includes(req.user.role);
-    const companyId       = req.user.tenantId;
+    const companyId       = req.user.companyId;
     const take            = Math.min(parseInt(limit, 10) || 50, 200);
 
     const where = {
@@ -105,7 +105,7 @@ router.get('/export', checkPermission('settings', 'export'), async (req, res) =>
   const prisma = req.db; 
   try {
     const canSeeSensitive = ADMIN_ROLES.includes(req.user.role);
-    const companyId       = req.user.tenantId;
+    const companyId       = req.user.companyId;
     const { module: mod, action, from, to } = req.query;
 
     const where = {
@@ -171,7 +171,7 @@ router.get('/:id', checkPermission('settings', 'view'), async (req, res) => {
   try {
     const canSeeSensitive = ADMIN_ROLES.includes(req.user.role);
     const row = await prisma.audit_logs.findFirst({
-      where: { id: req.params.id, company_id: req.user.tenantId },
+      where: { id: req.params.id, company_id: req.user.companyId },
       include: {
         user: {
           select: {
