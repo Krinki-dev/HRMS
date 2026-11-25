@@ -46,7 +46,7 @@ function buildLocalPostgresUrl(tenant, decryptValue) {
   url.port = String(port);
   url.username = username;
   url.password = password;
-  url.pathname = `/${database}`;
+  url.pathname = `/${encodeURIComponent(database)}`;
   return url.toString();
 }
 
