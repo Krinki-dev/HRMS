@@ -23,13 +23,16 @@ function getMonthlyRenewalPeriod(planExpiresAt, now = new Date()) {
   if (startAt.getTime() > current.getTime()) return null;
 
   const expiresAt = addCalendarMonthsClamped(startAt, 1);
-  const periodEndInstant = new Date(expiresAt.getTime() - 1);
   const asUtcDate = (date) => new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  // Invoice period_end is an inclusive calendar date. A timestamp expiry on
+  // the 25th means the preceding billing day is the 24th, even if expiry is
+  // later than midnight.
+  const periodEnd = new Date(Date.UTC(expiresAt.getUTCFullYear(), expiresAt.getUTCMonth(), expiresAt.getUTCDate() - 1));
   return {
     startAt,
     expiresAt,
     periodStart: asUtcDate(startAt),
-    periodEnd: asUtcDate(periodEndInstant),
+    periodEnd,
   };
 }
 
