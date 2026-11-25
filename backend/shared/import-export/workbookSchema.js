@@ -62,6 +62,29 @@ function validateWorkbookData(schema, sheets, options = {}) {
     });
   }
 
+  // Resolve schema-declared references against the referenced worksheet.
+  for (const definition of schema.sheets) {
+    for (const [field, rule] of Object.entries(definition.fields)) {
+      if (!rule.reference || (definition.parent && definition.parent.field === field)) continue;
+      const [referenceSheetName, referenceKey] = rule.reference.split('.');
+      const referenceDefinition = schema.sheets.find((sheet) => sheet.name === referenceSheetName);
+      const allowed = new Set((normalized[referenceSheetName] || [])
+        .map((row) => String(row?.[referenceKey] || '').trim().toLowerCase()).filter(Boolean));
+      (normalized[definition.name] || []).forEach((row, index) => {
+        if (isBlank(row?.[field])) return;
+        const value = String(row[field]).trim().toLowerCase();
+        if (!referenceDefinition || !allowed.has(value)) {
+          errors.push({
+            sheet: definition.name,
+            row: index + 2,
+            field,
+            message: `Reference must match ${referenceSheetName}.${referenceKey} in this workbook`,
+          });
+        }
+      });
+    }
+  }
+
   for (const definition of schema.sheets.filter((sheet) => sheet.parent)) {
     const parentDefinition = schema.sheets.find((sheet) => sheet.name === definition.parent.sheet);
     const parentRows = parentDefinition ? normalized[parentDefinition.name] || [] : [];
