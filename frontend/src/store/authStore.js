@@ -1,4 +1,4 @@
-﻿import { create } from 'zustand';
+import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export const useAuthStore = create(
@@ -18,8 +18,6 @@ export const useAuthStore = create(
           companyLogoUrl,
           companyName,
         } = data;
-
-        localStorage.setItem('accessToken', accessToken);
 
         set({
           isLoggedIn:     true,
@@ -44,8 +42,10 @@ export const useAuthStore = create(
         });
       },
 
+      updateToken: (accessToken) => set({ accessToken }),
+
       logout: () => {
-        localStorage.removeItem('accessToken');
+        // Remove any access token left by older versions; tokens are memory-only.
         set({
           isLoggedIn:     false,
           accessToken:    null,
@@ -99,15 +99,19 @@ export const useAuthStore = create(
       name: 'hrms-auth',
       partialize: (state) => ({
         isLoggedIn:     state.isLoggedIn,
-        accessToken:    state.accessToken,
         user:           state.user,
         companyLogoUrl: state.companyLogoUrl,
         companyName:    state.companyName,
       }),
+      version: 2,
+      migrate: (persistedState) => ({
+        ...persistedState,
+        accessToken: null,
+      }),
       onRehydrateStorage: () => (state) => {
-        if (state?.accessToken) {
-          localStorage.setItem('accessToken', state.accessToken);
-        }
+        // Purge the legacy standalone token and never restore tokens from storage.
+        localStorage.removeItem('accessToken');
+        if (state?.accessToken) state.accessToken = null;
       },
     }
   )
