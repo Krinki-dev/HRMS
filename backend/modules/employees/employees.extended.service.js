@@ -542,7 +542,7 @@ const prevEmploymentService = {
   },
 };
 
-async function checkAadhaar(db, companyId, userId, { aadhaarNumber, aadhaarHash }) {
+async function checkAadhaar(db, companyId, userId, centralTenantId, { aadhaarNumber, aadhaarHash }) {
   
   let hash = aadhaarHash;
   if (!hash && aadhaarNumber) {
@@ -604,7 +604,7 @@ async function checkAadhaar(db, companyId, userId, { aadhaarNumber, aadhaarHash 
     };
   }
 
-  const centralKyc = await findKycByHash(hash);
+  const centralKyc = await findKycByHash(centralTenantId, hash);
   if (centralKyc) {
     return {
       status: 'kyc_available',
