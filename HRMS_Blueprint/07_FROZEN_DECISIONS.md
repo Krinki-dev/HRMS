@@ -1,9 +1,44 @@
 # 07 — FROZEN DECISIONS
 > Part of HRMS Blueprint | [← Back to Index](./00_INDEX.md)
 > ⚠️ PASTE THIS AT THE START OF EVERY NEW AI CHAT ⚠️
-> Last Updated: June 2026 | Version: 4.0 FINAL
+> Last Updated: 2026-11-25 | Version: 5.0 — latest override section is authoritative
 
 ---
+
+
+## AUTHORITATIVE DECISION OVERRIDES — 2026-11-25
+
+The decisions below supersede contradictory older lines later in this document and older June 2026 blueprint files.
+
+### Database and tenant storage
+- Database engine: PostgreSQL ONLY. MySQL, MSSQL/SQL Server and SQLite are not supported target engines.
+- Storage modes: cloud, external_cloud and local PostgreSQL only. Hybrid is NOT an implemented sync mode; remove the old primary-database-wins sync statement. No sync feature is promised.
+- Free and Trial customers share the tenant operational public schema.
+- Every Paid customer receives an individually isolated schema derived from immutable Central tenants.id; optional Enterprise dedicated PostgreSQL database/instance requires separate approval.
+- Client-hosted/offline PostgreSQL remains a product requirement.
+- Central tenants.id and operational companies.id are different UUIDs. Application context and JWTs must carry tenantId and companyId separately.
+- The existing tenant Prisma migration directory declares MSSQL and must NOT be run against PostgreSQL. Build a new reviewed PostgreSQL baseline first.
+
+### Payments and activation
+- Razorpay only at launch; manual renewal. PhonePe, JioPay, automated payouts and any unverified callback path remain disabled.
+- Paid entitlements must not activate until captured payment is verified AND dedicated PostgreSQL schema provisioning/migration/data validation has completed.
+- No client-side mock payment success.
+
+### Shared schema security
+- Central RLS transaction helper remains required for Central tables.
+- Shared operational public schema must receive a complete tenant/company isolation design and verification before Free/Trial tenants are placed in it.
+- Explicit company_id filters remain mandatory; app DB role must not bypass RLS.
+
+### Product and data policy conflicts that require owner decision
+- Employee count: older plan text says 25 included plus overage; another older rule says unlimited employees. Do not treat either as final until owner resolves 34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md.
+- Trial: older 90-day auto-trial language conflicts with Free signup/explicit activation. Use the owner decision record.
+- Normal deletion remains soft-delete. Permanent account erasure is a separate governed workflow, not a blanket ban; record-class retention and legal hold must be verified.
+- Do not claim one blanket seven-year retention period is legally applicable to every HR, identity, recruitment and operational record without record-specific legal verification.
+
+### Verification and safety
+- Central schema upgrade is applied and user-verified 12/12. Tenant operational migrations remain unapplied.
+- No tenant schema cleanup, production migration, live payment or deployment is authorized by this document.
+- Never use commit messages alone to assert a feature exists; verify code, callers, tests and runtime behavior.
 
 ## THIS IS AN HRMS SAAS PRODUCT
 
