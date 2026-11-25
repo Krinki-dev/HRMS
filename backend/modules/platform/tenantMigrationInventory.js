@@ -195,8 +195,8 @@ async function inspectTenantMigration({
            c.convalidated AS is_validated,
            c.condeferrable AS is_deferrable,
            c.confmatchtype AS match_type,
-           array_agg(child_attr.attname ORDER BY key_columns.ordinality) AS child_columns,
-           array_agg(parent_attr.attname ORDER BY key_columns.ordinality) AS parent_columns
+           array_agg(child_attr.attname::text ORDER BY key_columns.ordinality) AS child_columns,
+           array_agg(parent_attr.attname::text ORDER BY key_columns.ordinality) AS parent_columns
          FROM pg_constraint c
          JOIN pg_class child ON child.oid = c.conrelid
          JOIN pg_namespace child_ns ON child_ns.oid = child.relnamespace
