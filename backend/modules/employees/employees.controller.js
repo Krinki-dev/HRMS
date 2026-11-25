@@ -196,9 +196,8 @@ module.exports = {
       'phone', 'personalEmail', 'workEmail',
       'dateOfJoining', 'employmentType', 'status',
       'dateOfBirth', 'gender', 'maritalStatus', 'bloodGroup',
-      'fatherName', 'motherName', 'spouseName', 'disabilityStatus',
+      'fatherName', 'motherName', 'spouseName',
       'emergencyContactName', 'emergencyContactPhone', 'emergencyContactRel',
-      'aadhaarNumber', 'panNumber', 'uanNumber', 'esiIpNumber',
       'departmentName', 'designationName', 'branchName',
       'probationEndDate',
     ];
@@ -207,9 +206,8 @@ module.exports = {
       '9876543210', 'ravi@gmail.com', 'ravi@company.com',
       '2024-01-15', 'full_time', 'active',
       '1990-05-15', 'male', 'married', 'B+',
-      'Ram Sharma', 'Sita Sharma', 'Priya Sharma', 'false',
+      'Ram Sharma', 'Sita Sharma', 'Priya Sharma',
       'Anil Sharma', '9999888877', 'Father',
-      '', 'ABCDE1234F', '100123456789', '',
       'Engineering', 'Software Engineer', 'Head Office',
       '',
     ].join(',');
