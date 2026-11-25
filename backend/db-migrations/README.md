@@ -78,3 +78,6 @@ The registration path records new tenant storage as `provisioning`, seeds the op
 Apply `20261125_central_kyc_tenant_isolation.sql` only after a verified Central DB backup and a reviewed migration window. It adds `tenant_id`, replaces global Aadhaar-hash uniqueness with `(tenant_id, aadhaar_hash)` uniqueness, and allows Central RLS access only to the owning tenant or platform admins.
 
 Existing rows are intentionally left with `tenant_id IS NULL`. They are not visible to tenant-scoped KYC routes after this migration. Do not backfill by guessing from Aadhaar hashes, email, phone or task IDs. A separate evidence-based ownership reconciliation is required before any legacy KYC row is assigned to a tenant.
+
+
+Shared `public` schema tenant backups are also a release blocker: the current backup target resolver intentionally refuses to dump a shared schema as an individual tenant backup. Never remove that guard or deliver a whole-public-schema dump to one customer. A tenant-filtered relational backup/restore or platform-wide protected backup design must be implemented first.
