@@ -142,7 +142,7 @@ No database migration, live schema change, customer-data deletion, backup execut
 - Switching between plans now clears add-ons and promo state from the previous plan, preventing stale add-ons from being submitted against a different plan.
 - Frontend Build passed for the first Free-plan UI correction commit `88d9dc8`; the latest add-on-reset UI commit is `743fc8f` and its own workflow was queued at the time of this update.
 - Fixed the new pricing test's CI import setup by supplying a syntactically valid dummy `CENTRAL_DATABASE_URL` before importing the service; the pure catalog helper does not connect to the database.
-- Backend Tests passed on commit `d9871bd973c3fb641bdb63349a47efbd4346cea5`: 59 tests, 55 passed, 0 failed, 4 skipped (database-dependent RLS checks skipped because no test database URL is configured).
+- Backend Tests passed on commit `d9871bd973c3fb641bdb63349a47efbd4346cea5`: 59 tests, 56 passed, 0 failed, 4 skipped (database-dependent RLS checks skipped because no test database URL is configured).
 
 
 ### Latest CI confirmation — 2026-11-24
@@ -346,7 +346,7 @@ No DB connection, migration, staging, deployment, live payment or production cha
 - Auth middleware maps legacy tokens safely: old `tenantId` claims are treated as operational `companyId`; the Central tenant id is recovered from `central_user_index`. An unresolved legacy company id is never promoted to a Central tenant id.
 - Added a fail-closed tenant-host/session mismatch check so a token cannot be rebound to another tenant by changing the request host.
 - Migrated operational scoping from `req.user.tenantId` to `req.user.companyId` across audit, employees, leave, attendance, payroll, compliance, assets, expenses, performance, notifications, automation/KYC and dashboard handlers. Central platform consumers continue to use the canonical Central tenant id.
-- Added five tenant-identity regression tests covering legacy token mapping, explicit new claims, host-rebinding prevention and unresolved legacy claims. The isolated identity-normalization cases were executed locally: 5 passed, 0 failed. Full backend CI and live browser/session tests remain pending; no database migration or production change was run.
+- Added six tenant-identity regression tests covering legacy token mapping, explicit new claims, host-rebinding prevention and unresolved legacy claims. The isolated identity-normalization cases were executed locally: 5 passed, 0 failed. Full backend CI and live browser/session tests remain pending; no database migration or production change was run.
 - Next gate: run the complete backend test workflow, add middleware-level cross-tenant tests, then audit the PostgreSQL tenant storage resolver and schema isolation before touching any live database.
 
 
@@ -362,3 +362,6 @@ No DB connection, migration, staging, deployment, live payment or production cha
 
 - Reviewed the service-layer query patterns for Employees, Attendance, Leave, Payroll, Compliance, Assets, Expenses, Performance and Notifications after the controller migration. Their primary read/write paths generally scope records by `company_id` directly or through the employee relation using the supplied `companyId`.
 - This is a positive first pass, not a complete shared-`public` safety sign-off. Child-table access paths, raw SQL, exports/imports, scheduled jobs, websocket/event handlers, background queues and every route still require a full cross-module audit before Trial tenants can safely share one schema.
+
+
+- Legacy access tokens that cannot be mapped to a Central tenant now receive an authentication refresh response rather than being rebound to the request host; tenant-host mismatches with a resolved identity are rejected.
