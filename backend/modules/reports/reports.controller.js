@@ -1,10 +1,10 @@
 ﻿const { sendSuccess, sendError } = require('../../shared/utils/response');
-const { resolveTenantId } = require('../../shared/utils/tenantResolver');
+const { resolveCompanyId } = require('../../shared/utils/tenantResolver');
 
 exports.getMonthlyAttendanceSummary = async (req, res) => {
   try {
     const db          = req.db;
-    const companyId   = await resolveTenantId(req);
+    const companyId   = await resolveCompanyId(req);
     const { month, year, departmentId } = req.query;
 
     const targetMonth = month ? parseInt(month) : new Date().getMonth() + 1;
@@ -94,7 +94,7 @@ exports.getMonthlyAttendanceSummary = async (req, res) => {
 exports.getPayrollSummary = async (req, res) => {
   try {
     const db        = req.db;
-    const companyId = await resolveTenantId(req);
+    const companyId = await resolveCompanyId(req);
     const { month, year, departmentId, status } = req.query;
 
     const targetMonth = month ? parseInt(month) : new Date().getMonth() + 1;
