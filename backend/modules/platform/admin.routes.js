@@ -1031,7 +1031,7 @@ router.get('/tenants/:id/migration-preview', async (req, res) => {
     }
 
     const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
-      SELECT id, plan, db_mode, db_url, schema_name, storage_tier, storage_status,
+      SELECT id, plan, gstin, pan, db_mode, db_url, schema_name, storage_tier, storage_status,
              local_db_type, local_db_host, local_db_port, local_db_name, local_db_user, local_db_pass
       FROM tenants
       WHERE id = ${tenantId}::uuid AND deleted_at IS NULL
@@ -1053,6 +1053,8 @@ router.get('/tenants/:id/migration-preview', async (req, res) => {
     const inventory = await inspectTenantMigration({
       databaseUrl: source.databaseUrl,
       tenantId,
+      gstin: tenant.gstin,
+      pan: tenant.pan,
       sourceSchema: source.schemaName,
       destinationSchema: deriveTenantSchemaName(tenantId),
     });
