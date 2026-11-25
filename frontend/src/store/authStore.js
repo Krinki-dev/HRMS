@@ -46,6 +46,7 @@ export const useAuthStore = create(
 
       logout: () => {
         // Remove any access token left by older versions; tokens are memory-only.
+        localStorage.removeItem('accessToken');
         set({
           isLoggedIn:     false,
           accessToken:    null,
