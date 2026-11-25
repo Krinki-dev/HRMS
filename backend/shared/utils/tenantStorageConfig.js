@@ -73,7 +73,7 @@ function buildStorageDescriptor({ tenantId, plan, dbMode='cloud', dbUrl=null, re
   }
   const parsedUrl=validatePostgresUrl(dbUrl,{required:dbMode!=='cloud'});
   let schemaName=null;
-  if (tier===STORAGE_TIERS.SHARED) schemaName='shared_tenants';
+  if (tier===STORAGE_TIERS.SHARED) schemaName='public';
   else if (tier===STORAGE_TIERS.DEDICATED_SCHEMA) schemaName=deriveTenantSchemaName(tenantId);
   if (parsedUrl && schemaName) parsedUrl.searchParams.set('schema',schemaName);
   if (parsedUrl && tier===STORAGE_TIERS.DEDICATED_DATABASE) parsedUrl.searchParams.delete('schema');
