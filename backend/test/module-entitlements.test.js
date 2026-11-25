@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { checkModuleEnabled, checkSensitivePermission, isModuleEnabled } = require('../shared/middleware/permission');
+const { checkModuleEnabled, checkSensitivePermission, checkSensitivePayloadPermission, isModuleEnabled } = require('../shared/middleware/permission');
 
 test('module entitlement matching is case-insensitive and exact', () => {
   assert.equal(isModuleEnabled(['Employees', 'attendance'], 'employees'), true);
@@ -69,4 +69,37 @@ test('sensitive employee data requires an explicit permission or platform-level 
     () => { platformGranted = true; }
   );
   assert.equal(platformGranted, true);
+});
+
+test('employee import permits ordinary fields without sensitive-data permission', () => {
+  let nextCalled = false;
+  checkSensitivePayloadPermission('employees', 'edit_sensitive', ['aadhaarNumber', 'panNumber'])(
+    { user: { role: 'HR', permissions: {} }, body: { rows: [{ firstName: 'Asha', lastName: 'Sharma' }] } },
+    {},
+    () => { nextCalled = true; }
+  );
+  assert.equal(nextCalled, true);
+});
+
+test('employee import denies populated identity fields without explicit sensitive-data permission', () => {
+  let statusCode;
+  let nextCalled = false;
+  const res = { status(code) { statusCode = code; return this; }, json() { return this; } };
+  checkSensitivePayloadPermission('employees', 'edit_sensitive', ['aadhaarNumber', 'panNumber'])(
+    { user: { role: 'Admin', permissions: {} }, body: { rows: [{ firstName: 'Asha', aadhaarNumber: '123456789012' }] } },
+    res,
+    () => { nextCalled = true; }
+  );
+  assert.equal(nextCalled, false);
+  assert.equal(statusCode, 403);
+});
+
+test('employee import allows identity fields only with explicit edit-sensitive permission', () => {
+  let nextCalled = false;
+  checkSensitivePayloadPermission('employees', 'edit_sensitive', ['aadhaarNumber', 'panNumber'])(
+    { user: { permissions: { employees: { edit_sensitive: true } } }, body: { rows: [{ panNumber: 'ABCDE1234F' }] } },
+    {},
+    () => { nextCalled = true; }
+  );
+  assert.equal(nextCalled, true);
 });
