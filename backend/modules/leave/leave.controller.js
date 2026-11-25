@@ -20,18 +20,18 @@ const ctrl = {
     const empId = req.user.employeeId || req.query.employeeId;
     if (!empId) return sendSuccess(res, {
       balances: [], myPending: [], myUpcoming: [],
-      pendingApprovals: await svc.list(req.db, req.user.tenantId, { status: 'pending', limit: 1 }).then(r => r.length),
+      pendingApprovals: await svc.list(req.db, req.user.companyId, { status: 'pending', limit: 1 }).then(r => r.length),
       teamOnLeave: [],
     });
-    sendSuccess(res, await svc.dashboard(req.db, empId, req.user.tenantId, isHR));
+    sendSuccess(res, await svc.dashboard(req.db, empId, req.user.companyId, isHR));
   }),
 
   calendar: wrap(async (req, res) => {
-    sendSuccess(res, await svc.calendar(req.db, req.user.tenantId, req.query.month, req.query.year));
+    sendSuccess(res, await svc.calendar(req.db, req.user.companyId, req.query.month, req.query.year));
   }),
 
   list: wrap(async (req, res) => {
-    sendSuccess(res, await svc.list(req.db, req.user.tenantId, req.query));
+    sendSuccess(res, await svc.list(req.db, req.user.companyId, req.query));
   }),
 
   myApplications: wrap(async (req, res) => {
@@ -43,7 +43,7 @@ const ctrl = {
   calculateDays: wrap(async (req, res) => {
     const { fromDate, toDate } = req.body;
     if (!fromDate) return sendError(res, ERROR_CODES.VALIDATION, 'fromDate required.');
-    sendSuccess(res, await svc.calculateDays(req.db, req.user.tenantId, req.user.employeeId, req.body));
+    sendSuccess(res, await svc.calculateDays(req.db, req.user.companyId, req.user.employeeId, req.body));
   }),
 
   apply: wrap(async (req, res) => {
@@ -52,7 +52,7 @@ const ctrl = {
     const { leaveTypeId, fromDate } = req.body;
     if (!leaveTypeId || !fromDate) return sendError(res, ERROR_CODES.VALIDATION, 'leaveTypeId and fromDate required.');
     try {
-      sendSuccess(res, await svc.apply(req.db, empId, req.user.tenantId, req.body), 'Leave applied. Pending approval.', 201);
+      sendSuccess(res, await svc.apply(req.db, empId, req.user.companyId, req.body), 'Leave applied. Pending approval.', 201);
     } catch (e) {
       const map = {
         INVALID_DATES:        'End date must be after start date.',
@@ -69,12 +69,12 @@ const ctrl = {
   getPendingApprovals: wrap(async (req, res) => {
     const isHR      = ADMIN_ROLES.includes(req.user.role);
     const managerId = req.user.employeeId;
-    sendSuccess(res, await svc.getPendingApprovals(req.db, req.user.tenantId, isHR, managerId));
+    sendSuccess(res, await svc.getPendingApprovals(req.db, req.user.companyId, isHR, managerId));
   }),
 
   approveLeave: wrap(async (req, res) => {
     try {
-      await svc.approveLeave(req.db, req.params.id, req.user.tenantId, req.user.id);
+      await svc.approveLeave(req.db, req.params.id, req.user.companyId, req.user.id);
 
       try {
         const application = await req.db.leave_applications.findUnique({
@@ -87,7 +87,7 @@ const ctrl = {
         if (application) {
           const email = application.employee?.work_email || application.employee?.personal_email;
           if (email) {
-            await emailSvc.sendLeaveUpdate(req.db, req.user.tenantId, {
+            await emailSvc.sendLeaveUpdate(req.db, req.user.companyId, {
               email,
               name: `${application.employee.first_name || ''} ${application.employee.last_name || ''}`.trim(),
               status: 'approved',
@@ -99,7 +99,7 @@ const ctrl = {
           }
           eventNotifier.notifyLeaveDecision({
             db: req.db,
-            companyId: req.user.tenantId,
+            companyId: req.user.companyId,
             application,
             decision: 'approved',
           }).catch(() => {});
@@ -119,7 +119,7 @@ const ctrl = {
     const { reason } = req.body;
     if (!reason?.trim()) return sendError(res, ERROR_CODES.VALIDATION, 'Rejection reason required.');
     try {
-      await svc.rejectLeave(req.db, req.params.id, req.user.tenantId, req.user.id, reason);
+      await svc.rejectLeave(req.db, req.params.id, req.user.companyId, req.user.id, reason);
 
       try {
         const application = await req.db.leave_applications.findUnique({
@@ -132,7 +132,7 @@ const ctrl = {
         if (application) {
           const email = application.employee?.work_email || application.employee?.personal_email;
           if (email) {
-            await emailSvc.sendLeaveUpdate(req.db, req.user.tenantId, {
+            await emailSvc.sendLeaveUpdate(req.db, req.user.companyId, {
               email,
               name: `${application.employee.first_name || ''} ${application.employee.last_name || ''}`.trim(),
               status: 'rejected',
@@ -145,7 +145,7 @@ const ctrl = {
           }
           eventNotifier.notifyLeaveDecision({
             db: req.db,
-            companyId: req.user.tenantId,
+            companyId: req.user.companyId,
             application,
             decision: 'rejected',
             reason,
@@ -178,7 +178,7 @@ const ctrl = {
         if (application) {
           const email = application.employee?.work_email || application.employee?.personal_email;
           if (email) {
-            await emailSvc.sendLeaveUpdate(req.db, req.user.tenantId, {
+            await emailSvc.sendLeaveUpdate(req.db, req.user.companyId, {
               email,
               name: `${application.employee.first_name || ''} ${application.employee.last_name || ''}`.trim(),
               status: 'cancelled',
@@ -208,34 +208,34 @@ const ctrl = {
   }),
 
   getAllBalances: wrap(async (req, res) => {
-    sendSuccess(res, await svc.getAllBalances(req.db, req.user.tenantId, req.query.year));
+    sendSuccess(res, await svc.getAllBalances(req.db, req.user.companyId, req.query.year));
   }),
 
   getLeaveTypes: wrap(async (req, res) => {
-    sendSuccess(res, await svc.getLeaveTypes(req.db, req.user.tenantId));
+    sendSuccess(res, await svc.getLeaveTypes(req.db, req.user.companyId));
   }),
 
   createLeaveType: wrap(async (req, res) => {
     const { name, code } = req.body;
     if (!name || !code) return sendError(res, ERROR_CODES.VALIDATION, 'Name and code required.');
-    sendSuccess(res, await svc.createLeaveType(req.db, req.user.tenantId, req.body), 'Leave type created.', 201);
+    sendSuccess(res, await svc.createLeaveType(req.db, req.user.companyId, req.body), 'Leave type created.', 201);
   }),
 
   updateLeaveType: wrap(async (req, res) => {
-    sendSuccess(res, await svc.updateLeaveType(req.db, req.params.id, req.user.tenantId, req.body));
+    sendSuccess(res, await svc.updateLeaveType(req.db, req.params.id, req.user.companyId, req.body));
   }),
 
   deleteLeaveType: wrap(async (req, res) => {
-    await svc.deleteLeaveType(req.db, req.params.id, req.user.tenantId);
+    await svc.deleteLeaveType(req.db, req.params.id, req.user.companyId);
     sendSuccess(res, null, 'Leave type deleted.');
   }),
 
   manualAccrue: wrap(async (req, res) => {
-    sendSuccess(res, await svc.manualAccrue(req.db, req.user.tenantId), 'Accrual processed.');
+    sendSuccess(res, await svc.manualAccrue(req.db, req.user.companyId), 'Accrual processed.');
   }),
 
   accrualLog: wrap(async (req, res) => {
-    sendSuccess(res, await svc.accrualLog(req.db, req.user.tenantId, req.query));
+    sendSuccess(res, await svc.accrualLog(req.db, req.user.companyId, req.query));
   }),
 
   encashLeave: wrap(async (req, res) => {
@@ -243,11 +243,11 @@ const ctrl = {
     if (!empId) return sendError(res, ERROR_CODES.VALIDATION, 'No employee record for this account.');
     const { leaveTypeId, days, reason } = req.body;
     if (!leaveTypeId || !days) return sendError(res, ERROR_CODES.VALIDATION, 'leaveTypeId and days required.');
-    sendSuccess(res, await svc.encashLeave(req.db, empId, req.user.tenantId, req.body), 'Encashment request submitted.', 201);
+    sendSuccess(res, await svc.encashLeave(req.db, empId, req.user.companyId, req.body), 'Encashment request submitted.', 201);
   }),
 
   report: wrap(async (req, res) => {
-    sendSuccess(res, await svc.report(req.db, req.user.tenantId, req.query));
+    sendSuccess(res, await svc.report(req.db, req.user.companyId, req.query));
   }),
 };
 
