@@ -690,7 +690,7 @@ const FEATURES = [
   { icon: '🏛', title: 'All compliance included', desc: 'PF, ESI, PT, TDS and LWF stay available on every plan without hidden compliance add-ons.' },
   { icon: '🤖', title: 'Browser automation', desc: 'Built-in automation handles repetitive filing work and reduces dependence on manual portal steps.' },
   { icon: '∞', title: 'Unlimited employees', desc: 'No per-seat pricing, so your cost remains stable whether you manage a small team or a large workforce.' },
-  { icon: '🔒', title: 'Deployment flexibility', desc: 'Run in cloud, on-premise or hybrid mode according to business, client and security requirements.' },
+  { icon: '🔒', title: 'Deployment flexibility', desc: 'Run in managed cloud or on your own customer-managed PostgreSQL server.' },
   { icon: '📊', title: 'Complete payroll engine', desc: 'Payroll, earnings, deductions, settlements, reports, bank files and payslip generation work from one system.' },
 ];
 
