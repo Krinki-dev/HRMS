@@ -6,15 +6,26 @@ function getSafeBackupTarget(tenant) {
   if (!tenant || !tenant.id) {
     throw new Error('Tenant backup requires a valid tenant record.');
   }
-  if (tenant.storage_tier !== STORAGE_TIERS.DEDICATED_SCHEMA ||
-      tenant.storage_status !== STORAGE_STATUSES.READY) {
-    throw new Error('Tenant-specific backup is blocked for shared, legacy, unready or dedicated-database storage.');
+  if (tenant.storage_status !== STORAGE_STATUSES.READY) {
+    throw new Error('Tenant-specific backup is blocked while storage is not ready.');
   }
-  const schema = assertSchemaName(tenant.schema_name);
-  if (schema !== deriveTenantSchemaName(tenant.id)) {
-    throw new Error('Tenant backup schema does not match the tenant UUID.');
+  if (tenant.storage_tier === STORAGE_TIERS.DEDICATED_SCHEMA) {
+    const schema = assertSchemaName(tenant.schema_name);
+    if (schema !== deriveTenantSchemaName(tenant.id)) {
+      throw new Error('Tenant backup schema does not match the tenant UUID.');
+    }
+    return schema;
   }
-  return schema;
+  if (tenant.storage_tier === STORAGE_TIERS.DEDICATED_DATABASE) {
+    if (tenant.schema_name) {
+      throw new Error('Dedicated database backup must not use a schema override.');
+    }
+    if (!['local', 'external_cloud', 'cloud'].includes(tenant.db_mode)) {
+      throw new Error('Unsupported dedicated database backup mode.');
+    }
+    return null;
+  }
+  throw new Error('Tenant-specific backup is blocked for shared or legacy storage.');
 }
 
 module.exports = { getSafeBackupTarget };
