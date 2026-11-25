@@ -199,7 +199,7 @@ router.get('/onboarding/progress', auth, async (req, res) => {
 router.post('/onboarding/save-step', auth, async (req, res) => {
   try {
     const { step, data = {}, skipped = false } = req.body || {};
-    const tenantId = req.user?.tenantId || req.user?.company_id;
+    const tenantId = req.user?.centralTenantId || req.user?.tenantId;
     if (!tenantId) return sendError(res, ERROR_CODES.VALIDATION, 'Tenant ID required', 400);
     if (!ONBOARDING_STEPS.has(step)) {
       return sendError(res, ERROR_CODES.VALIDATION, 'Unknown onboarding step', 400);
@@ -248,7 +248,7 @@ router.post('/onboarding/save-step', auth, async (req, res) => {
  */
 router.post('/onboarding/complete', auth, async (req, res) => {
   try {
-    const tenantId = req.user?.tenantId || req.user?.company_id;
+    const tenantId = req.user?.centralTenantId || req.user?.tenantId;
     if (!tenantId) return sendError(res, ERROR_CODES.VALIDATION, 'Tenant ID required', 400);
     const requiredSteps = ['org', 'work', 'payroll', 'email', 'compliance', 'documents', 'backup'];
     const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
@@ -312,7 +312,7 @@ router.post('/company-documents', auth, (req, res, next) => {
 }, async (req, res) => {
   let objectKey = null;
   try {
-    const tenantId = req.user?.tenantId || req.user?.company_id;
+    const tenantId = req.user?.centralTenantId || req.user?.tenantId;
     if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Company session required', 401);
     if (!documentStorageReady()) return sendError(res, ERROR_CODES.SERVER, 'Private document storage is not configured securely.', 503);
     if (!req.file || !validDocumentSignature(req.file)) {
@@ -346,7 +346,7 @@ router.post('/company-documents', auth, (req, res, next) => {
 
 router.get('/company-documents', auth, async (req, res) => {
   try {
-    const tenantId = req.user?.tenantId || req.user?.company_id;
+    const tenantId = req.user?.centralTenantId || req.user?.tenantId;
     if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Company session required', 401);
     const rows = await withTenantRLS(centralPrisma, tenantId, (tx) => tx.$queryRaw`
       SELECT id, document_type, file_name, mime_type, size_bytes, status,
@@ -363,7 +363,7 @@ router.get('/company-documents', auth, async (req, res) => {
 
 router.get('/company-documents/:id/download', auth, async (req, res) => {
   try {
-    const tenantId = req.user?.tenantId || req.user?.company_id;
+    const tenantId = req.user?.centralTenantId || req.user?.tenantId;
     if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Company session required', 401);
     const rows = await withTenantRLS(centralPrisma, tenantId, (tx) => tx.$queryRaw`
       SELECT object_key, file_name FROM company_documents
