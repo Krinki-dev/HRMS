@@ -17,7 +17,7 @@ function getCentralPrisma() {
 }
 
 module.exports = async function requireSetupComplete(req, res, next) {
-  const tenantId = req.tenant?.id || req.user?.tenantId;
+  const tenantId = req.tenant?.id || req.user?.centralTenantId || req.user?.tenantId;
 
   if (!tenantId) return next();
 
