@@ -36,7 +36,7 @@ The decisions below supersede contradictory older lines later in this document a
 - Do not claim one blanket seven-year retention period is legally applicable to every HR, identity, recruitment and operational record without record-specific legal verification.
 
 ### Verification and safety
-- Central schema upgrade is applied and user-verified 12/12. Tenant operational migrations remain unapplied.
+- Central schema upgrade and Central KYC tenant-isolation migration have NOT been applied by this development work. Prior schema inspection found `storage_tier` absent; re-check the live Central schema and apply reviewed migrations only after backup/approval. Tenant operational migrations remain unapplied.
 - No tenant schema cleanup, production migration, live payment or deployment is authorized by this document.
 - Never use commit messages alone to assert a feature exists; verify code, callers, tests and runtime behavior.
 
