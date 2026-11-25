@@ -54,3 +54,20 @@ Before creating tenant PostgreSQL migration SQL, establish the current tenant da
 - The application must set `app.current_tenant` inside the same transaction as tenant-scoped central queries; platform-admin operations must use the platform-admin RLS context.
 - PostgreSQL table owners and Supabase service-role connections can bypass RLS. Keep database credentials server-side and use least-privilege roles where practical.
 - Company document bytes belong in private object storage, not in PostgreSQL. Uploads should remain disabled until private storage and malware scanning are configured.
+
+
+## Tenant storage router rollout gate (2026-11-25)
+
+The backend tenant middleware, authentication DB lookup, platform-admin tenant DB access and new tenant registration now use the audited PostgreSQL storage resolver. It fails closed for rows whose `storage_tier` / `storage_status` are missing, legacy, pending, provisioning or failed.
+
+**Do not deploy this router against an unclassified Central database.** The consolidated upgrade adds the lifecycle columns with `legacy_unclassified` defaults; it deliberately does not guess where existing tenant data lives.
+
+After the Central upgrade and backup verification:
+
+1. Run `20261125_tenant_storage_classification_preview.sql` as a read-only review. It reports candidate tiers and the current-vs-expected schema without showing connection strings or changing data.
+2. Verify each tenant's actual database, schema, tables, row ownership and backup/restore status. Existing registrations may still use `tenant_<subdomain>`; do not mark those tenants ready as UUID-derived schemas or `public` until data has been safely reconciled.
+3. Managed-cloud Free/Trial registrations now target the shared `public` schema. Customer-managed `local` and `external_cloud` PostgreSQL registrations target a dedicated database with no schema override and require the HRMS PostgreSQL tables to exist before registration.
+4. The paid managed-cloud transition from shared `public` to a UUID-derived dedicated schema still requires a separately tested data-migration/provisioning workflow. Do not mark a paid tenant's storage ready in a dedicated schema until all tenant-owned rows and foreign-key relationships have been migrated and verified.
+5. Existing legacy tenants remain blocked by the resolver until explicitly classified and verified. No automatic legacy classification, schema cloning, data movement, production migration or deployment has been performed from this code work.
+
+The registration path records new tenant storage as `provisioning`, seeds the operational company/role/admin records, and only then marks storage `ready` and the tenant active. If seeding fails, the tenant remains inactive and its storage remains non-ready for manual recovery.
