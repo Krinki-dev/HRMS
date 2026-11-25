@@ -321,7 +321,7 @@ export default function AdminClientDetail() {
               <div style={{ overflowX: 'auto', marginTop: 7 }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                   <thead><tr style={{ textAlign: 'left', color: 'var(--admin-text-soft)' }}>
-                    <th style={{ padding: 7 }}>Table</th><th style={{ padding: 7 }}>Scope</th><th style={{ padding: 7 }}>Ownership path</th><th style={{ padding: 7, textAlign: 'right' }}>Source rows</th>
+                    <th style={{ padding: 7 }}>Table</th><th style={{ padding: 7 }}>Scope</th><th style={{ padding: 7 }}>Ownership path</th><th style={{ padding: 7, textAlign: 'right' }}>Tenant rows</th><th style={{ padding: 7, textAlign: 'right' }}>Orphans</th><th style={{ padding: 7, textAlign: 'right' }}>Nullable refs</th>
                   </tr></thead>
                   <tbody>
                     {(migration.tables || []).map((row) => (
@@ -330,6 +330,8 @@ export default function AdminClientDetail() {
                         <td style={{ padding: 7 }}>{row.scope}</td>
                         <td style={{ padding: 7 }}>{row.ownershipPath?.join(' → ') || '—'}</td>
                         <td style={{ padding: 7, textAlign: 'right' }}>{row.sourceRows ?? 'Pending relation analysis'}</td>
+                        <td style={{ padding: 7, textAlign: 'right' }}>{row.orphanRows ?? '—'}</td>
+                        <td style={{ padding: 7, textAlign: 'right' }}>{row.nullableReferenceRows ?? '—'}</td>
                       </tr>
                     ))}
                   </tbody>
