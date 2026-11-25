@@ -24,6 +24,7 @@
  */
 
 const { centralPrisma } = require('../utils/centralPrisma');
+const { withPlatformAdminRLS } = require('../utils/rlsContext');
 const logger = require('../utils/logger');
 
 const ALLOWED_GATEWAYS = ['razorpay', 'phonepe', 'jiopay', 'system'];
@@ -75,7 +76,7 @@ async function log({
     const safeGateway = ALLOWED_GATEWAYS.includes(gateway) ? gateway : 'system';
     const safeStatus = ALLOWED_STATUS.includes(status) ? status : 'info';
 
-    await centralPrisma.billing_events.create({
+    await withPlatformAdminRLS(centralPrisma, (tx) => tx.billing_events.create({
       data: {
         tenant_id: tenantId || null,
         gateway: safeGateway,
@@ -87,7 +88,7 @@ async function log({
         metadata: sanitizeMetadata(metadata),
         ip_address: getIp(req),
       },
-    });
+    }));
   } catch (err) {
     // Logging must never break the real billing flow.
     logger.error('[billingLogger] Failed to write billing event (non-fatal):', err);
