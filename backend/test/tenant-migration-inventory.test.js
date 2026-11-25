@@ -111,13 +111,14 @@ test('builds a read-only inventory using the verified operational company UUID',
           { table_name: 'companies', column_name: 'gstin', data_type: 'text' },
           { table_name: 'companies', column_name: 'pan', data_type: 'text' },
           { table_name: 'employees', column_name: 'company_id', data_type: 'uuid' },
-          { table_name: 'attendance', column_name: 'employee_id', data_type: 'uuid' },
+          { table_name: 'attendance', column_name: 'employee_id', data_type: 'uuid', is_nullable: 'NO' },
           { table_name: 'lookup_values', column_name: 'id', data_type: 'uuid' },
         ] };
       }
+      if (sql.includes('tenant_owned_rows')) return { rows: [{ tenant_owned_rows: '2', orphan_rows: '0', nullable_reference_rows: '0' }] };
       if (sql.includes('pg_constraint')) {
         return { rows: [
-          { child_schema: 'public', table_name: 'attendance', foreign_schema: 'public', foreign_table_name: 'employees', constraint_name: 'attendance_employee_id_fkey', child_columns: ['employee_id'], parent_columns: ['id'], is_validated: false, is_deferrable: false, match_type: 's' },
+          { child_schema: 'public', table_name: 'attendance', foreign_schema: 'public', foreign_table_name: 'employees', constraint_name: 'attendance_employee_id_fkey', child_columns: ['employee_id'], parent_columns: ['id'], is_validated: true, is_deferrable: false, match_type: 's' },
           { child_schema: 'public', table_name: 'audit_outbox', foreign_schema: 'shared', foreign_table_name: 'global_codes', constraint_name: 'audit_global_code_fk', child_columns: ['code_id'], parent_columns: ['id'], is_validated: true, is_deferrable: false, match_type: 's' },
         ] };
       }
@@ -153,6 +154,9 @@ test('builds a read-only inventory using the verified operational company UUID',
   assert.equal(result.tables.find((row) => row.name === 'companies').sourceRows, 1);
   assert.equal(result.tables.find((row) => row.name === 'employees').sourceRows, 3);
   assert.equal(result.tables.find((row) => row.name === 'attendance').scope, 'dependent');
+  assert.equal(result.tables.find((row) => row.name === 'attendance').sourceRows, 2);
+  assert.equal(result.tables.find((row) => row.name === 'attendance').orphanRows, 0);
+  assert.equal(result.tables.find((row) => row.name === 'attendance').nullableReferenceRows, 0);
   assert.equal(result.tables.find((row) => row.name === 'lookup_values').scope, 'unclassified');
   assert.equal(result.copyAllowed, false);
   assert.ok(result.blockers.some((item) => item.includes('Dependent tables')));
@@ -168,7 +172,7 @@ test('builds a read-only inventory using the verified operational company UUID',
     constraint: 'attendance_employee_id_fkey',
     childColumns: ['employee_id'],
     parentColumns: ['id'],
-    validated: false,
+    validated: true,
     deferrable: false,
     matchType: 's',
   });
