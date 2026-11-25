@@ -179,7 +179,7 @@ const ONBOARDING_STEPS = new Set(['org', 'branding', 'work', 'payroll', 'email',
 // Return persisted step markers so a customer can resume onboarding after login/reload.
 router.get('/onboarding/progress', auth, async (req, res) => {
   try {
-    const tenantId = req.user?.tenantId || req.user?.company_id;
+    const tenantId = req.user?.centralTenantId || req.user?.tenantId;
     if (!tenantId) return sendError(res, ERROR_CODES.VALIDATION, 'Tenant ID required', 400);
     const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
       SELECT onboarding_progress, is_setup_complete
