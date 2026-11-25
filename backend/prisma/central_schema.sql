@@ -581,6 +581,30 @@ CREATE INDEX IF NOT EXISTS idx_billing_events_status ON public.billing_events (s
 CREATE INDEX IF NOT EXISTS idx_billing_events_created_at ON public.billing_events (created_at);
 
 
+
+-- Tenant migration inventory audit trail. The corresponding RLS policy is
+-- installed by db-migrations/20261125_tenant_migration_jobs.sql.
+CREATE TABLE IF NOT EXISTS public.tenant_migration_jobs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  status TEXT NOT NULL CHECK (status IN (
+    'inventory_only', 'blocked', 'copying', 'verifying',
+    'completed', 'failed', 'rolled_back'
+  )),
+  source_schema TEXT NOT NULL,
+  destination_schema TEXT NOT NULL,
+  source_storage_tier TEXT NOT NULL,
+  target_storage_tier TEXT NOT NULL,
+  inventory JSONB NOT NULL,
+  blockers JSONB NOT NULL DEFAULT '[]'::jsonb,
+  requested_by_email TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_tenant_migration_jobs_tenant_created
+  ON public.tenant_migration_jobs (tenant_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_tenant_migration_jobs_status_created
+  ON public.tenant_migration_jobs (status, created_at DESC);
+
 -- VERIFY: List created tables
 -- ================================================================
 SELECT
@@ -590,7 +614,7 @@ SELECT
    AND table_schema = 'public') AS column_count
 FROM information_schema.tables t
 WHERE table_schema = 'public'
-  AND table_name IN ('tenants','tenant_modules','central_user_index','central_kyc_records')
+  AND table_name IN ('tenants','tenant_modules','central_user_index','central_kyc_records','tenant_migration_jobs')
 ORDER BY table_name;
 
 -- Expected output:
