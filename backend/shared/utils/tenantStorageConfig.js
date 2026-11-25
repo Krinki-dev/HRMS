@@ -57,34 +57,47 @@ function buildStorageDescriptor({ tenantId, plan, dbMode='cloud', dbUrl=null, re
   if (!SUPPORTED_DB_MODES.has(dbMode)) {
     throw new Error(`Unsupported database mode "${dbMode}". Only PostgreSQL cloud, external_cloud, and local modes are accepted for new allocations.`);
   }
-  const normalizedPlan=plan.trim().toLowerCase();
-  const isFreeOrTrial=normalizedPlan==='free' || normalizedPlan==='trial';
-  let tier=requestedTier;
-  if (tier==null) tier=isFreeOrTrial ? STORAGE_TIERS.SHARED : STORAGE_TIERS.DEDICATED_SCHEMA;
-  if (![STORAGE_TIERS.SHARED,STORAGE_TIERS.DEDICATED_SCHEMA,STORAGE_TIERS.DEDICATED_DATABASE].includes(tier)) {
+  const normalizedPlan = plan.trim().toLowerCase();
+  const isFreeOrTrial = normalizedPlan === 'free' || normalizedPlan === 'trial';
+  const isCustomerManagedDatabase = dbMode === 'external_cloud' || dbMode === 'local';
+  let tier = requestedTier;
+  if (tier == null) {
+    tier = isCustomerManagedDatabase
+      ? STORAGE_TIERS.DEDICATED_DATABASE
+      : isFreeOrTrial ? STORAGE_TIERS.SHARED : STORAGE_TIERS.DEDICATED_SCHEMA;
+  }
+  if (![STORAGE_TIERS.SHARED, STORAGE_TIERS.DEDICATED_SCHEMA, STORAGE_TIERS.DEDICATED_DATABASE].includes(tier)) {
     throw new Error(`Unsupported storage tier "${tier}".`);
   }
-  if (isFreeOrTrial && tier!==STORAGE_TIERS.SHARED) throw new Error('Free and Trial plans must use the shared public schema.');
-  if (!isFreeOrTrial && tier===STORAGE_TIERS.SHARED) {
-    throw new Error('Paid plans must receive a dedicated PostgreSQL schema or an explicitly approved dedicated database.');
+
+  if (isCustomerManagedDatabase && tier !== STORAGE_TIERS.DEDICATED_DATABASE) {
+    throw new Error('Customer-managed PostgreSQL must use its own dedicated database.');
   }
-  if (tier===STORAGE_TIERS.DEDICATED_DATABASE && normalizedPlan!=='enterprise') {
-    throw new Error('Dedicated database/instance isolation is reserved for an explicitly approved Enterprise allocation.');
+  if (dbMode === 'cloud' && isFreeOrTrial && tier !== STORAGE_TIERS.SHARED) {
+    throw new Error('Free and Trial managed-cloud plans must use the shared public schema.');
   }
-  const parsedUrl=validatePostgresUrl(dbUrl,{required:dbMode!=='cloud'});
-  let schemaName=null;
-  if (tier===STORAGE_TIERS.SHARED) schemaName='public';
-  else if (tier===STORAGE_TIERS.DEDICATED_SCHEMA) schemaName=deriveTenantSchemaName(tenantId);
-  if (parsedUrl && schemaName) parsedUrl.searchParams.set('schema',schemaName);
-  if (parsedUrl && tier===STORAGE_TIERS.DEDICATED_DATABASE) parsedUrl.searchParams.delete('schema');
+  if (dbMode === 'cloud' && !isFreeOrTrial && tier === STORAGE_TIERS.SHARED) {
+    throw new Error('Paid managed-cloud plans must receive a dedicated PostgreSQL schema or an explicitly approved dedicated database.');
+  }
+  if (tier === STORAGE_TIERS.DEDICATED_DATABASE && !isCustomerManagedDatabase && normalizedPlan !== 'enterprise') {
+    throw new Error('Platform-managed dedicated database isolation is reserved for an explicitly approved Enterprise allocation.');
+  }
+
+  const parsedUrl = validatePostgresUrl(dbUrl, { required: dbMode !== 'cloud' });
+  let schemaName = null;
+  if (tier === STORAGE_TIERS.SHARED) schemaName = 'public';
+  else if (tier === STORAGE_TIERS.DEDICATED_SCHEMA) schemaName = deriveTenantSchemaName(tenantId);
+  if (parsedUrl && schemaName) parsedUrl.searchParams.set('schema', schemaName);
+  if (parsedUrl && tier === STORAGE_TIERS.DEDICATED_DATABASE) parsedUrl.searchParams.delete('schema');
+
   return Object.freeze({
-    engine:'postgresql',
+    engine: 'postgresql',
     dbMode,
-    storageTier:tier,
-    storageStatus:STORAGE_STATUSES.PENDING,
+    storageTier: tier,
+    storageStatus: STORAGE_STATUSES.PENDING,
     schemaName,
-    databaseUrl:parsedUrl ? parsedUrl.toString() : null,
-    connectionSource:dbMode==='cloud' && !parsedUrl ? 'CLOUD_TENANT_DATABASE_URL' : 'tenant_configuration',
+    databaseUrl: parsedUrl ? parsedUrl.toString() : null,
+    connectionSource: dbMode === 'cloud' && !parsedUrl ? 'CLOUD_TENANT_DATABASE_URL' : 'tenant_configuration',
   });
 }
 
