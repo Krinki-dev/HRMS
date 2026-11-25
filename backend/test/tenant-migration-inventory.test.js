@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { classifyTenantTables, inspectTenantMigration } = require('../modules/platform/tenantMigrationInventory');
+const { classifyTenantTables, buildDependentInventoryQuery, buildCrossTenantReferenceQuery, inspectTenantMigration } = require('../modules/platform/tenantMigrationInventory');
 
 test('classifies direct company tables and descendants through foreign keys', () => {
   const result = classifyTenantTables({
@@ -92,6 +92,42 @@ test('preserves composite FK column order and rejects ambiguous or cyclic owners
   });
   assert.equal(cycle.cyclic_a.scope, 'unclassified');
   assert.equal(cycle.cyclic_b.scope, 'unclassified');
+});
+
+test('builds parameterized composite-key joins and cross-tenant reference checks', () => {
+  const dependentQuery = buildDependentInventoryQuery({
+    sourceSchema: 'public',
+    table: 'payroll_rows',
+    rootTable: 'employees',
+    relations: [{
+      fromTable: 'payroll_rows',
+      toTable: 'employees',
+      childColumns: ['employee_id', 'company_ref'],
+      parentColumns: ['id', 'company_id'],
+      validated: true,
+    }],
+  });
+  assert.match(dependentQuery.sql, /t0\."employee_id" = t1\."id"/);
+  assert.match(dependentQuery.sql, /t0\."company_ref" = t1\."company_id"/);
+  assert.match(dependentQuery.sql, /t1\."company_id" = \$1/);
+  assert.throws(() => buildDependentInventoryQuery({
+    sourceSchema: 'public',
+    table: 'payroll_rows',
+    rootTable: 'employees',
+    relations: [{ toTable: 'employees', childColumns: ['employee_id'], parentColumns: ['id'], validated: false }],
+  }), /Unvalidated foreign keys/);
+
+  const crossTenantQuery = buildCrossTenantReferenceQuery({
+    sourceSchema: 'public',
+    foreignKey: {
+      table_name: 'employee_notes',
+      foreign_table_name: 'employees',
+      child_columns: ['employee_id'],
+      parent_columns: ['id'],
+    },
+  });
+  assert.match(crossTenantQuery.sql, /child\."company_id" = \$1/);
+  assert.match(crossTenantQuery.sql, /parent\."company_id" <> \$1/);
 });
 
 test('builds a read-only inventory using the verified operational company UUID', async () => {
