@@ -145,6 +145,7 @@ test('builds a read-only inventory using the verified operational company UUID',
   assert.equal(result.copyAllowed, false);
   assert.equal(result.inventoryOnly, true);
   assert.equal(result.summary.destinationSchemaExists, false);
+  assert.equal(result.summary.ambiguousTables, 0);
   assert.equal(result.tables.find((row) => row.name === 'companies').sourceRows, 1);
   assert.equal(result.tables.find((row) => row.name === 'employees').sourceRows, 3);
   assert.equal(result.tables.find((row) => row.name === 'attendance').scope, 'dependent');
