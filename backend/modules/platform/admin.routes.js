@@ -10,13 +10,20 @@ const nodemailer  = require('nodemailer');
 const { centralPrisma } = require('../../shared/utils/centralPrisma');
 const logger = require('../../shared/utils/logger');
 const { THEME } = require('../../shared/utils/uiConstants');
-const { resolveTenantDbUrl } = require('./platform.service');
+const { resolveTenantStorageTarget } = require('../../shared/utils/tenantStorageResolver');
 const {
   getDeletionReadiness,
   permanentlyDeleteTenant,
 } = require('./tenantDeletion.service');
 
 const getCentral = () => centralPrisma;
+
+function resolveAdminTenantDbUrl(tenant) {
+  return resolveTenantStorageTarget(tenant, {
+    cloudDatabaseUrl: process.env.CLOUD_TENANT_DATABASE_URL,
+    decryptValue: (value) => decrypt(value) || value,
+  }).databaseUrl;
+}
 
 /**
  * Middleware to enforce platform-level super admin access.
@@ -550,12 +557,14 @@ router.get('/tenants/:id/notifications', async (req, res) => {
     
     const c = getCentral();
     const tenantRows = await c.$queryRaw`
-      SELECT db_url, db_mode, schema_name FROM tenants
+      SELECT plan, db_url, db_mode, schema_name, storage_tier, storage_status,
+             local_db_type, local_db_host, local_db_port, local_db_name,
+             local_db_user, local_db_pass FROM tenants
       WHERE id = ${req.params.id}::uuid AND deleted_at IS NULL LIMIT 1
     `;
     if (!tenantRows.length) return sendError(res, ERROR_CODES.NOT_FOUND, 'Tenant not found', 404);
 
-    const dbUrl = resolveTenantDbUrl(tenantRows[0].db_mode, tenantRows[0]);
+    const dbUrl = resolveAdminTenantDbUrl(tenantRows[0]);
     if (!dbUrl) {
       return sendSuccess(res, { config: null, message: 'Tenant DB not provisioned yet' });
     }
@@ -601,12 +610,14 @@ router.put('/tenants/:id/notifications', async (req, res) => {
   try {
     const c = getCentral();
     const tenantRows = await c.$queryRaw`
-      SELECT db_url, db_mode, schema_name FROM tenants
+      SELECT plan, db_url, db_mode, schema_name, storage_tier, storage_status,
+             local_db_type, local_db_host, local_db_port, local_db_name,
+             local_db_user, local_db_pass FROM tenants
       WHERE id = ${req.params.id}::uuid AND deleted_at IS NULL LIMIT 1
     `;
     if (!tenantRows.length) return sendError(res, ERROR_CODES.NOT_FOUND, 'Tenant not found', 404);
 
-    const dbUrl = resolveTenantDbUrl(tenantRows[0].db_mode, tenantRows[0]);
+    const dbUrl = resolveAdminTenantDbUrl(tenantRows[0]);
     if (!dbUrl) return sendError(res, ERROR_CODES.VALIDATION, 'Tenant DB not provisioned yet', 400);
 
     const {
@@ -667,12 +678,14 @@ router.post('/tenants/:id/notifications/test', async (req, res) => {
   try {
     const c = getCentral();
     const tenantRows = await c.$queryRaw`
-      SELECT db_url, db_mode, schema_name, admin_email FROM tenants
+      SELECT plan, db_url, db_mode, schema_name, storage_tier, storage_status,
+             local_db_type, local_db_host, local_db_port, local_db_name,
+             local_db_user, local_db_pass, admin_email FROM tenants
       WHERE id = ${req.params.id}::uuid AND deleted_at IS NULL LIMIT 1
     `;
     if (!tenantRows.length) return sendError(res, ERROR_CODES.NOT_FOUND, 'Tenant not found', 404);
 
-    const dbUrl = resolveTenantDbUrl(tenantRows[0].db_mode, tenantRows[0]);
+    const dbUrl = resolveAdminTenantDbUrl(tenantRows[0]);
     const toEmail  = req.body.toEmail || tenantRows[0].admin_email;
 
     if (!dbUrl) return sendError(res, ERROR_CODES.VALIDATION, 'Tenant DB not provisioned', 400);
