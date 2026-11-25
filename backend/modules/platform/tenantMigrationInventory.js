@@ -117,7 +117,7 @@ function buildDependentInventoryQuery({ sourceSchema, table, relations, rootTabl
   return {
     sql: `SELECT
       COUNT(*) FILTER (WHERE ${ownerPredicate})::text AS tenant_owned_rows,
-      COUNT(*) FILTER (WHERE ${rootAlias}.${quoteIdentifier(rootKey)} IS NULL)::text AS orphan_rows,
+      COUNT(*) FILTER (WHERE ${rootAlias}.${quoteIdentifier(rootKey)} IS NULL OR (${rootTable !== 'companies' ? `${rootAlias}.${quoteIdentifier('company_id')} IS NULL` : 'FALSE'}))::text AS orphan_rows,
       COUNT(*) FILTER (WHERE ${nullablePredicate})::text AS nullable_reference_rows
       FROM ${from}`,
   };
@@ -245,14 +245,16 @@ async function inspectTenantMigration({
       if (classification[table].scope !== 'direct') continue;
       const count = table === 'companies'
         ? await pool.query(
-            `SELECT COUNT(*)::text AS count FROM ${quoteIdentifier(sourceSchema)}.companies WHERE id = $1`,
+            `SELECT COUNT(*)::text AS count, '0'::text AS unowned_rows FROM ${quoteIdentifier(sourceSchema)}.companies WHERE id = $1`,
             [companyId]
           )
         : await pool.query(
-            `SELECT COUNT(*)::text AS count FROM ${quoteIdentifier(sourceSchema)}.${quoteIdentifier(table)} WHERE company_id = $1`,
+            `SELECT COUNT(*) FILTER (WHERE company_id = $1)::text AS count,
+                    COUNT(*) FILTER (WHERE company_id IS NULL)::text AS unowned_rows
+             FROM ${quoteIdentifier(sourceSchema)}.${quoteIdentifier(table)}`,
             [companyId]
           );
-      directCounts[table] = Number(count.rows[0].count);
+      directCounts[table] = { tenantRows: Number(count.rows[0].count), unownedRows: Number(count.rows[0].unowned_rows || 0) };
     }
 
     for (const table of tables) {
@@ -308,7 +310,8 @@ async function inspectTenantMigration({
     if (summary.unclassifiedTables) blockers.push('Some tables have no proven tenant ownership path and require explicit classification.');
     if (summary.ambiguousTables) blockers.push('Some tables have multiple foreign-key ownership paths; explicit reviewed ownership rules are required.');
     if (summary.dependentTables) blockers.push('Dependent tables were discovered; migration copy remains disabled until cross-tenant reference validation and per-table verification are implemented.');
-    if (Object.values(dependentCounts).some((item) => item.orphanRows > 0)) blockers.push('Dependent tables contain orphaned foreign-key records that cannot be assigned to a tenant safely.');
+    if (Object.values(dependentCounts).some((item) => item.orphanRows > 0)) blockers.push('Dependent tables contain orphaned or unowned foreign-key records that cannot be assigned to a tenant safely.');
+    if (Object.values(directCounts).some((item) => item.unownedRows > 0)) blockers.push('Directly scoped tables contain rows with NULL company_id; these records require manual ownership classification.');
     if (Object.values(dependentCounts).some((item) => item.nullableReferenceRows > 0)) blockers.push('Dependent tables contain nullable ownership references; rows without a complete ownership path require manual classification.');
     if (fkResult.rows.some((fk) => !fk.is_validated)) blockers.push('One or more foreign-key constraints are NOT VALID and must be validated before migration.');
     if (summary.crossSchemaForeignKeyCount) blockers.push('Foreign-key relationships cross the source schema boundary; external dependencies must be reviewed before migration.');
@@ -329,7 +332,8 @@ async function inspectTenantMigration({
         scope: classification[name].scope,
         ownershipPath: classification[name].via,
         ownershipRelations: classification[name].relations,
-        sourceRows: directCounts[name] ?? dependentCounts[name]?.tenantRows ?? null,
+        sourceRows: directCounts[name]?.tenantRows ?? dependentCounts[name]?.tenantRows ?? null,
+        unownedRows: directCounts[name]?.unownedRows ?? null,
         orphanRows: dependentCounts[name]?.orphanRows ?? null,
         nullableReferenceRows: dependentCounts[name]?.nullableReferenceRows ?? null,
       })),
