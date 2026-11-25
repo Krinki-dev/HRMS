@@ -404,3 +404,10 @@ Phase 19:  Mobile App (React Native)    ❌ Phase 2 — not started
 ❌ Direct file paths for uploads → signed MinIO URLs only
 ❌ Storing tokens in localStorage → httpOnly cookie for refresh, Bearer for access
 ```
+
+
+### Security implementation check — required correction
+- Access JWTs must be memory-only in the browser. Do not persist them to localStorage, sessionStorage or persisted Zustand state.
+- Refresh JWTs remain httpOnly secure cookies; refresh endpoint and CSRF controls must be verified together.
+- Current frontend authStore.js and services/api.js still persist accessToken in localStorage; this is a P0 deviation that must be corrected before security sign-off.
+- Central user lookup must not resolve a multi-tenant email by arbitrary LIMIT 1 where Central index only guarantees unique (email, company_id). Resolve tenant explicitly or ask the user to select one.
