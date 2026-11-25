@@ -9,6 +9,7 @@ const axios   = require('axios');
 const { registerTenant, requestBranchLink } = require('./platform.service');
 const { scrapeGSTPortal } = require('../../shared/utils/gstScraper');
 const { centralPrisma } = require('../../shared/utils/centralPrisma');
+const { withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 const { sendSuccess, sendError, ERROR_CODES } = require('../../shared/utils/response');
 const logger = require('../../shared/utils/logger');
 
@@ -280,18 +281,18 @@ router.get('/gstin-check/:gstin', async (req, res) => {
 
   const pan = gstinUpper.substring(2, 12);
   try {
-    const exactRows = await centralPrisma.$queryRaw`
+    const exactRows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
       SELECT id, name, legal_name, subdomain, gstin, pan, state, city
       FROM tenants
       WHERE gstin = ${gstinUpper} AND deleted_at IS NULL
       LIMIT 1
-    `;
+    `);
 
-    const samePanRows = await centralPrisma.$queryRaw`
+    const samePanRows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
       SELECT id, name, legal_name, subdomain, gstin, pan, state, city
       FROM tenants
       WHERE pan = ${pan} AND gstin != ${gstinUpper} AND deleted_at IS NULL
-    `;
+    `);
 
     return sendSuccess(res, {
       exists: exactRows.length > 0,
