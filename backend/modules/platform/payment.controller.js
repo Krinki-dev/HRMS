@@ -59,6 +59,9 @@ async function resolveTenantId(req) {
   const jwtTenantId = req.user?.centralTenantId || req.user?.tenantId;
   if (jwtTenantId) return jwtTenantId;
   if (req.tenant?.id) return req.tenant.id;
+  // A caller-controlled tenant header is a tenant selector, not proof of
+  // membership. Only a platform admin may resolve a tenant from this header.
+  if (!req.user?.is_platform_admin) return null;
   const subdomain = req.headers['x-tenant-subdomain'] || req.headers['x-tenant'];
   if (subdomain) {
     try {
