@@ -3,6 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { resolveTenantIdentity, matchesTenantContext } = require('../shared/utils/tenantIdentity');
+const { resolveCompanyId, resolveCentralTenantId } = require('../shared/utils/tenantResolver');
 
 test('maps legacy tenantId claim to companyId, not Central tenantId', () => {
   const identity = resolveTenantIdentity({
@@ -63,4 +64,28 @@ test('new company claim without Central tenant claim cannot be rebound by host',
   });
   assert.equal(identity.companyId, 'company-id');
   assert.equal(identity.centralTenantId, null);
+});
+
+
+test('operational resolver returns companyId, never Central tenantId', () => {
+  assert.equal(resolveCompanyId({
+    user: { companyId: 'company-id', centralTenantId: 'central-tenant-id', tenantId: 'central-tenant-id' },
+    tenant: { id: 'central-tenant-id' },
+  }), 'company-id');
+});
+
+test('Central resolver returns tenants.id, never operational companyId', () => {
+  assert.equal(resolveCentralTenantId({
+    user: { companyId: 'company-id', centralTenantId: 'central-tenant-id', tenantId: 'central-tenant-id' },
+    tenant: { id: 'central-tenant-id' },
+  }), 'central-tenant-id');
+});
+
+test('operational and Central resolvers fail closed when their own identity is absent', () => {
+  assert.throws(() => resolveCompanyId({ user: { centralTenantId: 'central-tenant-id' } }), {
+    code: 'COMPANY_CONTEXT_REQUIRED',
+  });
+  assert.throws(() => resolveCentralTenantId({ user: { companyId: 'company-id' } }), {
+    code: 'TENANT_REQUIRED',
+  });
 });
