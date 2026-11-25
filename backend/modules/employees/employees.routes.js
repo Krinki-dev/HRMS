@@ -9,7 +9,7 @@ const extCtrl = require('./employees.extended.controller');
 const reqCtrl = require('./employees.update-request');
 const auth    = require('../../shared/middleware/auth');
 const requireSetupComplete = require('../../shared/middleware/requireSetupComplete');
-const { checkPermission, checkSensitivePermission, checkModuleEnabled } = require('../../shared/middleware/permission');
+const { checkPermission, checkSensitivePermission, checkSensitivePayloadPermission, checkModuleEnabled } = require('../../shared/middleware/permission');
 const { sendError }       = require('../../shared/utils/response');
 
 const UPLOAD_DIR = path.join(__dirname, '../../../uploads/employees');
@@ -113,6 +113,7 @@ router.post(
   '/bulk-import',
   requireSetupComplete,
   checkPermission('employees', 'create'),
+  checkSensitivePayloadPermission('employees', 'edit_sensitive', ['aadhaarNumber', 'panNumber', 'uanNumber', 'esiIpNumber', 'disabilityStatus']),
   ctrl.bulkImport
 );
 router.get('/bulk-import/template', checkPermission('employees', 'view'), ctrl.downloadTemplate);
