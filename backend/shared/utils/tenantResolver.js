@@ -17,9 +17,13 @@ function resolveCompanyId(req) {
 }
 
 function resolveCentralTenantId(req) {
-  const tenantId = req.user?.is_platform_admin && req.tenant?.id
-    ? req.tenant.id
-    : (req.user?.centralTenantId || req.tenant?.id || req.user?.tenantId);
+  // Only platform admins may select a tenant from the request's resolved
+  // tenant context. Ordinary users must use the immutable Central tenant
+  // identity resolved from their authenticated token/index, never a host
+  // fallback or the legacy ambiguous tenantId alias.
+  const tenantId = req.user?.is_platform_admin
+    ? req.tenant?.id
+    : req.user?.centralTenantId;
   if (!tenantId) {
     const error = new Error('Central tenant context is required.');
     error.status = 400;
