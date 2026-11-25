@@ -444,3 +444,12 @@ User should not be asked to repeat technical decisions. Ask for their involvemen
 - Added regression tests for the explicit sensitive permission boundary. GitHub Actions Backend Tests succeeded at commit `20ef9b709291eab9a80e33c785b8211e9fb8b06b`: 87 tests, 83 passed, 0 failed, 4 skipped. This run includes schema/validator and permission tests; it is not PostgreSQL/browser/staging certification.
 - Fixed a pre-existing renewal test expectation: the one-month period from Nov 25 to Dec 25 ends on Dec 25 as a date-only value. CI then passed at `6668732d42531b430b969d3e78792481e35e9e14` (85 tests, 81 passed, 0 failed, 4 skipped).
 - Remaining import/export work: choose and lock a secure XLSX library, workbook writer/parser with bounded upload/decompression, server-side preview and persisted import jobs, conflict checks, transactional parent/child commit, error workbook, ID mapping, side-by-side UI, CSV robustness and round-trip tests.
+
+
+## 14. 2026-11-25 — Employees workbook validation/security follow-up
+
+- Latest implementation adds ContactDetails as a separate worksheet; Employees sheet no longer duplicates contact/address fields. Relational sheets link by Employee Code.
+- Shared validator resolves schema-declared references such as Manager Employee Code, validates parent-child links, supports only create-only/update-only/upsert, and requires child record UUIDs for update-only while forbidding them for create-only. It rejects formulas/non-primitive cells, invalid dates, duplicate keys and unknown worksheets.
+- Sensitive employee import fields (Aadhaar, PAN, UAN, ESI and disability status) now require explicit employees.edit_sensitive permission when populated. Normal CSV import remains possible without sensitive permission. Default CSV template excludes these fields; CSV export already excludes them.
+- Billing renewal invoice period_end bug found by CI was fixed: inclusive period_end is the calendar day before the paid-through expiry date. Backend CI run at 3388326dc14305f58487e26b578f2e613896bddb passed. The newest workbook/security commits still need a final green CI run; intermediate runs exposed validator/test issues which have since been corrected in commits 1016ea36c5c16b7a6da405511866255f012eacc3 and 9d93d7394e397c4f0b142d86a7daef0cd99267ba.
+- XLSX parser/writer, template, import preview/confirm persistence, database conflict checks, transaction-safe commit, error workbook and UI are not implemented yet. Do not present the workbook feature as complete.
