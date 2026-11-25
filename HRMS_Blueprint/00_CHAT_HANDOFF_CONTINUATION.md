@@ -568,3 +568,35 @@ Comparison from baseline commit `cd400a602eb255029c1daeeae1d35f0c7b7ee948` to re
 - The legacy engine branches, duplicate connection resolvers, old clone-based provisioning, local PostgreSQL resolver, tenant/company mapping and module-wide company scoping remain open work.
 - No database migration, schema drop, dummy-data cleanup, live routing change, payment or deployment was performed.
 
+
+
+## 2026-11-25 — Master codebase audit baseline and owner decision register
+
+Created and committed:
+- HRMS_Blueprint/33_MASTER_CODEBASE_ARCHITECTURE_AUDIT.md — source-verified architecture, database/storage lifecycle, P0/P1 findings, verification gates and remaining audit register.
+- HRMS_Blueprint/34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md — only business/product choices requiring owner direction, with recommended defaults.
+
+Also updated:
+- 00_INDEX.md to make the new audit and decision register the starting authority and remove the unavailable 08_STATUS_AND_CHANGELOG.md as the working status reference.
+- 07_FROZEN_DECISIONS.md with an override section for PostgreSQL-only, Free/Trial public, Paid UUID schema, Razorpay-only and identity mapping.
+- 32_PRODUCTION_READINESS_AND_MODULE_EXECUTION_PLAN.md with current blockers.
+- This handoff with the verified Central migration result and current audit priorities.
+
+Verified facts:
+- 477 reachable commits in branch history; 378 dated 2026-11-23 to 2026-11-25; 99 earlier baseline commits dated 2026-06-16 to 2026-08-21.
+- Branch compare at audit start: 378 ahead / 0 behind main, common base cd400a602eb255029c1daeeae1d35f0c7b7ee948.
+- New documentation commits changed no application source code. Current-head CI status query returned no status records or workflow runs; do not claim a fresh CI pass.
+- Central schema migration is applied and verified 12/12 by the user. Tenant operational migrations remain unapplied.
+- No SQL, tenant data cleanup, schema deletion, production deployment or live payment was performed.
+
+Important source findings to retain:
+1. Current tenant routing/registration still bypasses the new pure storage allocation/resolver helpers; Free/Trial public and Paid UUID-schema are not yet live end-to-end.
+2. Tenant/company IDs are overloaded: auth token tenantId currently comes from operational user.company_id, while platform billing code treats it as Central tenants.id.
+3. Subscription employee pricing count does not filter company_id.
+4. Tenant operational business tables lack a complete shared-public RLS protection set.
+5. Tenant Prisma migration history declares MSSQL and includes SQL Server DDL; do not use current migrate script.
+6. Local PostgreSQL URL construction is not supported by the new resolver yet.
+7. Shared public per-tenant backup/restore is not implemented; deletion remains safely fail-closed.
+8. Employee relational workbook contract exists, but full XLSX import/export pipeline is pending.
+
+Resume from Section 10 of 33_MASTER_CODEBASE_ARCHITECTURE_AUDIT.md. Do not ask the user to repeat confirmed tenancy or CSV/XLSX decisions. Do not ask for another SQL run before source-code audit is complete. First resolve or get owner input on the items in 34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md; then continue with P0 identity and shared-schema isolation.
