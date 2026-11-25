@@ -30,7 +30,7 @@
 function withTenantRLS(prisma, tenantId, fn) {
   if (!tenantId) throw new Error('withTenantRLS: tenantId is required');
   return prisma.$transaction(async (tx) => {
-    await tx.$executeRawUnsafe(`SET LOCAL app.current_tenant = '${tenantId}'`);
+    await tx.$queryRaw`SELECT set_config('app.current_tenant', ${tenantId}, true)`;
     return fn(tx);
   });
 }
@@ -44,7 +44,7 @@ function withTenantRLS(prisma, tenantId, fn) {
  */
 function withPlatformAdminRLS(prisma, fn) {
   return prisma.$transaction(async (tx) => {
-    await tx.$executeRawUnsafe(`SET LOCAL "jwt.claims.is_platform_admin" = 'true'`);
+    await tx.$queryRaw`SELECT set_config('jwt.claims.is_platform_admin', 'true', true)`;
     return fn(tx);
   });
 }
