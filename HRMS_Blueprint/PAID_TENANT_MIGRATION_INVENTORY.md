@@ -14,7 +14,9 @@ This phase is intentionally inventory-only:
 - It does not activate paid entitlements.
 - It is restricted to super-admin routes and managed-cloud tenants on shared storage.
 - It resolves the operational `companies.id` from the tenant's registered GSTIN/PAN (Central tenant UUID and operational company UUID are distinct), then counts the `companies` root row and tables with an explicit `company_id` ownership column.
-- It traces dependent tables through PostgreSQL foreign keys, but does not yet count or copy those rows.
+- It reads PostgreSQL foreign-key constraint metadata at column level, preserving ordered child/parent column mappings (including composite keys), constraint names, validation state, deferrability, and match type.
+- It traces dependent tables through foreign keys, but does not yet count or copy those rows.
+- Any `NOT VALID` foreign-key constraint is an explicit blocker; the preview does not validate or alter constraints.
 - Tables without a proven `company_id` root are marked unclassified and block migration readiness.
 - An already-existing destination schema is a blocker; the preview never overwrites it.
 
@@ -31,8 +33,8 @@ The ownership path is displayed from the dependent table toward its tenant-owned
 ## Required next phases before enabling copy
 
 1. Add an explicit, reviewed manifest for every operational, global/reference, and tenant-owned table.
-2. Resolve indirect ownership using the actual FK columns and tenant-specific parent row sets, not table-name assumptions.
-3. Detect cross-tenant FK references and orphan records.
+2. Use the captured ordered FK column mappings to resolve indirect ownership against tenant-specific parent row sets; ambiguous paths, composite keys, cycles, and nullable references need explicit handling.
+3. Count dependent rows using parameterized joins and detect cross-tenant references and orphan records.
 4. Compare source and destination schema versions, extensions, indexes, constraints, and unique-key collisions.
 5. Add durable migration-job state, resumable checkpoints, and idempotency keys in Central DB.
 6. Copy in dependency order into an isolated staging schema/target.
