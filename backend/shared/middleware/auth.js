@@ -58,6 +58,10 @@ const authMiddleware = async (req, res, next) => {
       indexedTenantId,
     });
 
+    if (req.tenant?.id && tenantIdentity.centralTenantId !== req.tenant.id) {
+      return sendError(res, ERROR_CODES.FORBIDDEN, 'Tenant context does not match the authenticated session.', 403);
+    }
+
     req.user = {
       id:                decoded.id,
       employeeId:        decoded.employeeId,
