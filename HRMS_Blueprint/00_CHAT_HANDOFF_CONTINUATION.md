@@ -5,7 +5,26 @@
 **Repository:** `Krinki-dev/HRMS`  
 **Working branch:** `architecture/postgres-tenant-isolation`  
 **Protected branch:** `main` — do not modify it.  
-**Current handoff date:** 2026-11-24 (Asia/Kolkata)
+**Current handoff date:** 2026-11-25 (Asia/Kolkata)
+
+
+## LATEST AUTHORITATIVE OVERRIDE — 2026-11-25
+
+This block supersedes older statements elsewhere in this handoff if they conflict.
+
+- Master code/architecture audit: HRMS_Blueprint/33_MASTER_CODEBASE_ARCHITECTURE_AUDIT.md.
+- Open product decisions: HRMS_Blueprint/34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md.
+- Git history verified: 477 reachable commits total; 378 commits from 2026-11-23 through 2026-11-25 are ahead of the common base with main; 99 older baseline commits are dated 2026-06-16 through 2026-08-21.
+- Common base with main: cd400a602eb255029c1daeeae1d35f0c7b7ee948. Current head at the start of this audit: cce0117970b6d816e4a7880b4bad11edb21e05e2. Do not modify main.
+- User-confirmed storage policy: PostgreSQL only; Free/Trial use tenant operational public schema; Paid tenants use their own UUID-derived schema; optional Enterprise dedicated PostgreSQL DB/instance only by separate approval; client-hosted/offline PostgreSQL remains required; hybrid synchronization is deferred.
+- Central tenants.id and operational companies.id are distinct. Current token/context code overloads tenantId; fix this as P0 by carrying tenantId and companyId separately.
+- The tenant storage config/resolver helpers and their tests reflect the public/Paid policy, but live tenant registration/routing still has old subdomain schema allocation, cloneSchema, hybrid/legacy engine paths and development fallbacks. Do not assume the policy is live.
+- The tenant Prisma migration history still declares MSSQL and contains SQL Server syntax. Do not run backend npm migrate, migrate reset, blind db push or the legacy migration against PostgreSQL.
+- Central migration backend/db-migrations/20261125_central_platform_schema_upgrade.sql has been applied on the correct Central HRMS DB; user supplied 12/12 verification checks as true. Tenant operational migrations have NOT been applied. Tenant inventory was read-only.
+- Do not ask the user to run further SQL at this stage. Continue source audit and documentation first.
+- No tenant schema deletion or operational data cleanup has been done. Even though the user permits eventual cleanup of dummy operational data, classify and restore-test first.
+- The exact latest branch CI has not been verified by this audit. Prior CI results apply only to their recorded commits.
+- Current priority is P0 identity mapping, public-schema isolation/RLS, single PostgreSQL resolver, Free/Trial signup routing, paid provisioning/promotion and a clean PostgreSQL migration baseline.
 
 ## 1. How to continue in a new chat
 
@@ -13,7 +32,7 @@ Paste this instruction in the new chat:
 
 > Continue the HRMS project using `HRMS_Blueprint/00_CHAT_HANDOFF_CONTINUATION.md` from branch `architecture/postgres-tenant-isolation`. Read it first, preserve every existing decision and constraint, inspect the current branch head before editing, and resume from the “Immediate next actions” section. Do not restart the project, change architecture decisions, or ask me to repeat information already recorded. Make real code commits on the working branch and report only verified progress. Update this handoff file after each meaningful work session.
 
-Always fetch the latest copy of this file from the working branch. The latest branch state and code are authoritative if this document becomes stale.
+Always fetch the latest copy of this file from the working branch. The latest branch state and code are authoritative if this document becomes stale. Before code work, also read HRMS_Blueprint/33_MASTER_CODEBASE_ARCHITECTURE_AUDIT.md and HRMS_Blueprint/34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md.
 
 ## 2. User's working preferences and communication
 
@@ -54,7 +73,7 @@ Do not bypass the onboarding gates or mark steps complete when their data has no
 ### Tenant isolation / database
 - PostgreSQL is the target architecture.
 - Tenant context and RLS boundaries must be explicit and fail closed.
-- Migrations have been prepared but **not applied**. Wait until the user is home and ready; use a supervised staging-first sequence, backup, migration review and verification.
+- Central platform migration has been applied and verified 12/12 on the correct Central HRMS DB. Tenant operational migrations remain unapplied. Do not ask for another SQL run during source audit; wait for explicit user readiness before any tenant/staging migration.
 - Do not treat source commits or CI as proof of live DB correctness.
 
 ### UI/theme
@@ -67,7 +86,7 @@ Do not bypass the onboarding gates or mark steps complete when their data has no
 
 - Working branch: `architecture/postgres-tenant-isolation`.
 - `main` must remain untouched.
-- Last recorded comparison before the latest handoff-file commit: branch was **247 commits ahead, 0 behind** main. Recheck the live compare endpoint before reporting current counts.
+- At the 2026-11-25 audit start, branch was **378 commits ahead, 0 behind** main; common base cd400a602eb255029c1daeeae1d35f0c7b7ee948. The branch has 477 reachable commits total, including 99 earlier baseline commits. Recheck the branch ref before future status reports.
 - Latest code commit whose backend CI was checked: `4498f48ec900ebd30f147fc3e17f40e6a065a8b0` — Backend Tests succeeded.
 - Frontend Build succeeded for commit `30460a891103d531cab91900650c23610542cc88` and earlier frontend changes including the marketing CTA commit `b4687906d93b3c98ac0e2b8f18d6c2997c0284f0`.
 - Backend Tests also succeeded for `0f9d28e3f2f5757ad6ba73b80b961f5911b6403a`, `1d21aa1beac8f44fc9a2af6f4c4b52cc239b8d88`, `d6dfee46145a7f4cee1694f0085bf2682cc5f2da`, and `30460a891103d531cab91900650c23610542cc88`.
@@ -173,7 +192,7 @@ Migration order documented in `backend/db-migrations/README.md`:
 4. `20261124_tenant_storage_lifecycle.sql`
 5. `20261124_company_document_workflow.sql`
 
-No migrations have been applied. Later: review current DB state, backup, run on staging first, generate Prisma clients, verify RLS/tenant access, test rollback/recovery, then obtain approval before production.
+Central migration backend/db-migrations/20261125_central_platform_schema_upgrade.sql HAS been applied to the correct Central HRMS database and its 12 expected checks were verified true by the user. Tenant operational migrations have NOT been applied. The inventory SQL was read-only. Later: review tenant state, classify schemas, backup and restore-test, build a PostgreSQL migration baseline, stage and verify, then obtain explicit approval before production.
 
 ## 7. Immediate next actions (resume from here)
 
