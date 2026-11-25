@@ -127,9 +127,12 @@ test('builds a customer-hosted PostgreSQL URL from explicit local settings', () 
   assert.equal(parsed.password, 'p%40ss%20word');
 });
 
-test('routes a ready local tenant only to its configured PostgreSQL database', () => {
+test('routes a ready customer-managed local PostgreSQL database without a schema override', () => {
   const result = resolveTenantStorageTarget(tenant({
+    plan: 'trial',
     db_mode: 'local',
+    storage_tier: STORAGE_TIERS.DEDICATED_DATABASE,
+    schema_name: null,
     local_db_type: 'postgresql',
     local_db_host: '192.168.1.20',
     local_db_port: 5432,
@@ -138,7 +141,7 @@ test('routes a ready local tenant only to its configured PostgreSQL database', (
     local_db_pass: 'enc:secret',
   }), { decryptValue: (value) => value.replace('enc:', '') });
   assert.equal(new URL(result.databaseUrl).hostname, '192.168.1.20');
-  assert.equal(new URL(result.databaseUrl).searchParams.get('schema'), tenant().schema_name);
+  assert.equal(new URL(result.databaseUrl).searchParams.has('schema'), false);
 });
 
 test('rejects non-PostgreSQL local database types and incomplete local credentials', () => {
