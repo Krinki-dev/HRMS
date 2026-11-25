@@ -20,7 +20,7 @@ test('paid plans use a tenant-specific schema, independent of employee count',()
   assert.equal(r.schemaName,deriveTenantSchemaName(tenantId));
 });
 test('enterprise cloud may explicitly request platform-managed dedicated database isolation',()=>{
-  const r=buildStorageDescriptor({tenantId,plan:'enterprise',dbMode:'external_cloud',dbUrl:pgUrl,requestedTier:STORAGE_TIERS.DEDICATED_DATABASE});
+  const r=buildStorageDescriptor({tenantId,plan:'enterprise',dbMode:'cloud',dbUrl:pgUrl,requestedTier:STORAGE_TIERS.DEDICATED_DATABASE});
   assert.equal(r.storageTier,STORAGE_TIERS.DEDICATED_DATABASE);
   assert.equal(r.schemaName,null);
   assert.equal(new URL(r.databaseUrl).searchParams.has('schema'),false);
