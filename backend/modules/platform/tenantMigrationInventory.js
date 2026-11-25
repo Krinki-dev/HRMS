@@ -131,7 +131,9 @@ async function inspectTenantMigration({
       ),
       pool.query(
         `SELECT
+           child_ns.nspname AS child_schema,
            child.relname AS table_name,
+           parent_ns.nspname AS foreign_schema,
            parent.relname AS foreign_table_name,
            c.conname AS constraint_name,
            c.convalidated AS is_validated,
@@ -151,11 +153,10 @@ async function inspectTenantMigration({
          JOIN pg_attribute parent_attr
            ON parent_attr.attrelid = parent.oid AND parent_attr.attnum = key_columns.parent_attnum
          WHERE c.contype = 'f'
-           AND child_ns.nspname = $1
-           AND parent_ns.nspname = $1
+           AND (child_ns.nspname = $1 OR parent_ns.nspname = $1)
          GROUP BY child.relname, parent.relname, c.conname,
            c.convalidated, c.condeferrable, c.confmatchtype
-         ORDER BY child.relname, c.conname`,
+         ORDER BY child_ns.nspname, child.relname, c.conname`,
         [sourceSchema]
       ),
     ]);
@@ -209,6 +210,7 @@ async function inspectTenantMigration({
     if (summary.ambiguousTables) blockers.push('Some tables have multiple foreign-key ownership paths; explicit reviewed ownership rules are required.');
     if (summary.dependentTables) blockers.push('Dependent tables were discovered; relation-scoped row counts and cross-tenant foreign-key validation are not yet implemented.');
     if (fkResult.rows.some((fk) => !fk.is_validated)) blockers.push('One or more foreign-key constraints are NOT VALID and must be validated before migration.');
+    if (summary.crossSchemaForeignKeyCount) blockers.push('Foreign-key relationships cross the source schema boundary; external dependencies must be reviewed before migration.');
     if (summary.destinationSchemaExists) blockers.push('The destination schema already exists; automatic migration is disabled to prevent overwriting data.');
 
     return {
@@ -228,8 +230,11 @@ async function inspectTenantMigration({
         sourceRows: directCounts[name] ?? null,
       })),
       foreignKeyCount: fkResult.rows.length,
+      crossSchemaForeignKeyCount: fkResult.rows.filter((fk) => fk.child_schema !== sourceSchema || fk.foreign_schema !== sourceSchema).length,
       foreignKeys: fkResult.rows.map((fk) => ({
+        schema: fk.child_schema,
         table: fk.table_name,
+        referencesSchema: fk.foreign_schema,
         referencesTable: fk.foreign_table_name,
         constraint: fk.constraint_name,
         childColumns: fk.child_columns,
