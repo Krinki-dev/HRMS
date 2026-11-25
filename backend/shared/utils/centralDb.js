@@ -1,4 +1,5 @@
-﻿const { centralPrisma } = require('./centralPrisma'); 
+﻿const { centralPrisma } = require('./centralPrisma');
+const { withTenantRLS } = require('./rlsContext'); 
 const crypto = require('crypto');
 
 function hashAadhaar(plain) {
@@ -12,31 +13,34 @@ function verifyHash(entered, storedHash) {
   return crypto.createHash('sha256').update(entered.trim()).digest('hex') === storedHash;
 }
 
-async function findKycByHash(aadhaarHash) {
-  const rows = await centralPrisma.$queryRaw`
+async function findKycByHash(tenantId, aadhaarHash) {
+  if (!tenantId) throw new Error('Central tenant ID is required for KYC lookup.');
+  const rows = await withTenantRLS(centralPrisma, tenantId, (tx) => tx.$queryRaw`
     SELECT id, created_at, method, aadhaar_hash, kyc_timestamp,
            name, dob, gender, careof, mobile_encrypted, email_encrypted,
            house, street, loc, vtc, po, subdist, dist, state, country, pc, pht,
            task_id
     FROM   central_kyc_records
-    WHERE  aadhaar_hash = ${aadhaarHash}
-  `;
+    WHERE  tenant_id = ${tenantId}::uuid AND aadhaar_hash = ${aadhaarHash}
+  `);
   return rows[0] || null;
 }
 
-async function findKycById(id) {
-  const rows = await centralPrisma.$queryRaw`
+async function findKycById(tenantId, id) {
+  if (!tenantId) throw new Error('Central tenant ID is required for KYC lookup.');
+  const rows = await withTenantRLS(centralPrisma, tenantId, (tx) => tx.$queryRaw`
     SELECT id, created_at, method, aadhaar_hash, kyc_timestamp,
            name, dob, gender, careof, mobile_encrypted, email_encrypted,
            house, street, loc, vtc, po, subdist, dist, state, country, pc, pht,
            task_id
     FROM   central_kyc_records
-    WHERE  id = ${id}::uuid
-  `;
+    WHERE  tenant_id = ${tenantId}::uuid AND id = ${id}::uuid
+  `);
   return rows[0] || null;
 }
 
-async function createKycRecord(data) {
+async function createKycRecord(tenantId, data) {
+  if (!tenantId) throw new Error('Central tenant ID is required to create a KYC record.');
   const {
     aadhaarHash, method = 'otp_based',
     kycTimestamp,
@@ -45,14 +49,14 @@ async function createKycRecord(data) {
     taskId,
   } = data;
 
-  await centralPrisma.$executeRaw`
+  await withTenantRLS(centralPrisma, tenantId, (tx) => tx.$executeRaw`
     INSERT INTO central_kyc_records (
-      method, aadhaar_hash, kyc_timestamp,
+      tenant_id, method, aadhaar_hash, kyc_timestamp,
       name, dob, gender, careof, mobile_encrypted, email_encrypted,
       house, street, loc, vtc, po, subdist, dist, state, country, pc, pht,
       task_id
     ) VALUES (
-      ${method}, ${aadhaarHash},
+      ${tenantId}::uuid, ${method}, ${aadhaarHash},
       ${kycTimestamp || null},
       ${name || null}, ${dob || null}, ${gender || null}, ${careof || null},
       ${mobile_encrypted || null}, ${email_encrypted || null},
@@ -61,15 +65,16 @@ async function createKycRecord(data) {
       ${country || 'India'}, ${pc || null}, ${pht || null},
       ${taskId || null}
     )
-  `;
-  return findKycByHash(aadhaarHash);
+  `);
+  return findKycByHash(tenantId, aadhaarHash);
 }
 
-async function upsertKycRecord(aadhaarHash, data) {
-  const existing = await findKycByHash(aadhaarHash);
+async function upsertKycRecord(tenantId, aadhaarHash, data) {
+  if (!tenantId) throw new Error('Central tenant ID is required to upsert a KYC record.');
+  const existing = await findKycByHash(tenantId, aadhaarHash);
   if (existing) {
     const v = (newVal, oldVal) => (newVal !== undefined && newVal !== null) ? newVal : oldVal;
-    await centralPrisma.$executeRaw`
+    await withTenantRLS(centralPrisma, tenantId, (tx) => tx.$executeRaw`
       UPDATE central_kyc_records SET
         method            = ${v(data.method,            existing.method)},
         kyc_timestamp     = ${v(data.kycTimestamp,     existing.kyc_timestamp)},
@@ -91,20 +96,21 @@ async function upsertKycRecord(aadhaarHash, data) {
         pc                = ${v(data.pc,                existing.pc)},
         pht               = ${v(data.pht,               existing.pht)},
         task_id           = ${v(data.taskId,            existing.task_id)}
-      WHERE id = ${existing.id}::uuid
-    `;
-    return findKycById(existing.id);
+      WHERE tenant_id = ${tenantId}::uuid AND id = ${existing.id}::uuid
+    `);
+    return findKycById(tenantId, existing.id);
   }
-  return createKycRecord({ aadhaarHash, ...data });
+  return createKycRecord(tenantId, { aadhaarHash, ...data });
 }
 
-async function linkKycToEmployee(kycId, employeeId) {
+async function linkKycToEmployee(tenantId, kycId, employeeId) {
+  if (!tenantId) throw new Error('Central tenant ID is required to link a KYC record.');
   try {
-    await centralPrisma.$executeRaw`
+    await withTenantRLS(centralPrisma, tenantId, (tx) => tx.$executeRaw`
       UPDATE central_kyc_records
       SET    employee_id = ${employeeId}
-      WHERE  id = ${kycId}::uuid
-    `;
+      WHERE  tenant_id = ${tenantId}::uuid AND id = ${kycId}::uuid
+    `);
   } catch (err) {
     if (err.message?.includes('column "employee_id" does not exist')) {
       console.warn('[centralDb] employee_id column missing, skipping KYC link');
