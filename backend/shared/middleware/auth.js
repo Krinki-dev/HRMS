@@ -58,10 +58,10 @@ const authMiddleware = async (req, res, next) => {
       indexedTenantId,
     });
 
-    if (req.tenant?.id && !tenantIdentity.centralTenantId) {
+    if (req.tenant?.id && !isPlatformAdmin && !tenantIdentity.centralTenantId) {
       return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Session tenant could not be resolved. Refresh your session.', 401);
     }
-    if (!matchesTenantContext(tenantIdentity, req.tenant?.id)) {
+    if (!isPlatformAdmin && !matchesTenantContext(tenantIdentity, req.tenant?.id)) {
       return sendError(res, ERROR_CODES.FORBIDDEN, 'Tenant context does not match the authenticated session.', 403);
     }
 
