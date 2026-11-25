@@ -56,6 +56,22 @@ test('rejects duplicate parent keys, invalid enums, malformed dates and formula 
   assert.ok(result.errors.some((error) => error.field === 'phone' && /Formula/.test(error.message)));
 });
 
+test('rejects invalid calendar dates and unresolved manager Employee Code references', () => {
+  const data = {
+    ...valid,
+    Employees: [{
+      employeeCode: 'EMP0001',
+      firstName: 'Asha',
+      lastName: 'Sharma',
+      dateOfJoining: '2026-02-31',
+      managerEmployeeCode: 'EMP9999',
+    }],
+  };
+  const result = validateWorkbookData(EMPLOYEE_WORKBOOK_SCHEMA, data);
+  assert.ok(result.errors.some((error) => error.field === 'dateOfJoining' && /valid date/.test(error.message)));
+  assert.ok(result.errors.some((error) => error.field === 'managerEmployeeCode' && /Reference/.test(error.message)));
+});
+
 test('supports only explicit non-destructive conflict modes', () => {
   assert.deepEqual(IMPORT_MODES, ['create-only', 'update-only', 'upsert']);
   assert.equal(validateWorkbookData(EMPLOYEE_WORKBOOK_SCHEMA, valid, { mode: 'replace-all' }).valid, false);
