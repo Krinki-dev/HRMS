@@ -370,7 +370,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     const payload = authService.buildUserPayload(user, permissions, tenantInfo, isPlatformAdmin);
     eventNotifier.notifyLogin({
       db: activeDb,
-      companyId: tenantId || user.company_id,
+      companyId: user.company_id,
       user,
       ipAddress: req.ip,
     }).catch((err) => {
