@@ -19,25 +19,25 @@ const h = (fn) => async (req, res) => {
 const empId = (req) => req.user.employeeId;
 
 module.exports = {
-  listClaims:       h(async (req, res) => sendSuccess(res, await svc.listClaims(req.db, empId(req), req.user.tenantId, { ...req.query, mine: req.query.mine === 'true' }))),
+  listClaims:       h(async (req, res) => sendSuccess(res, await svc.listClaims(req.db, empId(req), req.user.companyId, { ...req.query, mine: req.query.mine === 'true' }))),
   createClaim:      h(async (req, res) => sendSuccess(res, await svc.createClaim(req.db, empId(req), req.body), 'Claim submitted.', 201)),
-  pendingApprovals: h(async (req, res) => sendSuccess(res, await svc.pendingApprovals(req.db, req.user.tenantId))),
-  getClaim:         h(async (req, res) => sendSuccess(res, await svc.getClaim(req.db, req.params.id, empId(req), req.user.tenantId))),
+  pendingApprovals: h(async (req, res) => sendSuccess(res, await svc.pendingApprovals(req.db, req.user.companyId))),
+  getClaim:         h(async (req, res) => sendSuccess(res, await svc.getClaim(req.db, req.params.id, empId(req), req.user.companyId))),
   approveClaim:     h(async (req, res) => {
-    const claim = await svc.approveClaim(req.db, req.user.tenantId, req.params.id, req.user.id, req.body);
+    const claim = await svc.approveClaim(req.db, req.user.companyId, req.params.id, req.user.id, req.body);
     eventNotifier.notifyExpenseDecision({
       db: req.db,
-      companyId: req.user.tenantId,
+      companyId: req.user.companyId,
       claim,
       decision: 'approved',
     }).catch(() => {});
     sendSuccess(res, claim, 'Claim approved.');
   }),
   rejectClaim:      h(async (req, res) => {
-    const claim = await svc.rejectClaim(req.db, req.user.tenantId, req.params.id, req.user.id, req.body);
+    const claim = await svc.rejectClaim(req.db, req.user.companyId, req.params.id, req.user.id, req.body);
     eventNotifier.notifyExpenseDecision({
       db: req.db,
-      companyId: req.user.tenantId,
+      companyId: req.user.companyId,
       claim,
       decision: 'rejected',
       reason: req.body?.reason || '',
@@ -45,9 +45,9 @@ module.exports = {
     sendSuccess(res, claim, 'Claim rejected.');
   }),
   deleteClaim:      h(async (req, res) => sendSuccess(res, await svc.deleteClaim(req.db, empId(req), req.params.id), 'Claim deleted.')),
-  listPolicies:     h(async (req, res) => sendSuccess(res, await svc.listPolicies(req.db, req.user.tenantId))),
-  createPolicy:     h(async (req, res) => sendSuccess(res, await svc.createPolicy(req.db, req.user.tenantId, req.body), 'Policy created.', 201)),
-  updatePolicy:     h(async (req, res) => sendSuccess(res, await svc.updatePolicy(req.db, req.user.tenantId, req.params.id, req.body))),
-  uploadReceipt:    h(async (req, res) => sendSuccess(res, await svc.uploadReceipt(req.db, req.user.tenantId, req.file), 'Receipt uploaded.', 201)),
+  listPolicies:     h(async (req, res) => sendSuccess(res, await svc.listPolicies(req.db, req.user.companyId))),
+  createPolicy:     h(async (req, res) => sendSuccess(res, await svc.createPolicy(req.db, req.user.companyId, req.body), 'Policy created.', 201)),
+  updatePolicy:     h(async (req, res) => sendSuccess(res, await svc.updatePolicy(req.db, req.user.companyId, req.params.id, req.body))),
+  uploadReceipt:    h(async (req, res) => sendSuccess(res, await svc.uploadReceipt(req.db, req.user.companyId, req.file), 'Receipt uploaded.', 201)),
 };
 
