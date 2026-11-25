@@ -4,7 +4,7 @@ const { withPlatformAdminRLS } = require('./rlsContext');
 
 async function resolveTenantId(req) {
   // Prefer JWT claim
-  const jwtTenant = req.user?.tenantId;
+  const jwtTenant = req.user?.centralTenantId || req.user?.tenantId;
   if (jwtTenant) return jwtTenant;
 
   // Then request-scoped tenant (set by tenantMiddleware)
