@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const logger = require('../../shared/utils/logger');
 const emailSvc = require('../../shared/utils/emailService');
 const { centralPrisma } = require('../../shared/utils/centralPrisma');
+const { withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 const { decrypt } = require('../../shared/utils/encryption');
 const { resolveTenantStorageTarget } = require('../../shared/utils/tenantStorageResolver');
 
@@ -45,12 +46,12 @@ const authService = {
   async getTenantInfo(tenantId) {
     if (!tenantId) return {};
     try {
-      const rows = await centralPrisma.$queryRaw`
+      const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
         SELECT id, plan, plan_expires_at, is_setup_complete, name, logo_url
         FROM tenants 
         WHERE id = ${tenantId}::uuid AND deleted_at IS NULL 
         LIMIT 1
-      `;
+      `);
       if (!rows.length) return {};
       return {
         tenantId: rows[0].id,
@@ -98,34 +99,34 @@ const authService = {
     const normalizedEmail = email.toLowerCase().trim();
     
     // 1. Central Index
-    const rows = await centralPrisma.$queryRaw`
+    const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
       SELECT ui.subdomain, ui.is_platform_admin, t.name AS company_name, t.logo_url, t.is_active, t.plan
       FROM central_user_index ui
       LEFT JOIN tenants t ON t.id = ui.company_id
       WHERE ui.email = ${normalizedEmail} AND ui.is_active = true AND t.deleted_at IS NULL
       LIMIT 1
-    `;
+    `);
 
     if (rows && rows.length > 0) {
           const r = rows[0]; return { found: true, subdomain: r.subdomain, is_platform_admin: r.is_platform_admin, companyName: r.company_name, logoUrl: r.logo_url, is_active: r.is_active, plan: r.plan };
     }
 
     // 2. Tenant Admin Check
-    const tenantRows = await centralPrisma.$queryRaw`
+    const tenantRows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
       SELECT id, name, subdomain, logo_url, is_active, plan
       FROM tenants
       WHERE admin_email = ${normalizedEmail} AND deleted_at IS NULL
       LIMIT 1
-    `;
+    `);
 
     if (tenantRows.length > 0) {
       const t = tenantRows[0];
       // Auto-index for future
-      centralPrisma.$executeRaw`
+      withPlatformAdminRLS(centralPrisma, (tx) => tx.$executeRaw`
         INSERT INTO central_user_index (id, email, subdomain, company_id, is_active, created_at)
         VALUES (gen_random_uuid(), ${normalizedEmail}, ${t.subdomain}, ${t.id}, true, NOW())
         ON CONFLICT DO NOTHING
-      `.catch(() => {});
+      `).catch(() => {});
 
       return { 
         found: true, 
@@ -142,14 +143,14 @@ const authService = {
 
   async resolveTenantDb(email) {
     try {
-      const userRows = await centralPrisma.$queryRaw`
+      const userRows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
         SELECT * FROM central_user_index 
         WHERE email = ${email.toLowerCase().trim()} AND is_active = true 
         LIMIT 1
-      `;
+      `);
       let u = userRows[0];
       if (!u) {
-        const tenantRows = await centralPrisma.$queryRaw`
+        const tenantRows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
           SELECT id, subdomain, db_mode, db_url, schema_name, local_db_type,
                  local_db_host, local_db_port, local_db_name, local_db_user,
                  local_db_pass, is_active, deleted_at
@@ -158,14 +159,14 @@ const authService = {
             AND deleted_at IS NULL
             AND is_active = true
           LIMIT 1
-        `;
+        `);
         if (tenantRows.length > 0) {
           const tenant = tenantRows[0];
-          await centralPrisma.$executeRaw`
+          await withPlatformAdminRLS(centralPrisma, (tx) => tx.$executeRaw`
             INSERT INTO central_user_index (id, email, subdomain, company_id, is_active, created_at)
             VALUES (gen_random_uuid(), ${email.toLowerCase().trim()}, ${tenant.subdomain}, ${tenant.id}::uuid, true, NOW())
             ON CONFLICT DO NOTHING
-          `;
+          `);
           u = { company_id: tenant.id, subdomain: tenant.subdomain, is_platform_admin: false };
         }
       }
@@ -188,7 +189,7 @@ const authService = {
 
   async resolveTenantDbById(tenantId) {
     if (!tenantId) return null;
-    const rows = await centralPrisma.$queryRaw`
+    const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
       SELECT id, subdomain, plan, db_mode, db_url, schema_name,
              storage_tier, storage_status, local_db_type, local_db_host,
              local_db_port, local_db_name, local_db_user, local_db_pass,
@@ -196,7 +197,7 @@ const authService = {
       FROM tenants
       WHERE id = ${tenantId}::uuid
       LIMIT 1
-    `;
+    `);
     const t = rows[0];
       if (!t || t.deleted_at || !t.is_active) return null;
     const target = resolveTenantStorageTarget(t, {
@@ -283,11 +284,11 @@ const authService = {
   async isPlatformAdmin(userId) {
     if (!process.env.CENTRAL_DATABASE_URL) return false;
     try {
-      const rows = await centralPrisma.$queryRaw`
+      const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
         SELECT is_platform_admin FROM central_user_index
         WHERE user_id = ${userId}::uuid AND is_active = true
         LIMIT 1
-      `;
+      `);
       return rows.length > 0 ? rows[0].is_platform_admin : false;
     } catch { return false; }
   },
@@ -295,11 +296,11 @@ const authService = {
   async isPlatformAdminByEmail(email) {
     if (!process.env.CENTRAL_DATABASE_URL) return false;
     try {
-      const rows = await centralPrisma.$queryRaw`
+      const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
         SELECT is_platform_admin FROM central_user_index
         WHERE email = ${email.toLowerCase().trim()} AND is_active = true
         LIMIT 1
-      `;
+      `);
       return rows.length > 0 ? rows[0].is_platform_admin : false;
     } catch { return false; }
   },
@@ -324,13 +325,13 @@ const authService = {
       }
 
       // Search in central index first (if indexed by phone)
-      const rows = await centralPrisma.$queryRaw`
+      const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
         SELECT DISTINCT ui.subdomain, ui.is_platform_admin, t.name, t.logo_url, t.is_active, t.plan
         FROM central_user_index ui
         LEFT JOIN tenants t ON t.id = ui.company_id
         WHERE ui.phone = ${normalizedPhone} AND ui.is_active = true AND t.deleted_at IS NULL
         LIMIT 1
-      `;
+      `);
 
       if (rows && rows.length > 0) {
         const r = rows[0];
@@ -366,14 +367,14 @@ const authService = {
       const normalizedId = employeeId.toUpperCase().trim();
 
       // Search across all tenants
-      const rows = await centralPrisma.$queryRaw`
+      const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
         SELECT DISTINCT ui.subdomain, ui.is_platform_admin, t.name, t.logo_url, 
                         t.is_active, t.plan, ui.email
         FROM central_user_index ui
         LEFT JOIN tenants t ON t.id = ui.company_id
         WHERE ui.employee_id = ${normalizedId} AND ui.is_active = true AND t.deleted_at IS NULL
         LIMIT 1
-      `;
+      `);
 
       if (rows && rows.length > 0) {
         const r = rows[0];
@@ -414,7 +415,7 @@ const authService = {
         normalizedPhone = '91' + normalizedPhone;
       }
 
-      const rows = await centralPrisma.$queryRaw`
+      const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
         SELECT DISTINCT ui.subdomain, ui.is_platform_admin, t.name, t.logo_url, t.is_active, t.plan
         FROM central_user_index ui
         LEFT JOIN tenants t ON t.id = ui.company_id
@@ -423,7 +424,7 @@ const authService = {
           AND ui.is_active = true
           AND t.deleted_at IS NULL
         LIMIT 1
-      `;
+      `);
 
       if (rows && rows.length > 0) {
         const r = rows[0];
