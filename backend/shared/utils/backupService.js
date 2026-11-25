@@ -371,7 +371,7 @@ async function runBackup(db, companyId) {
       },
     }).catch(() => {});
 
-    const company = await db.companies.findFirst({ where: { id: companyId } }).catch(() => null);
+    const company = await withBackupRLS(db, (tx) => tx.companies.findFirst({ where: { id: companyId } }).catch(() => null));
     if (company?.email) {
       await emailService.sendBackupNotification(db, companyId, {
         email:    company.email,
@@ -412,7 +412,7 @@ function scheduleAll() {
     try {
       const configs = await withPlatformAdminRLS(centralPrisma, (tx) => tx.backup_config.findMany({
         where: { enabled: true },
-      });
+      }));
 
       for (const config of configs) {
         if (config.backup_time === currentTime) {
