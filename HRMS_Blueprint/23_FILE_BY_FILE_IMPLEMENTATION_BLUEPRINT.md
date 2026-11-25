@@ -23,7 +23,7 @@ The GitHub connector can read and commit source files but cannot run `npm test`,
 
 | Plan / deployment | PostgreSQL target | Routing and isolation |
 |---|---|---|
-| Free | One shared tenant schema (initially the agreed shared application schema) | Every tenant-owned row must be scoped by immutable tenant/company identity; database RLS plus application authorization |
+| Free | PostgreSQL public schema | Every tenant-owned row must be scoped by immutable tenant/company identity; database RLS plus application authorization |
 | Trial | Same shared schema as Free | Same isolation boundary as Free |
 | Any Paid plan | One schema reserved for that tenant | Schema routing is assigned only after provisioning and verification |
 | Enterprise isolation add-on | Optional dedicated PostgreSQL database/instance | Separate infrastructure credentials and backup/restore boundary |
