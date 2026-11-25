@@ -83,3 +83,6 @@ Existing rows are intentionally left with `tenant_id IS NULL`. They are not visi
 Shared `public` schema tenant backups are also a release blocker: the current backup target resolver intentionally refuses to dump a shared schema as an individual tenant backup. Never remove that guard or deliver a whole-public-schema dump to one customer. A tenant-filtered relational backup/restore or platform-wide protected backup design must be implemented first.
 
 Dedicated customer-managed PostgreSQL databases and Enterprise managed-cloud dedicated databases can be backed up as whole databases without a schema override. Shared managed-cloud `public` schema backups remain blocked pending tenant-filtered export/restore.
+
+
+KYC employee links use an optional `employee_id` UUID in the Central KYC table. The referenced employee lives in the tenant operational database, so the Central table intentionally has no foreign key across databases. Apply `20261125_central_kyc_employee_link.sql` after the KYC tenant-isolation migration and before enabling the KYC-to-employee link endpoint. The endpoint now fails visibly if the row is not updated; it no longer reports success when the column is absent.
