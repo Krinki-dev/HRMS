@@ -516,3 +516,36 @@ Comparison from baseline commit `cd400a602eb255029c1daeeae1d35f0c7b7ee948` to re
 - CI for the latest reviewed branch commit must be checked again; earlier successful CI runs do not verify the current branch state.
 - Do not ask the user to repeat the architecture decisions or rerun SQL at this stage. Continue source/history analysis and implementation on `architecture/postgres-tenant-isolation`; never modify `main`.
 
+## 2026-11-25 — Public-schema policy alignment committed
+
+### Changes committed on the working branch
+
+- Updated `backend/shared/utils/tenantStorageConfig.js`: Free/Trial shared storage now resolves to `public`, not the obsolete `shared_tenants` name. Paid plans continue to derive their dedicated schema from the immutable tenant UUID.
+- Updated `backend/shared/utils/tenantStorageResolver.js`: a ready shared tenant is accepted only when its schema is exactly `public`; paid dedicated schemas must still match the tenant UUID.
+- Updated `backend/test/tenant-storage-resolver.test.js`: coverage now checks both Free and Trial routing to `public`, plan-to-storage descriptor allocation, and rejection of mismatched shared schemas.
+- Updated `backend/test/tenant-deletion-guard.test.js`: shared-schema deletion guard test now uses `public`.
+- Updated architecture documents `07_FROZEN_DECISIONS.md`, `21_POSTGRES_TENANCY_MIGRATION_PLAN.md`, `22_SOURCE_AUDIT_AND_MIGRATION_IMPACT.md`, `23_FILE_BY_FILE_IMPLEMENTATION_BLUEPRINT.md`, `25_TENANT_STORAGE_RESOLVER.md`, and `26_TENANT_STORAGE_INVENTORY_AUDIT.md` to record the confirmed public-schema rule.
+- Updated this handoff with the user's architecture clarifications, tenant DB inventory summary, code findings and continuation order.
+
+### Commit references
+
+- Handoff clarification: `aab7ca848bde992e43d0d943ae55b6b8b73c99f9`
+- Storage config: `7ca87aa923312982cd935ba466365760025390ed`, follow-up wording: `72843291d64f321a008f5bcd3ea11eb36af1f28d`
+- Storage resolver: `26a8c1425558af7bb5a73ea576da1107e24d69b5`
+- Resolver tests: `9427bc44d7cd2426aca3ed2676a6d2c83463a91e`, follow-up allocation coverage: `f9c2c417e1488e8cd1f762cd7221a55069e71d1d`
+- Deletion guard test: `82db13ccc7c53044f12e346f2148099c7ad891e8`
+- Frozen decisions: `193852fd4189fdca7888e8d35500415ae24e2df4`
+- Tenancy plan: `98b34037f11306fd20d57a1e0b461907557023bc`
+- Source audit: `db7e2735f69c915767b47a83a770babe11461401`
+- File-by-file blueprint: `9bef951eecbab879c5ca415945033ddf8c31fce2`
+- Inventory audit: `8a4f7af4047a701b10d565682a5e5c57e2bf991c`
+- Resolver note: `a5a8a9aba01ee10753adf9e0aa27244677030001`
+
+### Verification boundary
+
+- These commits align the pure storage contract and tests with the user's public-schema decision. They do **not** yet route live requests through the new resolver.
+- GitHub Actions workflow-run lookup returned no run for these direct commits. Node tests, Prisma validation/generation, frontend build and PostgreSQL integration tests have not been executed for these changes.
+- Registration still needs to write storage tier/status correctly and keep Free/Trial in `public`; verified paid subscription activation still needs an idempotent dedicated-schema promotion workflow.
+- The legacy engine branches, duplicate connection resolvers, old clone-based provisioning, local PostgreSQL resolver, tenant/company mapping and module-wide company scoping remain open work.
+- No database migration, schema drop, dummy-data cleanup, live routing change, payment or deployment was performed.
+
