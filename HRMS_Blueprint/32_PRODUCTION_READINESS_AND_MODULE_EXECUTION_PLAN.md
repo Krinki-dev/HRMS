@@ -242,3 +242,24 @@ The schema/validation foundation has been tightened:
 - CI found and fixed a renewal invoice period_end boundary defect. A backend CI run passed at commit 3388326dc14305f58487e26b578f2e613896bddb, but newest workbook/security commits must still pass CI before the branch can be treated as green.
 
 Next implementation slice remains: choose/add XLSX dependency and lockfile; generate formatted workbook template from schema; implement bounded parser, server-side preview token and row/sheet diagnostics; tenant-scoped conflict checks; explicit transaction-safe commit with ID mapping and audit; error workbook; CSV/XLSX UI integration; and CSV/XLSX round-trip + PostgreSQL tenant-isolation tests.
+
+
+## 2026-11-25 — Master architecture audit supersession
+
+The source-verified master audit is now HRMS_Blueprint/33_MASTER_CODEBASE_ARCHITECTURE_AUDIT.md. Owner choices are tracked in HRMS_Blueprint/34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md.
+
+Newly verified blockers that take precedence over older task status:
+- Free/Trial public and Paid UUID-schema allocation helpers exist, but current tenant registration and middleware are not yet integrated with them.
+- Token tenantId currently originates from operational user.company_id while some Central billing lookups treat it as Central tenants.id. Separate tenantId and companyId before using this contract.
+- Subscription pricing counts active employees without company_id; this is not safe for a shared public schema.
+- Tenant business tables do not yet have a complete public-schema RLS policy set. Existing app-level company filters and payroll/compliance integration tests do not prove every module safe.
+- Tenant Prisma migration history is MSSQL, while the final target is PostgreSQL. Do not run the current migrate script.
+- Local PostgreSQL is not yet resolved by tenantStorageResolver.
+- Shared-schema per-tenant backup/restore is not implemented. Physical deletion remains intentionally fail-closed.
+- Razorpay checkout verification is present; PhonePe/JioPay and automated payouts remain disabled. Storage provisioning is not yet part of paid activation.
+- The module-wide checkModuleEnabled gate is mounted on core module routers; action authorization, self-service ownership and company scope still need module-by-module verification.
+- Employee relational workbook contract/validator exists, but server-side XLSX parser, preview/confirm, error workbook, commit workflow and module-wide delivery are not complete.
+
+The Central migration backend/db-migrations/20261125_central_platform_schema_upgrade.sql was applied and user-verified 12/12. Tenant operational migrations remain unapplied. Do not ask for more SQL at this stage.
+
+The current exact-head CI/build state has not been rechecked after this documentation update. Older green CI runs do not prove the current head.
