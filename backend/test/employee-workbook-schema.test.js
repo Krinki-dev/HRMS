@@ -46,8 +46,9 @@ test('rejects duplicate parent keys, invalid enums, malformed dates and formula 
     Employees: [
       { employeeCode: 'EMP0001', firstName: 'Asha', lastName: 'Sharma', status: 'active' },
       { employeeCode: 'emp0001', firstName: 'Ravi', lastName: 'Kumar', status: 'unknown' },
-      { employeeCode: 'EMP0003', firstName: 'Mina', lastName: 'Das', dateOfJoining: 'not-a-date', phone: { formula: '1+1' } },
+      { employeeCode: 'EMP0003', firstName: 'Mina', lastName: 'Das', dateOfJoining: 'not-a-date' },
     ],
+    ContactDetails: [{ employeeCode: 'EMP0001', phone: { formula: '1+1' } }],
   };
   const result = validateWorkbookData(EMPLOYEE_WORKBOOK_SCHEMA, data);
   assert.ok(result.errors.some((error) => error.field === 'employeeCode' && /Duplicate/.test(error.message)));
