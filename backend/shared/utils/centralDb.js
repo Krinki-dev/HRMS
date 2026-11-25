@@ -105,19 +105,12 @@ async function upsertKycRecord(tenantId, aadhaarHash, data) {
 
 async function linkKycToEmployee(tenantId, kycId, employeeId) {
   if (!tenantId) throw new Error('Central tenant ID is required to link a KYC record.');
-  try {
-    await withTenantRLS(centralPrisma, tenantId, (tx) => tx.$executeRaw`
-      UPDATE central_kyc_records
-      SET    employee_id = ${employeeId}
-      WHERE  tenant_id = ${tenantId}::uuid AND id = ${kycId}::uuid
-    `);
-  } catch (err) {
-    if (err.message?.includes('column "employee_id" does not exist')) {
-      console.warn('[centralDb] employee_id column missing, skipping KYC link');
-      return;
-    }
-    throw err;
-  }
+  const updated = await withTenantRLS(centralPrisma, tenantId, (tx) => tx.$executeRaw`
+    UPDATE central_kyc_records
+    SET    employee_id = ${employeeId}::uuid
+    WHERE  tenant_id = ${tenantId}::uuid AND id = ${kycId}::uuid
+  `);
+  if (updated !== 1) throw new Error('KYC record was not linked: record not found for this tenant.');
 }
 
 function getOptionalCentralDB() {
