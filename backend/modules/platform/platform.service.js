@@ -6,7 +6,9 @@ const { PrismaClient } = require('@prisma/client');
 const { v4: uuidv4 }   = require('uuid');
 const bcrypt           = require('bcryptjs');
 const { encrypt, decrypt, mask } = require('../../shared/utils/encryption');
-const { cloneSchema, appendSchemaToUrl } = require('../../shared/utils/dbSchema');
+const { appendSchemaToUrl } = require('../../shared/utils/dbSchema');
+const { buildStorageDescriptor } = require('../../shared/utils/tenantStorageConfig');
+const { buildLocalPostgresUrl, resolveTenantStorageTarget } = require('../../shared/utils/tenantStorageResolver');
 const { sendSuccess, sendError, ERROR_CODES } = require('../../shared/utils/response');
 const { centralPrisma } = require('../../shared/utils/centralPrisma');
 const emailService = require('../../shared/utils/emailService');
@@ -247,40 +249,82 @@ const registerTenant = async (req, res) => {
 
     const tenantId = uuidv4();
     const adminUserId = uuidv4();
-    let dbUrl = null;
+    let dbUrl = selectedDbMode === 'external_cloud' ? String(externalDbUrl).trim() : null;
     let localDbHost = null, localDbPort = null, localDbName = null;
     let localDbUser = null, localDbPass = null, localDbType = null;
 
-    switch (dbMode) {
-      case 'cloud': break;
-      case 'external_cloud': dbUrl = externalDbUrl; break;
-      case 'local':
-        localDbHost = encrypt(localDb.host || 'localhost'); localDbPort = localDb.port ? parseInt(localDb.port) : 5432;
-        localDbName = localDb.name || 'hrms'; localDbUser = encrypt(localDb.user || 'postgres');
-        localDbPass = localDb.pass || null;   localDbType = localDb.type || 'postgres';
-        break;
-      case 'hybrid':
-        localDbHost = encrypt(localDb.host || 'localhost'); localDbPort = localDb.port ? parseInt(localDb.port) : 5432;
-        localDbName = localDb.name || 'hrms'; localDbUser = encrypt(localDb.user || 'postgres');
-        localDbPass = localDb.pass || null;   localDbType = localDb.type || 'postgres';
-        dbUrl = cloudBackupUrl;
-        break;
+    let localDbUrl = null;
+    if (selectedDbMode === 'local') {
+      localDbType = String(localDb.type || 'postgres').toLowerCase();
+      if (!['postgres', 'postgresql'].includes(localDbType)) {
+        return sendError(res, ERROR_CODES.VALIDATION, 'Only PostgreSQL is supported for customer-hosted databases.', 400, { field: 'localDb.type' });
+      }
+      if (!localDb.host || !localDb.name || !localDb.user) {
+        return sendError(res, ERROR_CODES.VALIDATION, 'Local PostgreSQL requires host, database name and username.', 400, { field: 'localDb' });
+      }
+      localDbHost = encrypt(String(localDb.host).trim());
+      localDbPort = localDb.port ? Number(localDb.port) : 5432;
+      localDbName = String(localDb.name).trim();
+      localDbUser = encrypt(String(localDb.user).trim());
+      localDbPass = localDb.pass ? encrypt(String(localDb.pass)) : null;
+      localDbUrl = buildLocalPostgresUrl({
+        local_db_type: localDbType,
+        local_db_host: localDb.host,
+        local_db_port: localDbPort,
+        local_db_name: localDbName,
+        local_db_user: localDb.user,
+        local_db_pass: localDb.pass || '',
+      }, (value) => value);
     }
 
-    const tenantDbUrl = resolveTenantDbUrl(dbMode, localDb, externalDbUrl);
-    const schemaName = tenantDbUrl && (dbMode === 'cloud' || dbMode === 'external_cloud')
-      ? `tenant_${cleanSubdomain}`
-      : null;
+    const storageDescriptor = buildStorageDescriptor({
+      tenantId,
+      plan: 'trial',
+      dbMode: selectedDbMode,
+      dbUrl: selectedDbMode === 'local' ? localDbUrl : dbUrl,
+    });
+    const storageTenant = {
+      id: tenantId,
+      plan: 'trial',
+      db_mode: selectedDbMode,
+      db_url: dbUrl,
+      schema_name: storageDescriptor.schemaName,
+      storage_tier: storageDescriptor.storageTier,
+      storage_status: 'ready',
+      local_db_type: localDbType,
+      local_db_host: localDb?.host || null,
+      local_db_port: localDbPort,
+      local_db_name: localDbName,
+      local_db_user: localDb?.user || null,
+      local_db_pass: localDb?.pass || null,
+    };
+    const storageTarget = resolveTenantStorageTarget(storageTenant, {
+      cloudDatabaseUrl: process.env.CLOUD_TENANT_DATABASE_URL || (process.env.NODE_ENV === 'development' ? process.env.DEV_TENANT_DATABASE_URL : null),
+      decryptValue: (value) => decrypt(value) || value,
+    });
+    const tenantDbUrl = storageTarget.databaseUrl;
+    const schemaName = storageDescriptor.schemaName;
 
-    if (tenantDbUrl) {
-      const testClient = new PrismaClient({ datasources: { db: { url: tenantDbUrl } } });
-      try {
-        await testClient.$connect();
-      } catch (e) {
-        return sendError(res, ERROR_CODES.VALIDATION, `DB connection failed: ${e.message}`, 400);
-      } finally {
-        await testClient.$disconnect();
+    const testClient = new PrismaClient({ datasources: { db: { url: tenantDbUrl } } });
+    try {
+      await testClient.$connect();
+      const requiredTables = await testClient.$queryRaw`
+        SELECT
+          to_regclass('public.companies')::text AS companies,
+          to_regclass('public.roles')::text AS roles,
+          to_regclass('public.users')::text AS users
+      `;
+      const ready = requiredTables[0] &&
+        requiredTables[0].companies && requiredTables[0].roles && requiredTables[0].users;
+      if (!ready) {
+        return sendError(res, ERROR_CODES.VALIDATION,
+          'The PostgreSQL database is reachable but the HRMS schema is not installed. Run the official PostgreSQL setup before registering this tenant.',
+          400, { code: 'TENANT_SCHEMA_NOT_INSTALLED' });
       }
+    } catch (e) {
+      return sendError(res, ERROR_CODES.VALIDATION, `DB connection or schema check failed: ${e.message}`, 400);
+    } finally {
+      await testClient.$disconnect();
     }
 
     await centralPrisma.$transaction(async (tx) => {
@@ -288,7 +332,8 @@ const registerTenant = async (req, res) => {
       await tx.$executeRaw`
         INSERT INTO tenants (
           id, name, legal_name, subdomain, custom_domain, plan, db_mode,
-          db_url, schema_name, local_db_host, local_db_port, local_db_name,
+          db_url, schema_name, storage_tier, storage_status, storage_provisioned_at,
+          storage_verified_at, local_db_host, local_db_port, local_db_name,
           local_db_user, local_db_pass, local_db_type, 
           admin_name, admin_email, admin_phone, 
           gstin, pan, city, state, primary_color, background_color, background_url, sitemap_url,
@@ -296,8 +341,9 @@ const registerTenant = async (req, res) => {
         ) VALUES (
           ${tenantId}::uuid, ${company.name.trim()}, ${company.legalName || null},
           ${cleanSubdomain}, ${cleanCustomDomain}, 'free', ${dbMode || 'cloud'},
-          ${dbUrl ? encrypt(dbUrl) : null}, NULL, ${localDbHost}, ${localDbPort}, ${localDbName},
-          ${localDbUser}, ${localDbPass ? encrypt(localDbPass) : null}, ${localDbType}, 
+          ${dbUrl ? encrypt(dbUrl) : null}, ${schemaName}, ${storageDescriptor.storageTier}, 'provisioning',
+          NULL, NULL, ${localDbHost}, ${localDbPort}, ${localDbName},
+          ${localDbUser}, ${localDbPass}, ${localDbType}, 
           ${admin.name.trim()}, ${cleanEmail}, ${cleanPhone},
           ${company.gstin || null}, ${company.pan || null},
           ${company.city || null}, ${company.state || null}, '#2563eb', '#f8fafc', NULL, NULL,
@@ -348,35 +394,17 @@ const registerTenant = async (req, res) => {
       `;
     });
 
-    // After central DB entry, handle schema creation for managed databases.
-    // If we have a managed database (cloud mode), we create a schema
-    const baseTenantDbUrl = resolveTenantDbUrl(dbMode, localDb, externalDbUrl); // Get base URL
-    const actualSchemaName = `tenant_${cleanSubdomain}`; // Legacy naming retained until storage lifecycle migration is applied.
-    let schemaProvisioned = !['cloud', 'external_cloud'].includes(dbMode);
-
-    if (dbMode === 'cloud' || dbMode === 'external_cloud') {
-      if (baseTenantDbUrl) {
-        try {
-          const sourceSchema = process.env.TENANT_TEMPLATE_SCHEMA || 'public';
-          await cloneSchema(baseTenantDbUrl, sourceSchema, actualSchemaName); // Pass base URL
-          schemaProvisioned = true;
-        } catch (cloneErr) {
-          logger.error(`[registerTenant] Schema cloning failed for ${cleanSubdomain}:`, cloneErr);
-        }
-      }
-    }
-
-    // Update the tenant record with the actual schema name.
-    await centralPrisma.$executeRaw`
-      UPDATE tenants SET schema_name = ${actualSchemaName} WHERE id = ${tenantId}::uuid
-    `;
+    // Storage was connection- and schema-checked before the Central tenant record
+    // was created. Free/Trial managed-cloud tenants share public; customer-owned
+    // PostgreSQL instances are dedicated databases and do not get schema overrides.
+    const schemaProvisioned = true;
 
     // Seed the tenant's database with initial company, roles, and admin user data.
     const targetDbUrl = tenantDbUrl;
     let seedSucceeded = false;
 
     if (targetDbUrl) {
-      const tenantPrisma = new PrismaClient({ datasources: { db: { url: appendSchemaToUrl(baseTenantDbUrl, actualSchemaName) } } }); // Use base URL + schema
+      const tenantPrisma = new PrismaClient({ datasources: { db: { url: targetDbUrl } } });
       try {
         const companyId = uuidv4();
 
@@ -440,7 +468,13 @@ const registerTenant = async (req, res) => {
     }
 
     await centralPrisma.$executeRaw`
-      UPDATE tenants SET is_active = true, is_setup_complete = true, updated_at = NOW()
+      UPDATE tenants
+      SET storage_status = 'ready',
+          storage_provisioned_at = NOW(),
+          storage_verified_at = NOW(),
+          is_active = true,
+          is_setup_complete = true,
+          updated_at = NOW()
       WHERE id = ${tenantId}::uuid
     `;
 
