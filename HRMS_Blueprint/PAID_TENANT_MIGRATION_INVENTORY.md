@@ -15,7 +15,10 @@ This phase is intentionally inventory-only:
 - It is restricted to super-admin routes and managed-cloud tenants on shared storage.
 - It resolves the operational `companies.id` from the tenant's registered GSTIN/PAN (Central tenant UUID and operational company UUID are distinct), then counts the `companies` root row and tables with an explicit `company_id` ownership column.
 - It reads PostgreSQL foreign-key constraint metadata at column level, preserving ordered child/parent column mappings (including composite keys), constraint names, validation state, deferrability, and match type.
-- It traces dependent tables through foreign keys, but does not yet count or copy those rows.
+- It traces dependent tables through foreign keys only when ordered child/parent column mappings are available; composite key order is preserved.
+- Tables with multiple possible paths to tenant-owned roots are classified as `ambiguous` and block readiness. Cycles without a provable root remain unclassified.
+- The Platform Admin preview displays FK constraints, column mappings, and validation status.
+- It does not yet count or copy dependent rows.
 - Any `NOT VALID` foreign-key constraint is an explicit blocker; the preview does not validate or alter constraints.
 - Tables without a proven `company_id` root are marked unclassified and block migration readiness.
 - An already-existing destination schema is a blocker; the preview never overwrites it.
@@ -26,14 +29,14 @@ This phase is intentionally inventory-only:
 | --- | --- |
 | `direct` | Table contains `company_id`; row count is filtered to the tenant UUID |
 | `dependent` | Table has a foreign-key path to a directly scoped table |
-| `unclassified` | No provable ownership path was found; manual classification is required |
+| `ambiguous` | More than one FK path reaches tenant-owned roots; a reviewed rule is required |\n| `unclassified` | No provable ownership path was found; manual classification is required |
 
 The ownership path is displayed from the dependent table toward its tenant-owned parent.
 
 ## Required next phases before enabling copy
 
 1. Add an explicit, reviewed manifest for every operational, global/reference, and tenant-owned table.
-2. Use the captured ordered FK column mappings to resolve indirect ownership against tenant-specific parent row sets; ambiguous paths, composite keys, cycles, and nullable references need explicit handling.
+2. Use the captured ordered FK column mappings to resolve indirect ownership against tenant-specific parent row sets; composite keys, nullable references, cycles, and ambiguous paths need explicit handling.
 3. Count dependent rows using parameterized joins and detect cross-tenant references and orphan records.
 4. Compare source and destination schema versions, extensions, indexes, constraints, and unique-key collisions.
 5. Add durable migration-job state, resumable checkpoints, and idempotency keys in Central DB.
