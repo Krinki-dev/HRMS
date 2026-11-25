@@ -15,12 +15,11 @@ SELECT
 
 SELECT
   '2) User tables and estimated row counts' AS section,
-  schemaname AS schema_name,
-  relname AS table_name,
-  GREATEST(c.reltuples, 0)::bigint AS estimated_rows
-FROM pg_stat_user_tables s
-JOIN pg_class c ON c.oid = (quote_ident(s.schemaname) || '.' || quote_ident(s.relname))::regclass
-ORDER BY schemaname, relname;
+  s.schemaname AS schema_name,
+  s.relname AS table_name,
+  GREATEST(s.n_live_tup, 0)::bigint AS estimated_rows
+FROM pg_stat_user_tables AS s
+ORDER BY s.schemaname, s.relname;
 
 SELECT
   '3) Table column inventory' AS section,
