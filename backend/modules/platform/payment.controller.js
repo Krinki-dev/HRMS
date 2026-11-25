@@ -627,7 +627,7 @@ exports.createSubscriptionOrder = async (req, res) => {
 
 exports.verifySubscription = async (req, res) => {
   try {
-    const tenantId = req.user?.centralTenantId || req.user?.tenantId;
+    const tenantId = await resolveTenantId(req);
     if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Tenant session required', 401);
     const { razorpay_order_id: orderId, razorpay_payment_id: paymentId, razorpay_signature: signature } = req.body || {};
     const secret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
