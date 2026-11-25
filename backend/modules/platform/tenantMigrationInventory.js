@@ -7,7 +7,7 @@ function quoteIdentifier(value) {
   return '"' + String(value).replace(/"/g, '""') + '"';
 }
 
-function classifyTenantTables({ tables, columns, foreignKeys }) {
+function classifyTenantTables({ tables, columns, foreignKeys, sourceSchema = null }) {
   const tableSet = new Set(tables);
   const direct = new Set(
     columns
@@ -21,6 +21,7 @@ function classifyTenantTables({ tables, columns, foreignKeys }) {
 
   const parents = new Map();
   for (const fk of foreignKeys) {
+    if (sourceSchema && (fk.child_schema !== sourceSchema || fk.foreign_schema !== sourceSchema)) continue;
     if (!tableSet.has(fk.table_name) || !tableSet.has(fk.foreign_table_name)) continue;
     const childColumns = Array.isArray(fk.child_columns) ? fk.child_columns : [];
     const parentColumns = Array.isArray(fk.parent_columns) ? fk.parent_columns : [];
@@ -179,6 +180,7 @@ async function inspectTenantMigration({
       tables,
       columns: columnResult.rows,
       foreignKeys: fkResult.rows,
+      sourceSchema,
     });
 
     const directCounts = {};
