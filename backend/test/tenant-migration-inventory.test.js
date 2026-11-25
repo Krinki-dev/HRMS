@@ -77,7 +77,7 @@ test('builds a read-only inventory using the verified operational company UUID',
         assert.deepEqual(params, ['29ABCDE1234F1Z5', 'ABCDE1234F']);
         return { rows: [{ id: '11111111-1111-4111-8111-111111111111' }] };
       }
-      if (sql.includes('FROM "public"."companies"')) return { rows: [{ count: '1' }] };
+      if (sql.includes('FROM "public".companies WHERE id = $1')) return { rows: [{ count: '1' }] };
       if (sql.includes('FROM "public"."employees"')) {
         assert.deepEqual(params, ['11111111-1111-4111-8111-111111111111']);
         return { rows: [{ count: '3' }] };
