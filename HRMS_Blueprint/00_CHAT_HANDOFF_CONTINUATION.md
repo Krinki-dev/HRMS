@@ -260,7 +260,7 @@ Continue the end-to-end plan contract audit: compare `PlanSelectionStep.jsx`, `O
 
 - Fixed a frontend pricing bug: `PlanSelectionStep.jsx` previously treated a legitimate zero-price Free plan as Custom because it used a truthiness check. It now treats only null/undefined base prices as Custom and allows the Free plan to be selected.
 - Switching plans now clears previously selected add-ons and promo status so modules from the previous plan cannot accidentally remain in the checkout payload.
-- Added a pure catalog calculator and validation tests. Backend CI passed on `d9871bd973c3fb641bdb63349a47efbd4346cea5`: 59 tests total, 55 passed, 0 failed, 4 skipped (RLS tests requiring a dedicated test database were skipped).
+- Added a pure catalog calculator and validation tests. Backend CI passed on `d9871bd973c3fb641bdb63349a47efbd4346cea5`: 59 tests total, 56 passed, 0 failed, 4 skipped (RLS tests requiring a dedicated test database were skipped).
 - Frontend Build passed for `88d9dc8a24a42015e5502705870e9c3ab23d23fb`. The subsequent plan-switch add-on reset is commit `743fc8f877fb6362787c31eb34b3b21430c52d05`; check its Frontend Build run before claiming the latest frontend head is green.
 - The first test attempt failed because importing the service instantiated the central Prisma client without a CI datasource URL. The test now sets a dummy syntactically valid URL before import; no database connection is made by the pure calculator tests.
 - Files changed in this follow-up: `backend/modules/platform/plans.service.js`, `backend/modules/platform/plans.routes.js`, `backend/test/plan-pricing.test.js`, `frontend/src/pages/onboarding/PlanSelectionStep.jsx`, and this progress/handoff documentation.
@@ -666,7 +666,7 @@ Extended historical commit review continues. The 99 old commits are not all clai
 - Auth middleware maps legacy tokens safely: old `tenantId` claims are treated as operational `companyId`; the Central tenant id is recovered from `central_user_index`. An unresolved legacy company id is never promoted to a Central tenant id.
 - Added a fail-closed tenant-host/session mismatch check so a token cannot be rebound to another tenant by changing the request host.
 - Migrated operational scoping from `req.user.tenantId` to `req.user.companyId` across audit, employees, leave, attendance, payroll, compliance, assets, expenses, performance, notifications, automation/KYC and dashboard handlers. Central platform consumers continue to use the canonical Central tenant id.
-- Added five tenant-identity regression tests covering legacy token mapping, explicit new claims, host-rebinding prevention and unresolved legacy claims. The isolated identity-normalization cases were executed locally: 5 passed, 0 failed. Full backend CI and live browser/session tests remain pending; no database migration or production change was run.
+- Added six tenant-identity regression tests covering legacy token mapping, explicit new claims, host-rebinding prevention and unresolved legacy claims. The isolated identity-normalization cases were executed locally: 5 passed, 0 failed. Full backend CI and live browser/session tests remain pending; no database migration or production change was run.
 - Next gate: run the complete backend test workflow, add middleware-level cross-tenant tests, then audit the PostgreSQL tenant storage resolver and schema isolation before touching any live database.
 
 
@@ -682,3 +682,6 @@ Extended historical commit review continues. The 99 old commits are not all clai
 
 - Reviewed the service-layer query patterns for Employees, Attendance, Leave, Payroll, Compliance, Assets, Expenses, Performance and Notifications after the controller migration. Their primary read/write paths generally scope records by `company_id` directly or through the employee relation using the supplied `companyId`.
 - This is a positive first pass, not a complete shared-`public` safety sign-off. Child-table access paths, raw SQL, exports/imports, scheduled jobs, websocket/event handlers, background queues and every route still require a full cross-module audit before Trial tenants can safely share one schema.
+
+
+- Legacy access tokens that cannot be mapped to a Central tenant now receive an authentication refresh response rather than being rebound to the request host; tenant-host mismatches with a resolved identity are rejected.
