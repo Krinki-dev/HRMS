@@ -136,7 +136,7 @@ function buildCrossTenantReferenceQuery({ sourceSchema, foreignKey, parentIsComp
       FROM ${quoteIdentifier(sourceSchema)}.${quoteIdentifier(foreignKey.table_name)} AS child
       JOIN ${quoteIdentifier(sourceSchema)}.${quoteIdentifier(foreignKey.foreign_table_name)} AS parent
         ON ${join}
-      WHERE child.company_id = $1
+      WHERE child.${quoteIdentifier('company_id')} = $1
         AND parent.${quoteIdentifier(parentTenantColumn)} <> $1`,
   };
 }
