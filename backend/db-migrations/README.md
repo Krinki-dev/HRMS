@@ -25,7 +25,7 @@ It does **not** create or alter employee, attendance, leave or payroll tables. I
 1. Confirm the selected Supabase project is the **central/platform** project (the one whose database contains `public.tenants`).
 2. Take a Supabase backup / point-in-time recovery checkpoint and confirm it is available.
 3. Open Supabase SQL Editor in that project and run the complete file once.
-4. Check that the final verification query returns all six flags as `true`.
+4. Check that the final verification query returns all six table flags and all six column flags as `true`.
 5. Regenerate the central Prisma client from `backend/`: `npx prisma generate --schema=prisma/central.prisma`.
 
 For PowerShell / psql from the repository root, with the central URL already configured securely in the environment:
