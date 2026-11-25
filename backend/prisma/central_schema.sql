@@ -211,6 +211,9 @@ CREATE INDEX IF NOT EXISTS idx_branch_links_tenant ON tenant_branch_links (tenan
 CREATE TABLE IF NOT EXISTS central_kyc_records (
 
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id       UUID,
+  -- Employee UUID belongs to the tenant database; intentionally no Central FK.
+  employee_id     UUID,
   aadhaar_hash    TEXT NOT NULL UNIQUE,          -- SHA-256 of 12-digit Aadhaar
   method          TEXT NOT NULL,                 -- 'otp_based' or 'xml_upload'
   kyc_timestamp   TIMESTAMPTZ,                   -- from XML attribute 'ts' (optional)
