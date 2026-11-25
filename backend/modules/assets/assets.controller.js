@@ -14,14 +14,14 @@ const h = (fn) => async (req, res) => {
 };
 
 module.exports = {
-  dashboard:   h(async (req, res) => sendSuccess(res, await svc.dashboard(req.db, req.user.tenantId))),
-  list:        h(async (req, res) => sendSuccess(res, await svc.list(req.db, req.user.tenantId, req.query))),
-  create:      h(async (req, res) => sendSuccess(res, await svc.create(req.db, req.user.tenantId, req.body), 'Asset created.', 201)),
-  get:         h(async (req, res) => sendSuccess(res, await svc.get(req.db, req.user.tenantId, req.params.id))),
-  update:      h(async (req, res) => sendSuccess(res, await svc.update(req.db, req.user.tenantId, req.params.id, req.body))),
-  remove:      h(async (req, res) => sendSuccess(res, await svc.remove(req.db, req.user.tenantId, req.params.id), 'Deleted.')),
-  allocate:    h(async (req, res) => sendSuccess(res, await svc.allocate(req.db, req.user.tenantId, req.params.id, { ...req.body, allocatedBy: req.user.id }), 'Asset allocated.')),
-  returnAsset: h(async (req, res) => sendSuccess(res, await svc.returnAsset(req.db, req.user.tenantId, req.params.id, req.body), 'Asset returned.')),
-  byEmployee:  h(async (req, res) => sendSuccess(res, await svc.byEmployee(req.db, req.user.tenantId, req.params.empId))),
+  dashboard:   h(async (req, res) => sendSuccess(res, await svc.dashboard(req.db, req.user.companyId))),
+  list:        h(async (req, res) => sendSuccess(res, await svc.list(req.db, req.user.companyId, req.query))),
+  create:      h(async (req, res) => sendSuccess(res, await svc.create(req.db, req.user.companyId, req.body), 'Asset created.', 201)),
+  get:         h(async (req, res) => sendSuccess(res, await svc.get(req.db, req.user.companyId, req.params.id))),
+  update:      h(async (req, res) => sendSuccess(res, await svc.update(req.db, req.user.companyId, req.params.id, req.body))),
+  remove:      h(async (req, res) => sendSuccess(res, await svc.remove(req.db, req.user.companyId, req.params.id), 'Deleted.')),
+  allocate:    h(async (req, res) => sendSuccess(res, await svc.allocate(req.db, req.user.companyId, req.params.id, { ...req.body, allocatedBy: req.user.id }), 'Asset allocated.')),
+  returnAsset: h(async (req, res) => sendSuccess(res, await svc.returnAsset(req.db, req.user.companyId, req.params.id, req.body), 'Asset returned.')),
+  byEmployee:  h(async (req, res) => sendSuccess(res, await svc.byEmployee(req.db, req.user.companyId, req.params.empId))),
 };
 
