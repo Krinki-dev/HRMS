@@ -112,6 +112,7 @@ exports.checkAadhaar = async (req, res) => {
       req.db,
       req.user.companyId,
       req.user.id,
+      req.user.centralTenantId || req.user.tenantId,
       { aadhaarNumber, aadhaarHash }
     );
 
