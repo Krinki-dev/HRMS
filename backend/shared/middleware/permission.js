@@ -58,6 +58,20 @@ const checkSensitivePermission = (module, action) => {
   };
 };
 
+const checkSensitivePayloadPermission = (module, action, fields) => {
+  const sensitiveFields = Array.isArray(fields) ? fields : [];
+  const requiredPermission = checkSensitivePermission(module, action);
+  return (req, res, next) => {
+    const rows = Array.isArray(req.body?.rows) ? req.body.rows : [];
+    const hasSensitiveValues = rows.some((row) => row && sensitiveFields.some((field) => {
+      const value = row[field];
+      return value !== undefined && value !== null && !(typeof value === 'string' && value.trim() === '');
+    }));
+    if (!hasSensitiveValues) return next();
+    return requiredPermission(req, res, next);
+  };
+};
+
 function isModuleEnabled(enabledModules, moduleName) {
   if (!Array.isArray(enabledModules) || typeof moduleName !== 'string' || !moduleName.trim()) return false;
   const normalized = new Set(enabledModules.filter((item) => typeof item === 'string').map((item) => item.trim().toLowerCase()));
@@ -78,5 +92,5 @@ const checkModuleEnabled = (moduleName) => {
   };
 };
 
-module.exports = { checkPermission, checkSensitivePermission, checkModuleEnabled, isModuleEnabled };
+module.exports = { checkPermission, checkSensitivePermission, checkSensitivePayloadPermission, checkModuleEnabled, isModuleEnabled };
 
