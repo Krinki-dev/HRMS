@@ -31,13 +31,13 @@ test('maps explicit company and Central tenant claims independently', () => {
   });
 });
 
-test('request tenant context takes precedence over stale token tenant context', () => {
+test('legacy token is not rebound to a request tenant without central index resolution', () => {
   const identity = resolveTenantIdentity({
     claims: { tenantId: 'old-company-id' },
-    requestTenantId: 'resolved-central-tenant-id',
+    requestTenantId: 'untrusted-request-tenant-id',
   });
   assert.equal(identity.companyId, 'old-company-id');
-  assert.equal(identity.tenantId, 'resolved-central-tenant-id');
+  assert.equal(identity.tenantId, null);
 });
 
 test('does not promote a legacy company claim to a Central tenant without resolution', () => {
