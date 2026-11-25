@@ -152,7 +152,7 @@ test('rejects non-PostgreSQL local database types and incomplete local credentia
   assert.throws(() => buildLocalPostgresUrl({
     local_db_type: 'postgres', local_db_host: 'localhost',
     local_db_name: 'hrms',
-  }), decryptValue), /requires host, database name and username/);
+  }, decryptValue), /requires host, database name and username/);
 });
 
 
