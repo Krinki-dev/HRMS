@@ -166,7 +166,7 @@ const PRODUCT_HIGHLIGHTS = [
   { icon: '🤖', text: 'Auto-files PF & ESI every month' },
   { icon: '⚡', text: 'Aadhaar KYC fills forms instantly' },
   { icon: '∞',  text: 'Unlimited employees, flat pricing' },
-  { icon: '🔒', text: 'Cloud, on-premise, or hybrid' },
+  { icon: '🔒', text: 'Managed cloud or customer-hosted PostgreSQL' },
 ];
 
 export default function SmartLoginPage() {
