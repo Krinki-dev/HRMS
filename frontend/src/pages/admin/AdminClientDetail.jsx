@@ -282,7 +282,7 @@ export default function AdminClientDetail() {
             This check does not create schemas, copy tenant records, change the plan, or activate paid access. It saves an audit snapshot in Central DB.
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 14 }}>
-            <button className="btn-sm" onClick={() => { setMigrationPreviewRequested(true); refetchMigration(); }} disabled={migrationLoading}>
+            <button className="btn-sm" onClick={async () => { setMigrationPreviewRequested(true); await refetchMigration(); await qc.invalidateQueries({ queryKey: ['admin-tenant-migration-history', id] }); }} disabled={migrationLoading}>
               {migrationLoading ? 'Inspecting database…' : 'Run migration inventory'}
             </button>
             <span style={{ fontSize: 11, color: 'var(--admin-text-soft)' }}>Tenant data untouched · audit snapshot saved</span>
