@@ -21,6 +21,7 @@ This phase is intentionally inventory-only:
 - The Platform Admin preview displays FK constraints, schema-qualified table names, column mappings, and validation status.
 - For each uniquely resolved, validated FK ownership path, it reports tenant-owned dependent row counts, orphan counts, and rows with nullable ownership references.
 - It checks direct tenant-owned child rows against direct tenant-owned FK parents and blocks when a child points to another tenant's parent record.
+- It counts direct-table rows with `NULL company_id` and indirect rows whose FK chain cannot reach a tenant-owned root; unowned/orphaned records block readiness.
 - Orphaned or nullable ownership references are explicit migration blockers; ambiguous paths and unvalidated FK paths are never used for dependent-row counts.
 - It does not copy dependent rows.
 - Any `NOT VALID` foreign-key constraint is an explicit blocker; the preview does not validate or alter constraints.
