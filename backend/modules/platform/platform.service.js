@@ -87,7 +87,7 @@ const registerTenant = async (req, res) => {
     if (!['cloud', 'local', 'external_cloud'].includes(selectedDbMode)) {
       return sendError(res, ERROR_CODES.VALIDATION, 'Choose a supported PostgreSQL deployment mode: managed cloud, own server, or own cloud database.', 400, { field: 'dbMode' });
     }
-    if (selectedDbMode === 'local' && localDb?.type && localDb.type !== 'postgres') {
+    if (selectedDbMode === 'local' && localDb?.type && !['postgres', 'postgresql'].includes(String(localDb.type).toLowerCase())) {
       return sendError(res, ERROR_CODES.VALIDATION, 'Only PostgreSQL is supported for new registrations.', 400, { field: 'localDb.type' });
     }
     if (selectedDbMode === 'external_cloud' && !/^postgres(?:ql)?:\\/\\//i.test(String(externalDbUrl || '').trim())) {
