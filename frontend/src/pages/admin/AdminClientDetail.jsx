@@ -272,13 +272,13 @@ export default function AdminClientDetail() {
           <div className="card-title">Paid tenant storage migration</div>
           <div className="card-sub" style={{ marginTop: 5, lineHeight: 1.6 }}>
             Read-only preflight for moving a managed-cloud tenant from the shared public schema to its UUID-derived dedicated schema.
-            This check does not create schemas, copy records, change the plan, or activate paid access.
+            This check does not create schemas, copy tenant records, change the plan, or activate paid access. It saves an audit snapshot in Central DB.
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 14 }}>
             <button className="btn-sm" onClick={() => { setMigrationPreviewRequested(true); refetchMigration(); }} disabled={migrationLoading}>
               {migrationLoading ? 'Inspecting database…' : 'Run migration inventory'}
             </button>
-            <span style={{ fontSize: 11, color: 'var(--admin-text-soft)' }}>No data is modified</span>
+            <span style={{ fontSize: 11, color: 'var(--admin-text-soft)' }}>Tenant data untouched · audit snapshot saved</span>
           </div>
           {migrationError && (
             <div style={{ marginTop: 12, color: 'var(--admin-danger)', fontSize: 12 }}>
@@ -326,6 +326,7 @@ export default function AdminClientDetail() {
                   </tbody>
                 </table>
               </div>
+              <div style={{ marginTop: 12, color: 'var(--admin-text-soft)', fontSize: 10 }}>Audit job: {migration.jobId || 'not recorded'} · Status: {migration.jobStatus || 'unknown'}</div>
               <div style={{ marginTop: 12, color: 'var(--admin-text-soft)', fontSize: 10 }}>
                 Inventory generated {migration.generatedAt ? new Date(migration.generatedAt).toLocaleString('en-IN') : '—'}. Copy execution remains disabled until every table has a verified ownership rule, dependency order, destination validation, and recovery plan.
               </div>
