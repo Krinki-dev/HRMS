@@ -20,7 +20,7 @@ test('allows only a ready dedicated schema owned by the tenant UUID', () => {
 
 test('blocks shared schemas', () => {
   assert.throws(
-    () => getSafeDeletionTarget({ ...base, storage_tier: STORAGE_TIERS.SHARED, schema_name: 'shared_tenants' }),
+    () => getSafeDeletionTarget({ ...base, storage_tier: STORAGE_TIERS.SHARED, schema_name: 'public' }),
     { code: 'SHARED_STORAGE_DELETE_BLOCKED' }
   );
 });
