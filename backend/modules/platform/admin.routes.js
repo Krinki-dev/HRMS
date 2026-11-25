@@ -155,7 +155,6 @@ router.get('/stats', async (req, res) => {
  */
 router.get('/tenants', async (req, res) => {
   try {
-    const c = getCentral();
     const { search = '', plan = '', status = 'active', limit = 20, cursor } = req.query;
     const take = Math.min(Number(limit) || 20, 100);
 
@@ -407,8 +406,7 @@ router.post('/tenants/:id/activate', async (req, res) => {
 // ================================================================
 router.get('/tenants/:id/deletion-readiness', async (req, res) => {
   try {
-    const c = getCentral();
-    const data = await getDeletionReadiness(c, req.params.id);
+    const data = await withPlatformAdminRLS(centralPrisma, (tx) => getDeletionReadiness(tx, req.params.id));
     return sendSuccess(res, data);
   } catch (err) {
     if (err.status) {
@@ -446,14 +444,14 @@ router.post('/tenants/:id/delete-permanent', async (req, res) => {
       return sendError(res, ERROR_CODES.FORBIDDEN, 'Incorrect delete password', 403);
     }
 
-    const result = await permanentlyDeleteTenant({
-      centralDb: c,
+    const result = await withPlatformAdminRLS(centralPrisma, (tx) => permanentlyDeleteTenant({
+      centralDb: tx,
       tenantId: req.params.id,
       actorEmail: req.user?.email,
       reason,
       confirmExternalDelete,
       backupConfig,
-    });
+    }));
 
     logger.info(
       `[Admin] Permanent delete: ${result.tenantName} (${result.subdomain}). ` +
