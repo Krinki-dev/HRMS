@@ -44,7 +44,7 @@ function classifyTenantTables({ tables, columns, foreignKeys }) {
       }
     }
     classification[table] = match
-      ? { scope: 'dependent', via: match.slice(1).reverse() }
+      ? { scope: 'dependent', via: match.slice(1) }
       : { scope: 'unclassified', via: null };
   }
   return classification;
