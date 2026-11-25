@@ -27,13 +27,13 @@ test('resolves a ready dedicated-schema tenant to its exact PostgreSQL schema',(
   assert.equal(result.schemaName,tenant().schema_name);
   assert.equal(new URL(result.databaseUrl).searchParams.get('schema'),tenant().schema_name);
 });
-test('resolves shared tenants only to shared_tenants',()=>{
+test('resolves Free/Trial tenants only to public',()=>{
   const result=resolveTenantStorageTarget(tenant({
     plan:'free',
     storage_tier:STORAGE_TIERS.SHARED,
-    schema_name:'shared_tenants',
+    schema_name:'public',
   }),{cloudDatabaseUrl:cloudUrl});
-  assert.equal(result.schemaName,'shared_tenants');
+  assert.equal(result.schemaName,'public');
 });
 test('requires explicit audited classification for legacy rows',()=>{
   assert.throws(()=>resolveTenantStorageTarget(tenant({
