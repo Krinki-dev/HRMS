@@ -38,7 +38,7 @@ The output contains tenant UUIDs and subdomains for reconciliation, but delibera
 
 1. **Aggregate inventory** shows counts by plan, db mode, storage tier, and storage status.
 2. **Per-tenant routing metadata** shows each active (not soft-deleted) tenant's routing fields and only boolean indicators for credential/config presence.
-3. **Duplicate schema assignments** lists repeated schema names. Repeated `shared_tenants` may be intentional after the new policy; other duplicates require careful review. No row is automatically changed.
+3. **Duplicate schema assignments** lists repeated schema names. The `public` schema is the expected shared Free/Trial target in the tenant operational database. Other tenant schemas must be reconciled to Central tenant records; repeated or orphaned schema names require careful review. No row is automatically changed.
 4. **Potentially unsafe/incomplete records** flags legacy lifecycle values, missing connection metadata, hybrid routing, and unknown modes. A flag is a review prompt, not an automatic diagnosis.
 
 ## Important limits
