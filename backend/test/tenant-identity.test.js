@@ -89,3 +89,18 @@ test('operational and Central resolvers fail closed when their own identity is a
     code: 'TENANT_REQUIRED',
   });
 });
+
+
+test('platform admins use the explicitly selected Central tenant context', () => {
+  assert.equal(resolveCentralTenantId({
+    user: { is_platform_admin: true, centralTenantId: 'admin-home-tenant' },
+    tenant: { id: 'selected-tenant-id' },
+  }), 'selected-tenant-id');
+});
+
+test('ordinary tenant users cannot override their token Central tenant through request context', () => {
+  assert.equal(resolveCentralTenantId({
+    user: { is_platform_admin: false, centralTenantId: 'token-tenant-id' },
+    tenant: { id: 'other-tenant-id' },
+  }), 'token-tenant-id');
+});
