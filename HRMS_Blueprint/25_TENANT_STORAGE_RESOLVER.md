@@ -2,7 +2,7 @@
 
 ## What this stage adds
 
-A side-effect-free resolver converts an already-classified central tenant record into a PostgreSQL connection target. It is deliberately separate from Express middleware and does not create schemas or connect to PostgreSQL.
+A side-effect-free resolver converts an already-classified central tenant record into a PostgreSQL connection target. Free and Trial customers resolve to the tenant operational database's `public` schema; each Paid customer resolves to its UUID-derived dedicated schema. It is deliberately separate from Express middleware and does not create schemas or connect to PostgreSQL.
 
 ## Fail-closed behavior
 
