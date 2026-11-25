@@ -263,3 +263,9 @@ Newly verified blockers that take precedence over older task status:
 The Central migration backend/db-migrations/20261125_central_platform_schema_upgrade.sql was applied and user-verified 12/12. Tenant operational migrations remain unapplied. Do not ask for more SQL at this stage.
 
 The current exact-head CI/build state has not been rechecked after this documentation update. Older green CI runs do not prove the current head.
+
+### Additional P0/P1 — encryption and migration safety (2026-11-25)
+- P0: Do not run scripts/migrate-pii-encryption.js. It writes an ENC: format not read by current live Employee services. Build a compatible migration with backup, dry run, dual-read/round-trip tests and validation.
+- P1: Remove static fallback key in shared/utils/encryption.js; align server, worker, script and PII key validation into one key contract.
+- P1: The canonical schema migration script can swallow errors and still allow server boot. Add schema readiness/version gate; successful process start must not imply successful migration.
+- Operator scripts that scan every tenant must require explicit tenant allowlist, dry-run, backup and audit.
