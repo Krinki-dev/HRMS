@@ -69,6 +69,8 @@ model tenants {
   tenant_pricing_configs tenant_pricing_configs?
   invoices               invoices[]
   billing_events         billing_events[]
+  company_documents      company_documents[]
+  company_document_reviews company_document_reviews[]
 }
 
 model backup_config {
@@ -352,4 +354,46 @@ model billing_events {
   @@index([event_type])
   @@index([status])
   @@index([created_at])
+}
+
+
+model company_documents {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id     String   @db.Uuid
+  document_type String
+  file_name     String
+  object_key    String   @unique
+  mime_type     String
+  size_bytes    BigInt
+  sha256        String
+  status        String   @default("submitted")
+  reviewer_id   String?  @db.Uuid
+  reviewer_note String?
+  reviewed_at   DateTime? @db.Timestamptz
+  uploaded_by   String?  @db.Uuid
+  created_at    DateTime @default(now()) @db.Timestamptz
+  updated_at    DateTime @default(now()) @db.Timestamptz
+
+  tenant  tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  reviews company_document_reviews[]
+
+  @@index([tenant_id, status, created_at(sort: Desc)])
+  @@index([status, created_at])
+}
+
+model company_document_reviews {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  document_id   String   @db.Uuid
+  tenant_id     String   @db.Uuid
+  reviewer_id   String?  @db.Uuid
+  from_status   String?
+  to_status     String
+  reviewer_note String?
+  created_at    DateTime @default(now()) @db.Timestamptz
+
+  document company_documents @relation(fields: [document_id], references: [id], onDelete: Cascade)
+  tenant   tenants           @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+
+  @@index([document_id, created_at(sort: Desc)])
+  @@index([tenant_id])
 }
