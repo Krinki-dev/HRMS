@@ -172,7 +172,7 @@ exports.downloadInvoicePDF = async (req, res) => {
  */
 exports.getMySubscription = async (req, res) => {
   // Identify tenant from the auth token
-  req.params.tenantId = req.user.tenantId;
+  req.params.tenantId = req.user.centralTenantId || req.user.tenantId;
   return exports.getTenantPricing(req, res);
 };
 
@@ -181,7 +181,7 @@ exports.getMySubscription = async (req, res) => {
  */
 exports.getMyInvoices = async (req, res) => {
   // Identify tenant from the auth token
-  req.params.tenantId = req.user.tenantId;
+  req.params.tenantId = req.user.centralTenantId || req.user.tenantId;
   return exports.getTenantInvoices(req, res);
 };
 
@@ -192,7 +192,7 @@ exports.getMyInvoices = async (req, res) => {
  * This path never creates a payment order or invoice.
  */
 exports.activateFreePlan = async (req, res) => {
-  const tenantId = req.user?.tenantId || req.user?.company_id;
+  const tenantId = req.user?.centralTenantId || req.user?.tenantId;
   if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Tenant session required', 401);
 
   try {
@@ -275,7 +275,7 @@ exports.activateFreePlan = async (req, res) => {
  * managed cloud, 14 days for self-hosted); this endpoint does not extend it.
  */
 exports.activateTrial = async (req, res) => {
-  const tenantId = req.user?.tenantId || req.user?.company_id;
+  const tenantId = req.user?.centralTenantId || req.user?.tenantId;
   if (!tenantId) return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Tenant session required', 401);
 
   try {
