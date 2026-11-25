@@ -23,6 +23,9 @@ function getSafeBackupTarget(tenant) {
     if (!['local', 'external_cloud', 'cloud'].includes(tenant.db_mode)) {
       throw new Error('Unsupported dedicated database backup mode.');
     }
+    if (tenant.db_mode === 'cloud' && tenant.plan !== 'enterprise') {
+      throw new Error('Platform-managed dedicated database backup is Enterprise-only.');
+    }
     return null;
   }
   throw new Error('Tenant-specific backup is blocked for shared or legacy storage.');
