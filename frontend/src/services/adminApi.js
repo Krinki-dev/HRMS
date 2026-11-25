@@ -11,6 +11,9 @@ export const adminApi = {
   getTenant: (id) =>
     api.get(`/platform/admin/tenants/${id}`).then(r => r.data),
 
+  getTenantMigrationPreview: (id) =>
+    api.get(`/platform/admin/tenants/${id}/migration-preview`).then(r => r.data),
+
   updateTenant: (id, data) =>
     api.put(`/platform/admin/tenants/${id}`, data).then(r => r.data),
 
