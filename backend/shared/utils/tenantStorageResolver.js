@@ -67,8 +67,8 @@ function resolveTenantStorageTarget(tenant, {
 
   if (tier === STORAGE_TIERS.SHARED || tier === STORAGE_TIERS.DEDICATED_SCHEMA) {
     schemaName = assertSchemaName(tenant.schema_name);
-    if (tier === STORAGE_TIERS.SHARED && schemaName !== 'shared_tenants') {
-      throw new Error('Shared storage must use the shared_tenants schema.');
+    if (tier === STORAGE_TIERS.SHARED && schemaName !== 'public') {
+      throw new Error('Free and Trial storage must use the public schema.');
     }
     if (tier === STORAGE_TIERS.DEDICATED_SCHEMA && schemaName !== deriveTenantSchemaName(tenant.id)) {
       throw new Error('Dedicated schema must match the immutable tenant UUID.');
