@@ -14,12 +14,14 @@ const { resolveTenantDbUrl } = require('../platform/platform.service');
 const authService = {
   // ─── Token Management ───────────────────────────────────────────────
 
-  signAccessToken(user, permissions) {
+  signAccessToken(user, permissions, centralTenantId = null) {
     return jwt.sign(
       {
         id: user.id,
         employeeId: user.employee_id,
-        tenantId: user.company_id,
+        companyId: user.company_id,
+        centralTenantId: centralTenantId || null,
+        tenantId: centralTenantId || null,
         role: user.role?.name || 'employee',
         permissions,
         email: user.email,
