@@ -8,6 +8,7 @@ test('paid cloud plans require ready dedicated schemas', () => {
   assert.equal(isPaidStorageReady({ db_mode: 'cloud', storage_tier: 'dedicated_schema', storage_status: 'ready' }, 'pro'), true);
   assert.equal(isPaidStorageReady({ db_mode: 'cloud', storage_tier: 'shared', storage_status: 'ready' }, 'pro'), false);
   assert.equal(isPaidStorageReady({ db_mode: 'cloud', storage_tier: 'dedicated_schema', storage_status: 'provisioning' }, 'pro'), false);
+  assert.equal(isPaidStorageReady({ db_mode: 'local', storage_tier: 'dedicated_schema', storage_status: 'ready' }, 'pro'), false);
 });
 
 test('dedicated customer-managed PostgreSQL databases can activate paid plans', () => {
