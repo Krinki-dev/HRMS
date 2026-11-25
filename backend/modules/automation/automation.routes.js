@@ -170,7 +170,7 @@ router.get('/kyc/:kycId', async (req, res) => {
       district: d(rec.dist),
     };
 
-    await audit(req.db, req.user.tenantId, req.user.id, 'kyc_record_accessed',
+    await audit(req.db, req.user.companyId, req.user.id, 'kyc_record_accessed',
       { kycId: rec.id, method: rec.method }, req.ip);
 
     return sendSuccess(res, safe);
@@ -206,7 +206,7 @@ router.post('/kyc/:kycId/link', async (req, res) => {
     const rec = await findKycById(req.params.kycId);
     if (!rec) return sendError(res, ERROR_CODES.NOT_FOUND, 'KYC record not found', 404);
     await linkKycToEmployee(rec.id, employeeId);
-    await audit(req.db, req.user.tenantId, req.user.id, 'kyc_linked_to_employee',
+    await audit(req.db, req.user.companyId, req.user.id, 'kyc_linked_to_employee',
       { kycId: rec.id, employeeId }, req.ip);
     return sendSuccess(res, null, 'KYC linked to employee');
   } catch (e) {
@@ -223,7 +223,7 @@ router.post('/kyc/start-otp', async (req, res) => {
     if (!/^\d{12}$/.test(clean))
       return sendError(res, ERROR_CODES.VALIDATION, 'Aadhaar must be 12 digits', 400);
 
-    const companyId = req.user.tenantId;
+    const companyId = req.user.companyId;
 
     const running = await req.db.automation_tasks.findFirst({
       where: {
@@ -279,7 +279,7 @@ router.post('/kyc/upload-xml',
     try {
       const { shareCode: userCode, mode = 'direct', aadhaarNumber = '' } = req.body;
       const cleanAadhaar = (aadhaarNumber || '').replace(/\s/g, '');
-      const companyId = req.user.tenantId;
+      const companyId = req.user.companyId;
       const now       = new Date();
       const shareCode = userCode?.trim() ||
         String(now.getDate()).padStart(2,'0') + String(now.getMonth()+1).padStart(2,'0');
@@ -369,7 +369,7 @@ router.post('/kyc/save-after-review', async (req, res) => {
       pht:     kycData.photo    || kycData.photoUrl || null,
       taskId:  null,
     });
-    await audit(req.db, req.user.tenantId, req.user.id, `kyc_${method}_confirmed`,
+    await audit(req.db, req.user.companyId, req.user.id, `kyc_${method}_confirmed`,
       { kycId: kycRec?.id, method, mode }, req.ip);
     return sendSuccess(res, { kycId: kycRec?.id, mode }, 'KYC saved to central database');
   } catch (e) { return sendError(res, ERROR_CODES.SERVER, e.message, 500); }
@@ -378,7 +378,7 @@ router.post('/kyc/save-after-review', async (req, res) => {
 router.get('/tasks', async (req, res) => {
   try {
     const { status } = req.query;
-    const where = { company_id: req.user.tenantId };
+    const where = { company_id: req.user.companyId };
     if (status) where.status = status;
     const tasks = await req.db.automation_tasks.findMany({
       where, orderBy: { created_at: 'desc' }, take: 100,
@@ -391,7 +391,7 @@ router.get('/tasks', async (req, res) => {
 router.get('/task/:taskId', async (req, res) => {
   try {
     const task = await req.db.automation_tasks.findFirst({
-      where: { id: req.params.taskId, company_id: req.user.tenantId },
+      where: { id: req.params.taskId, company_id: req.user.companyId },
       include: { logs: { orderBy: { step_number: 'asc' } } },
     });
     if (!task) return sendError(res, ERROR_CODES.NOT_FOUND, 'Task not found', 404);
@@ -405,7 +405,7 @@ router.post('/task/:taskId/captcha', async (req, res) => {
     if (!captcha?.trim())
       return sendError(res, ERROR_CODES.VALIDATION, 'captcha required', 400);
     const task = await req.db.automation_tasks.findFirst({
-      where: { id: req.params.taskId, company_id: req.user.tenantId },
+      where: { id: req.params.taskId, company_id: req.user.companyId },
     });
     if (!task) return sendError(res, ERROR_CODES.NOT_FOUND, 'Task not found', 404);
     if (task.status !== 'captcha_required')
@@ -425,7 +425,7 @@ router.post('/task/:taskId/otp', async (req, res) => {
     if (!otp?.trim() || !/^\d{6}$/.test(otp.trim()))
       return sendError(res, ERROR_CODES.VALIDATION, 'OTP must be 6 digits', 400);
     const task = await req.db.automation_tasks.findFirst({
-      where: { id: req.params.taskId, company_id: req.user.tenantId },
+      where: { id: req.params.taskId, company_id: req.user.companyId },
     });
     if (!task) return sendError(res, ERROR_CODES.NOT_FOUND, 'Task not found', 404);
     if (task.status !== 'otp_required')
@@ -446,7 +446,7 @@ router.post('/task/:taskId/confirm', async (req, res) => {
     if (!mobile || !email) return sendError(res, ERROR_CODES.VALIDATION, 'Mobile and email required', 400);
     
     const task = await req.db.automation_tasks.findFirst({
-      where: { id: req.params.taskId, company_id: req.user.tenantId },
+      where: { id: req.params.taskId, company_id: req.user.companyId },
     });
     if (!task) return sendError(res, ERROR_CODES.NOT_FOUND, 'Task not found', 404);
     if (task.status !== 'review_required') return sendError(res, ERROR_CODES.VALIDATION, `Status is "${task.status}", expected "review_required"`, 400);
@@ -469,7 +469,7 @@ router.post('/task/:taskId/confirm', async (req, res) => {
 router.post('/task/:taskId/refresh-captcha', async (req, res) => {
   try {
     const task = await req.db.automation_tasks.findFirst({
-      where: { id: req.params.taskId, company_id: req.user.tenantId },
+      where: { id: req.params.taskId, company_id: req.user.companyId },
     });
     if (!task) return sendError(res, ERROR_CODES.NOT_FOUND, 'Task not found', 404);
     if (task.status !== 'captcha_required')
