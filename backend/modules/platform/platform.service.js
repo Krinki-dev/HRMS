@@ -110,11 +110,11 @@ const registerTenant = async (req, res) => {
     }
 
     if (cleanGstin) {
-      const existingGstin = await centralPrisma.$queryRaw`
+      const existingGstin = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
         SELECT id, name, legal_name, subdomain FROM tenants
         WHERE gstin = ${cleanGstin} AND deleted_at IS NULL
         LIMIT 1
-      `;
+      `);
       if (existingGstin.length > 0) {
         return sendError(res, ERROR_CODES.CONFLICT, `This GSTIN is already registered with ${existingGstin[0].name} (${existingGstin[0].subdomain}).`, 409, { field: 'gstin' });
       }
@@ -125,37 +125,37 @@ const registerTenant = async (req, res) => {
     if (selectedDbMode === 'external_cloud' && !externalDbUrl)
       return sendError(res, ERROR_CODES.VALIDATION, 'Database connection URL is required', 400);
 
-    const existingSubdomain = await centralPrisma.$queryRaw`
+    const existingSubdomain = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
       SELECT id FROM tenants WHERE subdomain = ${cleanSubdomain} AND deleted_at IS NULL LIMIT 1
-    `;
+    `);
     if (existingSubdomain.length > 0)
       return sendError(res, ERROR_CODES.CONFLICT, `Subdomain "${cleanSubdomain}" is already taken.`, 409, { field: 'subdomain' });
 
     if (cleanCustomDomain) {
-      const existingCustomDomain = await centralPrisma.$queryRaw`
+      const existingCustomDomain = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
         SELECT id FROM tenants WHERE LOWER(custom_domain) = LOWER(${cleanCustomDomain}) AND deleted_at IS NULL LIMIT 1
-      `;
+      `);
       if (existingCustomDomain.length > 0) {
         return sendError(res, ERROR_CODES.CONFLICT, `The custom domain "${cleanCustomDomain}" is already registered.`, 409, { field: 'customDomain' });
       }
     }
 
-    const existingEmail = await centralPrisma.$queryRaw`
+    const existingEmail = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
       SELECT id FROM tenants WHERE admin_email = ${cleanEmail} AND deleted_at IS NULL LIMIT 1
-    `;
+    `);
     if (existingEmail.length > 0)
       return sendError(res, ERROR_CODES.CONFLICT, 'An account is already registered with this email.', 409, { field: 'email' });
 
-    const existingIndex = await centralPrisma.$queryRaw`
+    const existingIndex = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
       SELECT id FROM central_user_index WHERE email = ${cleanEmail} AND is_active = true LIMIT 1
-    `;
+    `);
     if (existingIndex.length > 0)
       return sendError(res, ERROR_CODES.CONFLICT, 'This email is already linked to an account.', 409, { field: 'email' });
 
     if (cleanPhone) {
-      const existingPhone = await centralPrisma.$queryRaw`
+      const existingPhone = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
         SELECT id FROM tenants WHERE admin_phone = ${cleanPhone} AND deleted_at IS NULL LIMIT 1
-      `;
+      `);
       if (existingPhone.length > 0)
         return sendError(res, ERROR_CODES.CONFLICT, 'Mobile number already registered.', 409, { field: 'phone' });
     }
@@ -240,7 +240,7 @@ const registerTenant = async (req, res) => {
       await testClient.$disconnect();
     }
 
-    await centralPrisma.$transaction(async (tx) => {
+    await withPlatformAdminRLS(centralPrisma, async (tx) => {
       
       await tx.$executeRaw`
         INSERT INTO tenants (
@@ -380,7 +380,7 @@ const registerTenant = async (req, res) => {
       return sendError(res, ERROR_CODES.SERVER, 'Tenant workspace provisioning failed. The account is not active; support must complete provisioning before login.', 503);
     }
 
-    await centralPrisma.$executeRaw`
+    await withPlatformAdminRLS(centralPrisma, (tx) => tx.$executeRaw`
       UPDATE tenants
       SET storage_status = 'ready',
           storage_provisioned_at = NOW(),
@@ -389,7 +389,7 @@ const registerTenant = async (req, res) => {
           is_setup_complete = true,
           updated_at = NOW()
       WHERE id = ${tenantId}::uuid
-    `;
+    `);
 
     const portalUrl = cleanCustomDomain ? `https://${cleanCustomDomain}` : `https://${cleanSubdomain}.syntern.in`;
     const loginUrl = `${portalUrl}/login`;
@@ -465,12 +465,12 @@ async function requestBranchLink(gstin, targetTenantId, metadata = {}) {
   }
 
   const pan = gstinUpper.substring(2, 12);
-  const targetRows = await centralPrisma.$queryRaw`
+  const targetRows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
     SELECT id, name, legal_name, gstin, pan
     FROM tenants
     WHERE id = ${targetTenantId}::uuid AND deleted_at IS NULL
     LIMIT 1
-  `;
+  `);
   const target = targetRows[0];
   if (!target) {
     throw new Error('Target tenant not found');
@@ -479,21 +479,21 @@ async function requestBranchLink(gstin, targetTenantId, metadata = {}) {
     throw new Error('Target tenant PAN does not match the GSTIN PAN');
   }
 
-  const existingGstin = await centralPrisma.$queryRaw`
+  const existingGstin = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
     SELECT id FROM tenants WHERE gstin = ${gstinUpper} AND deleted_at IS NULL LIMIT 1
-  `;
+  `);
   if (existingGstin.length > 0) {
     throw new Error('This GSTIN is already registered as a tenant.');
   }
 
-  const existingLink = await centralPrisma.$queryRaw`
+  const existingLink = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
     SELECT id FROM tenant_branch_links WHERE gstin = ${gstinUpper} LIMIT 1
-  `;
+  `);
   if (existingLink.length > 0) {
     throw new Error('A branch link request already exists for this GSTIN.');
   }
 
-  await centralPrisma.$executeRaw`
+  await withPlatformAdminRLS(centralPrisma, (tx) => tx.$executeRaw`
     INSERT INTO tenant_branch_links (
       tenant_id, gstin, pan, branch_name, branch_no,
       city, state, pincode, address, status, requested_at
@@ -502,7 +502,7 @@ async function requestBranchLink(gstin, targetTenantId, metadata = {}) {
       ${metadata.city || null}, ${metadata.state || null}, ${metadata.pincode || null}, ${metadata.address || null},
       'pending', NOW()
     )
-  `;
+  `);
 
   return { success: true, message: 'Branch link request created successfully.' };
 }
