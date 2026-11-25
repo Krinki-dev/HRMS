@@ -14,43 +14,73 @@ function classifyTenantTables({ tables, columns, foreignKeys }) {
       .filter((column) => tableSet.has(column.table_name) && column.column_name === 'company_id')
       .map((column) => column.table_name)
   );
-  // The registration flow creates a separate companies.id UUID; it is not the
-  // Central tenants.id. Treat the companies row as the ownership root.
+  // Operational companies.id is distinct from Central tenants.id.
   if (tableSet.has('companies') && columns.some((column) => column.table_name === 'companies' && column.column_name === 'id')) {
     direct.add('companies');
   }
+
   const parents = new Map();
   for (const fk of foreignKeys) {
     if (!tableSet.has(fk.table_name) || !tableSet.has(fk.foreign_table_name)) continue;
+    const childColumns = Array.isArray(fk.child_columns) ? fk.child_columns : [];
+    const parentColumns = Array.isArray(fk.parent_columns) ? fk.parent_columns : [];
+    // Never infer ownership from table names alone: a real ordered FK column
+    // mapping is required, including every member of a composite key.
+    if (!childColumns.length || childColumns.length !== parentColumns.length) continue;
     if (!parents.has(fk.table_name)) parents.set(fk.table_name, []);
-    parents.get(fk.table_name).push(fk.foreign_table_name);
+    parents.get(fk.table_name).push({
+      table: fk.foreign_table_name,
+      constraint: fk.constraint_name || null,
+      childColumns,
+      parentColumns,
+      validated: fk.is_validated !== false,
+    });
   }
 
   const classification = {};
   for (const table of tables) {
     if (direct.has(table)) {
-      classification[table] = { scope: 'direct', via: null };
+      classification[table] = { scope: 'direct', via: null, relations: [] };
       continue;
     }
-    const queue = [{ table, path: [table] }];
-    const visited = new Set([table]);
-    let match = null;
-    while (queue.length && !match) {
+
+    const queue = [{ table, path: [table], relations: [], visited: new Set([table]) }];
+    const matches = [];
+    while (queue.length && matches.length < 2) {
       const current = queue.shift();
-      for (const parent of parents.get(current.table) || []) {
-        if (visited.has(parent)) continue;
-        const path = [...current.path, parent];
-        if (direct.has(parent)) {
-          match = path;
-          break;
+      for (const relation of parents.get(current.table) || []) {
+        if (current.visited.has(relation.table)) continue;
+        const path = [...current.path, relation.table];
+        const relations = [...current.relations, {
+          fromTable: current.table,
+          toTable: relation.table,
+          constraint: relation.constraint,
+          childColumns: relation.childColumns,
+          parentColumns: relation.parentColumns,
+          validated: relation.validated,
+        }];
+        if (direct.has(relation.table)) {
+          matches.push({ path, relations });
+          if (matches.length > 1) break;
+        } else {
+          const visited = new Set(current.visited);
+          visited.add(relation.table);
+          queue.push({ table: relation.table, path, relations, visited });
         }
-        visited.add(parent);
-        queue.push({ table: parent, path });
       }
     }
-    classification[table] = match
-      ? { scope: 'dependent', via: match.slice(1) }
-      : { scope: 'unclassified', via: null };
+
+    if (matches.length > 1) {
+      classification[table] = { scope: 'ambiguous', via: null, relations: [] };
+    } else if (matches.length === 1) {
+      classification[table] = {
+        scope: 'dependent',
+        via: matches[0].path.slice(1),
+        relations: matches[0].relations,
+      };
+    } else {
+      classification[table] = { scope: 'unclassified', via: null, relations: [] };
+    }
   }
   return classification;
 }
@@ -170,11 +200,13 @@ async function inspectTenantMigration({
       directlyScoped: Object.values(classification).filter((item) => item.scope === 'direct').length,
       dependentTables: Object.values(classification).filter((item) => item.scope === 'dependent').length,
       unclassifiedTables: Object.values(classification).filter((item) => item.scope === 'unclassified').length,
+      ambiguousTables: Object.values(classification).filter((item) => item.scope === 'ambiguous').length,
       destinationSchemaExists: existingSchemas.has(destinationSchema),
     };
     const blockers = [];
     if (!summary.directlyScoped) blockers.push('No company_id-owned tables were discovered; tenant ownership cannot be proven.');
     if (summary.unclassifiedTables) blockers.push('Some tables have no proven tenant ownership path and require explicit classification.');
+    if (summary.ambiguousTables) blockers.push('Some tables have multiple foreign-key ownership paths; explicit reviewed ownership rules are required.');
     if (summary.dependentTables) blockers.push('Dependent tables were discovered; relation-scoped row counts and cross-tenant foreign-key validation are not yet implemented.');
     if (fkResult.rows.some((fk) => !fk.is_validated)) blockers.push('One or more foreign-key constraints are NOT VALID and must be validated before migration.');
     if (summary.destinationSchemaExists) blockers.push('The destination schema already exists; automatic migration is disabled to prevent overwriting data.');
@@ -192,6 +224,7 @@ async function inspectTenantMigration({
         name,
         scope: classification[name].scope,
         ownershipPath: classification[name].via,
+        ownershipRelations: classification[name].relations,
         sourceRows: directCounts[name] ?? null,
       })),
       foreignKeyCount: fkResult.rows.length,
