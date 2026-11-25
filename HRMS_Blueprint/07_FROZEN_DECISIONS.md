@@ -411,3 +411,10 @@ Phase 19:  Mobile App (React Native)    ❌ Phase 2 — not started
 - Refresh JWTs remain httpOnly secure cookies; refresh endpoint and CSRF controls must be verified together.
 - Current frontend authStore.js and services/api.js still persist accessToken in localStorage; this is a P0 deviation that must be corrected before security sign-off.
 - Central user lookup must not resolve a multi-tenant email by arbitrary LIMIT 1 where Central index only guarantees unique (email, company_id). Resolve tenant explicitly or ask the user to select one.
+
+### Encryption and schema readiness hardening
+- No static fallback encryption key is permitted in any process. Existing server startup requires ENCRYPTION_KEY; helper-only scripts/workers must validate it too.
+- Only one canonical PII encryption codec/key contract should be supported for new writes. Legacy decoding is allowed only as a controlled compatibility layer with test coverage.
+- Do NOT run backend/scripts/migrate-pii-encryption.js: it writes the separate ENC: format, while live Employee services currently use the colon-separated shared encryption codec. Replace with a tested compatible migration first.
+- A deployment may not be marked schema-ready if any required migration failed. A server that starts after a swallowed migration failure is not a green release.
+- Operator database sweep/migration scripts must never run automatically.
