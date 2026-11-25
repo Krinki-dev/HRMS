@@ -221,3 +221,12 @@ The first implementation slice is committed on the working branch:
 6. Add downloadable error workbook and import summary/audit log including generated ID mappings.
 7. Integrate side-by-side CSV and Excel template/import/export actions in the Employees UI; then reuse the engine for Attendance, Leave, Payroll, Compliance and remaining modules.
 8. Add CSV and XLSX round-trip tests and PostgreSQL integration tests for tenant ownership, permissions and transaction rollback.
+
+
+## 2026-11-25 — Employees implementation findings and verification
+
+- Employee workbook schema now has Employees, ContactDetails, Addresses, Family, Education and PreviousEmployment sheets. All related rows join by Employee Code, with optional immutable child record UUIDs. Schema metadata drives the shared validation primitives; it is the first module-specific implementation slice, not a complete XLSX pipeline.
+- The existing Employees CSV importer needs replacement behind a compatibility path: browser-only parsing is not authoritative; the button commits immediately; API validation only checks names; service writes one employee at a time; unknown department/designation/branch names silently become null. Required design: backend preview → explicit confirm → revalidate → safe transaction/batch commit.
+- Security finding fixed: standard `checkPermission` lets built-in tenant Admin/HR Admin roles bypass all action flags. Added `checkSensitivePermission` with no such role bypass and applied it to Aadhaar/PAN unmask and bank-account reads. Explicit `employees.view_sensitive` or platform-level access is required.
+- CI verified: Backend Tests at `20ef9b709291eab9a80e33c785b8211e9fb8b06b` succeeded (87 tests; 83 passed, 0 failed, 4 skipped). This is unit/ordinary backend CI only; no live PostgreSQL, browser E2E, provider sandbox or deployment proof.
+- Before implementing XLSX I am checking dependency maintenance and security: upstream ExcelJS 4.4.0 has had a long release gap and open reports about vulnerable transitive dependencies; do not add it blindly. Regenerate the lockfile using npm tooling, never hand-edit integrity hashes.

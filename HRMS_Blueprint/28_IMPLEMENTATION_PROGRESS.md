@@ -287,3 +287,12 @@ No DB connection, migration, staging, deployment, live payment or production cha
 - Added `backend/test/employee-workbook-schema.test.js` for relationship contracts, required stable keys, missing parent references, duplicates, enums, date/formula handling and conflict modes.
 - Commits: schema `2aab011e6f74fce7298e2e50906256321b275021`; generic validator `73f767d6d5589db940612a3831d670567b1009c0` (subsequently hardened in `a98814e164a2640a47712014eb2b3ce48f4ad934`, `f0b77a9bb3598ea962896bfad016f424210edf98`, `02989f8dd57b66c069bc73adba344b6a461989e5`); tests `466b7a8a41c45078d48ad4cff7b92fabb65a7333` and `def7e4880b3fe4fca6fd0f84abcb28e3c4855c01`.
 - Not yet implemented: XLSX file generation/parsing, CSV relational bundle, template downloads, import preview/job persistence, DB conflict detection, transaction-safe commit, error workbook, audit mapping, UI integration, export permission checks and round-trip tests. No tests have been executed yet.
+
+
+## 2026-11-25 — Employees workbook and sensitive-access implementation
+
+- Added relational Employees workbook schema metadata and reusable validator. Current sheets: Employees, ContactDetails, Addresses, Family, Education and PreviousEmployment. Parent/child relationships use Employee Code; child record UUIDs may be supplied for authorised update/upsert flows.
+- Default schema excludes bank details, Aadhaar/PAN and private document content. A strict sensitive permission middleware was added because ordinary built-in Admin/HR Admin role bypasses are unsuitable for field-level sensitive access. Identity unmask and bank account read endpoints now require explicit `employees.view_sensitive` or platform-level access.
+- Backend CI passed at `20ef9b709291eab9a80e33c785b8211e9fb8b06b`: 87 tests, 83 passed, 0 failed, 4 skipped. Four tests are skipped by the current test suite; PostgreSQL integration, browser E2E and staging remain unverified.
+- Current CSV import is still unsafe relative to the frozen requirement: client-side preview is not authoritative, the import button commits immediately, server validation is minimal, each row is written separately, and unknown lookup names silently map to null. Do not call the import/export feature complete.
+- Next: implement server-side preview and commit with persisted import jobs and transactional parent/child writes; choose an XLSX dependency only after checking current advisories and regenerating package-lock; preserve CSV compatibility; add workbook templates, error workbook and UI actions.
