@@ -624,3 +624,14 @@ Extended historical commit review continues. The 99 old commits are not all clai
 - backend/scripts/migrate-pii-encryption.js rewrites employee Aadhaar/PAN/bank fields into ENC:. This is incompatible with the live Employee decrypt() function and may make the fields unreadable in the app. **Do not run this script** until a compatibility migration is redesigned and round-trip tested.
 - backend/scripts/apply_canonical_schema_migration.js catches migration errors and continues server startup. This was intentionally introduced historically. Treat migration success as a separate hard readiness gate; process startup is not schema readiness.
 - migrate_user_index.js and other full-tenant sweeps are operator-only; require a tenant allowlist, dry-run, backup, audit and secret-safe handling. Never add them to startup.
+
+## Session update — 2026-11-25 (new chat continuation)
+
+- Re-read this handoff, the master audit (33), owner decisions (34), implementation progress, and the relevant source files from the working branch.
+- Confirmed current branch head before this session's change was `a00e885a7b35a531a1df788821ba5b0518e71f9c` (docs-only encryption/migration safety update). `main` remains untouched.
+- Rechecked exact-head Backend Tests run `45607022296`: 94 tests, 89 passed, 1 failed, 4 skipped. The only reported failure was a stale assertion in `backend/test/tenant-storage-config.test.js` expecting `shared_tenants`, while the approved policy and implementation both require `public`.
+- Corrected that test expectation and test title to `public` and committed as `62d56b43dec7d51f38863d10661fa1ca4428577d` (`test: align shared tenant schema expectations with public`). This is a test alignment only; it does not change runtime behavior.
+- CI for the new commit has not yet been observed; do not claim the test suite is green until a workflow run for the exact new HEAD completes.
+- Reconfirmed high-priority source gaps: auth token currently assigns `tenantId: user.company_id`; auth lookup uses `LIMIT 1` for email-to-tenant resolution; storage resolver is not integrated into legacy tenant middleware and explicitly blocks local PostgreSQL mode; signup path still contains legacy dbMode/schema-clone logic; tenant operational Prisma migration history still declares MSSQL.
+- No tenant operational migration, live database operation, real payment, deployment, or production data cleanup was performed.
+- Resume next: verify CI for commit `62d56b43...`; complete the plans catalog -> public selector -> checkout -> invoice compatibility audit; then implement P0 identity mapping and storage lifecycle integration in isolated, tested changes. Preserve all safety gates and do not modify `main`.
