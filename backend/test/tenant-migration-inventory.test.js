@@ -73,7 +73,7 @@ test('builds a read-only inventory using the verified operational company UUID',
       if (sql.includes('pg_constraint')) {
         return { rows: [{ table_name: 'attendance', foreign_table_name: 'employees' }] };
       }
-      if (sql.includes('FROM "public".companies')) {
+      if (sql.includes('FROM "public".companies') && sql.includes('WHERE ($1::text IS NULL')) {
         assert.deepEqual(params, ['29ABCDE1234F1Z5', 'ABCDE1234F']);
         return { rows: [{ id: '11111111-1111-4111-8111-111111111111' }] };
       }
