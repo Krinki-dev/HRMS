@@ -123,6 +123,24 @@ function buildDependentInventoryQuery({ sourceSchema, table, relations, rootTabl
   };
 }
 
+function buildCrossTenantReferenceQuery({ sourceSchema, foreignKey, parentIsCompanies = false }) {
+  if (!foreignKey.child_columns?.length || foreignKey.child_columns.length !== foreignKey.parent_columns?.length) {
+    throw new Error('Foreign-key column mappings are incomplete.');
+  }
+  const join = foreignKey.child_columns.map((column, index) =>
+    `child.${quoteIdentifier(column)} = parent.${quoteIdentifier(foreignKey.parent_columns[index])}`
+  ).join(' AND ');
+  const parentTenantColumn = parentIsCompanies ? 'id' : 'company_id';
+  return {
+    sql: `SELECT COUNT(*)::text AS cross_tenant_rows
+      FROM ${quoteIdentifier(sourceSchema)}.${quoteIdentifier(foreignKey.table_name)} AS child
+      JOIN ${quoteIdentifier(sourceSchema)}.${quoteIdentifier(foreignKey.foreign_table_name)} AS parent
+        ON ${join}
+      WHERE child.company_id = $1
+        AND parent.${quoteIdentifier(parentTenantColumn)} <> $1`,
+  };
+}
+
 async function inspectTenantMigration({
   databaseUrl,
   tenantId,
@@ -222,6 +240,7 @@ async function inspectTenantMigration({
 
     const directCounts = {};
     const dependentCounts = {};
+    const crossTenantReferences = [];
     for (const table of tables) {
       if (classification[table].scope !== 'direct') continue;
       const count = table === 'companies'
@@ -250,6 +269,30 @@ async function inspectTenantMigration({
       };
     }
 
+    const directTableNames = new Set(Object.entries(classification).filter(([, item]) => item.scope === 'direct').map(([name]) => name));
+    const columnNamesByTable = new Map();
+    for (const column of columnResult.rows) {
+      if (!columnNamesByTable.has(column.table_name)) columnNamesByTable.set(column.table_name, new Set());
+      columnNamesByTable.get(column.table_name).add(column.column_name);
+    }
+    for (const fk of fkResult.rows) {
+      if (fk.child_schema !== sourceSchema || fk.foreign_schema !== sourceSchema) continue;
+      if (!directTableNames.has(fk.table_name) || !directTableNames.has(fk.foreign_table_name)) continue;
+      if (!columnNamesByTable.get(fk.table_name)?.has('company_id')) continue;
+      const parentIsCompanies = fk.foreign_table_name === 'companies';
+      if (!parentIsCompanies && !columnNamesByTable.get(fk.foreign_table_name)?.has('company_id')) continue;
+      if (!fk.is_validated) continue;
+      const query = buildCrossTenantReferenceQuery({ sourceSchema, foreignKey: fk, parentIsCompanies });
+      const result = await pool.query(query.sql, [companyId]);
+      const count = Number(result.rows[0].cross_tenant_rows);
+      if (count > 0) crossTenantReferences.push({
+        table: fk.table_name,
+        referencesTable: fk.foreign_table_name,
+        constraint: fk.constraint_name,
+        rows: count,
+      });
+    }
+
     const summary = {
       totalTables: tables.length,
       directlyScoped: Object.values(classification).filter((item) => item.scope === 'direct').length,
@@ -257,6 +300,7 @@ async function inspectTenantMigration({
       unclassifiedTables: Object.values(classification).filter((item) => item.scope === 'unclassified').length,
       ambiguousTables: Object.values(classification).filter((item) => item.scope === 'ambiguous').length,
       crossSchemaForeignKeyCount: fkResult.rows.filter((fk) => fk.child_schema !== sourceSchema || fk.foreign_schema !== sourceSchema).length,
+      crossTenantReferenceCount: crossTenantReferences.reduce((total, item) => total + item.rows, 0),
       destinationSchemaExists: existingSchemas.has(destinationSchema),
     };
     const blockers = [];
@@ -268,6 +312,7 @@ async function inspectTenantMigration({
     if (Object.values(dependentCounts).some((item) => item.nullableReferenceRows > 0)) blockers.push('Dependent tables contain nullable ownership references; rows without a complete ownership path require manual classification.');
     if (fkResult.rows.some((fk) => !fk.is_validated)) blockers.push('One or more foreign-key constraints are NOT VALID and must be validated before migration.');
     if (summary.crossSchemaForeignKeyCount) blockers.push('Foreign-key relationships cross the source schema boundary; external dependencies must be reviewed before migration.');
+    if (summary.crossTenantReferenceCount) blockers.push('Tenant-owned rows reference records owned by another tenant; repair and review are required before migration.');
     if (summary.destinationSchemaExists) blockers.push('The destination schema already exists; automatic migration is disabled to prevent overwriting data.');
 
     return {
@@ -290,6 +335,7 @@ async function inspectTenantMigration({
       })),
       foreignKeyCount: fkResult.rows.length,
       crossSchemaForeignKeyCount: fkResult.rows.filter((fk) => fk.child_schema !== sourceSchema || fk.foreign_schema !== sourceSchema).length,
+      crossTenantReferences,
       foreignKeys: fkResult.rows.map((fk) => ({
         schema: fk.child_schema,
         table: fk.table_name,
@@ -309,4 +355,4 @@ async function inspectTenantMigration({
   }
 }
 
-module.exports = { classifyTenantTables, buildDependentInventoryQuery, inspectTenantMigration };
+module.exports = { classifyTenantTables, buildDependentInventoryQuery, buildCrossTenantReferenceQuery, inspectTenantMigration };
