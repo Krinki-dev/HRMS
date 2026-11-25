@@ -10,6 +10,7 @@ const { decrypt, encrypt } = require('./encryption');
 const emailService       = require('./emailService');
 const { centralPrisma }  = require('./centralPrisma');
 const { withPlatformAdminRLS } = require('./rlsContext');
+const { resolveTenantStorageTarget } = require('./tenantStorageResolver');
 
 function tryDecrypt(val) {
   if (!val) return val;
@@ -288,18 +289,15 @@ async function runBackup(db, companyId) {
   // Legacy and shared storage need their own audited backup/restore implementation.
   const tenant = await withBackupRLS(db, (tx) => tx.tenants.findUnique({
     where: { id: companyId },
-    select: { id: true, db_mode: true, db_url: true, schema_name: true, storage_tier: true, storage_status: true },
+    select: { id: true, plan: true, db_mode: true, db_url: true, schema_name: true, storage_tier: true, storage_status: true, local_db_type: true, local_db_host: true, local_db_port: true, local_db_name: true, local_db_user: true, local_db_pass: true },
   }));
   const { getSafeBackupTarget } = require('./tenantBackupTarget');
-  const schemaName = getSafeBackupTarget(tenant);
-  const tenantCfg = await withBackupRLS(db, (tx) => tx.tenant_db_config.findUnique({ where: { company_id: companyId } }));
-  const configuredUrl = tenantCfg?.cloud_db_url
-    ? tryDecrypt(tenantCfg.cloud_db_url)
-    : (tenant?.db_url ? tryDecrypt(tenant.db_url) : process.env.CLOUD_TENANT_DATABASE_URL);
-  if (!configuredUrl) throw new Error('No PostgreSQL URL is configured for this tenant backup.');
-  const parsedUrl = new URL(configuredUrl);
-  parsedUrl.searchParams.set('schema', schemaName);
-  const dbUrl = parsedUrl.toString();
+  getSafeBackupTarget(tenant);
+  const storageTarget = resolveTenantStorageTarget(tenant, {
+    cloudDatabaseUrl: process.env.CLOUD_TENANT_DATABASE_URL || (process.env.NODE_ENV === 'development' ? process.env.DEV_TENANT_DATABASE_URL : null),
+    decryptValue: (value) => decrypt(value) || value,
+  });
+  const dbUrl = storageTarget.databaseUrl;
 
   const dbType = 'postgres';
 
