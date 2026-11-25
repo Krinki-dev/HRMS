@@ -333,13 +333,10 @@ D. Error Handling & Fallback Flows
 | FE (Frontend) | BE (Backend) | DB (Database) |
 |--------------|-------------|--------------|
 | API returns ERR_DB_CONNECTION | | |
-| **If hybrid mode (local + cloud):** | | |
-| | Detect local DB down | |
-| | Auto-switch reads/writes to cloud DB | |
-| | Log failover event | WRITE: system_logs |
-| | Notify HR Admin | |
-| Yellow banner: "Running on backup database" | | |
-| **If single mode (local only):** | | |
+| **Any PostgreSQL connection unavailable:** | | |
+| | Fail closed; do not switch databases or sync data | |
+| | Log connection failure and alert the authorized admin | WRITE: system_logs |
+| Red banner: "Database unavailable. Check connection" | | |
 | Red banner: "Database unavailable. Check connection" | | |
 | Retry connection button | | |
 | **On recovery:** | | |
