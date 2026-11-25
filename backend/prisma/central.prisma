@@ -71,6 +71,7 @@ model tenants {
   billing_events         billing_events[]
   company_documents      company_documents[]
   company_document_reviews company_document_reviews[]
+  migration_jobs            tenant_migration_jobs[]
 }
 
 model backup_config {
@@ -401,4 +402,24 @@ model company_document_reviews {
 
   @@index([document_id, created_at(sort: Desc)])
   @@index([tenant_id])
+}
+
+
+model tenant_migration_jobs {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id          String   @db.Uuid
+  status             String
+  source_schema      String
+  destination_schema String
+  source_storage_tier String
+  target_storage_tier String
+  inventory          Json
+  blockers           Json     @default("[]")
+  requested_by_email String?
+  created_at         DateTime @default(now()) @db.Timestamptz
+
+  tenant tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+
+  @@index([tenant_id, created_at(sort: Desc)])
+  @@index([status, created_at(sort: Desc)])
 }
