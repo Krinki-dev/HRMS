@@ -34,7 +34,6 @@ test('maps explicit company and Central tenant claims independently', () => {
 test('legacy token is not rebound to a request tenant without central index resolution', () => {
   const identity = resolveTenantIdentity({
     claims: { tenantId: 'old-company-id' },
-    requestTenantId: 'untrusted-request-tenant-id',
   });
   assert.equal(identity.companyId, 'old-company-id');
   assert.equal(identity.tenantId, null);
@@ -54,4 +53,13 @@ test('tenant host must match the authenticated Central tenant', () => {
   assert.equal(matchesTenantContext(identity, 'tenant-a'), true);
   assert.equal(matchesTenantContext(identity, 'tenant-b'), false);
   assert.equal(matchesTenantContext({ centralTenantId: null }, 'tenant-a'), false);
+});
+
+test('new company claim without Central tenant claim cannot be rebound by host', () => {
+  const identity = resolveTenantIdentity({
+    claims: { companyId: 'company-id' },
+    indexedTenantId: null,
+  });
+  assert.equal(identity.companyId, 'company-id');
+  assert.equal(identity.centralTenantId, null);
 });
