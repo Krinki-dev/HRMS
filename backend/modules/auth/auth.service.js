@@ -6,7 +6,8 @@ const crypto = require('crypto');
 const logger = require('../../shared/utils/logger');
 const emailSvc = require('../../shared/utils/emailService');
 const { centralPrisma } = require('../../shared/utils/centralPrisma');
-const { resolveTenantDbUrl } = require('../platform/platform.service');
+const { decrypt } = require('../../shared/utils/encryption');
+const { resolveTenantStorageTarget } = require('../../shared/utils/tenantStorageResolver');
 
 /**
  * Service to handle Authentication, OTP, and Password logic.
@@ -188,25 +189,22 @@ const authService = {
   async resolveTenantDbById(tenantId) {
     if (!tenantId) return null;
     const rows = await centralPrisma.$queryRaw`
-      SELECT id, subdomain, db_mode, db_url, schema_name, local_db_type,
-             local_db_host, local_db_port, local_db_name, local_db_user,
-             local_db_pass, is_active, deleted_at
+      SELECT id, subdomain, plan, db_mode, db_url, schema_name,
+             storage_tier, storage_status, local_db_type, local_db_host,
+             local_db_port, local_db_name, local_db_user, local_db_pass,
+             is_active, deleted_at
       FROM tenants
       WHERE id = ${tenantId}::uuid
       LIMIT 1
     `;
     const t = rows[0];
       if (!t || t.deleted_at || !t.is_active) return null;
-    let url = resolveTenantDbUrl(t.db_mode, t);
+    const target = resolveTenantStorageTarget(t, {
+      cloudDatabaseUrl: process.env.CLOUD_TENANT_DATABASE_URL || (process.env.NODE_ENV === 'development' ? process.env.DEV_TENANT_DATABASE_URL : null),
+      decryptValue: (value) => decrypt(value) || value,
+    });
 
-    // Ensure schema is appended for multi-tenant shared databases
-    if (url && t.schema_name) {
-      const urlObj = new URL(url);
-      urlObj.searchParams.set('schema', t.schema_name.toLowerCase());
-      url = urlObj.toString();
-    }
-
-    return { url, tenantId: t.id, subdomain: t.subdomain, t };
+    return { url: target.databaseUrl, tenantId: t.id, subdomain: t.subdomain, t, storageTarget: target };
   },
 
   async sendOtp(db, tenantId, email, purpose) {
