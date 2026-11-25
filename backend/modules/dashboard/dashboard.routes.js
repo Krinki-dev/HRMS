@@ -8,7 +8,7 @@ router.use(auth);
 router.get('/stats', async (req, res) => {
   try {
     const db        = req.db;           
-    const companyId = req.user?.companyId || req.user?.tenantId;
+    const companyId = req.user?.companyId;
 
     if (!db) {
       return sendError(res, 'ERR_DASHBOARD', 'Database client not available', 500);
@@ -133,7 +133,7 @@ router.get('/stats', async (req, res) => {
 router.get('/activity', async (req, res) => {
   try {
     const db        = req.db;
-    const companyId = req.user?.companyId || req.user?.tenantId;
+    const companyId = req.user?.companyId;
 
     if (!db || !companyId) {
       return sendSuccess(res, { logs: [] });
