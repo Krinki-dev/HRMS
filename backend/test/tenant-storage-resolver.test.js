@@ -3,7 +3,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const {STORAGE_TIERS,STORAGE_STATUSES,buildStorageDescriptor}=require('../shared/utils/tenantStorageConfig');
-const {resolveTenantStorageTarget}=require('../shared/utils/tenantStorageResolver');
+const {resolveTenantStorageTarget,buildLocalPostgresUrl}=require('../shared/utils/tenantStorageResolver');
 
 const tenantId='2c6b9b7a-8d52-4b2f-9d47-8c1e6b8b1a10';
 const cloudUrl='postgresql://hrms:secret@db.example.test:5432/hrms';
@@ -106,4 +106,48 @@ test('rejects another tenant schema even when it has a valid identifier',()=>{
   assert.throws(()=>resolveTenantStorageTarget(tenant({
     schema_name:'tenant_other',
   }),{cloudDatabaseUrl:cloudUrl}),/immutable tenant UUID/);
+});
+
+
+test('builds a customer-hosted PostgreSQL URL from explicit local settings', () => {
+  const result = buildLocalPostgresUrl({
+    local_db_type: 'postgres',
+    local_db_host: '127.0.0.1',
+    local_db_port: 5433,
+    local_db_name: 'customer hrms',
+    local_db_user: 'hr user',
+    local_db_pass: 'p@ss word',
+  }, decryptValue);
+  const parsed = new URL(result);
+  assert.equal(parsed.protocol, 'postgresql:');
+  assert.equal(parsed.hostname, '127.0.0.1');
+  assert.equal(parsed.port, '5433');
+  assert.equal(parsed.pathname, '/customer%20hrms');
+  assert.equal(parsed.username, 'hr%20user');
+  assert.equal(parsed.password, 'p%40ss%20word');
+});
+
+test('routes a ready local tenant only to its configured PostgreSQL database', () => {
+  const result = resolveTenantStorageTarget(tenant({
+    db_mode: 'local',
+    local_db_type: 'postgresql',
+    local_db_host: '192.168.1.20',
+    local_db_port: 5432,
+    local_db_name: 'hrms',
+    local_db_user: 'hrms_app',
+    local_db_pass: 'enc:secret',
+  }), { decryptValue: (value) => value.replace('enc:', '') });
+  assert.equal(new URL(result.databaseUrl).hostname, '192.168.1.20');
+  assert.equal(new URL(result.databaseUrl).searchParams.get('schema'), tenant().schema_name);
+});
+
+test('rejects non-PostgreSQL local database types and incomplete local credentials', () => {
+  assert.throws(() => buildLocalPostgresUrl({
+    local_db_type: 'mysql', local_db_host: 'localhost',
+    local_db_name: 'hrms', local_db_user: 'hrms',
+  }), /Only PostgreSQL/);
+  assert.throws(() => buildLocalPostgresUrl({
+    local_db_type: 'postgres', local_db_host: 'localhost',
+    local_db_name: 'hrms',
+  }), /requires host, database name and username/);
 });
