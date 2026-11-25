@@ -67,6 +67,9 @@ CREATE INDEX IF NOT EXISTS idx_payment_orders_tenant_purpose_status
 CREATE UNIQUE INDEX IF NOT EXISTS uq_payment_orders_one_open_per_invoice
   ON public.payment_orders (invoice_id)
   WHERE gateway = 'razorpay' AND status = 'created';
+CREATE UNIQUE INDEX IF NOT EXISTS uq_payment_orders_one_open_subscription
+  ON public.payment_orders (tenant_id)
+  WHERE purpose = 'subscription' AND gateway = 'razorpay' AND status = 'created';
 
 CREATE TABLE IF NOT EXISTS public.payment_webhook_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -170,7 +173,26 @@ CREATE POLICY company_document_reviews_admin ON public.company_document_reviews
   FOR ALL USING (current_setting('jwt.claims.is_platform_admin', true) = 'true')
   WITH CHECK (current_setting('jwt.claims.is_platform_admin', true) = 'true');
 
--- 5. Verification result is emitted before commit; any SQL error rolls back all DDL.
+-- 5. Platform billing event log (present in central Prisma schema).
+CREATE TABLE IF NOT EXISTS public.billing_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID REFERENCES public.tenants(id) ON DELETE SET NULL,
+  gateway TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'info',
+  reference_id TEXT,
+  amount_paise INTEGER,
+  message TEXT,
+  metadata JSONB,
+  ip_address TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_billing_events_tenant ON public.billing_events (tenant_id);
+CREATE INDEX IF NOT EXISTS idx_billing_events_event_type ON public.billing_events (event_type);
+CREATE INDEX IF NOT EXISTS idx_billing_events_status ON public.billing_events (status);
+CREATE INDEX IF NOT EXISTS idx_billing_events_created_at ON public.billing_events (created_at);
+
+-- 6. Verification result is emitted before commit; any SQL error rolls back all DDL.
 SELECT
   to_regclass('public.tenants') IS NOT NULL AS tenants_table_present,
   to_regclass('public.payment_orders') IS NOT NULL AS payment_orders_present,
