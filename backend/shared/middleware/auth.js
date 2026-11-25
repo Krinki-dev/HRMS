@@ -1,6 +1,7 @@
 ﻿const jwt = require('jsonwebtoken');
 const { sendError, ERROR_CODES } = require('../utils/response');
 const { PrismaClient } = require('@prisma/client');
+const { resolveTenantIdentity } = require('../utils/tenantIdentity');
 
 // ── Singleton Prisma client for the central (platform-level) database ─────────
 function getCentralClient() {
@@ -34,29 +35,39 @@ const authMiddleware = async (req, res, next) => {
 
     // ── Fetch is_platform_admin from central DB (non-fatal fallback) ──────────
     let isPlatformAdmin = false;
+    let indexedTenantId = null;
     try {
       const central = getCentralClient();
       const rows = await central.$queryRaw`
-        SELECT is_platform_admin FROM central_user_index
+        SELECT is_platform_admin, company_id FROM central_user_index
         WHERE user_id = ${decoded.id}::uuid AND is_active = true
         LIMIT 1
       `;
       if (rows.length > 0) {
         isPlatformAdmin = rows[0].is_platform_admin;
+        indexedTenantId = rows[0].company_id || null;
       }
     } catch (e) {
       // Non-fatal – fallback to false so a central DB hiccup doesn't lock out users
       console.warn('[Auth] Could not fetch is_platform_admin from central DB:', e.message);
     }
 
+    const tenantIdentity = resolveTenantIdentity({
+      claims: decoded,
+      requestTenantId: req.tenant?.id || null,
+      indexedTenantId,
+    });
+
     req.user = {
       id:                decoded.id,
       employeeId:        decoded.employeeId,
-      tenantId:          decoded.tenantId || req.tenant?.id,
+      companyId:         tenantIdentity.companyId,
+      centralTenantId:   tenantIdentity.centralTenantId,
+      tenantId:          tenantIdentity.tenantId,
       role:              decoded.role,
       permissions:       decoded.permissions,
       email:             decoded.email,
-      is_platform_admin: isPlatformAdmin,   // ← sourced from central DB, not JWT
+      is_platform_admin: isPlatformAdmin,   // sourced from central DB, not JWT
     };
 
     // NOTE: RLS session variables (app.current_tenant / jwt.claims.is_platform_admin)
