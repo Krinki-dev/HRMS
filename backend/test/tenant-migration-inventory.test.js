@@ -104,5 +104,8 @@ test('builds a read-only inventory using the verified operational company UUID',
   assert.equal(result.tables.find((row) => row.name === 'employees').sourceRows, 3);
   assert.equal(result.tables.find((row) => row.name === 'attendance').scope, 'dependent');
   assert.equal(result.tables.find((row) => row.name === 'lookup_values').scope, 'unclassified');
+  assert.equal(result.copyAllowed, false);
+  assert.ok(result.blockers.some((item) => item.includes('Dependent tables')));
+  assert.ok(result.blockers.some((item) => item.includes('unproven tenant ownership')));
   assert.ok(calls.some((call) => call.params?.[0] === '11111111-1111-4111-8111-111111111111'));
 });
