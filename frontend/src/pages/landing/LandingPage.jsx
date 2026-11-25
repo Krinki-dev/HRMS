@@ -699,7 +699,7 @@ const COMPARISON_ROWS = [
   { label: 'Compliance', them: 'Paid addon', us: 'Included on all plans' },
   { label: 'Portal filing automation', them: 'Not available', us: 'Built in' },
   { label: 'Per-seat billing', them: 'Yes', us: 'No per-seat charges' },
-  { label: 'Deployment choice', them: 'Mostly cloud only', us: 'Cloud / On-prem / Hybrid' },
+  { label: 'Deployment choice', them: 'Mostly cloud only', us: 'Managed cloud / Customer-managed PostgreSQL' },
   { label: 'Unlimited scale', them: 'Variable cost', us: 'Flat structure' },
 ];
 
@@ -728,13 +728,13 @@ const PRICING = [
     price: null,
     period: null,
     desc: 'For large organisations',
-    features: ['Self-hosted deployment', 'Custom integrations', 'Dedicated support', 'SLA commitments', 'Hybrid architecture', 'Custom commercial terms'],
+    features: ['Self-hosted deployment', 'Custom integrations', 'Dedicated support', 'SLA commitments', 'Customer-managed PostgreSQL deployment', 'Custom commercial terms'],
     cta: 'Contact us',
     highlight: false,
   },
 ];
 
-const TRUST_BADGES = ['Payroll + Compliance included', 'No per-seat pricing', 'Cloud / On-prem / Hybrid', 'Automation-ready workflows'];
+const TRUST_BADGES = ['Payroll + Compliance included', 'No per-seat pricing', 'Managed cloud / Customer-managed PostgreSQL', 'Automation-ready workflows'];
 const SECTION_IDS = ['hero', 'stats', 'features-section', 'compliance-section', 'pricing-section', 'automation-section', 'cta-section'];
 
 function Counter({ target, suffix = '' }) {
