@@ -230,3 +230,15 @@ The first implementation slice is committed on the working branch:
 - Security finding fixed: standard `checkPermission` lets built-in tenant Admin/HR Admin roles bypass all action flags. Added `checkSensitivePermission` with no such role bypass and applied it to Aadhaar/PAN unmask and bank-account reads. Explicit `employees.view_sensitive` or platform-level access is required.
 - CI verified: Backend Tests at `20ef9b709291eab9a80e33c785b8211e9fb8b06b` succeeded (87 tests; 83 passed, 0 failed, 4 skipped). This is unit/ordinary backend CI only; no live PostgreSQL, browser E2E, provider sandbox or deployment proof.
 - Before implementing XLSX I am checking dependency maintenance and security: upstream ExcelJS 4.4.0 has had a long release gap and open reports about vulnerable transitive dependencies; do not add it blindly. Regenerate the lockfile using npm tooling, never hand-edit integrity hashes.
+
+
+## 2026-11-25 — Employees workbook validation/security follow-up
+
+The schema/validation foundation has been tightened:
+- Contact Details are a dedicated sheet; duplicate contact/address columns were removed from Employees.
+- Schema-declared references (including manager Employee Code) are resolved against the target sheet. Child sheets require parent Employee Code links. Date validation rejects impossible calendar dates and formula/non-primitive values.
+- Explicit modes are create-only, update-only and upsert. Child record UUID is prohibited in create-only and required in update-only; upsert supports either new rows or identified existing child rows.
+- Sensitive employee fields in the legacy CSV import now require explicit employees.edit_sensitive when populated. Ordinary CSV import remains available; default CSV template excludes Aadhaar/PAN/UAN/ESI and disability status. Sensitive export remains excluded by default.
+- CI found and fixed a renewal invoice period_end boundary defect. A backend CI run passed at commit 3388326dc14305f58487e26b578f2e613896bddb, but newest workbook/security commits must still pass CI before the branch can be treated as green.
+
+Next implementation slice remains: choose/add XLSX dependency and lockfile; generate formatted workbook template from schema; implement bounded parser, server-side preview token and row/sheet diagnostics; tenant-scoped conflict checks; explicit transaction-safe commit with ID mapping and audit; error workbook; CSV/XLSX UI integration; and CSV/XLSX round-trip + PostgreSQL tenant-isolation tests.
