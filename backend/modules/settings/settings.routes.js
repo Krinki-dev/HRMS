@@ -6,6 +6,7 @@ const requireSetupComplete = require('../../shared/middleware/requireSetupComple
 const ctrl   = require('./settings.controller');
 const { centralPrisma } = require('../../shared/utils/centralPrisma');
 const { resolveCentralTenantId } = require('../../shared/utils/tenantResolver');
+const { withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 const {
   getDeletionReadiness,
   permanentlyDeleteTenant,
@@ -176,7 +177,7 @@ router.get(
           message: 'Tenant ID could not be resolved',
         });
       }
-      const data = await getDeletionReadiness(centralPrisma, tenantId);
+      const data = await withPlatformAdminRLS(centralPrisma, (tx) => getDeletionReadiness(tx, tenantId));
       return res.json({ success: true, data });
     } catch (err) {
       if (err.status) {
@@ -214,14 +215,14 @@ router.post(
         return res.status(403).json({ success: false, code: 'INVALID_PASSWORD', message: 'Current password is incorrect' });
       }
 
-      const result = await permanentlyDeleteTenant({
-        centralDb: centralPrisma,
+      const result = await withPlatformAdminRLS(centralPrisma, (tx) => permanentlyDeleteTenant({
+        centralDb: tx,
         tenantId,
         actorEmail: req.user?.email,
         reason,
         confirmExternalDelete,
         backupConfig,
-      });
+      }));
 
       return res.json({
         success: true,
