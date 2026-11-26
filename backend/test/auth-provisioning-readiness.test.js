@@ -46,3 +46,15 @@ test('signup database preflight errors do not disclose raw connection details', 
   assert.match(platformSource, /Check the database settings and installation/);
   assert.doesNotMatch(platformSource, /DB connection or schema check failed: \$\{e\.message\}/);
 });
+
+test('signup preflight verifies the minimum launch schema before marking storage ready', () => {
+  for (const table of [
+    'companies', 'roles', 'users', 'employees', 'departments', 'designations',
+    'attendance', 'leave_types', 'leave_balances', 'leave_applications',
+    'otp_store', 'audit_logs',
+  ]) {
+    assert.match(platformSource, new RegExp(`to_regclass\\('public\\.${table}'\\)`));
+  }
+  assert.match(platformSource, /missingTables\.length > 0/);
+  assert.match(platformSource, /TENANT_SCHEMA_NOT_INSTALLED/);
+});
