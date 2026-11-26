@@ -13,6 +13,7 @@ const { centralPrisma } = require('../../shared/utils/centralPrisma');
 const { withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 const emailService = require('../../shared/utils/emailService');
 const logger = require('../../shared/utils/logger');
+const { normalizeTenantSubdomain, normalizeCustomDomain } = require('../../shared/utils/domainValidation');
 
 /**
  * Compatibility wrapper for older callers. All tenant DB routing must use the
@@ -68,11 +69,14 @@ const registerTenant = async (req, res) => {
     if (admin.password.length < 8)
       return sendError(res, ERROR_CODES.VALIDATION, 'Password must be at least 8 characters', 400);
 
-    if (!/^[a-z0-9-]+$/.test(subdomain.toLowerCase().trim()))
-      return sendError(res, ERROR_CODES.VALIDATION, 'Subdomain: lowercase letters, numbers, hyphens only', 400);
+    const cleanSubdomain = normalizeTenantSubdomain(subdomain);
+    if (!cleanSubdomain) {
+      return sendError(res, ERROR_CODES.VALIDATION,
+        'Subdomain must be 1–63 characters, use lowercase letters, numbers and internal hyphens, and start/end with a letter or number.',
+        400, { field: 'subdomain' });
+    }
 
     const reserved = ['api', 'admin', 'platform', 'app', 'www', 'mail', 'syntern'];
-    const cleanSubdomain = subdomain.toLowerCase().trim();
     if (reserved.includes(cleanSubdomain)) {
       return sendError(res, ERROR_CODES.VALIDATION, `Subdomain "${cleanSubdomain}" is reserved.`, 400);
     }
@@ -81,7 +85,12 @@ const registerTenant = async (req, res) => {
     const cleanPan         = company?.pan?.trim().toUpperCase() || null;
     const cleanEmail       = admin.email.toLowerCase().trim();
     const cleanPhone       = admin.phone?.replace(/\s/g, '') || null;
-    const cleanCustomDomain = customDomain?.trim().toLowerCase() || null;
+    const cleanCustomDomain = customDomain ? normalizeCustomDomain(customDomain) : null;
+    if (customDomain && !cleanCustomDomain) {
+      return sendError(res, ERROR_CODES.VALIDATION,
+        'Custom domain must contain valid DNS labels (1–63 characters each) and be no longer than 253 characters.',
+        400, { field: 'customDomain' });
+    }
 
     const selectedDbMode = dbMode;
     if (!['cloud', 'local', 'external_cloud'].includes(selectedDbMode)) {
@@ -104,10 +113,6 @@ const registerTenant = async (req, res) => {
     }
     if (!cleanGstin && !cleanPan) {
       return sendError(res, ERROR_CODES.VALIDATION, 'Enter your GSTIN or PAN to identify your business.', 400, { field: 'gstin' });
-    }
-
-    if (cleanCustomDomain && !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/.test(cleanCustomDomain)) {
-      return sendError(res, ERROR_CODES.VALIDATION, 'Custom domain must be a valid hostname', 400);
     }
 
     if (cleanGstin) {
