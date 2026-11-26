@@ -35,7 +35,7 @@ test('Central Prisma model and fresh-install SQL baseline contain matching lease
 });
 
 test('lease schema migration does not silently retry, activate, or delete tenants', () => {
-  assert.doesNotMatch(migration, /UPDATE\s+public?\.??tenants\s+SET\s+storage_status\s*=\s*'ready'/i);
+  assert.doesNotMatch(migration, /UPDATE\s+(?:public\.)?tenants\s+SET\s+storage_status\s*=\s*'ready'/i);
   assert.doesNotMatch(migration, /SET\s+is_active\s*=\s*true/i);
-  assert.doesNotMatch(migration, /DELETE\s+FROM\s+public?\.??tenants/i);
+  assert.doesNotMatch(migration, /DELETE\s+FROM\s+(?:public\.)?tenants/i);
 });
