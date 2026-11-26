@@ -222,3 +222,12 @@ First inspect latest branch head and confirm P0/P1 exit criteria from code, docs
 - A further search for optional-chaining variants found two additional ambiguous Central-tenant fallbacks: `auth.routes.js /me` and `requireSetupComplete.js`. Both now use only the explicit selected `req.tenant.id` or authenticated `req.user.centralTenantId`; the legacy `req.user.tenantId` alias is no longer used as a Central identity fallback in these paths.
 - The routing/KYC code increment through `6c9e54c3636097de2d0c0267be0dba2307f34d2c` passed Backend Tests and Tenant Migration PostgreSQL Integration CI (both success). The two latest auth/setup-guard changes are later source commits and must be rechecked on their own exact CI head before marking this cleanup verified.
 - Continue to distinguish the backend suite from production readiness: no live database migration, tenant-data isolation exercise against real customer data, deployment, backup restore drill or browser E2E has been performed.
+
+
+## 2026-11-26 exact-head CI verification — identity and routing fixes
+
+- Exact source commit `923a0f2dfa7cb8d134161fe05c500c2855c4e5ff` passed Backend Tests: https://github.com/Krinki-dev/HRMS/actions/runs/45725846263 (success).
+- The same exact source commit passed Tenant Migration PostgreSQL Integration: https://github.com/Krinki-dev/HRMS/actions/runs/45725846261 (success).
+- This exact source commit includes the missing tenant-subdomain resolver and its tests, preview-host utility export, explicit Central tenant identity in the legacy KYC queue payload, and removal of ambiguous `req.user.tenantId` fallbacks from Aadhaar/KYC, `/auth/me` and the setup-completion guard.
+- Subsequent commits through `7818d26de74a670947241aa22e30d2f0d8f90450` are documentation-only. The latest branch head must still be rechecked before any future write.
+- Scope of verification remains limited to configured automated backend tests and the disposable PostgreSQL integration workflow. Production DB state, live tenant isolation, browser E2E, deployment, backup restore and live integrations remain unverified.
