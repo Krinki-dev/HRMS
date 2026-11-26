@@ -108,11 +108,16 @@ exports.checkAadhaar = async (req, res) => {
       );
     }
 
+    const centralTenantId = req.user.centralTenantId;
+    if (!centralTenantId) {
+      return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Central tenant context is required for Aadhaar/KYC checks.', 401);
+    }
+
     const result = await checkAadhaar(
       req.db,
       req.user.companyId,
       req.user.id,
-      req.user.centralTenantId || req.user.tenantId,
+      centralTenantId,
       { aadhaarNumber, aadhaarHash }
     );
 
