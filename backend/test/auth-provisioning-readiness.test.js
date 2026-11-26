@@ -58,3 +58,23 @@ test('signup preflight verifies the minimum launch schema before marking storage
   assert.match(platformSource, /missingTables\.length > 0/);
   assert.match(platformSource, /TENANT_SCHEMA_NOT_INSTALLED/);
 });
+
+test('company, Super Admin role and admin user are seeded in one operational transaction', () => {
+  const seedStart = platformSource.indexOf('Keep company, role and admin creation atomic');
+  const seedEnd = platformSource.indexOf('seedSucceeded = true', seedStart);
+  assert.ok(seedStart >= 0 && seedEnd > seedStart);
+  const seedBlock = platformSource.slice(seedStart, seedEnd);
+  assert.match(seedBlock, /tenantPrisma\.\$transaction\(async \(tx\) =>/);
+  assert.equal((seedBlock.match(/tx\.\$executeRaw/g) || []).length, 3);
+  assert.match(seedBlock, /INSERT INTO companies/);
+  assert.match(seedBlock, /INSERT INTO roles/);
+  assert.match(seedBlock, /INSERT INTO users/);
+});
+
+test('role permissions are inserted using the Prisma schema text type', () => {
+  const roleInsertStart = platformSource.indexOf('INSERT INTO roles (id, company_id, name, description, permissions');
+  const roleInsertEnd = platformSource.indexOf('`;', roleInsertStart);
+  const roleInsert = platformSource.slice(roleInsertStart, roleInsertEnd);
+  assert.match(roleInsert, /\$\{permissions\}/);
+  assert.doesNotMatch(roleInsert, /::jsonb/);
+});
