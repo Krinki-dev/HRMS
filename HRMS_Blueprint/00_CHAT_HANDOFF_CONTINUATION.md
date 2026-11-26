@@ -878,6 +878,6 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 ## Latest continuation handoff — 2026-11-26
 
 - Added Central tenant provisioning lease schema foundation: migration `backend/db-migrations/20261126_tenant_provisioning_leases.sql`; Prisma and fresh-install schema fields: `storage_lease_token`, `storage_lease_expires_at`, `provisioning_attempts`; static test: `backend/test/tenant-provisioning-lease-schema.test.js`.
-- Latest test-source commit: `4133d6c6f5e83b7e831a3e5f5202884bf8e49c43`. No CI checks were visible for this commit at handoff; do not mark verified. No DB migration was run.
+- Latest test-source commit: `14867ea8bc01d6771d788bf1d98702a972f47efc` (initial test commit `4133d6c6f5e83b7e831a3e5f5202884bf8e49c43`). No CI checks were visible for this commit at handoff; do not mark verified. No DB migration was run.
 - Critical: lease fields are groundwork only. Registration does not yet use them. Next implement token-guarded atomic lease claim/reclaim, strict matching of existing tenant/admin identity and DB configuration, detection of already-committed operational seed, token-guarded final activation, and concurrency/crash-window tests. Keep production migration blocked until implementation and verification are complete.
 - Continue only on `architecture/postgres-tenant-isolation`; do not modify `main`.
