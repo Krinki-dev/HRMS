@@ -740,3 +740,15 @@ Recommendation:
 - Safe self-service retry/resume is still NOT implemented. Failed/incomplete registrations remain blocked from login and can still block reuse of their email/subdomain until a safe recovery flow is implemented. No automatic deletion or unsafe compensation was introduced.
 - No production DB changes, deployments, or live payments were performed.
 - Next P0: design a concurrency-safe resume/retry path for `failed` provisioning records using the existing inactive Central tenant/index IDs and the stored database target, with explicit credential/configuration matching and an atomic claim/lease. Do not simply bypass the existing email/subdomain uniqueness checks. Also continue the launch login → company → employee smoke path and verify the external-database network-egress security boundary.
+
+
+## 2026-11-26 P0/P1 follow-up — DNS-safe tenant domain validation
+
+- Added `backend/shared/utils/domainValidation.js` and wired registration to normalize/validate tenant subdomains and optional custom domains before Central DB writes.
+- Tenant subdomains now enforce the DNS label length limit (1–63), lowercase normalization, alphanumeric first/last characters, and internal hyphens only.
+- Custom hostnames now enforce 1–63 characters per label, at least two labels, lowercase normalization, and the DNS hostname total-length ceiling of 253 characters.
+- Added focused tests in `backend/test/domain-validation.test.js` for valid, normalized, overlength, leading/trailing-hyphen and malformed values.
+- Latest code commits: GSTIN/PAN normalization `38f70a39233ae3934827799cdb342738560919ba`; domain validation helper `2eebe93cb872c5d5faa436004da2b1df80884d96`; registration integration `47497c791719dea6c9d2b261b97e1ec9a8bb16f0`. Latest domain-validation test commit: `1d270ee54a9e6601814d06f9aae42ed0a1b21e40`.
+- Verified CI before this latest domain-validation increment: Backend Tests and Tenant Migration PostgreSQL Integration passed for `14820999cafb719c9ab3bd0d02d586f731b7884d`. Exact-head Backend Tests and PostgreSQL integration for `1d270ee54a9e6601814d06f9aae42ed0a1b21e40` were running when this note was written.
+- Security follow-up still required before accepting customer-supplied PostgreSQL endpoints in production: the application currently accepts customer-provided host/connection details and connects from the server. URL scheme validation alone is not a complete SSRF/network-boundary control. Production deployment must enforce outbound network policy blocking loopback, link-local, cloud metadata and private infrastructure ranges (with an explicit approved customer-connectivity mechanism); implement/verify DNS/IP controls without relying on a vulnerable one-time hostname check. Do not claim customer-managed DB mode production-safe until this is verified.
+- No production database changes or deployments were performed.
