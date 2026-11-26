@@ -51,4 +51,5 @@ module.exports = {
   isPlatformRootHost,
   buildHostnameCandidates,
   getHostnameLookup,
+  isPreviewHost,
 };
