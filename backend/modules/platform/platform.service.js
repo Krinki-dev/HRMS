@@ -397,7 +397,26 @@ const registerTenant = async (req, res) => {
 
     if (!schemaProvisioned || !seedSucceeded) {
       logger.error(`[registerTenant] Provisioning incomplete for ${cleanSubdomain}; tenant remains inactive.`);
-      return sendError(res, ERROR_CODES.SERVER, 'Tenant workspace provisioning failed. The account is not active; support must complete provisioning before login.', 503);
+      try {
+        await withPlatformAdminRLS(centralPrisma, (tx) => tx.$executeRaw`
+          UPDATE tenants
+          SET storage_status = 'failed',
+              storage_error_code = 'TENANT_SEED_FAILED',
+              updated_at = NOW()
+          WHERE id = ${tenantId}::uuid
+            AND is_active = false
+            AND storage_status = 'provisioning'
+        `);
+      } catch (stateErr) {
+        logger.error(`[registerTenant] Could not record failed provisioning state for ${cleanSubdomain}:`, { error: stateErr.message });
+      }
+      return sendError(
+        res,
+        ERROR_CODES.SERVER,
+        'Tenant workspace provisioning failed. The account is inactive and requires a safe provisioning retry or support recovery.',
+        503,
+        { code: 'TENANT_PROVISIONING_FAILED' }
+      );
     }
 
     await withPlatformAdminRLS(centralPrisma, async (tx) => {
