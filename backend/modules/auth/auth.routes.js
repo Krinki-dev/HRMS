@@ -489,7 +489,7 @@ router.get('/me', auth, async (req, res) => {
       return sendError(res, ERROR_CODES.NOT_FOUND, 'User not found.', 404);
     }
     const permissions = safeParseJSON(user.role?.permissions);
-    const tenantInfo  = await authService.getTenantInfo(req.tenant?.id || req.user?.centralTenantId || req.user?.tenantId);
+    const tenantInfo  = await authService.getTenantInfo(req.tenant?.id || req.user?.centralTenantId || null);
     const payload = buildUserPayload(user, permissions, tenantInfo);
     payload.is_platform_admin = req.user.is_platform_admin;
     return sendSuccess(res, payload);
