@@ -339,21 +339,8 @@ const registerTenant = async (req, res) => {
       const tenantPrisma = new PrismaClient({ datasources: { db: { url: targetDbUrl } } });
       try {
         const companyId = uuidv4();
-
-        await tenantPrisma.$executeRaw`
-          INSERT INTO companies (
-            id, name, legal_name, gstin, pan, city, state, email, phone, is_active, created_at, updated_at
-          ) VALUES (
-            ${companyId}::uuid, ${company.name.trim()}, ${company.legalName || null},
-            ${company.gstin || null}, ${company.pan || null},
-            ${company.city || null}, ${company.state || null},
-            ${company.email || cleanEmail}, ${company.phone || cleanPhone},
-            true, NOW(), NOW()
-          )
-        `;
-
-        // Create a default 'Super Admin' role for the new tenant.
         const roleId = uuidv4();
+        const passwordHash = await bcrypt.hash(admin.password, 12);
         const permissions = JSON.stringify({
           employees:   { view: true, create: true, edit: true, delete: true, export: true, unmask: true },
           attendance:  { view: true, create: true, edit: true, delete: true, export: true, approve: true },
@@ -370,23 +357,37 @@ const registerTenant = async (req, res) => {
           audit:       { view: true },
         });
 
-        await tenantPrisma.$executeRaw`
-          INSERT INTO roles (id, company_id, name, description, permissions, is_system, created_at, updated_at)
-          VALUES (${roleId}::uuid, ${companyId}::uuid, 'Super Admin', 'Full access', ${permissions}::jsonb, true, NOW(), NOW())
-        `;
+        // Keep company, role and admin creation atomic. A failed insert must not
+        // leave partial operational records that make a retry create duplicates.
+        await tenantPrisma.$transaction(async (tx) => {
+          await tx.$executeRaw`
+            INSERT INTO companies (
+              id, name, legal_name, gstin, pan, city, state, email, phone, is_active, created_at, updated_at
+            ) VALUES (
+              ${companyId}::uuid, ${company.name.trim()}, ${company.legalName || null},
+              ${company.gstin || null}, ${company.pan || null},
+              ${company.city || null}, ${company.state || null},
+              ${company.email || cleanEmail}, ${company.phone || cleanPhone},
+              true, NOW(), NOW()
+            )
+          `;
 
-        // Create the initial admin user for the tenant.
-        const passwordHash = await bcrypt.hash(admin.password, 12);
-        await tenantPrisma.$executeRaw`
-          INSERT INTO users (id, company_id, role_id, email, phone, password_hash, is_active, is_first_login, created_at, updated_at)
-          VALUES (
-            ${adminUserId}::uuid, ${companyId}::uuid, ${roleId}::uuid,
-            ${cleanEmail}, ${cleanPhone}, ${passwordHash}, true, true, NOW(), NOW()
-          )
-        `;
+          await tx.$executeRaw`
+            INSERT INTO roles (id, company_id, name, description, permissions, is_system, created_at, updated_at)
+            VALUES (${roleId}::uuid, ${companyId}::uuid, 'Super Admin', 'Full access', ${permissions}, true, NOW(), NOW())
+          `;
+
+          await tx.$executeRaw`
+            INSERT INTO users (id, company_id, role_id, email, phone, password_hash, is_active, is_first_login, created_at, updated_at)
+            VALUES (
+              ${adminUserId}::uuid, ${companyId}::uuid, ${roleId}::uuid,
+              ${cleanEmail}, ${cleanPhone}, ${passwordHash}, true, true, NOW(), NOW()
+            )
+          `;
+        });
 
         seedSucceeded = true;
-        logger.info(`✅ Tenant DB seeded: ${cleanSubdomain} | admin: ${cleanEmail}`);
+        logger.info(`Tenant DB seeded atomically: ${cleanSubdomain} | admin: ${cleanEmail}`);
       } catch (seedErr) {
         logger.error(`[registerTenant] Tenant DB seed FAILED for ${cleanSubdomain}:`, seedErr);
       } finally {
