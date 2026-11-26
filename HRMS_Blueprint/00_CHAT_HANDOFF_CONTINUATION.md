@@ -808,3 +808,10 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Latest source commit at this entry: `6c9e54c3636097de2d0c0267be0dba2307f34d2c`. Backend and PostgreSQL integration CI for this exact commit were still in progress; do not mark the full increment CI-verified until both complete.
 - Identity call-site spot-check across audit, leave, assets, payroll, expenses, automation, employees, compliance, attendance, notifications and performance found operational scoping uses `req.user.companyId`; the one remaining ambiguous Central-tenant fallback in `employees.extended.controller.js` was corrected. This is still not a complete scan of every worker, raw SQL, WebSocket or frontend call site.
 - No production DB migration, deployment, live payment or destructive operation was performed. Continue launch-focused P0 work: finish identity/storage routing verification, then close the highest-risk signup/provisioning retry path. Defer non-blocking polish and advanced features.
+
+
+## 2026-11-26 additional identity cleanup — auth profile and setup guard
+
+- A further search for optional-chaining variants found two additional ambiguous Central-tenant fallbacks: `auth.routes.js /me` and `requireSetupComplete.js`. Both now use only the explicit selected `req.tenant.id` or authenticated `req.user.centralTenantId`; the legacy `req.user.tenantId` alias is no longer used as a Central identity fallback in these paths.
+- The routing/KYC code increment through `6c9e54c3636097de2d0c0267be0dba2307f34d2c` passed Backend Tests and Tenant Migration PostgreSQL Integration CI (both success). The two latest auth/setup-guard changes are later source commits and must be rechecked on their own exact CI head before marking this cleanup verified.
+- Continue to distinguish the backend suite from production readiness: no live database migration, tenant-data isolation exercise against real customer data, deployment, backup restore drill or browser E2E has been performed.
