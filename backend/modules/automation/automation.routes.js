@@ -252,6 +252,7 @@ router.post('/kyc/start-otp', async (req, res) => {
     await enqueue('aadhaar_kyc', task.id, {
       aadhaarNumber: clean,
       companyId,
+      centralTenantId: resolveCentralTenantId(req),
       mode,
       createdBy: req.user.id,
       dbUrl, 
