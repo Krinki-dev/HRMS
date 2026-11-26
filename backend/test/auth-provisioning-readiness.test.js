@@ -40,3 +40,9 @@ test('OTP generation uses cryptographically secure randomness', () => {
   assert.match(authSource, /crypto\.randomInt\(100000, 1000000\)/);
   assert.doesNotMatch(authSource, /Math\.random\(\)/);
 });
+
+test('signup database preflight errors do not disclose raw connection details', () => {
+  assert.match(platformSource, /TENANT_DATABASE_PREFLIGHT_FAILED/);
+  assert.match(platformSource, /Check the database settings and installation/);
+  assert.doesNotMatch(platformSource, /DB connection or schema check failed: \$\{e\.message\}/);
+});
