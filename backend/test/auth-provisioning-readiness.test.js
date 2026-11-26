@@ -90,3 +90,12 @@ test('failed tenant seeding records an inactive failed lifecycle state', () => {
   assert.match(failureBlock, /is_active = false/);
   assert.match(failureBlock, /TENANT_PROVISIONING_FAILED/);
 });
+
+test('GSTIN and PAN are persisted in the same normalized form used for validation and duplicate checks', () => {
+  assert.match(platformSource, /const cleanGstin\s*=\s*company\?\.gstin\?\.trim\(\)\.toUpperCase\(\) \|\| null/);
+  assert.match(platformSource, /const cleanPan\s*=\s*company\?\.pan\?\.trim\(\)\.toUpperCase\(\) \|\| null/);
+  assert.ok((platformSource.match(/\$\{cleanGstin\}/g) || []).length >= 2);
+  assert.ok((platformSource.match(/\$\{cleanPan\}/g) || []).length >= 2);
+  assert.doesNotMatch(platformSource, /\$\{company\.gstin \|\| null\}/);
+  assert.doesNotMatch(platformSource, /\$\{company\.pan \|\| null\}/);
+});
