@@ -874,3 +874,10 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Verified CI before this latest domain-validation increment: Backend Tests and Tenant Migration PostgreSQL Integration passed for `14820999cafb719c9ab3bd0d02d586f731b7884d`. Exact-head Backend Tests and PostgreSQL integration for `1d270ee54a9e6601814d06f9aae42ed0a1b21e40` were running when this note was written.
 - Security follow-up still required before accepting customer-supplied PostgreSQL endpoints in production: the application currently accepts customer-provided host/connection details and connects from the server. URL scheme validation alone is not a complete SSRF/network-boundary control. Production deployment must enforce outbound network policy blocking loopback, link-local, cloud metadata and private infrastructure ranges (with an explicit approved customer-connectivity mechanism); implement/verify DNS/IP controls without relying on a vulnerable one-time hostname check. Do not claim customer-managed DB mode production-safe until this is verified.
 - No production database changes or deployments were performed.
+
+## Latest continuation handoff — 2026-11-26
+
+- Added Central tenant provisioning lease schema foundation: migration `backend/db-migrations/20261126_tenant_provisioning_leases.sql`; Prisma and fresh-install schema fields: `storage_lease_token`, `storage_lease_expires_at`, `provisioning_attempts`; static test: `backend/test/tenant-provisioning-lease-schema.test.js`.
+- Latest test-source commit: `4133d6c6f5e83b7e831a3e5f5202884bf8e49c43`. No CI checks were visible for this commit at handoff; do not mark verified. No DB migration was run.
+- Critical: lease fields are groundwork only. Registration does not yet use them. Next implement token-guarded atomic lease claim/reclaim, strict matching of existing tenant/admin identity and DB configuration, detection of already-committed operational seed, token-guarded final activation, and concurrency/crash-window tests. Keep production migration blocked until implementation and verification are complete.
+- Continue only on `architecture/postgres-tenant-isolation`; do not modify `main`.
