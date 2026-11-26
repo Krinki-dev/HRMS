@@ -277,7 +277,7 @@ const registerTenant = async (req, res) => {
           NULL, NULL, ${localDbHost}, ${localDbPort}, ${localDbName},
           ${localDbUser}, ${localDbPass}, ${localDbType}, 
           ${admin.name.trim()}, ${cleanEmail}, ${cleanPhone},
-          ${company.gstin || null}, ${company.pan || null},
+          ${cleanGstin}, ${cleanPan},
           ${company.city || null}, ${company.state || null}, '#2563eb', '#f8fafc', NULL, NULL,
           false, false, NOW(), NOW()
         )
@@ -365,7 +365,7 @@ const registerTenant = async (req, res) => {
               id, name, legal_name, gstin, pan, city, state, email, phone, is_active, created_at, updated_at
             ) VALUES (
               ${companyId}::uuid, ${company.name.trim()}, ${company.legalName || null},
-              ${company.gstin || null}, ${company.pan || null},
+              ${cleanGstin}, ${cleanPan},
               ${company.city || null}, ${company.state || null},
               ${company.email || cleanEmail}, ${company.phone || cleanPhone},
               true, NOW(), NOW()
