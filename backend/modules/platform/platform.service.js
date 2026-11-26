@@ -272,7 +272,7 @@ const registerTenant = async (req, res) => {
           (id, email, subdomain, company_id, user_id, is_platform_admin, is_active, created_at)
         VALUES
           (${uuidv4()}::uuid, ${cleanEmail}, ${cleanSubdomain},
-           ${tenantId}::uuid, ${adminUserId}::uuid, false, true, NOW())
+           ${tenantId}::uuid, ${adminUserId}::uuid, false, false, NOW())
       `;
 
       // NEW: Initialize Pricing Config based on Dynamic Settings
@@ -381,16 +381,23 @@ const registerTenant = async (req, res) => {
       return sendError(res, ERROR_CODES.SERVER, 'Tenant workspace provisioning failed. The account is not active; support must complete provisioning before login.', 503);
     }
 
-    await withPlatformAdminRLS(centralPrisma, (tx) => tx.$executeRaw`
-      UPDATE tenants
-      SET storage_status = 'ready',
-          storage_provisioned_at = NOW(),
-          storage_verified_at = NOW(),
-          is_active = true,
-          is_setup_complete = true,
-          updated_at = NOW()
-      WHERE id = ${tenantId}::uuid
-    `);
+    await withPlatformAdminRLS(centralPrisma, async (tx) => {
+      await tx.$executeRaw`
+        UPDATE tenants
+        SET storage_status = 'ready',
+            storage_provisioned_at = NOW(),
+            storage_verified_at = NOW(),
+            is_active = true,
+            is_setup_complete = true,
+            updated_at = NOW()
+        WHERE id = ${tenantId}::uuid
+      `;
+      await tx.$executeRaw`
+        UPDATE central_user_index
+        SET is_active = true, updated_at = NOW()
+        WHERE company_id = ${tenantId}::uuid AND user_id = ${adminUserId}::uuid
+      `;
+    });
 
     const portalUrl = cleanCustomDomain ? `https://${cleanCustomDomain}` : `https://${cleanSubdomain}.syntern.in`;
     const loginUrl = `${portalUrl}/login`;
