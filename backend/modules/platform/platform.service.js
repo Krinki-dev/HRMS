@@ -236,7 +236,14 @@ const registerTenant = async (req, res) => {
           400, { code: 'TENANT_SCHEMA_NOT_INSTALLED' });
       }
     } catch (e) {
-      return sendError(res, ERROR_CODES.VALIDATION, `DB connection or schema check failed: ${e.message}`, 400);
+      logger.error(`[registerTenant] PostgreSQL preflight failed for ${cleanSubdomain}:`, { error: e.message });
+      return sendError(
+        res,
+        ERROR_CODES.VALIDATION,
+        'Unable to connect to PostgreSQL or verify the required HRMS tables. Check the database settings and installation.',
+        400,
+        { code: 'TENANT_DATABASE_PREFLIGHT_FAILED' }
+      );
     } finally {
       await testClient.$disconnect();
     }
