@@ -78,3 +78,15 @@ test('role permissions are inserted using the Prisma schema text type', () => {
   assert.match(roleInsert, /\$\{permissions\}/);
   assert.doesNotMatch(roleInsert, /::jsonb/);
 });
+
+test('failed tenant seeding records an inactive failed lifecycle state', () => {
+  const failureStart = platformSource.indexOf('if (!schemaProvisioned || !seedSucceeded)');
+  const activationStart = platformSource.indexOf('UPDATE tenants', failureStart);
+  const failureEnd = platformSource.indexOf('const portalUrl', failureStart);
+  const failureBlock = platformSource.slice(failureStart, failureEnd);
+  assert.ok(failureStart >= 0 && activationStart > failureStart);
+  assert.match(failureBlock, /storage_status = 'failed'/);
+  assert.match(failureBlock, /storage_error_code = 'TENANT_SEED_FAILED'/);
+  assert.match(failureBlock, /is_active = false/);
+  assert.match(failureBlock, /TENANT_PROVISIONING_FAILED/);
+});
