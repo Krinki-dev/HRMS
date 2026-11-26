@@ -537,3 +537,13 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - CI: Backend Tests succeeded for commit `3f43f512c4337c48b64668a8c083bff3e1553226` (run #702), which included the login gating, delayed index activation and secure OTP changes. The later generic DB-error response/test commits are newer; exact-head Backend Tests and Tenant Migration PostgreSQL Integration for the latest code are not yet confirmed. Do not claim exact-head CI pass until both workflows complete.
 - No production database change, deployment, real payment or destructive cleanup was performed.
 - Next P0 tasks: (1) inspect safe retry/resume design for incomplete signups; (2) verify signup preflight against the full minimum launch schema, not only three table names; (3) continue identity/storage resolver inventory across jobs, raw SQL and WebSockets; (4) close core login → company creation → employee CRUD smoke path. Do not start P2 before P0/P1 exit criteria pass.
+
+
+## 2026-11-26 P0 addendum — minimum launch schema preflight
+
+- Extended signup's PostgreSQL preflight beyond the original three-table check. Registration now verifies the presence of 12 launch-critical tables: companies, roles, users, employees, departments, designations, attendance, leave_types, leave_balances, leave_applications, otp_store and audit_logs. An incomplete schema is rejected before any Central tenant/index rows are created.
+- Missing table names are logged server-side for diagnosis; the API returns a stable `TENANT_SCHEMA_NOT_INSTALLED` error without exposing database internals.
+- Added regression assertions for the required launch table set and rejection path in `backend/test/auth-provisioning-readiness.test.js`.
+- Latest source commit: `461b58b05741a6aa1e9ad22c5f270d98af094aa2`; latest test commit: `08180f99e0cfca6a5f83cf3b272d8d894b7b79c5`. Latest branch head will move as progress docs are updated.
+- Backend Tests and Tenant Migration PostgreSQL Integration were triggered for source commit `461b58b05741a6aa1e9ad22c5f270d98af094aa2` and were still running at the time of this note. A previous backend run on head `2437cfaa45f61719748a8ef8bb4c1274756e8c3c` passed; that does not verify this newer schema-preflight change. Recheck exact-head workflow results.
+- The preflight is a minimum table-presence check, not a full migration-version/column/index/constraint compatibility proof. A proper schema version marker and migration gate remain a follow-up; do not call this complete migration validation.
