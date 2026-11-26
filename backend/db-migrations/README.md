@@ -93,3 +93,8 @@ KYC employee links use an optional `employee_id` UUID in the Central KYC table. 
 Apply `20261125_tenant_migration_jobs.sql` to the Central PostgreSQL database before enabling the Platform Admin **Storage migration** inventory endpoint. The migration creates an append-only inventory audit table protected by the platform-admin RLS claim. The same table is included in `backend/prisma/central_schema.sql` for fresh installations.
 
 The current endpoint records only a read-only source inventory and blocker snapshot. It does not create a destination schema, copy tenant data, change storage metadata, or activate a subscription. Do not apply this migration to production without the normal backup, review, and approval process.
+
+
+## Tenant provisioning recovery lease metadata
+
+Apply `20261126_tenant_provisioning_leases.sql` to the **Central / Platform PostgreSQL database only** after a verified backup. The migration adds an opaque lease token, lease expiry, and a non-negative provisioning-attempt counter to `public.tenants`. It is additive and safe to re-run. It does not itself retry or activate a tenant; application retry logic must still verify tenant ownership, stored database target, operational seed state, and the current lease token before changing lifecycle state. Do not run this migration against a tenant operational database.
