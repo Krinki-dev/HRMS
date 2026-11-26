@@ -13,7 +13,7 @@ const { sendError, ERROR_CODES } = require('../utils/response');
 const { decrypt } = require('../utils/encryption');
 const { resolveTenantStorageTarget } = require('../utils/tenantStorageResolver');
 const { withPlatformAdminRLS } = require('../utils/rlsContext');
-const { normalizeHostname, isPlatformRootHost, buildHostnameCandidates } = require('../utils/domainRouting');
+const { normalizeHostname, isPlatformRootHost, isPreviewHost } = require('../utils/domainRouting');
 
 // ── DB connection pool — one PrismaClient per unique DB URL ──────
 const dbPool = {};
@@ -69,6 +69,29 @@ const PLATFORM_ROOTS = new Set([
   'app.syntern.in',
   'app.localhost',
 ]);
+
+// Resolve a managed Syntern subdomain without treating arbitrary custom domains
+// or preview hosts as tenant subdomains. Custom domains are matched separately
+// against tenants.custom_domain in the Central database.
+function extractTenantSubdomain(req = {}) {
+  const explicit = String(req.headers?.['x-tenant-subdomain'] || '').trim().toLowerCase();
+  if (explicit) {
+    return /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(explicit) ? explicit : null;
+  }
+
+  const host = normalizeHostname(req.hostname || req.headers?.host || '');
+  if (!host || isPlatformRootHost(host) || isPreviewHost(host)) return null;
+
+  if (host.endsWith('.syntern.in')) {
+    const subdomain = host.slice(0, -'.syntern.in'.length);
+    return subdomain && !subdomain.includes('.') ? subdomain : null;
+  }
+  if (host.endsWith('.localhost')) {
+    const subdomain = host.slice(0, -'.localhost'.length);
+    return subdomain && !subdomain.includes('.') ? subdomain : null;
+  }
+  return null;
+}
 
 // ================================================================
 // TENANT MIDDLEWARE
@@ -272,4 +295,4 @@ const tenantMiddleware = async (req, res, next) => {
   }
 };
 
-module.exports = { tenantMiddleware, getTenantDB, resolveTenantDB };
+module.exports = { tenantMiddleware, getTenantDB, resolveTenantDB, extractTenantSubdomain };
