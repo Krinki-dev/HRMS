@@ -675,3 +675,14 @@ Recommendation:
 - The latest branch head at this documentation update is `64837385466a550995c3e0af1ddc93623023aa1a`. Recheck before future edits.
 - These CI results verify the configured automated backend suite and disposable PostgreSQL integration workflow only. They do not prove production DB migration state, real customer data isolation, staging deployment, real Razorpay, MinIO/ClamAV production readiness, backup restore for live tenants, or browser E2E.
 - Identity hardening increment is source-implemented and CI-verified; the overall P0 identity audit remains open pending exhaustive caller inventory and end-to-end multi-company/company membership tests.
+
+
+## 2026-11-26 launch-focused P0 increment — tenant routing and identity defects
+
+- Found and fixed a live request-path defect: `tenantMiddleware` invoked `extractTenantSubdomain(req)` but the function was not defined/imported. Added a guarded resolver for explicit tenant headers, `*.syntern.in` and `*.localhost`; platform roots, preview hosts and arbitrary custom domains are not misclassified. Custom domains remain matched through Central tenant records.
+- Added `backend/test/tenant-domain-routing.test.js` covering managed subdomains, local development, validated headers and non-tenant hosts. The first test run exposed that `isPreviewHost` existed but was not exported; exported the shared helper. Backend Tests passed for the subsequent fix commit `abca0e628f9c34cef5d4245e7b8c5b5a4299e695` (run #45725656437). The PostgreSQL integration run for that commit was still running when recorded.
+- Removed the remaining ambiguous `req.user.centralTenantId || req.user.tenantId` fallback from the employee Aadhaar/KYC endpoint. It now requires explicit `centralTenantId` and returns 401 when unavailable.
+- Found a legacy KYC queue path that omitted `centralTenantId` even though the worker requires it. Added the explicit Central tenant ID to its queued payload.
+- Latest source commit at this entry: `6c9e54c3636097de2d0c0267be0dba2307f34d2c`. Backend and PostgreSQL integration CI for this exact commit were still in progress; do not mark the full increment CI-verified until both complete.
+- Identity call-site spot-check across audit, leave, assets, payroll, expenses, automation, employees, compliance, attendance, notifications and performance found operational scoping uses `req.user.companyId`; the one remaining ambiguous Central-tenant fallback in `employees.extended.controller.js` was corrected. This is still not a complete scan of every worker, raw SQL, WebSocket or frontend call site.
+- No production DB migration, deployment, live payment or destructive operation was performed. Continue launch-focused P0 work: finish identity/storage routing verification, then close the highest-risk signup/provisioning retry path. Defer non-blocking polish and advanced features.
