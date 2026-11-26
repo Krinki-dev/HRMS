@@ -103,7 +103,7 @@ const authService = {
       SELECT ui.subdomain, ui.is_platform_admin, t.name AS company_name, t.logo_url, t.is_active, t.plan
       FROM central_user_index ui
       LEFT JOIN tenants t ON t.id = ui.company_id
-      WHERE ui.email = ${normalizedEmail} AND ui.is_active = true AND t.deleted_at IS NULL
+      WHERE ui.email = ${normalizedEmail} AND ui.is_active = true AND t.is_active = true AND t.storage_status = 'ready' AND t.deleted_at IS NULL
       LIMIT 1
     `);
 
@@ -115,7 +115,7 @@ const authService = {
     const tenantRows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
       SELECT id, name, subdomain, logo_url, is_active, plan
       FROM tenants
-      WHERE admin_email = ${normalizedEmail} AND deleted_at IS NULL
+      WHERE admin_email = ${normalizedEmail} AND is_active = true AND storage_status = 'ready' AND deleted_at IS NULL
       LIMIT 1
     `);
 
@@ -145,7 +145,8 @@ const authService = {
     try {
       const userRows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
         SELECT * FROM central_user_index 
-        WHERE email = ${email.toLowerCase().trim()} AND is_active = true 
+        WHERE email = ${email.toLowerCase().trim()} AND is_active = true
+          AND EXISTS (SELECT 1 FROM tenants t WHERE t.id = central_user_index.company_id AND t.is_active = true AND t.storage_status = 'ready' AND t.deleted_at IS NULL) 
         LIMIT 1
       `);
       let u = userRows[0];
@@ -158,6 +159,7 @@ const authService = {
           WHERE LOWER(admin_email) = LOWER(${email.toLowerCase().trim()})
             AND deleted_at IS NULL
             AND is_active = true
+            AND storage_status = 'ready'
           LIMIT 1
         `);
         if (tenantRows.length > 0) {
@@ -209,7 +211,7 @@ const authService = {
   },
 
   async sendOtp(db, tenantId, email, purpose) {
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = crypto.randomInt(100000, 1000000).toString();
     const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -329,7 +331,7 @@ const authService = {
         SELECT DISTINCT ui.subdomain, ui.is_platform_admin, t.name, t.logo_url, t.is_active, t.plan
         FROM central_user_index ui
         LEFT JOIN tenants t ON t.id = ui.company_id
-        WHERE ui.phone = ${normalizedPhone} AND ui.is_active = true AND t.deleted_at IS NULL
+        WHERE ui.phone = ${normalizedPhone} AND ui.is_active = true AND t.is_active = true AND t.storage_status = 'ready' AND t.deleted_at IS NULL
         LIMIT 1
       `);
 
@@ -372,7 +374,7 @@ const authService = {
                         t.is_active, t.plan, ui.email
         FROM central_user_index ui
         LEFT JOIN tenants t ON t.id = ui.company_id
-        WHERE ui.employee_id = ${normalizedId} AND ui.is_active = true AND t.deleted_at IS NULL
+        WHERE ui.employee_id = ${normalizedId} AND ui.is_active = true AND t.is_active = true AND t.storage_status = 'ready' AND t.deleted_at IS NULL
         LIMIT 1
       `);
 
@@ -422,6 +424,8 @@ const authService = {
         WHERE ui.email = ${normalizedEmail}
           AND ui.phone = ${normalizedPhone}
           AND ui.is_active = true
+          AND t.is_active = true
+          AND t.storage_status = 'ready'
           AND t.deleted_at IS NULL
         LIMIT 1
       `);
