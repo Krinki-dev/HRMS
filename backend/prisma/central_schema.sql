@@ -48,6 +48,9 @@ CREATE TABLE IF NOT EXISTS tenants (
   storage_provisioned_at TIMESTAMPTZ,
   storage_verified_at    TIMESTAMPTZ,
   storage_error_code     TEXT,
+  storage_lease_token       UUID,
+  storage_lease_expires_at  TIMESTAMPTZ,
+  provisioning_attempts     INTEGER     NOT NULL DEFAULT 0,
 
   -- Database configuration
   -- db_mode controls which connection fields are used:
@@ -108,6 +111,10 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='tenants_storage_status_check' AND conrelid='public.tenants'::regclass) THEN
     ALTER TABLE public.tenants ADD CONSTRAINT tenants_storage_status_check
       CHECK (storage_status IN ('pending','provisioning','ready','failed','legacy_unclassified'));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='tenants_provisioning_attempts_nonnegative' AND conrelid='public.tenants'::regclass) THEN
+    ALTER TABLE public.tenants ADD CONSTRAINT tenants_provisioning_attempts_nonnegative
+      CHECK (provisioning_attempts >= 0);
   END IF;
 END $$;
 
