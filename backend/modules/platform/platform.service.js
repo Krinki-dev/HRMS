@@ -226,13 +226,24 @@ const registerTenant = async (req, res) => {
         SELECT
           to_regclass('public.companies')::text AS companies,
           to_regclass('public.roles')::text AS roles,
-          to_regclass('public.users')::text AS users
+          to_regclass('public.users')::text AS users,
+          to_regclass('public.employees')::text AS employees,
+          to_regclass('public.departments')::text AS departments,
+          to_regclass('public.designations')::text AS designations,
+          to_regclass('public.attendance')::text AS attendance,
+          to_regclass('public.leave_types')::text AS leave_types,
+          to_regclass('public.leave_balances')::text AS leave_balances,
+          to_regclass('public.leave_applications')::text AS leave_applications,
+          to_regclass('public.otp_store')::text AS otp_store,
+          to_regclass('public.audit_logs')::text AS audit_logs
       `;
-      const ready = requiredTables[0] &&
-        requiredTables[0].companies && requiredTables[0].roles && requiredTables[0].users;
-      if (!ready) {
+      const missingTables = Object.entries(requiredTables[0] || {})
+        .filter(([, tableName]) => !tableName)
+        .map(([tableName]) => tableName);
+      if (missingTables.length > 0) {
+        logger.warn(`[registerTenant] HRMS schema preflight missing required tables for ${cleanSubdomain}`, { missingTables });
         return sendError(res, ERROR_CODES.VALIDATION,
-          'The PostgreSQL database is reachable but the HRMS schema is not installed. This database cannot be registered until the supported PostgreSQL installation package has initialized it.',
+          'The PostgreSQL database is reachable but the minimum HRMS launch schema is incomplete. Initialize the database with the supported PostgreSQL installation package before registering this workspace.',
           400, { code: 'TENANT_SCHEMA_NOT_INSTALLED' });
       }
     } catch (e) {
