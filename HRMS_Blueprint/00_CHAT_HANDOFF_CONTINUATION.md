@@ -1116,3 +1116,13 @@ This block supersedes older branch/CI statements above where they conflict.
 - No application implementation, production migration, deployment, live payment or customer-data operation was performed.
 - Exact next work: continue full route/controller/service/model/test audit and operational table/FK/RLS matrix; safely reproduce boot/browser/DB candidates where isolated execution is available; reconcile duplicate/root causes; only then draft and independently verify Cycle 01 plan. No implementation before plan verification.
 - User expects concise plain-language progress updates and explicit statements of completed work, blockers and next task.
+
+## CURRENT HANDOFF — Cycle 01 Phase 13 (2026-11-27)
+
+- Working branch: architecture/postgres-tenant-isolation. Never modify main.
+- New audit record: HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-13.md (commit d2fa4d9e4f1f55283f2937f5344f987eb14ae1ee).
+- Phase 13 recorded GAP-0041: tenant Prisma schema targets PostgreSQL, but documented legacy tenant migration history is MSSQL/SQL Server and must not be run against PostgreSQL. A safe PostgreSQL baseline/replay strategy is still required.
+- Tenant migration inventory is intentionally read-only/inventory-only with copyAllowed=false; do not claim data copy or cutover is implemented.
+- GAP-0020 WebSocket broadcast and GAP-0021 missing Razorpay handler remain source-confirmed/open; runtime verification not performed.
+- No tests, server boot, browser, database, migrations, payments, deployments or customer-data operations were performed. main untouched; application source unchanged.
+- Next: continue full operational schema/FK/index/RLS matrix; inspect migration inventory tests and lifecycle callers; then frontend/API and backup/restore audit. Cycle 01 plan only after complete audit; independently verify before implementation.
