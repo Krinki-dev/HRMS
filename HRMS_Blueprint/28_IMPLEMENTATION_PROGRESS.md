@@ -644,3 +644,11 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - No application source changed. No test, boot, browser, database or live payment operation was run.
 - Combined status at inspected SHA contained two successful external Railway contexts; GitHub Actions workflow lookup returned no runs for that SHA. Do not report these external statuses as test passes.
 - Audit remains incomplete; root-cause consolidation, full module/data/RLS matrix, runtime harnesses, Cycle 01 plan and independent verification remain pending.
+
+## 2026-11-27 — Cycle 01 Phase 13 PostgreSQL migration audit
+
+- Added HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-13.md.
+- Reconciled tenant Prisma PostgreSQL datasource with migration README: legacy tenant migration history is explicitly MSSQL/SQL Server and is not a valid PostgreSQL migration history. Added GAP-0041 (P1) for a safe, reconciled PostgreSQL baseline and migration replay strategy.
+- Reviewed tenantMigrationInventory.js: inventory-only, validates identity/schema/FK ownership and returns copyAllowed=false. Recorded missing test/operational proof without misclassifying this safety control as a defect.
+- Re-fetched GAP-0020 and GAP-0021 source evidence; both remain open pending runtime verification.
+- No tests, boot, browser, DB, migration or application source changes were performed. No main-branch, production, payment, deployment or customer-data operation.
