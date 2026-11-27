@@ -72,10 +72,10 @@ These are inherited from prior source-audit notes and must be rechecked against 
 | GAP-0039 | F | Employee CSV export quotes fields but does not neutralize spreadsheet formula injection | P1 | Open | downloadExportCsv escapeCsv helper; formula-leading/control-character export tests |
 
 ## Cycle 01 disposition
-- Phase 1–8 source audit evidence is recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-1.md through CYCLE-01-SOURCE-AUDIT-PHASE-8.md.
+- Phase 1–10 source audit evidence is recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-1.md through CYCLE-01-SOURCE-AUDIT-PHASE-10.md.
 - New source findings currently recorded: GAP-0015 through GAP-0039. All remain Open; GAP-0017 and GAP-0021 require runtime/boot reproduction. GAP-0020 is a source-confirmed unscoped WebSocket broadcast. GAP-0030 is a confirmed absence of operational HR-table RLS coverage in the inspected SQL migrations and test documentation.
 - Existing inherited findings GAP-0001 through GAP-0014 remain open until each is revalidated and consolidated against current source.
-- Full audit: In Progress. Remaining work includes complete module/service ownership tracing, file and import/export pipeline, final Central lifecycle and billing review, complete table/FK inventory, frontend runtime/browser E2E, deployment and operations.
+- Full audit: In Progress. Remaining work includes finishing route → controller → service → model → tests tracing for every module, full operational table/FK and RLS matrix, runtime reproduction/boot verification of provisional findings, frontend route/browser/E2E tests, deployment and operations runbooks, and final evidence reconciliation.
 - Duplicate/root-cause consolidation: Pending.
 - Cycle 01 improvement plan: Not drafted.
 - Independent plan verification: Pending.
