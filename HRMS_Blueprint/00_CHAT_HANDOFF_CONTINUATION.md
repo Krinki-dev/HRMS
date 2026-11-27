@@ -1104,3 +1104,15 @@ This block supersedes older branch/CI statements above where they conflict.
 - No application code changed; no tests, boot, browser, DB, staging, migration, payment or deployment operation was performed.
 - Audit remains In Progress. Root-cause consolidation, remaining whole-repo coverage, runtime verification, Cycle 01 plan drafting and independent plan verification are still pending.
 - Communication preference: keep chat updates short and user-relevant; state active phase/task and verified completion/blockers. Do not imply background execution after a turn ends.
+
+
+## CURRENT HANDOFF — Cycle 01 Phase 12 (2026-11-27)
+
+- Working branch: architecture/postgres-tenant-isolation. Never modify main.
+- Latest documented application source inspected: cd400a602eb255029c1daeeae1d35f0c7b7ee948. Documentation continuation commits follow this source inspection; re-fetch branch head before any next source audit or CI claim.
+- New audit record: HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-12.md.
+- Phase 12 revalidated GAP-0020, GAP-0021, GAP-0031, GAP-0022, GAP-0029 and GAP-0040 against exact-head source. All remain open; boot/runtime/integration verification is still required.
+- Latest inspected SHA had two successful external Railway status contexts but no GitHub Actions runs returned. This is not proof that tests passed.
+- No application implementation, production migration, deployment, live payment or customer-data operation was performed.
+- Exact next work: continue full route/controller/service/model/test audit and operational table/FK/RLS matrix; safely reproduce boot/browser/DB candidates where isolated execution is available; reconcile duplicate/root causes; only then draft and independently verify Cycle 01 plan. No implementation before plan verification.
+- User expects concise plain-language progress updates and explicit statements of completed work, blockers and next task.
