@@ -62,6 +62,9 @@ These are inherited from prior source-audit notes and must be rechecked against 
 | GAP-0029 | A | Payroll payslip GET/update and bonus delete controller calls omit req.db and misalign service args | P1 | Open | payroll.controller.js vs payroll.service.js signatures; API contract and ownership tests |
 | GAP-0030 | D | Shared operational public schema has no demonstrated company/tenant RLS coverage | P0 | Open | Operational Prisma table inventory + SQL RLS policy scan + non-owner runtime role tests |
 | GAP-0031 | F | RLS/auth/payroll/compliance PostgreSQL integration suites are not configured in standard backend CI | P1 | Open | Test README env requirements vs backend workflow; configure disposable DB roles/services and fail on required skips |
+| GAP-0032 | E | Onboarding wizard calls missing progress/save/complete endpoints and mismatched payroll salary-components endpoint | P1 | Open | OnboardingWizard API calls vs platform/subscription/payroll mounted routes |
+| GAP-0033 | E | Company document upload/review UI endpoints are absent despite Central metadata tables | P1 | Open | CompanyDocumentsStep/AdminDocuments/adminApi vs platform/admin mounted routes; secure file workflow absent |
+| GAP-0034 | E | Notification settings frontend URL differs from mounted notification config route | P2 | Open | settingsApi/adminApi /settings/notifications vs server mount /config/notifications |
 
 ## Cycle 01 disposition
 - Full fresh source audit: Pending.
