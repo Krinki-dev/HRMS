@@ -1092,3 +1092,15 @@ This block supersedes older branch/CI statements above where they conflict.
 - Most recent preceding Backend Tests on 674483fd0e9bdc0eaf0ca093eaa9117d36c1fb40 passed (run 46027270700). Its Tenant Migration PostgreSQL Integration run 46027270452 was still in_progress at snapshot.
 - No application code was changed in this audit; commits are documentation-only. No production DB migration, deployment, real payment, destructive customer-data operation or credential change was performed.
 - Immediate next step: complete remaining source/test coverage and verify provisional P0/P1 findings with safe boot/browser/database harnesses; then consolidate duplicates/root causes, draft Cycle 01 plan and independently verify it before any code implementation.
+
+
+## 2026-11-27 continued work — Cycle 01 Phase 11
+
+- Added `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-11.md` (auth identity and attendance controller/service contract reconciliation).
+- Re-fetched current branch files before inspection. Key source blob SHAs and detailed evidence are recorded in Phase 11.
+- Auth trace confirmed current token signers emit separate `companyId` and `centralTenantId`; `tenantIdentity.js`, auth middleware and existing identity tests include legacy-token and host-mismatch safeguards. Full login/refresh/company-selection runtime coverage remains outstanding.
+- New GAP-0040 (P2): attendance controller passes `companyId` as the third argument to `checkIn`, but service's third argument is `data`. Request body becomes an unused fourth argument, so latitude/longitude/IP metadata is not persisted. Fix only after plan verification; add controller/service contract and self-service ownership tests.
+- Reconfirmed GAP-0037 public uploads mount in `server.js`; no duplicate finding created.
+- No application code changed; no tests, boot, browser, DB, staging, migration, payment or deployment operation was performed.
+- Audit remains In Progress. Root-cause consolidation, remaining whole-repo coverage, runtime verification, Cycle 01 plan drafting and independent plan verification are still pending.
+- Communication preference: keep chat updates short and user-relevant; state active phase/task and verified completion/blockers. Do not imply background execution after a turn ends.
