@@ -1041,3 +1041,13 @@ This block supersedes older branch/CI statements above where they conflict.
 - Positive correction retained: frontend-build.yml exists and runs npm ci + npm run build on frontend changes; browser E2E remains absent.
 - Latest Phase 6 docs commits: e01fd66 (audit), 5153cd4 (gap register), d13cf81 (index), 25909a5 (tracker). Re-fetch exact branch head and CI before status claims.
 - No production DB migration, DB-role change or deployment was performed. Continue audit of Central tenant lifecycle/billing, document workflow, import/export, backups and deployment before writing Cycle 01 plan.
+
+
+## CYCLE 01 PHASE 7 UPDATE — 2026-11-27
+
+- Onboarding/document/settings API contract audit is recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-7.md at source SHA 8b99f8a40311d81f5e200700562effb06ced0255.
+- GAP-0032: OnboardingWizard calls /platform/onboarding/progress, /save-step and /complete, plus /payroll/salary-components; the mounted backend route inventory has no corresponding endpoints (payroll has /salary-structures instead).
+- GAP-0033: CompanyDocumentsStep/AdminDocuments call /platform/company-documents endpoints, but the mounted platform/admin route inventories do not expose them. Central document metadata tables exist; upload/review/scanning/storage API workflow is not implemented in the inspected backend.
+- GAP-0034: Frontend settingsApi calls /settings/notifications; server mounts notification config routes at /config/notifications with /notifications path, not the frontend URL.
+- Latest Phase 7 docs commits: e04e0e4 (audit), 4548638 (gap register), 1be18e0 (index), 2556fd0 (tracker). Verify exact branch head/CI before status claims.
+- Next: audit billing/payment verification, Central RLS coverage and lifecycle, remaining Settings/Notifications/Reports service paths, import/export, backup/restore and deployment. No Cycle 01 plan yet.
