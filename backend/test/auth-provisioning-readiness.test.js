@@ -128,3 +128,10 @@ test('tenant activation requires the live lease token and activates its index in
   assert.match(activationBlock, /UPDATE central_user_index/);
   assert.match(activationBlock, /if \(indexed !== 1\)/);
 });
+
+
+test('public signup blocks customer-supplied database targets until deployment egress policy is explicitly enabled', () => {
+  assert.match(platformSource, /customerDatabaseConnectionsEnabled\(\)/);
+  assert.match(platformSource, /CUSTOMER_DATABASE_CONNECTIONS_DISABLED/);
+  assert.match(platformSource, /temporarily disabled until the server deployment has an approved outbound network security policy/);
+});
