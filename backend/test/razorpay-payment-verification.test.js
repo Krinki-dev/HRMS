@@ -45,3 +45,21 @@ test('verifies Razorpay webhook signatures against exact raw request bytes', () 
   assert.equal(verifyRazorpayWebhookSignature({ rawBody, signature: valid, secret: '' }), false);
   assert.equal(verifyRazorpayWebhookSignature({ rawBody, signature: 'invalid', secret: webhookSecret }), false);
 });
+
+
+test('payment verification rejects client-supplied mock mode before gateway verification or ledger mutation', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const controller = fs.readFileSync(path.join(__dirname, '../modules/platform/payment.controller.js'), 'utf8');
+  const start = controller.indexOf('exports.verifyPayment = async');
+  const end = controller.indexOf('/**', start + 10);
+  const handler = controller.slice(start, end > start ? end : undefined);
+  const mockGuard = handler.indexOf("if (mock)");
+  const signatureCheck = handler.indexOf('verifyRazorpaySignature(');
+  const invoiceMutation = handler.indexOf('tx.invoices.updateMany');
+  assert.ok(mockGuard >= 0);
+  assert.ok(signatureCheck > mockGuard);
+  assert.ok(invoiceMutation > signatureCheck);
+  assert.match(handler.slice(mockGuard, mockGuard + 240), /Client-side mock payments are not accepted/);
+  assert.doesNotMatch(handler, /if\s*\(!mock\)/);
+});
