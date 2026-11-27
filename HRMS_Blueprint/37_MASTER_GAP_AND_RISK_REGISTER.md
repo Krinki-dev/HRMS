@@ -50,6 +50,8 @@ These are inherited from prior source-audit notes and must be rechecked against 
 | GAP-0017 | E | ESS nested absolute child routes do not begin with /ess | P1 | Open — Runtime Verify | App.jsx ESS route tree; reproduce with React Router v6 build/runtime test |
 | GAP-0018 | A | Attendance approval endpoints lack explicit permission checks; reject mutation omits company scope | P1 | Open | attendance.routes.js, attendance.controller.js and attendance.service.js approval/rejection paths |
 | GAP-0019 | F | CI omits frontend build/browser E2E and skips optional DB integration tests | P1 | Open | Current workflows and test README; add executed-not-skipped DB test jobs |
+| GAP-0020 | B/F | Company WebSocket broadcast ignores companyId and sends to every connected socket | P0 | Open | notifications.service.js pushToCompany and server.js socket registration; cross-company disclosure risk |
+| GAP-0021 | C/F | Subscription route registers paymentController.handleWebhook, which is not exported | P0 | Open — Boot Verify | subscription.routes.js + payment.controller.js exports; backend startup smoke test required |
 
 ## Cycle 01 disposition
 - Full fresh source audit: Pending.
