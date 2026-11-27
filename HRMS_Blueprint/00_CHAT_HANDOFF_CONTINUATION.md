@@ -1003,3 +1003,15 @@ This block supersedes older branch/CI statements above where they conflict.
 - Static route scan across Leave, Compliance, Recruitment, Performance, Training, Assets, Expenses, Reports, Roles, Settings and Notifications shows a mixture of explicit module permission routes and auth-only self-service routes. These modules are not security-cleared until each service method is traced for company/actor ownership.
 - Latest phase 3 docs commits: 5df85f2 (audit), 3c202a6 (gap register), 27f4074 (index), c8ce486 (tracker). Re-fetch actual branch head and CI before status claims.
 - Next: continue service-level and data-model audit for Performance, Training, Assets, Expenses, Compliance, Payroll, Reports, Settings and Notifications; then complete tenant/RLS, billing, file/import/export and operations audits. Cycle 01 plan remains not yet written or verified.
+
+
+## CYCLE 01 PHASE 4 UPDATE — 2026-11-27
+
+- Focused Performance/Training/Assets/Expense upload audit is recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-4.md at source SHA 8caa1cfaf153563a22269f6a3bca11fb60e5ef3b.
+- GAP-0025: Performance close-cycle, approve-goal and finalize-appraisal mutations do not consistently enforce company ownership.
+- GAP-0026: Training service operations accept companyId but several methods ignore it for deletion, nominations, attendance and feedback.
+- GAP-0027: Asset allocation does not validate employee company; return and by-employee lookup omit company scoping.
+- GAP-0028: Expense receipt upload uses unbounded Multer memory storage, has no content filter, and bypasses the available ClamAV scanner.
+- The above are source-level findings; no application fixes or live uploads were performed.
+- Latest phase 4 docs commits: d730105 (audit), dcc9ca1 (gap register), 54ab40e (index), de65788 (tracker). Re-fetch branch head/CI before making status claims.
+- Next audit targets: Payroll, Compliance, Notifications, Settings, Central tenancy/RLS, billing, company documents, CSV/XLSX, backup/restore and operations. Cycle 01 plan remains pending.
