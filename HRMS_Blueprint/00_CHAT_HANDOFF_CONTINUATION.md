@@ -1081,3 +1081,14 @@ This block supersedes older branch/CI statements above where they conflict.
 - Positive controls: employee bulk import is capped at 1,000 JSON rows and protects sensitive fields; CSV export query is company-scoped.
 - Latest Phase 10 docs commits: 8d94b2e (audit), 483331c (gap register), f4cd817 (index), 0780f9a (tracker). Re-fetch current branch head and CI before status claims.
 - Cycle 01 audit now has 10 phase documents and findings through GAP-0039. Remaining coverage includes final whole-repo inventory/reconciliation, full auth/employee/attendance route-service tracing, frontend browser/runtime verification, operational runbooks/deployment and consolidation of common root causes. Do not draft implementation tasks until the audit is complete.
+
+
+## CURRENT EXECUTION SNAPSHOT — 2026-11-27
+
+- Branch head at this snapshot: 15b178e1ab524dd6c7ca217c405b8ced56fa9060 on architecture/postgres-tenant-isolation.
+- Cycle 01 source audit has 10 phase reports (PHASE-1 through PHASE-10); master gap register currently lists GAP-0015 through GAP-0039 in addition to inherited GAP-0001 through GAP-0014.
+- The audit remains IN PROGRESS. Findings have not been implemented or closed. Some candidates (ESS route-tree invariant and undefined Razorpay webhook handler) still require runtime/boot reproduction; root-cause deduplication and independent prioritization are pending.
+- Latest exact-head checks at snapshot: Backend Tests run 46027335412 = in_progress; Tenant Migration PostgreSQL Integration run 46027335592 = in_progress. Do not claim latest-head checks passed until these complete.
+- Most recent preceding Backend Tests on 674483fd0e9bdc0eaf0ca093eaa9117d36c1fb40 passed (run 46027270700). Its Tenant Migration PostgreSQL Integration run 46027270452 was still in_progress at snapshot.
+- No application code was changed in this audit; commits are documentation-only. No production DB migration, deployment, real payment, destructive customer-data operation or credential change was performed.
+- Immediate next step: complete remaining source/test coverage and verify provisional P0/P1 findings with safe boot/browser/database harnesses; then consolidate duplicates/root causes, draft Cycle 01 plan and independently verify it before any code implementation.
