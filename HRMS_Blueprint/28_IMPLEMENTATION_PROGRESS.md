@@ -614,3 +614,13 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Commits: helper/config 6fd45c2b6cc1428aa1acf33aaa46ed951dbbd2f0; registration enforcement 7db722cbe54b888dff4f24e5c21a9823fef59eb8; config test 83a51e37d53d9a2cd2d2858cd5b745bae46410a2; signup regression test a78f656211ce71ed654e9a315d78344c4c928745; frozen decision d06e3f24878992f9c171e33cac6dcc4164df7f91.
 - Prior exact branch head e6f727440f7e2d81c9808472b7993bc38efc3d12 passed Backend Tests and Tenant Migration PostgreSQL Integration (runs 46019432334 and 46019432286). New commits require fresh CI verification.
 - No production database changes, migrations, deployments, or changes to main were performed.
+
+
+## 2026-11-27 P0 verification — Razorpay mock bypass audit correction
+
+- Re-inspected the current Razorpay `verifyPayment` handler. It rejects client-supplied truthy `mock` with HTTP 403 before checking the signature or mutating invoice/payment-order state. The old audit note claiming this bypass remained open was stale.
+- Normal verification checks the server-created payment-order ledger, verifies the Razorpay HMAC signature, fetches the gateway order/payment, and requires captured payment matching invoice amount/currency/order.
+- Added a regression assertion in `backend/test/razorpay-payment-verification.test.js` that the mock rejection precedes signature verification and invoice mutation.
+- Test commit: 2cf1b45cd2a3a5e6d7f59c5da2e2a321002b2471; audit correction commit: da41e250c1cfbc20e01c4075f0b1998a51171a1a.
+- This closes only the client-controlled mock flag issue; webhook, refund, replay and live-gateway end-to-end verification remain separate checks.
+- New test/docs commits require fresh CI verification. No production payment or database actions were performed.
