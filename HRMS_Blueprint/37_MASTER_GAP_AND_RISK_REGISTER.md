@@ -66,10 +66,12 @@ These are inherited from prior source-audit notes and must be rechecked against 
 | GAP-0033 | E | Company document upload/review UI endpoints are absent despite Central metadata tables | P1 | Open | CompanyDocumentsStep/AdminDocuments/adminApi vs platform/admin mounted routes; secure file workflow absent |
 | GAP-0034 | E | Notification settings frontend URL differs from mounted notification config route | P2 | Open | settingsApi/adminApi /settings/notifications vs server mount /config/notifications |
 | GAP-0035 | F | PostgreSQL backup dumps are gzip-compressed but not application-layer encrypted before cloud upload | P1 | Open | backupService.js pg_dump/gzip → Google Drive/OneDrive upload; design key management and restore/decrypt tests |
+| GAP-0036 | A | Employee bank/document update/delete service methods omit company ownership checks | P1 | Open | employees.service.js child-record lookups use only child ID + employee ID; cross-company tests |
+| GAP-0037 | E/F | Employee photos are stored under a public static /uploads directory with no read authorization | P1 | Open — Product Visibility Verify | employees.routes.js upload path + server.js express.static; private access or explicit public-avatar consent |
 
 ## Cycle 01 disposition
 - Phase 1–8 source audit evidence is recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-1.md through CYCLE-01-SOURCE-AUDIT-PHASE-8.md.
-- New source findings currently recorded: GAP-0015 through GAP-0035. All remain Open; GAP-0017 and GAP-0021 require runtime/boot reproduction. GAP-0020 is a source-confirmed unscoped WebSocket broadcast. GAP-0030 is a confirmed absence of operational HR-table RLS coverage in the inspected SQL migrations and test documentation.
+- New source findings currently recorded: GAP-0015 through GAP-0037. All remain Open; GAP-0017 and GAP-0021 require runtime/boot reproduction. GAP-0020 is a source-confirmed unscoped WebSocket broadcast. GAP-0030 is a confirmed absence of operational HR-table RLS coverage in the inspected SQL migrations and test documentation.
 - Existing inherited findings GAP-0001 through GAP-0014 remain open until each is revalidated and consolidated against current source.
 - Full audit: In Progress. Remaining work includes complete module/service ownership tracing, file and import/export pipeline, final Central lifecycle and billing review, complete table/FK inventory, frontend runtime/browser E2E, deployment and operations.
 - Duplicate/root-cause consolidation: Pending.
