@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const {STORAGE_TIERS,STORAGE_STATUSES,assertSchemaName,buildStorageDescriptor,deriveTenantSchemaName,validatePostgresUrl}=require('../shared/utils/tenantStorageConfig');
+const {STORAGE_TIERS,STORAGE_STATUSES,assertSchemaName,buildStorageDescriptor,deriveTenantSchemaName,validatePostgresUrl,customerDatabaseConnectionsEnabled}=require('../shared/utils/tenantStorageConfig');
 const tenantId='2c6b9b7a-8d52-4b2f-9d47-8c1e6b8b1a10';
 const pgUrl='postgresql://hrms:secret@db.example.test:5432/hrms';
 
@@ -63,4 +63,12 @@ test('customer-managed local and external PostgreSQL use a dedicated database ev
   });
   assert.equal(external.storageTier, STORAGE_TIERS.DEDICATED_DATABASE);
   assert.equal(external.schemaName, null);
+});
+
+
+test('customer-managed database connections are disabled unless explicitly enabled by deployment policy', () => {
+  assert.equal(customerDatabaseConnectionsEnabled({}), false);
+  assert.equal(customerDatabaseConnectionsEnabled({ CUSTOMER_DATABASE_CONNECTIONS_ENABLED: 'false' }), false);
+  assert.equal(customerDatabaseConnectionsEnabled({ CUSTOMER_DATABASE_CONNECTIONS_ENABLED: 'TRUE' }), false);
+  assert.equal(customerDatabaseConnectionsEnabled({ CUSTOMER_DATABASE_CONNECTIONS_ENABLED: 'true' }), true);
 });
