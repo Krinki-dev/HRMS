@@ -591,3 +591,15 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Verification status: GitHub combined status and PR-associated workflow lookup returned no checks for the exact test commit, so this increment is **not yet CI-verified**. No local runtime database migration was run. The new fields are groundwork only: registration does not yet acquire, renew, or release leases, and no retry endpoint/behavior is enabled. Do not apply the migration to production until backup, review, and the application implementation are ready.
 - Next: implement an atomic claim/reclaim operation using the lease token and expiry, reuse the existing Central tenant and admin index IDs only after strict identity/configuration matching, detect whether the operational seed transaction already committed, and activate only when the current lease token still owns the claim. Add concurrency and crash-window integration tests before enabling retry.
 - No production DB changes, deployments, or changes to `main` were performed.
+
+
+## 2026-11-27 P0 follow-up — initial signup lease ownership
+
+- Initial tenant registration now creates an opaque storage_lease_token, a 30-minute storage_lease_expires_at, and provisioning_attempts = 1 in the same Central insert that creates the inactive tenant and inactive admin index.
+- A seed failure may mark the tenant failed and clear lease metadata only when the failing request still owns the exact lease token.
+- Final activation now requires the same lease token, a still-live lease, storage_status = provisioning, and an inactive tenant. Tenant activation and admin-index activation remain in one Central transaction; unexpected affected-row counts abort the transaction.
+- Added regression assertions in backend/test/auth-provisioning-readiness.test.js for lease creation, token-guarded failure, and token/expiry-guarded activation.
+- Code commits: initial lease-guard implementation 8aebab5bc4e8eb6b6e466064fea058adf5380d66; regression tests 43ca254d928d2e75aabb5473a0d57d29a7695735.
+- CI status before this increment: exact previous branch head 0d8c0e3966002fe555af9648d718a526b28bf580 passed Backend Tests (run 45753835869) and Tenant Migration PostgreSQL Integration (run 45753835839). The new source/test commits require fresh CI verification.
+- Important limitation: this is initial-registration lease ownership, not self-service retry/recovery. No public retry endpoint is enabled. Expired/failed records still need an ownership-proof design and idempotent seed detection before retry can be safe. The Central migration 20261126_tenant_provisioning_leases.sql must be applied to the Central DB before deploying this code; it has not been run.
+- No production DB changes, deployments, or changes to main were performed.
