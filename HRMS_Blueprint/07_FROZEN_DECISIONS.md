@@ -17,6 +17,7 @@ The decisions below supersede contradictory older lines later in this document a
 - Free and Trial customers share the tenant operational public schema.
 - Every Paid customer receives an individually isolated schema derived from immutable Central tenants.id; optional Enterprise dedicated PostgreSQL database/instance requires separate approval.
 - Client-hosted/offline PostgreSQL remains a product requirement.
+- Public signup for customer-managed `local` / `external_cloud` PostgreSQL is disabled by default until the server deployment has a verified outbound network policy blocking loopback, link-local, cloud metadata and unauthorized private infrastructure destinations. Enable only with `CUSTOMER_DATABASE_CONNECTIONS_ENABLED=true` after infrastructure verification; URL syntax checks or one-time DNS resolution are not sufficient SSRF protection.
 - Central tenants.id and operational companies.id are different UUIDs. Application context and JWTs must carry tenantId and companyId separately.
 - The existing tenant Prisma migration directory declares MSSQL and must NOT be run against PostgreSQL. Build a new reviewed PostgreSQL baseline first.
 
