@@ -102,3 +102,12 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - Tenant migration inventory remains intentionally inventory-only (`copyAllowed: false`); this is a safety gate, not a verified data-copy/cutover capability.
 - GAP-0020 and GAP-0021 were re-fetched and remain open; runtime reproductions are still pending.
 - No app code, test, DB, migration, deployment, payment or customer-data operation was performed. Do not start implementation before full audit and independent plan verification.
+
+
+## Cycle 01 Phase 14 — tenant routing / customer DB security review
+
+- Evidence: HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-14.md.
+- **GAP-0042 (P1 security review):** `customerDatabaseConnectionsEnabled` is defined/exported, but the inspected tenant storage resolver does not enforce it directly before accepting `external_cloud` / `local` routing. The helper's own comment identifies customer-supplied hosts as an SSRF boundary requiring verified outbound network policy.
+- Exploitability is NOT established: DB configuration write permissions, flag state, provisioning paths and deployment egress policy still require inspection. Do not describe this as a confirmed exploitable SSRF vulnerability.
+- Source confirms auth tenant-context matching and transaction-scoped central RLS helper patterns; runtime tests remain unexecuted. GAP-0031 CI skip concern remains.
+- Keep customer-managed DB modes disabled until application gate and outbound network controls are verified.
