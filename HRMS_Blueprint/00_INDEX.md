@@ -31,7 +31,7 @@ Never paste everything at once — keep context focused.
 ## 📂 DOCUMENT MAP
 
 ### Continuous improvement cycle
-- HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-1.md — routing, CI and initial security audit.\n- HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-2.md — WebSocket tenant broadcast and payment webhook route wiring audit.\n- HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-3.md — Leave and recruitment service-level access control audit.\n- HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-4.md — Performance, Training, Assets and file-upload security audit.\n- HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-5.md — Payroll controller/service contracts and Compliance ownership audit.
+- HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-1.md — routing, CI and initial security audit.\n- HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-2.md — WebSocket tenant broadcast and payment webhook route wiring audit.\n- HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-3.md — Leave and recruitment service-level access control audit.\n- HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-4.md — Performance, Training, Assets and file-upload security audit.\n- HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-5.md — Payroll controller/service contracts and Compliance ownership audit.\n- HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-6.md — Operational PostgreSQL RLS and database-role verification audit.
 - HRMS_Blueprint/36_MASTER_MODULE_COMPLETION_TRACKER.md — module-by-module evidence tracker.
 - HRMS_Blueprint/37_MASTER_GAP_AND_RISK_REGISTER.md — consolidated risk and gap ledger.
 
