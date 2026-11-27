@@ -881,3 +881,12 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Latest test-source commit: `14867ea8bc01d6771d788bf1d98702a972f47efc` (initial test commit `4133d6c6f5e83b7e831a3e5f5202884bf8e49c43`). No CI checks were visible for this commit at handoff; do not mark verified. No DB migration was run.
 - Critical: lease fields are groundwork only. Registration does not yet use them. Next implement token-guarded atomic lease claim/reclaim, strict matching of existing tenant/admin identity and DB configuration, detection of already-committed operational seed, token-guarded final activation, and concurrency/crash-window tests. Keep production migration blocked until implementation and verification are complete.
 - Continue only on `architecture/postgres-tenant-isolation`; do not modify `main`.
+
+
+## Latest continuation handoff — 2026-11-27
+
+- Branch head before this increment was 0d8c0e3966002fe555af9648d718a526b28bf580; Backend Tests and Tenant Migration PostgreSQL Integration both passed at that exact head (runs 45753835869 and 45753835839).
+- Initial registration now owns a 30-minute provisioning lease; seed failure and final activation are guarded by the exact lease token. Admin-index activation is checked in the same Central transaction as tenant activation.
+- Implementation commit: 8aebab5bc4e8eb6b6e466064fea058adf5380d66; regression tests commit: 43ca254d928d2e75aabb5473a0d57d29a7695735.
+- CI must be rechecked for the latest test/docs commit before claiming this increment passes. The migration is still unapplied. No production database or main changes.
+- Remaining: design a safe ownership-proof flow for retry; claim expired/failed tenant atomically; reuse exact Central IDs only after matching tenant/admin identity and DB configuration; detect already committed operational seed and reuse it without changing passwords; add crash/concurrency integration tests. Do not expose retry to unauthenticated public callers until email ownership is proven.
