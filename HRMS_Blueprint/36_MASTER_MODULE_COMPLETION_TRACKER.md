@@ -2,7 +2,7 @@
 
 > Governed by `35_MASTER_PROJECT_EXECUTION_AND_CONTINUITY_PLAN.md`.  
 > **Important:** This is an audit ledger, not a claim of completion. Rows begin as **Not Assessed** until checked against current source and evidence.  
-> Last updated: 2026-11-27 | Initial full audit: Pending.
+> Last updated: 2026-11-27 | Cycle 01 Phase 1 audit: In Progress | Initial full audit: Pending.
 
 ## Status definitions
 Use only: Not Assessed, Not Started, In Progress, Implemented — Unverified, Automated Tests Passed, Integration Verified, E2E Verified, Production Ready, Blocked, Not Applicable. Record evidence and exact commit SHA for every verified status.
@@ -18,6 +18,19 @@ Use only: Not Assessed, Not Started, In Progress, Implemented — Unverified, Au
 - **INT:** PostgreSQL/integration tests
 - **E2E:** Complete browser workflows
 - **OPS:** Observability/failure/recovery/deployment
+
+## Cycle 01 audit activity — partial, not completion evidence
+
+Source SHA: 6625b93733e726140c44ff633cef351abd3d4d9d.
+Detailed evidence: HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-1.md.
+
+Partially inspected in Phase 1:
+- HR tenant-domain frontend route components and sidebar.
+- Backend server route mounts and attendance route/controller/service authorization path.
+- Auth/tenant middleware, explicit tenant/company identity helper, Central RLS helper.
+- Tenant storage resolver, legacy migration lock, backup dump path and selected tests/CI workflows.
+
+No module dimension has been promoted to a verified completion status. The table below remains Not Assessed where a complete route → controller → service → data model → tests → browser workflow audit has not been completed. This avoids presenting partial source reading as module completion.
 
 ## Module register
 
