@@ -1031,3 +1031,13 @@ This block supersedes older branch/CI statements above where they conflict.
 - Correction to the earlier Phase 1 statement: .github/workflows/frontend-build.yml exists. It runs npm ci and npm run build in frontend on frontend/** changes to main or architecture/postgres-tenant-isolation. The earlier audit scan missed this workflow.
 - Correct current CI finding: frontend production build is covered by its own path-triggered workflow; browser-based E2E is not present. The Backend Tests workflow still does not configure the optional RLS/auth/payroll/compliance PostgreSQL test URLs, so those tests skip there.
 - Phase 1 report, GAP-0019 and tracker wording were corrected in commits 014e9d7, 3a52be1 and 53a054a. The correction supersedes earlier wording.
+
+
+## CYCLE 01 PHASE 6 UPDATE — 2026-11-27
+
+- PostgreSQL RLS/table-isolation audit is recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-6.md at source SHA 8b99f8a40311d81f5e200700562effb06ced0255.
+- GAP-0030 (P0): inspected SQL RLS migrations cover Central/platform tables, not operational HR tables. backend/test/README.md explicitly says payroll integration uses company_id as the only isolation boundary and has no per-company RLS. Shared public operational schema remains a hard release gate until table coverage and a non-owner runtime DB role are verified.
+- GAP-0031 (P1): standard backend CI does not set the RLS/auth/payroll/compliance integration DB URLs; those tests skip. The separate PostgreSQL workflow runs only the synthetic tenant migration inventory classifier.
+- Positive correction retained: frontend-build.yml exists and runs npm ci + npm run build on frontend changes; browser E2E remains absent.
+- Latest Phase 6 docs commits: e01fd66 (audit), 5153cd4 (gap register), d13cf81 (index), 25909a5 (tracker). Re-fetch exact branch head and CI before status claims.
+- No production DB migration, DB-role change or deployment was performed. Continue audit of Central tenant lifecycle/billing, document workflow, import/export, backups and deployment before writing Cycle 01 plan.
