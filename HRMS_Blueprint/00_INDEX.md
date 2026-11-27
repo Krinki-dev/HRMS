@@ -109,7 +109,7 @@ Never paste everything at once — keep context focused.
 | How data flows | 05_DATA_FLOW.md |
 | What a module does | 06_MODULES.md |
 | All final decisions | 07_FROZEN_DECISIONS.md |
-| Current architecture status & blockers | 33_MASTER_CODEBASE_ARCHITECTURE_AUDIT.md |
+| Master process / new chat recovery | 35_MASTER_PROJECT_EXECUTION_AND_CONTINUITY_PLAN.md |\n| Module-wise completion and evidence | 36_MASTER_MODULE_COMPLETION_TRACKER.md |\n| Open gaps and risks | 37_MASTER_GAP_AND_RISK_REGISTER.md |\n| Current architecture status & blockers | 33_MASTER_CODEBASE_ARCHITECTURE_AUDIT.md |
 | Owner decisions still required | 34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md |
 | Paid tenant migration inventory and safety gates | PAID_TENANT_MIGRATION_INVENTORY.md |
 | Latest implementation/CI progress | 28_IMPLEMENTATION_PROGRESS.md |
