@@ -83,3 +83,14 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - Independent plan verification: Pending.
 - No application implementation may begin until the audit is complete and the plan passes independent verification.
 - Do not close inherited findings until revalidated with current evidence.
+
+
+## Cycle 01 Phase 12 exact-head revalidation — 2026-11-27
+
+- Evidence: HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-12.md; inspected source SHA cd400a602eb255029c1daeeae1d35f0c7b7ee948.
+- GAP-0020: revalidated source-confirmed P0 — WebSocket company broadcast ignores companyId and sends to every registered socket; server tickets carry userId only. Runtime Company A/B negative test pending.
+- GAP-0021: revalidated source-confirmed P0 candidate — subscription router references paymentController.handleWebhook, which is not defined/exported; server directly requires this router. Isolated boot reproduction pending.
+- GAP-0031: revalidated source-confirmed P1 — backend CI omits environment variables for RLS/auth/payroll/compliance PostgreSQL suites that auto-skip; migration CI runs only migration-inventory integration.
+- GAP-0022, GAP-0029 and GAP-0040 were also rechecked against current route/controller/service source and remain open.
+- Do not close any item based on source inspection alone where runtime/integration acceptance tests are required. Do not start implementation before full audit and independent plan verification.
+- Exact-head GitHub Actions runs were not returned; two external Railway statuses were successful but are not test evidence.
