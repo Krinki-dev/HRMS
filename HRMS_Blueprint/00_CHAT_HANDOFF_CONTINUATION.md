@@ -890,3 +890,14 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Implementation commit: 8aebab5bc4e8eb6b6e466064fea058adf5380d66; regression tests commit: 43ca254d928d2e75aabb5473a0d57d29a7695735.
 - CI must be rechecked for the latest test/docs commit before claiming this increment passes. The migration is still unapplied. No production database or main changes.
 - Remaining: design a safe ownership-proof flow for retry; claim expired/failed tenant atomically; reuse exact Central IDs only after matching tenant/admin identity and DB configuration; detect already committed operational seed and reuse it without changing passwords; add crash/concurrency integration tests. Do not expose retry to unauthenticated public callers until email ownership is proven.
+
+
+## Latest continuation handoff — 2026-11-27 (security gate + payment regression)
+
+- Latest branch head at start of this increment was e6f727440f7e2d81c9808472b7993bc38efc3d12; both Backend Tests and Tenant Migration PostgreSQL Integration passed at that exact head.
+- Customer-managed PostgreSQL registration (local/external_cloud) is now disabled by default. It returns CUSTOMER_DATABASE_CONNECTIONS_DISABLED unless CUSTOMER_DATABASE_CONNECTIONS_ENABLED=true. Do not enable until outbound network policy is independently verified; application flag alone does not prevent SSRF/DNS rebinding. Managed-cloud signup remains enabled.
+- Added tests for strict opt-in and public signup gate. Commits: 6fd45c2b6cc1428aa1acf33aaa46ed951dbbd2f0, 7db722cbe54b888dff4f24e5c21a9823fef59eb8, 83a51e37d53d9a2cd2d2858cd5b745bae46410a2, a78f656211ce71ed654e9a315d78344c4c928745.
+- Re-verified current Razorpay verifyPayment rejects client mock mode before signature verification or ledger mutation; added a regression test and corrected the stale P0 audit note. Commits: 2cf1b45cd2a3a5e6d7f59c5da2e2a321002b2471, da41e250c1cfbc20e01c4075f0b1998a51171a1a.
+- Progress docs commit 013dbaf25277056dccdf74ae99bfd2c91fe33a10; backup guide commit 5844f08a5f4edf1319550ef0d4a9105ae05713df; final audit/progress docs commit 284617476dac0c3482d7de8f149ebeab41e61781.
+- CI was green through commit 013dbaf25277056dccdf74ae99bfd2c91fe33a10 (Backend Tests run 46019981940; PostgreSQL integration run 46019981623). Latest payment test/docs commits have runs pending; recheck before claiming final green.
+- No production DB migrations, deployment, live payment actions or changes to main.
