@@ -634,3 +634,13 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - **Implementation commits:** code 1eddcec53390bd14ed92f2d6fc749f4bafc89403; regression test 6d5b7ca9e473ca0045d4fa8bc75755c83e9b2c9e.
 - **Verification:** source-level regression test added; GitHub Actions for the exact resulting head must complete before this is considered CI-verified. No live database or login flow was exercised.
 - **Safety:** no migration, production DB change, deployment, payment, or change to main.
+
+
+## 2026-11-27 — Cycle 01 Phase 12 exact-head revalidation
+
+- Added HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-12.md.
+- Inspected branch source at cd400a602eb255029c1daeeae1d35f0c7b7ee948; exact file blob SHAs and findings are recorded in the phase report.
+- Reconfirmed GAP-0020 (company WebSocket broadcasts reach every socket), GAP-0021 (Razorpay route references a missing handler), GAP-0031 (PostgreSQL integration suites can auto-skip in CI), GAP-0022 (company-wide leave list lacks leave.view gate), GAP-0029 (payroll controller omits req.db for three service calls), and GAP-0040 (attendance check-in argument mismatch).
+- No application source changed. No test, boot, browser, database or live payment operation was run.
+- Combined status at inspected SHA contained two successful external Railway contexts; GitHub Actions workflow lookup returned no runs for that SHA. Do not report these external statuses as test passes.
+- Audit remains incomplete; root-cause consolidation, full module/data/RLS matrix, runtime harnesses, Cycle 01 plan and independent verification remain pending.
