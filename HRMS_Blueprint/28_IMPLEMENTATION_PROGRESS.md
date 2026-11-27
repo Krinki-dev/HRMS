@@ -603,3 +603,14 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - CI status before this increment: exact previous branch head 0d8c0e3966002fe555af9648d718a526b28bf580 passed Backend Tests (run 45753835869) and Tenant Migration PostgreSQL Integration (run 45753835839). The new source/test commits require fresh CI verification.
 - Important limitation: this is initial-registration lease ownership, not self-service retry/recovery. No public retry endpoint is enabled. Expired/failed records still need an ownership-proof design and idempotent seed detection before retry can be safe. The Central migration 20261126_tenant_provisioning_leases.sql must be applied to the Central DB before deploying this code; it has not been run.
 - No production DB changes, deployments, or changes to main were performed.
+
+
+## 2026-11-27 P0 security increment — customer-managed DB egress gate
+
+- Public tenant registration now rejects customer-supplied local/external PostgreSQL targets by default with HTTP 503 and code CUSTOMER_DATABASE_CONNECTIONS_DISABLED. Managed-cloud registration remains available.
+- Added a strict opt-in helper: CUSTOMER_DATABASE_CONNECTIONS_ENABLED must equal the literal string true. Deployment documentation states this flag may be enabled only after an outbound network policy is verified to block loopback, link-local, cloud metadata and unauthorized private infrastructure destinations.
+- This is a fail-closed application gate, not an SSRF network defense by itself. Do not enable the flag merely because the database URL is PostgreSQL or DNS resolves; DNS rebinding/TOCTOU still requires network-level egress enforcement.
+- Added unit coverage for default-disabled/strict-opt-in behavior and a source regression test for the signup gate.
+- Commits: helper/config 6fd45c2b6cc1428aa1acf33aaa46ed951dbbd2f0; registration enforcement 7db722cbe54b888dff4f24e5c21a9823fef59eb8; config test 83a51e37d53d9a2cd2d2858cd5b745bae46410a2; signup regression test a78f656211ce71ed654e9a315d78344c4c928745; frozen decision d06e3f24878992f9c171e33cac6dcc4164df7f91.
+- Prior exact branch head e6f727440f7e2d81c9808472b7993bc38efc3d12 passed Backend Tests and Tenant Migration PostgreSQL Integration (runs 46019432334 and 46019432286). New commits require fresh CI verification.
+- No production database changes, migrations, deployments, or changes to main were performed.
