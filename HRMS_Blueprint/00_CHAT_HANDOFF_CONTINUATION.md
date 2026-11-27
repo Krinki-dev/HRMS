@@ -1071,3 +1071,13 @@ This block supersedes older branch/CI statements above where they conflict.
 - GAP-0037: Employee photos are written under backend/uploads/employees and saved as /uploads/...; server.js serves the entire uploads directory through unauthenticated express.static before tenant/auth middleware. The upload is size/MIME restricted, but reads are public. Product owner must confirm whether this is intentional; default recommendation is private access.
 - Latest Phase 9 docs commits: aee3d2c (audit), fa1d7cc (gap register), 9150241 (index), 61aadb9 (tracker). Verify current head/CI before future status claims.
 - Continue audit with remaining core route/service contracts, import/export, and final deployment/operations. The module tracker remains Not Assessed until full evidence is available.
+
+
+## CYCLE 01 PHASE 10 UPDATE — 2026-11-27
+
+- Import/export audit is recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-10.md at source SHA 60c8c37f5603220897a94ae40b1a1b9ba3d1289b.
+- GAP-0038: Employee route currently accepts JSON rows and provides CSV template/export. Relational employee XLSX schema and validation contract exist, but shared/import-export/workbookSchema.js only validates in-memory sheet data; no actual XLSX parser/writer, preview, transactional import or round-trip export is wired.
+- GAP-0039: Employee CSV export quotes values but does not neutralize formula-leading/control characters. Apply spreadsheet-safe serialization to untrusted fields and test it.
+- Positive controls: employee bulk import is capped at 1,000 JSON rows and protects sensitive fields; CSV export query is company-scoped.
+- Latest Phase 10 docs commits: 8d94b2e (audit), 483331c (gap register), f4cd817 (index), 0780f9a (tracker). Re-fetch current branch head and CI before status claims.
+- Cycle 01 audit now has 10 phase documents and findings through GAP-0039. Remaining coverage includes final whole-repo inventory/reconciliation, full auth/employee/attendance route-service tracing, frontend browser/runtime verification, operational runbooks/deployment and consolidation of common root causes. Do not draft implementation tasks until the audit is complete.
