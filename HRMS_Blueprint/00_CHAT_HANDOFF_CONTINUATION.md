@@ -1126,3 +1126,13 @@ This block supersedes older branch/CI statements above where they conflict.
 - GAP-0020 WebSocket broadcast and GAP-0021 missing Razorpay handler remain source-confirmed/open; runtime verification not performed.
 - No tests, server boot, browser, database, migrations, payments, deployments or customer-data operations were performed. main untouched; application source unchanged.
 - Next: continue full operational schema/FK/index/RLS matrix; inspect migration inventory tests and lifecycle callers; then frontend/API and backup/restore audit. Cycle 01 plan only after complete audit; independently verify before implementation.
+
+
+## CURRENT HANDOFF — Cycle 01 Phase 14 (2026-11-27)
+
+- Working branch: architecture/postgres-tenant-isolation. Never modify main.
+- New audit record: HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-14.md (creation commit 154594e60f3fdc1bdbd94eb6c16676d7a0f8651c).
+- Phase 14 recorded GAP-0042 (P1 security review): customer DB connection enablement helper exists but is not directly enforced in inspected tenant storage resolver; SSRF exploitability remains unproven until DB-config write permissions, provisioning paths, flag state and outbound network policy are checked.
+- Positive controls noted: auth tenant-context match, fail-closed storage resolver, UUID-derived schema names and transaction-scoped central RLS helpers. Runtime DB tests were not executed; CI skip concern GAP-0031 remains.
+- No application source, tests, server, browser, DB, customer network, payment or deployment was changed/exercised. main untouched.
+- Next session: trace DB-config write routes and provisioning lifecycle; verify feature flag + egress policy; continue schema/FK/index/RLS and frontend/ops audits. Only after audit complete draft and independently verify Cycle 01 plan.
