@@ -71,9 +71,11 @@ These are inherited from prior source-audit notes and must be rechecked against 
 | GAP-0038 | F | Relational XLSX schema/validator is not wired to actual workbook import/export; current employee pipeline is JSON bulk import + CSV | P2 | Open | No XLSX parser/writer or transactional reusable import/export route; add end-to-end roundtrip tests |
 | GAP-0039 | F | Employee CSV export quotes fields but does not neutralize spreadsheet formula injection | P1 | Open | downloadExportCsv escapeCsv helper; formula-leading/control-character export tests |
 
+| GAP-0040 | A | Attendance check-in controller passes companyId in the service's data argument position, so request geolocation/IP metadata is silently ignored | P2 | Open | Align controller/service signature and test request metadata propagation plus self-service ownership |
+
 ## Cycle 01 disposition
-- Phase 1–10 source audit evidence is recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-1.md through CYCLE-01-SOURCE-AUDIT-PHASE-10.md.
-- New source findings currently recorded: GAP-0015 through GAP-0039. All remain Open; GAP-0017 and GAP-0021 require runtime/boot reproduction. GAP-0020 is a source-confirmed unscoped WebSocket broadcast. GAP-0030 is a confirmed absence of operational HR-table RLS coverage in the inspected SQL migrations and test documentation.
+- Phase 1–11 source audit evidence is recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-1.md through CYCLE-01-SOURCE-AUDIT-PHASE-11.md.
+- New source findings currently recorded: GAP-0015 through GAP-0040. All remain Open; GAP-0017 and GAP-0021 require runtime/boot reproduction. GAP-0020 is a source-confirmed unscoped WebSocket broadcast. GAP-0030 is a confirmed absence of operational HR-table RLS coverage in the inspected SQL migrations and test documentation.
 - Existing inherited findings GAP-0001 through GAP-0014 remain open until each is revalidated and consolidated against current source.
 - Full audit: In Progress. Remaining work includes finishing route → controller → service → model → tests tracing for every module, full operational table/FK and RLS matrix, runtime reproduction/boot verification of provisional findings, frontend route/browser/E2E tests, deployment and operations runbooks, and final evidence reconciliation.
 - Duplicate/root-cause consolidation: Pending.
