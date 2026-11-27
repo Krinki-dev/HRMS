@@ -1,7 +1,7 @@
 # PostgreSQL Tenant Isolation — Implementation Progress
 
 **Branch:** `architecture/postgres-tenant-isolation`  
-**Updated:** 2026-11-24
+**Updated:** 2026-11-27
 
 ## Implemented in source (runtime validation pending)
 
@@ -624,3 +624,13 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Test commit: 2cf1b45cd2a3a5e6d7f59c5da2e2a321002b2471; audit correction commit: da41e250c1cfbc20e01c4075f0b1998a51171a1a.
 - This closes only the client-controlled mock flag issue; webhook, refund, replay and live-gateway end-to-end verification remain separate checks.
 - New test/docs commits require fresh CI verification. No production payment or database actions were performed.
+
+
+## 2026-11-27 — Auth tenant metadata readiness guard
+
+- **Why:** The central authentication lookup already rejects inactive, non-ready and deleted tenants, but authService.getTenantInfo() independently fetched tenant metadata using only the tenant UUID and deleted_at IS NULL. That weaker predicate could expose stale plan/setup metadata if the helper is called from another flow or lifecycle state changes between lookups.
+- **What changed:** backend/modules/auth/auth.service.js now requires is_active = true and storage_status = 'ready' in the metadata query, in addition to the existing UUID and non-deleted checks.
+- **Regression coverage:** backend/test/auth-provisioning-readiness.test.js asserts the metadata query enforces all three lifecycle conditions.
+- **Implementation commits:** code 1eddcec53390bd14ed92f2d6fc749f4bafc89403; regression test 6d5b7ca9e473ca0045d4fa8bc75755c83e9b2c9e.
+- **Verification:** source-level regression test added; GitHub Actions for the exact resulting head must complete before this is considered CI-verified. No live database or login flow was exercised.
+- **Safety:** no migration, production DB change, deployment, payment, or change to main.
