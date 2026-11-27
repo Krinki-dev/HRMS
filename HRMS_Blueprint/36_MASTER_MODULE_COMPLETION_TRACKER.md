@@ -32,6 +32,13 @@ Partially inspected in Phase 1:
 
 No module dimension has been promoted to a verified completion status. The table below remains Not Assessed where a complete route → controller → service → data model → tests → browser workflow audit has not been completed. This avoids presenting partial source reading as module completion.
 
+## Cycle 01 Phase 11 audit activity — partial, not completion evidence
+
+- Auth identity trace: token signers, tenant identity normalization, auth middleware, tenant middleware and existing identity tests inspected. Existing source controls separate operational companyId from Central tenantId; end-to-end login/refresh/company-selection runtime coverage remains pending.
+- Attendance contract: controller calls checkIn(db, employeeId, companyId, body), while service declares checkIn(db, employeeId, data). Request geolocation/IP data therefore lands in the wrong argument and is not persisted. Recorded as GAP-0040 (P2).
+- Source evidence and blob SHAs: HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-11.md.
+- No application code changed; no tests/runtime/database/browser verification performed.
+
 ## Module register
 
 | ID | Stream | Module / capability | REQ | FE | BE | DB | SEC | IO | TEST | INT | E2E | OPS | Evidence / gaps / next task |
