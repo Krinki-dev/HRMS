@@ -1015,3 +1015,12 @@ This block supersedes older branch/CI statements above where they conflict.
 - The above are source-level findings; no application fixes or live uploads were performed.
 - Latest phase 4 docs commits: d730105 (audit), dcc9ca1 (gap register), 54ab40e (index), de65788 (tracker). Re-fetch branch head/CI before making status claims.
 - Next audit targets: Payroll, Compliance, Notifications, Settings, Central tenancy/RLS, billing, company documents, CSV/XLSX, backup/restore and operations. Cycle 01 plan remains pending.
+
+
+## CYCLE 01 PHASE 5 UPDATE — 2026-11-27
+
+- Payroll/Compliance source audit is recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-5.md at source SHA e008b95f718a17458152428535bde74ae5cd2d84.
+- GAP-0029: Payroll controller calls for getPayslip, updatePayslip and removeBonus omit req.db and do not match the service signatures; those endpoints are expected to fail. Correcting signatures must also enforce company/run/bonus ownership.
+- Positive observations: payroll run processing/locking/publishing/deletion generally verify companyId; self-service payslips bind to req.user.employeeId and published state; Compliance administrative routes are permission-gated and TDS declarations bind to the authenticated employee.
+- Latest Phase 5 docs commits: bce71fa (audit), e624b73 (gap register), 07c9173 (index), 75fb869 (tracker). Verify actual branch head/CI before status claims.
+- Next: complete Settings/Notifications/Reports service checks; inspect full Central tenant lifecycle, billing webhook, RLS policies and table ownership, file/document storage, import/export, backup/restore and deployment operations. No Cycle 01 implementation plan yet.
