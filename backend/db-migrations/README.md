@@ -97,4 +97,6 @@ The current endpoint records only a read-only source inventory and blocker snaps
 
 ## Tenant provisioning recovery lease metadata
 
-Apply `20261126_tenant_provisioning_leases.sql` to the **Central / Platform PostgreSQL database only** after a verified backup. The migration adds an opaque lease token, lease expiry, and a non-negative provisioning-attempt counter to `public.tenants`. It is additive and safe to re-run. It does not itself retry or activate a tenant; application retry logic must still verify tenant ownership, stored database target, operational seed state, and the current lease token before changing lifecycle state. Do not run this migration against a tenant operational database.
+Apply `20261126_tenant_provisioning_leases.sql` to the **Central / Platform PostgreSQL database only** after a verified backup. The migration adds an opaque lease token, lease expiry, and a non-negative provisioning-attempt counter to `public.tenants`. It is additive and safe to re-run. Do not run this migration against a tenant operational database.
+
+Initial signup now creates a 30-minute lease and guards both failed-state recording and final tenant/admin-index activation with the exact lease token. The application expects these columns to exist before this code is deployed. The current implementation does **not** yet retry or reclaim expired/failed registrations. A future recovery path must verify ownership, compare the stored database target, detect an already-committed operational seed, and claim atomically before resuming.
