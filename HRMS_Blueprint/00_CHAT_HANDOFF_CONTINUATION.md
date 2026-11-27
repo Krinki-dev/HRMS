@@ -933,3 +933,28 @@ The user has explicitly adopted a full-product, document-driven continuous impro
 - Master plan commit: `93ca847d95e3f74e681795ceb22d69f123c9f413`.
 - Pre-documentation code head: `005d34d3d060e66d73ab12163866a0111d9e277b`. Pre-documentation CI runs #46020780777 and #46020780783 passed on that SHA only. Re-check after documentation commit/current head.
 - `main` remains untouched. Production migrations/deployment, live payments and destructive/customer-data actions remain approval-gated.
+
+
+## DOCUMENT-DRIVEN CONTINUITY SETUP — 2026-11-27
+
+The project now has these governance records on the working branch:
+- `HRMS_Blueprint/35_MASTER_PROJECT_EXECUTION_AND_CONTINUITY_PLAN.md` — mandatory full-product cycle and new-chat recovery protocol.
+- `HRMS_Blueprint/36_MASTER_MODULE_COMPLETION_TRACKER.md` — complete module/dimension tracker; all dimensions intentionally start Not Assessed pending fresh audit.
+- `HRMS_Blueprint/37_MASTER_GAP_AND_RISK_REGISTER.md` — initial inherited risks to revalidate; not automatically confirmed current.
+- `HRMS_Blueprint/00_INDEX.md` — updated navigation.
+
+Documentation commits created in this session:
+- Master plan: `93ca847d95e3f74e681795ceb22d69f123c9f413`
+- Handoff update: `2fbccd2d77ae2cca7222a5047d82eb4216ca535e`
+- Initial module tracker: `bd988fbdfe446d6cd64f5d2e69c0e06af7352d8d`
+- Initial gap register: `81c367894b5c1f1716d01d3cd15ef484afb0acf9`
+- Index update: `c9b8b2cfd967a984c523cc9b93c38744834f3110`
+
+Latest CI runs were triggered for these documentation commits and were still in progress at handoff time:
+- Backend Tests run `46023109646` for tracker commit `bd988f...`
+- Backend Tests run `46023115991` for gap register commit `81c367...`
+- Tenant Migration Integration run `46023109809` for tracker commit `bd988f...`
+- Tenant Migration Integration run `46023116077` for gap register commit `81c367...`
+Do not report these as passed until their final conclusions are fetched. Also check CI for latest index/handoff head.
+
+**Next exact action:** start Cycle 01 fresh full source inventory and module audit under Section 13 of the master plan. Do not implement feature changes until Cycle 01 plan is complete and plan verification passes. No production operations are authorized.
