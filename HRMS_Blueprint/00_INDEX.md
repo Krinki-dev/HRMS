@@ -7,10 +7,10 @@
 ## CURRENT AUTHORITY — 2026-11-25
 
 Read these documents before making architecture or code changes:
-1. 00_CHAT_HANDOFF_CONTINUATION.md — latest handoff, user-approved constraints and immediate continuation.
-2. 33_MASTER_CODEBASE_ARCHITECTURE_AUDIT.md — source-verified architecture, findings, blockers and implementation sequence.
-3. 34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md — only the product/business choices that still need owner input.
-4. 07_FROZEN_DECISIONS.md — frozen decisions, with its new override section taking precedence over legacy contradictions.
+1. 35_MASTER_PROJECT_EXECUTION_AND_CONTINUITY_PLAN.md — mandatory master process, full-project audit, plan verification, implementation cycle and new-chat recovery protocol.\n2. 00_CHAT_HANDOFF_CONTINUATION.md — latest handoff, user-approved constraints and immediate continuation.
+3. 33_MASTER_CODEBASE_ARCHITECTURE_AUDIT.md — source-verified architecture, findings, blockers and implementation sequence.
+4. 34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md — only the product/business choices that still need owner input.
+5. 07_FROZEN_DECISIONS.md — frozen decisions, with its new override section taking precedence over legacy contradictions.
 
 The June 2026 module status percentages and "production-ready" labels below are historical snapshots, not release evidence. The old 08_STATUS_AND_CHANGELOG.md reference is unresolved; use 33_MASTER_CODEBASE_ARCHITECTURE_AUDIT.md and 32_PRODUCTION_READINESS_AND_MODULE_EXECUTION_PLAN.md for current status.
 
@@ -18,7 +18,7 @@ The June 2026 module status percentages and "production-ready" labels below are 
 
 ```
 Starting any new AI chat:
-  ALWAYS read → 00_CHAT_HANDOFF_CONTINUATION.md
+  ALWAYS read → 35_MASTER_PROJECT_EXECUTION_AND_CONTINUITY_PLAN.md\n  ALWAYS read → 00_CHAT_HANDOFF_CONTINUATION.md
   ALWAYS read → 33_MASTER_CODEBASE_ARCHITECTURE_AUDIT.md
   ALWAYS read → 34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md (for unresolved owner choices)
   ALSO read   → 07_FROZEN_DECISIONS.md and the relevant flow doc
