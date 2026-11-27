@@ -981,3 +981,14 @@ This block supersedes older branch/CI statements above where they conflict.
 - Latest docs commits after audit report: d327c6b (audit report), 228091f (gap register), 1341006 (tracker activity), 5c3b006 (index). Re-fetch actual branch head and CI before next work; these are documentation commits only.
 - Immediate next task: continue the full Cycle 01 route → controller → service → Prisma → tests audit for every module, plus Central provisioning/billing, RLS/table ownership, imports/files, backup/restore and operations. Only after that draft and independently verify CYCLE-01-PLAN.md. Do not start application implementation before plan verification.
 - No production migrations, deployment, real payments, destructive customer-data changes or credential changes were performed.
+
+
+## CYCLE 01 PHASE 2 UPDATE — 2026-11-27
+
+- Focused source audit Phase 2 is recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-2.md at source SHA 341704d3192d6d8ddd4391bad9b8a2967b75672e.
+- GAP-0020 (P0 candidate): notifications.service.js pushToCompany(companyId, payload) ignores companyId and broadcasts to every registered WebSocket connection. server.js registers sockets with userId only. This creates a cross-company notification disclosure risk. Require company-bound socket identity and cross-company broadcast tests.
+- GAP-0021 (P0 candidate): subscription.routes.js registers paymentController.handleWebhook, but payment.controller.js does not export handleWebhook. server.js requires this route module directly. Run a deterministic backend boot/route-registration smoke test before assuming the server starts.
+- Positive controls confirmed in platform.service.js / tenantDeletion.service.js / backupService.js: customer-managed PostgreSQL registration is gated while outbound-network controls are unverified; new tenant activation checks the original provisioning lease token and expiry; physical deletion fails closed pending restore validation; shared/legacy tenant backup targets are refused.
+- Gap register now contains GAP-0015 through GAP-0021. Tracker and index link Phase 1 and Phase 2 audit evidence.
+- Latest docs commits include d357df7 (Phase 2 report), f3a3164 (gap register), db4cbdd (index), eda010f (tracker). Verify current branch head and CI again before future status claims.
+- Next: continue module-by-module source tracing and validate the two P0 candidates with safe test harnesses. Do not start application implementation until the full audit, Cycle 01 plan and independent plan verification are complete.
