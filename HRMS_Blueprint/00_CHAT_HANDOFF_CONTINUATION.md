@@ -1051,3 +1051,14 @@ This block supersedes older branch/CI statements above where they conflict.
 - GAP-0034: Frontend settingsApi calls /settings/notifications; server mounts notification config routes at /config/notifications with /notifications path, not the frontend URL.
 - Latest Phase 7 docs commits: e04e0e4 (audit), 4548638 (gap register), 1be18e0 (index), 2556fd0 (tracker). Verify exact branch head/CI before status claims.
 - Next: audit billing/payment verification, Central RLS coverage and lifecycle, remaining Settings/Notifications/Reports service paths, import/export, backup/restore and deployment. No Cycle 01 plan yet.
+
+
+## CYCLE 01 PHASE 8 UPDATE — 2026-11-27
+
+- Billing/backup/deletion audit is recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-8.md at source SHA a9c5f094e145afb95d93fcf136643058c4fb95db.
+- Paid checkout uses a server-side Razorpay order snapshot, HMAC verification, gateway-side order/payment fetch, conditional order claim and transactional entitlement/invoice activation. Manual renewal is enforced.
+- The paidStorageGuard blocks checkout until dedicated storage is already verified. No complete public shared-schema → UUID-derived dedicated-schema data migration/provisioning workflow was found; paid upgrade remains blocked pending this prerequisite (inherited GAP-0004).
+- Backup uses pg_dump + gzip and uploads directly to Google Drive/OneDrive; no application-layer encryption of backup bytes was found (GAP-0035).
+- Backup target guard blocks shared/legacy/unready and unsupported dedicated-database storage. No restore function/drill was found. Permanent physical deletion remains fail-closed (inherited GAP-0006).
+- Latest Phase 8 docs commits: 6e0afac (audit), 2c20a57 (gap register), 3866ee6 (index), 43f53ce (tracker). Re-fetch current branch head and CI before claims.
+- Gap register Cycle 01 disposition now records Phase 1–8, new findings GAP-0015 through GAP-0035, and confirms the improvement plan is not drafted/verified. Continue remaining audit and consolidate root causes before planning.
