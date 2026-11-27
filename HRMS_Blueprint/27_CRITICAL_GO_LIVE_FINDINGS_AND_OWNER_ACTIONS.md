@@ -180,3 +180,10 @@ This was a source-code review through GitHub. No Node test suite, Prisma generat
 4. Reconcile existing tenant records using the read-only inventory output.
 5. Integrate the new resolver and run end-to-end isolation tests.
 6. Only then plan production migration and enable paid dedicated-schema provisioning.
+
+
+## 2026-11-27 verification correction — payment mock bypass
+
+The earlier source-audit finding above is superseded by the current implementation in `backend/modules/platform/payment.controller.js`: `verifyPayment` now explicitly rejects any client-supplied truthy `mock` flag with HTTP 403 before signature verification or invoice/payment-order mutation. Normal verification requires a server-recorded Razorpay order, a valid signature, and a captured gateway payment matching invoice amount/currency/order.
+
+A source regression test has been added to `backend/test/razorpay-payment-verification.test.js` to ensure the mock rejection remains before signature verification and ledger mutation. This closes the specific client-controlled mock bypass described above; it does not by itself certify every payment webhook, refund, renewal, or production gateway configuration.
