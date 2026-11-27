@@ -99,3 +99,32 @@ test('GSTIN and PAN are persisted in the same normalized form used for validatio
   assert.doesNotMatch(platformSource, /\$\{company\.gstin \|\| null\}/);
   assert.doesNotMatch(platformSource, /\$\{company\.pan \|\| null\}/);
 });
+
+
+test('new signup owns a bounded provisioning lease and starts its attempt counter', () => {
+  assert.match(platformSource, /const storageLeaseToken = uuidv4\(\)/);
+  assert.match(platformSource, /storage_lease_token, storage_lease_expires_at, provisioning_attempts/);
+  assert.match(platformSource, /\$\{storageLeaseToken\}::uuid, NOW\(\) \+ INTERVAL '30 minutes', 1/);
+});
+
+test('failed signup can only release the lease owned by its provisioning attempt', () => {
+  const failureStart = platformSource.indexOf("SET storage_status = 'failed'");
+  const failureEnd = platformSource.indexOf("`);", failureStart);
+  const failureBlock = platformSource.slice(failureStart, failureEnd);
+  assert.match(failureBlock, /storage_lease_token = \$\{storageLeaseToken\}::uuid/);
+  assert.match(failureBlock, /storage_lease_token = NULL/);
+  assert.match(failureBlock, /storage_lease_expires_at = NULL/);
+});
+
+test('tenant activation requires the live lease token and activates its index in the same transaction', () => {
+  const activationStart = platformSource.indexOf('const activated = await tx.$queryRaw');
+  const activationEnd = platformSource.indexOf('});', activationStart);
+  const activationBlock = platformSource.slice(activationStart, activationEnd);
+  assert.match(activationBlock, /storage_status = 'provisioning'/);
+  assert.match(activationBlock, /storage_lease_token = \$\{storageLeaseToken\}::uuid/);
+  assert.match(activationBlock, /storage_lease_expires_at > NOW\(\)/);
+  assert.match(activationBlock, /RETURNING id/);
+  assert.match(activationBlock, /if \(activated.length !== 1\)/);
+  assert.match(activationBlock, /UPDATE central_user_index/);
+  assert.match(activationBlock, /if \(indexed !== 1\)/);
+});
