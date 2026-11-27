@@ -135,3 +135,13 @@ test('public signup blocks customer-supplied database targets until deployment e
   assert.match(platformSource, /CUSTOMER_DATABASE_CONNECTIONS_DISABLED/);
   assert.match(platformSource, /temporarily disabled until the server deployment has an approved outbound network security policy/);
 });
+
+
+test('tenant metadata lookup excludes inactive, provisioning, failed and deleted tenants', () => {
+  const start = authSource.indexOf('SELECT id, plan, plan_expires_at, is_setup_complete, name, logo_url');
+  const end = authSource.indexOf('`', start);
+  const query = authSource.slice(start, end);
+  assert.match(query, /is_active = true/);
+  assert.match(query, /storage_status = 'ready'/);
+  assert.match(query, /deleted_at IS NULL/);
+});
