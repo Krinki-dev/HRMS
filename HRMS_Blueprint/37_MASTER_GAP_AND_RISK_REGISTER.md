@@ -65,10 +65,15 @@ These are inherited from prior source-audit notes and must be rechecked against 
 | GAP-0032 | E | Onboarding wizard calls missing progress/save/complete endpoints and mismatched payroll salary-components endpoint | P1 | Open | OnboardingWizard API calls vs platform/subscription/payroll mounted routes |
 | GAP-0033 | E | Company document upload/review UI endpoints are absent despite Central metadata tables | P1 | Open | CompanyDocumentsStep/AdminDocuments/adminApi vs platform/admin mounted routes; secure file workflow absent |
 | GAP-0034 | E | Notification settings frontend URL differs from mounted notification config route | P2 | Open | settingsApi/adminApi /settings/notifications vs server mount /config/notifications |
+| GAP-0035 | F | PostgreSQL backup dumps are gzip-compressed but not application-layer encrypted before cloud upload | P1 | Open | backupService.js pg_dump/gzip → Google Drive/OneDrive upload; design key management and restore/decrypt tests |
 
 ## Cycle 01 disposition
-- Full fresh source audit: Pending.
-- Confirmed current findings: Pending.
+- Phase 1–8 source audit evidence is recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-1.md through CYCLE-01-SOURCE-AUDIT-PHASE-8.md.
+- New source findings currently recorded: GAP-0015 through GAP-0035. All remain Open; GAP-0017 and GAP-0021 require runtime/boot reproduction. GAP-0020 is a source-confirmed unscoped WebSocket broadcast. GAP-0030 is a confirmed absence of operational HR-table RLS coverage in the inspected SQL migrations and test documentation.
+- Existing inherited findings GAP-0001 through GAP-0014 remain open until each is revalidated and consolidated against current source.
+- Full audit: In Progress. Remaining work includes complete module/service ownership tracing, file and import/export pipeline, final Central lifecycle and billing review, complete table/FK inventory, frontend runtime/browser E2E, deployment and operations.
 - Duplicate/root-cause consolidation: Pending.
-- Verified improvement plan: Pending.
+- Cycle 01 improvement plan: Not drafted.
+- Independent plan verification: Pending.
+- No application implementation may begin until the audit is complete and the plan passes independent verification.
 - Do not close inherited findings until revalidated with current evidence.
