@@ -30,6 +30,11 @@ Never paste everything at once — keep context focused.
 
 ## 📂 DOCUMENT MAP
 
+### Continuous improvement cycle
+- HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-1.md — first source audit evidence, confirmed gaps and remaining audit coverage (in progress).
+- HRMS_Blueprint/36_MASTER_MODULE_COMPLETION_TRACKER.md — module-by-module evidence tracker.
+- HRMS_Blueprint/37_MASTER_GAP_AND_RISK_REGISTER.md — consolidated risk and gap ledger.
+
 ### Foundation Documents
 | File | Purpose | Last Updated |
 |------|---------|-------------|
