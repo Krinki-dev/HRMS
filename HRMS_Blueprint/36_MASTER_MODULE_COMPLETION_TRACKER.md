@@ -80,3 +80,8 @@ No module dimension has been promoted to a verified completion status. The table
 4. Use Not Assessed until checked; use Not Verified when evidence is missing or stale.
 5. Update this tracker after every meaningful batch and every full re-analysis.
 6. Do not delete rows when a module is deferred; record why and when it will be revisited.
+
+
+## 2026-11-27 audit evidence note — Phase 12
+
+Phase 12 source revalidation is recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-12.md. It reconfirmed critical findings in notifications/WebSocket, subscription webhook wiring, leave authorization, payroll controller/service contracts, attendance check-in contract and CI integration-test configuration. This does not justify marking any module dimension complete: module-wide route/service/data/E2E coverage remains incomplete, and runtime tests were not run. Keep existing Not Assessed/Not Verified statuses until the full audit supplies evidence.
