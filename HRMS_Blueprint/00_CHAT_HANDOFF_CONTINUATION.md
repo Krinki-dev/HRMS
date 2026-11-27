@@ -992,3 +992,14 @@ This block supersedes older branch/CI statements above where they conflict.
 - Gap register now contains GAP-0015 through GAP-0021. Tracker and index link Phase 1 and Phase 2 audit evidence.
 - Latest docs commits include d357df7 (Phase 2 report), f3a3164 (gap register), db4cbdd (index), eda010f (tracker). Verify current branch head and CI again before future status claims.
 - Next: continue module-by-module source tracing and validate the two P0 candidates with safe test harnesses. Do not start application implementation until the full audit, Cycle 01 plan and independent plan verification are complete.
+
+
+## CYCLE 01 PHASE 3 UPDATE — 2026-11-27
+
+- Focused Leave + Recruitment source audit is recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-3.md at source SHA 181a4ee3fee3cc581d5cd59b6c52bfe16b026fe0.
+- GAP-0022: Leave GET / lists company-wide leave applications without leave.view permission; the service filters by company but not caller employee.
+- GAP-0023: Leave balances controller calls the service without req.db (signature mismatch) and accepts req.query.employeeId without a permission gate. Fix must separate self-service from HR cross-employee lookup.
+- GAP-0024: Recruitment interview feedback and accept/decline offer paths lack full company ownership checks; feedback also does not verify interviewer assignment.
+- Static route scan across Leave, Compliance, Recruitment, Performance, Training, Assets, Expenses, Reports, Roles, Settings and Notifications shows a mixture of explicit module permission routes and auth-only self-service routes. These modules are not security-cleared until each service method is traced for company/actor ownership.
+- Latest phase 3 docs commits: 5df85f2 (audit), 3c202a6 (gap register), 27f4074 (index), c8ce486 (tracker). Re-fetch actual branch head and CI before status claims.
+- Next: continue service-level and data-model audit for Performance, Training, Assets, Expenses, Compliance, Payroll, Reports, Settings and Notifications; then complete tenant/RLS, billing, file/import/export and operations audits. Cycle 01 plan remains not yet written or verified.
