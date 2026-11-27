@@ -59,6 +59,7 @@ These are inherited from prior source-audit notes and must be rechecked against 
 | GAP-0026 | B | Training operations ignore companyId for nominations, attendance, feedback and deletion | P1 | Open | Training service methods accept but omit company scoping; cross-company tests |
 | GAP-0027 | B | Asset allocation/return/by-employee operations omit employee or asset company checks | P1 | Open | Asset service methods and controller call contract; cross-company lifecycle tests |
 | GAP-0028 | F | Expense receipt upload has no Multer limits/content filter and bypasses ClamAV | P1 | Open | expenses.routes.js, expenses.service.js and minio upload path; fail-closed upload tests |
+| GAP-0029 | A | Payroll payslip GET/update and bonus delete controller calls omit req.db and misalign service args | P1 | Open | payroll.controller.js vs payroll.service.js signatures; API contract and ownership tests |
 
 ## Cycle 01 disposition
 - Full fresh source audit: Pending.
