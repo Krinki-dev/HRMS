@@ -17,6 +17,14 @@ const STORAGE_STATUSES = Object.freeze({
   LEGACY: 'legacy_unclassified',
 });
 const SUPPORTED_DB_MODES = new Set(['cloud', 'external_cloud', 'local']);
+
+// Customer-supplied database hosts are an SSRF boundary. Keep these modes
+// disabled unless the deployment operator has installed and verified an
+// outbound network policy that blocks loopback, link-local, metadata and
+// unauthorized private infrastructure destinations.
+function customerDatabaseConnectionsEnabled(env = process.env) {
+  return env.CUSTOMER_DATABASE_CONNECTIONS_ENABLED === 'true';
+}
 const SCHEMA_PATTERN = /^[a-z][a-z0-9_]{0,62}$/;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -101,4 +109,4 @@ function buildStorageDescriptor({ tenantId, plan, dbMode='cloud', dbUrl=null, re
   });
 }
 
-module.exports={STORAGE_TIERS,STORAGE_STATUSES,SUPPORTED_DB_MODES,assertSchemaName,buildStorageDescriptor,deriveTenantSchemaName,validatePostgresUrl};
+module.exports={STORAGE_TIERS,STORAGE_STATUSES,SUPPORTED_DB_MODES,assertSchemaName,buildStorageDescriptor,customerDatabaseConnectionsEnabled,deriveTenantSchemaName,validatePostgresUrl};
