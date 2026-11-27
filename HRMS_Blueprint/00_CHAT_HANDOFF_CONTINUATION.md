@@ -958,3 +958,26 @@ Latest CI runs were triggered for these documentation commits and were still in 
 Do not report these as passed until their final conclusions are fetched. Also check CI for latest index/handoff head.
 
 **Next exact action:** start Cycle 01 fresh full source inventory and module audit under Section 13 of the master plan. Do not implement feature changes until Cycle 01 plan is complete and plan verification passes. No production operations are authorized.
+
+
+---
+
+## LATEST AUTHORITATIVE OVERRIDE — 2026-11-27 (Cycle 01 audit started)
+
+This block supersedes older branch/CI statements above where they conflict.
+
+- Latest verified source baseline at audit start: 6625b93733e726140c44ff633cef351abd3d4d9d on architecture/postgres-tenant-isolation.
+- Exact-head GitHub checks on that SHA: Backend Tests run 46023203389 = success; Tenant Migration PostgreSQL Integration run 46023203475 = success.
+- Do not overstate these checks: current workflows do not run a frontend build/browser E2E. The PostgreSQL integration workflow runs only the tenant migration inventory classifier test against synthetic schemas. Several RLS/auth/payroll DB integration tests skip unless explicit DB URLs are configured.
+- Cycle 01 Phase 1 source audit is recorded at HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-1.md. It is partial; no module completion is claimed.
+- New findings GAP-0015 through GAP-0019 are recorded in 37_MASTER_GAP_AND_RISK_REGISTER.md:
+  - Tenant-domain HR pages call legacy /hr APIs not mounted by backend/server.js.
+  - Tenant HR sidebar paths do not match active App.jsx routes.
+  - ESS nested absolute route paths require React Router runtime verification.
+  - Attendance approval/rejection endpoints lack explicit permission checks; rejectRegularization update omits company_id.
+  - CI lacks frontend build/browser E2E and does not execute all optional DB integration tests.
+- GAP-0003 (legacy Prisma migration history) is confirmed: backend/prisma/migrations     11223/migration_lock.toml declares provider = mssql. Never run this migration history against PostgreSQL.
+- Explicit positive source facts: tenantResolver.js separates companyId from centralTenantId; tenantStorageResolver.js rejects unclassified/not-ready storage; Central RLS helper uses one transaction for context + protected query. All callers/table coverage and DB role assumptions still need audit.
+- Latest docs commits after audit report: d327c6b (audit report), 228091f (gap register), 1341006 (tracker activity), 5c3b006 (index). Re-fetch actual branch head and CI before next work; these are documentation commits only.
+- Immediate next task: continue the full Cycle 01 route → controller → service → Prisma → tests audit for every module, plus Central provisioning/billing, RLS/table ownership, imports/files, backup/restore and operations. Only after that draft and independently verify CYCLE-01-PLAN.md. Do not start application implementation before plan verification.
+- No production migrations, deployment, real payments, destructive customer-data changes or credential changes were performed.
