@@ -22,7 +22,7 @@ Use only: Not Assessed, Not Started, In Progress, Implemented — Unverified, Au
 ## Cycle 01 audit activity — partial, not completion evidence
 
 Source SHA: 6625b93733e726140c44ff633cef351abd3d4d9d.
-Detailed evidence: HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-1.md.
+Detailed evidence: HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-1.md and CYCLE-01-SOURCE-AUDIT-PHASE-2.md.\n- Additional focused review: WebSocket connection registration/broadcast scoping, notification dispatch, subscription route registration, payment-controller exports, customer-managed DB feature gate, provisioning lease transitions and deletion/backup fail-closed behavior.\n- GAP-0020: company broadcast currently ignores companyId and iterates all WebSocket connections.\n- GAP-0021: subscription.routes.js references paymentController.handleWebhook, but payment.controller.js does not export that handler; backend startup smoke test is required.\n- Positive controls: customer-managed PostgreSQL connection gate is present; provisioning activation checks the lease token and expiry; physical deletion currently fails closed until restore validation.
 
 Partially inspected in Phase 1:
 - HR tenant-domain frontend route components and sidebar.
