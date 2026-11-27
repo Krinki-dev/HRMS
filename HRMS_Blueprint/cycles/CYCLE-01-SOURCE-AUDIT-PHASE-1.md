@@ -66,7 +66,7 @@ These counts describe repository inventory only. They do not represent completed
 - Proposed direction: Add explicit permission/role checks to approval endpoints; scope every mutation by company ownership; make the read/check/update atomic and race-safe; add negative cross-company tests.
 - Acceptance evidence needed: Tests proving an ordinary employee cannot approve/reject/approve overtime, company A cannot affect company B, and authorized approvers can complete valid actions.
 
-### C01-CI-001 — Current CI does not verify the frontend build or browser workflows
+### C01-CI-001 — Frontend build is covered; browser E2E is not
 - Severity: P1 — release confidence
 - Evidence: The current .github/workflows files inspected are backend-tests.yml and tenant-migration-integration.yml. Backend Tests runs npm ci --ignore-scripts and npm test from backend; no frontend install/build step is present. No frontend/browser E2E workflow was found in the current workflow inventory.
 - Impact: A broken React build or route runtime regression can pass the currently observed required workflows.
