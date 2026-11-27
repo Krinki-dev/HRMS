@@ -911,3 +911,25 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Code commit: 1eddcec53390bd14ed92f2d6fc749f4bafc89403; test commit: 6d5b7ca9e473ca0045d4fa8bc75755c83e9b2c9e; progress-document commit: 145a3e959dbbf3a129a7911f918965fdbbde8954.
 - CI for these new commits is pending verification. No DB, migration, deployment or payment action was taken. main remains untouched.
 - Next: verify exact-head CI; then prioritize registration recovery design only after email ownership proof and retry idempotency are established. In parallel, review RLS database-role bypass and auth-to-company/employee smoke path. Do not expose a public retry endpoint or enable customer-managed DB connections without verified egress policy.
+
+
+---
+
+## LATEST CONTINUITY OVERRIDE — 2026-11-27
+
+**Mandatory first read:** `HRMS_Blueprint/35_MASTER_PROJECT_EXECUTION_AND_CONTINUITY_PLAN.md`.
+
+The user has explicitly adopted a full-product, document-driven continuous improvement cycle:
+`Full audit → Gap register → Improvement plan → Plan verification → Implementation → Tests → Full re-analysis → Next cycle`.
+
+- Audit all product modules and six streams; do not focus indefinitely on one subsystem.
+- Balance implementation by dependencies, customer impact and risk. P0 safety work remains mandatory, but core HR and product modules must not be neglected.
+- No implementation batch starts until its plan, dependencies and acceptance criteria are verified.
+- After implementation, re-analyze the whole codebase and update the tracker/gap register.
+- Every task needs a stable ID, evidence, scope, numbered steps, acceptance criteria, tests, safety/rollback notes and commit/test results.
+- New chat/device/model recovery: read master plan first, then this handoff, index, frozen decisions, owner decisions, latest architecture audit, progress log, active cycle plan/verification/report and module tracker. Verify current branch SHA and CI before claiming status.
+- Do not rely on chat history; repository documents are the continuity source of truth.
+- First full fresh audit and verified Cycle 01 plan are still pending. Do not claim they are complete.
+- Master plan commit: `93ca847d95e3f74e681795ceb22d69f123c9f413`.
+- Pre-documentation code head: `005d34d3d060e66d73ab12163866a0111d9e277b`. Pre-documentation CI runs #46020780777 and #46020780783 passed on that SHA only. Re-check after documentation commit/current head.
+- `main` remains untouched. Production migrations/deployment, live payments and destructive/customer-data actions remain approval-gated.
