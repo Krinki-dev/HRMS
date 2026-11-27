@@ -1062,3 +1062,12 @@ This block supersedes older branch/CI statements above where they conflict.
 - Backup target guard blocks shared/legacy/unready and unsupported dedicated-database storage. No restore function/drill was found. Permanent physical deletion remains fail-closed (inherited GAP-0006).
 - Latest Phase 8 docs commits: 6e0afac (audit), 2c20a57 (gap register), 3866ee6 (index), 43f53ce (tracker). Re-fetch current branch head and CI before claims.
 - Gap register Cycle 01 disposition now records Phase 1–8, new findings GAP-0015 through GAP-0035, and confirms the improvement plan is not drafted/verified. Continue remaining audit and consolidate root causes before planning.
+
+
+## CYCLE 01 PHASE 9 UPDATE — 2026-11-27
+
+- Employee sensitive-data/photo audit is recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-9.md at source SHA 3fe4bf85d9539e4568882495efeab376d7358a3a.
+- GAP-0036: Employee bank-account update/delete and document-delete service queries accept companyId but do not use it to verify employee ownership. Other sibling methods do verify companyId, so the inconsistency is concrete.
+- GAP-0037: Employee photos are written under backend/uploads/employees and saved as /uploads/...; server.js serves the entire uploads directory through unauthenticated express.static before tenant/auth middleware. The upload is size/MIME restricted, but reads are public. Product owner must confirm whether this is intentional; default recommendation is private access.
+- Latest Phase 9 docs commits: aee3d2c (audit), fa1d7cc (gap register), 9150241 (index), 61aadb9 (tracker). Verify current head/CI before future status claims.
+- Continue audit with remaining core route/service contracts, import/export, and final deployment/operations. The module tracker remains Not Assessed until full evidence is available.
