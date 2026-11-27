@@ -1,4 +1,4 @@
-﻿﻿﻿/**
+﻿﻿/**
  * @file platform.service.js
  * @description Handles tenant lifecycle operations, database resolution, and multi-tenancy setup.
  */
@@ -6,7 +6,7 @@ const { PrismaClient } = require('@prisma/client');
 const { v4: uuidv4 }   = require('uuid');
 const bcrypt           = require('bcryptjs');
 const { encrypt, decrypt } = require('../../shared/utils/encryption');
-const { buildStorageDescriptor } = require('../../shared/utils/tenantStorageConfig');
+const { buildStorageDescriptor, customerDatabaseConnectionsEnabled } = require('../../shared/utils/tenantStorageConfig');
 const { buildLocalPostgresUrl, resolveTenantStorageTarget } = require('../../shared/utils/tenantStorageResolver');
 const { sendSuccess, sendError, ERROR_CODES } = require('../../shared/utils/response');
 const { centralPrisma } = require('../../shared/utils/centralPrisma');
@@ -93,6 +93,11 @@ const registerTenant = async (req, res) => {
     }
 
     const selectedDbMode = dbMode;
+    if (['local', 'external_cloud'].includes(selectedDbMode) && !customerDatabaseConnectionsEnabled()) {
+      return sendError(res, ERROR_CODES.VALIDATION,
+        'Customer-managed PostgreSQL connections are temporarily disabled until the server deployment has an approved outbound network security policy. Please use managed cloud registration or contact the platform administrator.',
+        503, { code: 'CUSTOMER_DATABASE_CONNECTIONS_DISABLED' });
+    }
     if (!['cloud', 'local', 'external_cloud'].includes(selectedDbMode)) {
       return sendError(res, ERROR_CODES.VALIDATION, 'Choose a supported PostgreSQL deployment mode: managed cloud, own server, or own cloud database.', 400, { field: 'dbMode' });
     }
