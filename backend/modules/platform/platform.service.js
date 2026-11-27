@@ -1,4 +1,4 @@
-﻿﻿﻿﻿/**
+﻿﻿﻿/**
  * @file platform.service.js
  * @description Handles tenant lifecycle operations, database resolution, and multi-tenancy setup.
  */
@@ -264,12 +264,19 @@ const registerTenant = async (req, res) => {
       await testClient.$disconnect();
     }
 
+    // The initial registration owns a bounded provisioning lease. Any future
+    // recovery worker must claim only after this lease expires and must present
+    // its own token for every lifecycle transition.
+    const storageLeaseToken = uuidv4();
+
     await withPlatformAdminRLS(centralPrisma, async (tx) => {
       
       await tx.$executeRaw`
         INSERT INTO tenants (
           id, name, legal_name, subdomain, custom_domain, plan, db_mode,
-          db_url, schema_name, storage_tier, storage_status, storage_provisioned_at,
+          db_url, schema_name, storage_tier, storage_status,
+          storage_lease_token, storage_lease_expires_at, provisioning_attempts,
+          storage_provisioned_at,
           storage_verified_at, local_db_host, local_db_port, local_db_name,
           local_db_user, local_db_pass, local_db_type, 
           admin_name, admin_email, admin_phone, 
@@ -279,6 +286,7 @@ const registerTenant = async (req, res) => {
           ${tenantId}::uuid, ${company.name.trim()}, ${company.legalName || null},
           ${cleanSubdomain}, ${cleanCustomDomain}, 'free', ${dbMode || 'cloud'},
           ${dbUrl ? encrypt(dbUrl) : null}, ${schemaName}, ${storageDescriptor.storageTier}, 'provisioning',
+          ${storageLeaseToken}::uuid, NOW() + INTERVAL '30 minutes', 1,
           NULL, NULL, ${localDbHost}, ${localDbPort}, ${localDbName},
           ${localDbUser}, ${localDbPass}, ${localDbType}, 
           ${admin.name.trim()}, ${cleanEmail}, ${cleanPhone},
@@ -407,8 +415,11 @@ const registerTenant = async (req, res) => {
           UPDATE tenants
           SET storage_status = 'failed',
               storage_error_code = 'TENANT_SEED_FAILED',
+              storage_lease_token = NULL,
+              storage_lease_expires_at = NULL,
               updated_at = NOW()
           WHERE id = ${tenantId}::uuid
+            AND storage_lease_token = ${storageLeaseToken}::uuid
             AND is_active = false
             AND storage_status = 'provisioning'
         `);
@@ -425,21 +436,37 @@ const registerTenant = async (req, res) => {
     }
 
     await withPlatformAdminRLS(centralPrisma, async (tx) => {
-      await tx.$executeRaw`
+      const activated = await tx.$queryRaw`
         UPDATE tenants
         SET storage_status = 'ready',
             storage_provisioned_at = NOW(),
             storage_verified_at = NOW(),
+            storage_lease_token = NULL,
+            storage_lease_expires_at = NULL,
+            storage_error_code = NULL,
             is_active = true,
             is_setup_complete = true,
             updated_at = NOW()
         WHERE id = ${tenantId}::uuid
+          AND storage_status = 'provisioning'
+          AND storage_lease_token = ${storageLeaseToken}::uuid
+          AND storage_lease_expires_at > NOW()
+          AND is_active = false
+        RETURNING id
       `;
-      await tx.$executeRaw`
+      if (activated.length !== 1) {
+        throw new Error('TENANT_PROVISIONING_LEASE_LOST');
+      }
+      const indexed = await tx.$executeRaw`
         UPDATE central_user_index
         SET is_active = true, updated_at = NOW()
-        WHERE company_id = ${tenantId}::uuid AND user_id = ${adminUserId}::uuid
+        WHERE company_id = ${tenantId}::uuid
+          AND user_id = ${adminUserId}::uuid
+          AND is_active = false
       `;
+      if (indexed !== 1) {
+        throw new Error('TENANT_ADMIN_INDEX_ACTIVATION_FAILED');
+      }
     });
 
     const portalUrl = cleanCustomDomain ? `https://${cleanCustomDomain}` : `https://${cleanSubdomain}.syntern.in`;
