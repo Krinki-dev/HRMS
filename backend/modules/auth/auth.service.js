@@ -49,7 +49,10 @@ const authService = {
       const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
         SELECT id, plan, plan_expires_at, is_setup_complete, name, logo_url
         FROM tenants 
-        WHERE id = ${tenantId}::uuid AND deleted_at IS NULL 
+        WHERE id = ${tenantId}::uuid
+          AND is_active = true
+          AND storage_status = 'ready'
+          AND deleted_at IS NULL
         LIMIT 1
       `);
       if (!rows.length) return {};
