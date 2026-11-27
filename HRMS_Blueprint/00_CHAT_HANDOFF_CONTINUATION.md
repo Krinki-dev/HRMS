@@ -901,3 +901,13 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Progress docs commit 013dbaf25277056dccdf74ae99bfd2c91fe33a10; backup guide commit 5844f08a5f4edf1319550ef0d4a9105ae05713df; final audit/progress docs commit 284617476dac0c3482d7de8f149ebeab41e61781.
 - CI was green through commit 013dbaf25277056dccdf74ae99bfd2c91fe33a10 (Backend Tests run 46019981940; PostgreSQL integration run 46019981623). Latest payment test/docs commits have runs pending; recheck before claiming final green.
 - No production DB migrations, deployment, live payment actions or changes to main.
+
+
+## 2026-11-27 continuation — auth metadata lifecycle guard
+
+- Verified branch head before editing: 0567761db8e194af81c932d05cbe5d12c9bf1a7d; latest Backend Tests and Tenant Migration PostgreSQL Integration were both successful on that exact SHA. main remained cd400a602eb255029c1daeeae1d35f0c7b7ee948 and was not modified.
+- Found a defensive lifecycle gap in authService.getTenantInfo(): unlike the main auth lookup, it did not require the tenant to be active and storage-ready. Added both predicates and retained the non-deleted condition.
+- Added a source regression test covering active + ready + non-deleted metadata lookup.
+- Code commit: 1eddcec53390bd14ed92f2d6fc749f4bafc89403; test commit: 6d5b7ca9e473ca0045d4fa8bc75755c83e9b2c9e; progress-document commit: 145a3e959dbbf3a129a7911f918965fdbbde8954.
+- CI for these new commits is pending verification. No DB, migration, deployment or payment action was taken. main remains untouched.
+- Next: verify exact-head CI; then prioritize registration recovery design only after email ownership proof and retry idempotency are established. In parallel, review RLS database-role bypass and auth-to-company/employee smoke path. Do not expose a public retry endpoint or enable customer-managed DB connections without verified egress policy.
