@@ -1024,3 +1024,10 @@ This block supersedes older branch/CI statements above where they conflict.
 - Positive observations: payroll run processing/locking/publishing/deletion generally verify companyId; self-service payslips bind to req.user.employeeId and published state; Compliance administrative routes are permission-gated and TDS declarations bind to the authenticated employee.
 - Latest Phase 5 docs commits: bce71fa (audit), e624b73 (gap register), 07c9173 (index), 75fb869 (tracker). Verify actual branch head/CI before status claims.
 - Next: complete Settings/Notifications/Reports service checks; inspect full Central tenant lifecycle, billing webhook, RLS policies and table ownership, file/document storage, import/export, backup/restore and deployment operations. No Cycle 01 implementation plan yet.
+
+
+## AUDIT CORRECTION — FRONTEND BUILD WORKFLOW
+
+- Correction to the earlier Phase 1 statement: .github/workflows/frontend-build.yml exists. It runs npm ci and npm run build in frontend on frontend/** changes to main or architecture/postgres-tenant-isolation. The earlier audit scan missed this workflow.
+- Correct current CI finding: frontend production build is covered by its own path-triggered workflow; browser-based E2E is not present. The Backend Tests workflow still does not configure the optional RLS/auth/payroll/compliance PostgreSQL test URLs, so those tests skip there.
+- Phase 1 report, GAP-0019 and tracker wording were corrected in commits 014e9d7, 3a52be1 and 53a054a. The correction supersedes earlier wording.
