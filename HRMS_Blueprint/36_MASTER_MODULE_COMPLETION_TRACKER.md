@@ -85,3 +85,7 @@ No module dimension has been promoted to a verified completion status. The table
 ## 2026-11-27 audit evidence note — Phase 12
 
 Phase 12 source revalidation is recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-12.md. It reconfirmed critical findings in notifications/WebSocket, subscription webhook wiring, leave authorization, payroll controller/service contracts, attendance check-in contract and CI integration-test configuration. This does not justify marking any module dimension complete: module-wide route/service/data/E2E coverage remains incomplete, and runtime tests were not run. Keep existing Not Assessed/Not Verified statuses until the full audit supplies evidence.
+
+## 2026-11-27 audit evidence note — Phase 13
+
+Phase 13 is recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-13.md. It adds GAP-0041 (P1): the operational Prisma schema is PostgreSQL, while the documented legacy tenant migration history is MSSQL/SQL Server; a safe PostgreSQL baseline and replay strategy are required. Tenant migration inventory remains intentionally copy-disabled and is not evidence of a completed migration/cutover capability. No runtime/database verification was performed. Keep module dimensions Not Assessed/Not Verified until full evidence is available.
