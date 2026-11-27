@@ -94,3 +94,11 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - GAP-0022, GAP-0029 and GAP-0040 were also rechecked against current route/controller/service source and remain open.
 - Do not close any item based on source inspection alone where runtime/integration acceptance tests are required. Do not start implementation before full audit and independent plan verification.
 - Exact-head GitHub Actions runs were not returned; two external Railway statuses were successful but are not test evidence.
+
+## Cycle 01 Phase 13 — PostgreSQL migration baseline
+
+- Evidence: HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-13.md.
+- **GAP-0041 (P1):** operational Prisma schema targets PostgreSQL, while the documented legacy tenant migration directory has an MSSQL migration provider and SQL Server syntax. The repository migration README explicitly prohibits running that history against PostgreSQL and requires a reconciled PostgreSQL baseline. No live DB state was inspected in this phase.
+- Tenant migration inventory remains intentionally inventory-only (`copyAllowed: false`); this is a safety gate, not a verified data-copy/cutover capability.
+- GAP-0020 and GAP-0021 were re-fetched and remain open; runtime reproductions are still pending.
+- No app code, test, DB, migration, deployment, payment or customer-data operation was performed. Do not start implementation before full audit and independent plan verification.
