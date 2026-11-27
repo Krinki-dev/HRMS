@@ -652,3 +652,12 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Reviewed tenantMigrationInventory.js: inventory-only, validates identity/schema/FK ownership and returns copyAllowed=false. Recorded missing test/operational proof without misclassifying this safety control as a defect.
 - Re-fetched GAP-0020 and GAP-0021 source evidence; both remain open pending runtime verification.
 - No tests, boot, browser, DB, migration or application source changes were performed. No main-branch, production, payment, deployment or customer-data operation.
+
+
+## 2026-11-27 — Cycle 01 Phase 14 tenant routing review
+
+- Added HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-14.md.
+- Recorded GAP-0042 (P1 security review): customer DB enablement helper is defined/exported but not directly enforced in the inspected storage resolver; resolver accepts local/external PostgreSQL modes. SSRF exploitability is not established pending config-write authorization, feature flag, provisioning and outbound network policy review.
+- Revalidated positive source controls: authenticated tenant-context match, fail-closed storage resolver, UUID-bound schema naming and transaction-scoped central RLS helpers.
+- Inspected storage resolver and RLS test source; tests were not executed and DB env variables may cause auto-skip under current CI (GAP-0031).
+- No application code, runtime, DB, customer network, payment or deployment operations performed; main untouched.
