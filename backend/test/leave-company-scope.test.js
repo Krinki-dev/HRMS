@@ -117,3 +117,46 @@ test('non-HR dashboard does not accept another employee ID from the query string
   const controller = fs.readFileSync(path.join(__dirname, '../modules/leave/leave.controller.js'), 'utf8');
   assert.match(controller, /req\.user\.employeeId \|\| \(isHR \? req\.query\.employeeId : null\)/);
 });
+
+
+test('non-HR users without an employee identity receive no pending approvals', async () => {
+  let queried = false;
+  const db = baseDb({
+    leave_applications: {
+      findMany: async () => { queried = true; return []; },
+    },
+  });
+  const result = await leaveService.getPendingApprovals(db, COMPANY_A, false, null);
+  assert.deepEqual(result, []);
+  assert.equal(queried, false);
+});
+
+test('manager approval lookup is limited to direct reports in the same company', async () => {
+  let query;
+  const db = baseDb({
+    leave_applications: {
+      findFirst: async (args) => { query = args; return null; },
+    },
+  });
+  await assert.rejects(
+    leaveService.approveLeave(db, 'application-id', COMPANY_A, 'user-id', EMPLOYEE_A, false),
+    /NOT_FOUND/
+  );
+  assert.equal(query.where.employee.company_id, COMPANY_A);
+  assert.equal(query.where.employee.reporting_to, EMPLOYEE_A);
+});
+
+test('manager rejection lookup is limited to direct reports in the same company', async () => {
+  let query;
+  const db = baseDb({
+    leave_applications: {
+      findFirst: async (args) => { query = args; return null; },
+    },
+  });
+  await assert.rejects(
+    leaveService.rejectLeave(db, 'application-id', COMPANY_A, 'user-id', 'reason', EMPLOYEE_A, false),
+    /NOT_FOUND/
+  );
+  assert.equal(query.where.employee.company_id, COMPANY_A);
+  assert.equal(query.where.employee.reporting_to, EMPLOYEE_A);
+});
