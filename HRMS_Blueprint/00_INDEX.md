@@ -141,3 +141,8 @@ Product domain:     PRODUCT_DOMAIN env var
 ## Latest Cycle 01 source audit
 
 - Phase 15 — customer DB configuration, connection-test network boundary and provisioning lifecycle: [CYCLE-01-SOURCE-AUDIT-PHASE-15.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-15.md)
+
+
+## Latest Cycle 01 source audit
+
+- Phase 16 — PostgreSQL operational referential integrity, central RLS coverage, fresh-install baseline and FK index inventory: [CYCLE-01-SOURCE-AUDIT-PHASE-16.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-16.md)
