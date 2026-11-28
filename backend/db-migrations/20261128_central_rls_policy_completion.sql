@@ -2,6 +2,7 @@
 -- Run only after the Central schema upgrade has created all listed tables.
 -- This file is a migration artifact; do not execute it against production
 -- until a DBA has verified the application role, table ownership and backup.
+-- The application DB role must not own these tables and must not have BYPASSRLS.
 BEGIN;
 
 -- Tenant-scoped tables: current tenant OR an explicitly scoped platform job.
