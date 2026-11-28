@@ -1241,3 +1241,14 @@ This block supersedes older branch/CI statements above where they conflict.
 - Full traceability matrix maps all GAP-0001 through GAP-0065. Duplicates and superseded findings are explicitly marked.
 - Next safe implementation tasks: HRMS-C-002 (missing webhook handler/server boot) and HRMS-D-001 (company-scoped WebSocket) with isolated tests; HRMS-D-003 identity contract must be coordinated with WebSocket ticket identity. No production database, deployment, real payment, deletion, customer DB connection or key rotation without explicit approval.
 - No application code has been changed by the plan/review process. Keep main untouched.
+
+
+## CURRENT HANDOFF — Cycle 01 Phase 23 (2026-11-28)
+
+- Latest implementation report: `HRMS_Blueprint/cycles/CYCLE-01-IMPLEMENTATION-PHASE-23.md`.
+- HRMS-D-001: tenant/company-scoped WebSocket tickets and notification delivery implemented; focused unit tests pass. Still requires real WebSocket integration test.
+- HRMS-C-002: Razorpay webhook handler export and subscription router callable test now pass. CI discovered and fixed a separate unterminated disabled PhonePe handler; GAP-0066 verified closed.
+- Plan: `HRMS_Blueprint/cycles/CYCLE-01-PLAN.md`; verification Round 2 plus Round 3 addendum in `CYCLE-01-PLAN-VERIFICATION.md`. Traceability now includes GAP-0001–GAP-0066.
+- Backend CI run 46103433237 passed on SHA `97c60ad1ed3549d4c780c8506f871ada8e7cd1bb` (171 discovered, 166 pass, 0 fail, 5 skipped). This is not latest HEAD; later auth/session commits and docs updates require fresh CI.
+- Next: finish live WebSocket integration test; verify current multi-tenant login/OTP/refresh implementation and tests (D-003); then continue D-004 table ownership/Central RLS and D-005 migration baseline. Do not use production DB or real payments.
+- `main` untouched.
