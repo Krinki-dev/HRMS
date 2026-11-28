@@ -349,72 +349,8 @@ exports.verifyPayment = async (req, res) => {
  */
 exports.createPhonePeOrder = async (_req, res) => {
   return sendError(res, ERROR_CODES.VALIDATION, 'PhonePe checkout is temporarily disabled until the current Standard Checkout v2 integration is configured and verified.', 503);
-  /*
-  try {
-    const { invoiceId } = req.params;
-    const tenantId = await resolveTenantId(req);
-
-    const invoice = await withBillingRLS(req, tenantId, (tx) => tx.invoices.findUnique({
-      where: { id: invoiceId },
-      include: { tenant: true }
-    }));
-
-    if (!invoice) return sendError(res, ERROR_CODES.NOT_FOUND, 'Invoice not found', 404);
-    if (invoice.tenant_id !== tenantId && !req.user.is_platform_admin) {
-      return sendError(res, ERROR_CODES.FORBIDDEN, 'Unauthorized to pay this invoice', 403);
-    }
-    if (invoice.status === 'paid') return sendError(res, ERROR_CODES.VALIDATION, 'Invoice already paid', 400);
-
-    const merchantTransactionId = `INV-${invoice.invoice_no}-${Date.now()}`;
-    const payload = {
-      merchantId: phonePeMerchantId,
-      merchantTransactionId: merchantTransactionId,
-      amount: invoice.total_paise, // Amount in paise
-      currency: 'INR',
-      redirectUrl: `${process.env.FRONTEND_URL}/payment-status?invoiceId=${invoice.id}&transactionId=${merchantTransactionId}`,
-      redirectMode: 'POST',
-      callbackUrl: `${process.env.BACKEND_URL}/api/v1/platform/subscribe/phonepe-webhook`,
-      mobileNumber: invoice.tenant.admin_phone || '9999999999', // Fallback to a dummy number for testing
-      paymentInstrument: {
-        type: 'PAY_PAGE'
-      },
-      // Custom data to pass through webhook
-      metadata: {
-        invoiceId: invoice.id,
-        tenantId: invoice.tenant_id,
-        type: 'invoice_payment'
-      }
-    };
-
-    const base64Payload = Buffer.from(JSON.stringify(payload)).toString('base64');
-    const xVerify = crypto.createHash('sha256').update(base64Payload + '/pg/v1/pay' + phonePeSaltKey).digest('hex') + '###' + phonePeSaltIndex;
-
-    const response = await axios.post(`${phonePeBaseUrl}/pg/v1/pay`, {
-      request: base64Payload
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'X-VERIFY': xVerify,
-        'X-MERCHANT-ID': phonePeMerchantId
-      }
-    });
-
-    if (response.data.success && response.data.data.instrumentResponse.redirectInfo.url) {
-      return sendSuccess(res, {
-        redirectUrl: response.data.data.instrumentResponse.redirectInfo.url,
-        merchantTransactionId: merchantTransactionId
-      }, 'PhonePe order created successfully.');
-    } else {
-      logger.error(`${THEME.ICONS.ERROR} [createPhonePeOrder] PhonePe API error:`, response.data);
-      return sendError(res, ERROR_CODES.SERVER, response.data.message || 'Failed to create PhonePe order', 500);
-    }
-  } catch (error) {
-    logger.error(`${THEME.ICONS.ERROR} [createPhonePeOrder] Failed:`, error);
-    return sendError(res, ERROR_CODES.SERVER, 'Failed to create PhonePe order', 500);
-  }
 };
 
-  */
 
 /**
  * Handles PhonePe Webhooks for asynchronous payment status updates.
