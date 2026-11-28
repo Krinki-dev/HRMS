@@ -87,6 +87,7 @@ const ctrl = {
       await svc.approveRegularization(req.db, req.params.id, req.user.companyId, req.user.id);
       eventNotifier.notifyRegularizationDecision({
         db: req.db,
+        tenantId: req.user.centralTenantId,
         companyId: req.user.companyId,
         requestId: req.params.id,
         decision: 'approved',
@@ -103,6 +104,7 @@ const ctrl = {
       await svc.rejectRegularization(req.db, req.params.id, req.user.companyId, req.user.id, req.body.reason);
       eventNotifier.notifyRegularizationDecision({
         db: req.db,
+        tenantId: req.user.centralTenantId,
         companyId: req.user.companyId,
         requestId: req.params.id,
         decision: 'rejected',
