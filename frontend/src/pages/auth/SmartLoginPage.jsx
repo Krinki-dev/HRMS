@@ -382,7 +382,7 @@ export default function SmartLoginPage() {
 
       const res = await api.post(
         '/auth/login',
-        { email: normalizedEmail, password },
+        { email: normalizedEmail, password, tenantId: company?.tenantId || null },
         { headers }
       );
 
