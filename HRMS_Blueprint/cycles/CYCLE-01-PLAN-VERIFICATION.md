@@ -172,3 +172,22 @@ The change does not alter architecture constraints, task dependencies or product
 ### Result
 
 **VERIFIED for this implementation increment.** This does not close HRMS-A-010 or HRMS-D-004. Full permission/ownership coverage, API E2E, composite FK review, production Central role/catalog proof and the forgot-password multi-tenant residual remain open. The next task is the HRMS-D-003 forgot-password workspace-selection residual, followed by the remaining D-004 ownership matrix.
+
+
+---
+
+## Cycle 01 Plan Verification — Phase 29 D-003 scope clarification (2026-11-28)
+
+**Scope:** Forgot-password workspace selection, mapped to the existing `HRMS-D-003` identity-binding task and `GAP-0065`.  
+**Review outcome:** **Verified for source-only implementation; test execution remains pending.**
+
+- [x] The addition stays within the existing explicit tenant-selection and identity-binding task; no new architecture or database engine is introduced.
+- [x] The selected Central tenant UUID remains distinct from the operational company UUID.
+- [x] A tenant-host request remains bound to its verified tenant; a conflicting body tenant is rejected.
+- [x] Ambiguous platform-root memberships require an explicit workspace; unordered first-row fallback is prohibited.
+- [x] Reset-token persistence and email delivery are required to use the same selected tenant database.
+- [x] Unknown membership retains a generic response to avoid account enumeration.
+- [x] No production DB, migration, deployment, real payment, destructive operation or customer-data change is included.
+- [ ] Exact-head backend/frontend CI and authenticated password-reset E2E remain pending and are not represented as passed.
+
+**Process deviation recorded:** The scope clarification was documented after the source implementation instead of before it. This is a documentation/sequence deviation, not an owner-decision or safety-gate bypass. The implementation remains unverified until tests pass.
