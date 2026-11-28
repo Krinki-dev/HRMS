@@ -785,3 +785,14 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Added `central-rls-policy-parity.test.js`; backend CI passed at SHA `865d5f5d567f49b70967dbd82923047e7a870311` (183 discovered, 178 passed, 0 failed, 5 skipped).
 - This is static source/CI evidence only. No live Central DB catalog, role ownership/BYPASSRLS, fresh install or migration execution was performed.
 - Legacy Settings DB-config direct Prisma access is a precondition to resolve before rollout.
+
+
+## 2026-11-28 — Cycle 01 Phase 25 Central RLS and CI
+
+- Added Phase 25 RLS policy parity and zero-skip CI evidence in `HRMS_Blueprint/cycles/CYCLE-01-IMPLEMENTATION-PHASE-25.md`.
+- All 17 Central Prisma models have RLS enabled and explicit policies in both incremental migration and fresh-install bootstrap.
+- Added disposable PostgreSQL 16 Central/tenant DBs to backend CI; applies Central RLS migration only to test DB; creates non-owner app role; seeds auth/RLS fixtures.
+- Backend Tests passed at SHA `c3790b43c30b5895fd2eb9b156ef939a54db2055`: 210 tests, 210 pass, 0 fail, 0 skipped. Auth middleware, RLS pooling, payroll, compliance and tenant migration integration tests executed.
+- Tenant Migration PostgreSQL Integration also passed at the same SHA.
+- GAP-0047/0048 are fixed in source with live role/catalog and clean-install comparison pending. GAP-0031 backend CI skip issue fixed; frontend E2E remains.
+- Production Central RLS migration was not run. Legacy Settings direct Prisma access and actual deployed DB role ownership/BYPASSRLS remain rollout blockers.
