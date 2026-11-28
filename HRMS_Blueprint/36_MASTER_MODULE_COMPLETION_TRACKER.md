@@ -199,3 +199,11 @@ HRMS-D-005 remains **Blocked / Not Implemented**: the existing migration history
 - Added six focused regression tests. Test execution, exact-head CI and authenticated OTP E2E remain pending.
 - Authentication module remains **Not Assessed** at full module/dimension level. HRMS-D-003 remains In Progress; no module completion is inferred.
 - D-004 schema inventory covers 82 operational and 17 Central models; query-level ownership proof and live role/catalog verification remain open.
+
+
+## 2026-11-28 — Phase 31 auth identity evidence
+
+- Login, OTP and forgot-password now bind to the operational user ID indexed for the selected Central tenant and validate its operational companyId.
+- OTP identity is scoped to tenant + company + normalized email.
+- GAP-0068 remains Open / Blocked: current Central user index cannot represent multiple operational company accounts with the same email inside one tenant; a Central membership mapping and backfill are needed.
+- Authentication module remains Not Assessed at full module/dimension level; exact-head CI and authenticated E2E are pending.
