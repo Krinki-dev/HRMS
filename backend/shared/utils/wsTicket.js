@@ -17,15 +17,9 @@ function gc() {
   }
 }
 
-function issueTicket({ userId, tenantId = null, companyId = null } = {}) {
-  if (typeof userId !== 'string' || !userId.trim()) {
-    throw new TypeError('A verified userId is required to issue a WebSocket ticket.');
-  }
-  if (tenantId != null && (typeof tenantId !== 'string' || !tenantId.trim())) {
-    throw new TypeError('tenantId must be a non-empty string or null.');
-  }
-  if (companyId != null && (typeof companyId !== 'string' || !companyId.trim())) {
-    throw new TypeError('companyId must be a non-empty string or null.');
+function issueTicket({ userId, tenantId, companyId } = {}) {
+  if (![userId, tenantId, companyId].every((value) => typeof value === 'string' && value.trim())) {
+    throw new TypeError('Verified userId, tenantId and companyId are required to issue a WebSocket ticket.');
   }
 
   gc();
