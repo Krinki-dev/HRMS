@@ -694,3 +694,13 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - GAP-0053: dump artifacts are gzip-compressed but not application-layer encrypted before cloud upload (revalidates GAP-0035).
 - GAP-0054: notification settings frontend route does not match the backend router mounts (revalidates GAP-0034).
 - CI workflow definitions were inspected, but no current-HEAD workflow pass was verified. No app code, runtime, DB, backup, restore, migration, deployment, payment or customer-data operation was performed; main untouched.
+
+
+## 2026-11-28 — Cycle 01 Phase 18 frontend/backend API contract mapping
+
+- Added `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-18.md`.
+- GAP-0055: employee address list endpoint requested by frontend is not declared by backend.
+- GAP-0056: expense receipt upload path and multipart field differ between frontend and backend.
+- GAP-0057: employee photo upload HTTP method differs (frontend POST, backend PUT).
+- Reviewed core service/router prefixes for auth, employee, attendance, leave, payroll, compliance, dashboard, recruitment, performance, training, assets, expenses, settings, notifications and reports. This remains static route mapping; request/response and runtime verification pending.
+- No application code, test, browser, DB, migration, deployment, backup, restore or payment operation performed; main untouched.
