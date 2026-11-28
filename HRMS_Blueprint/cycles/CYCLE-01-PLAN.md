@@ -106,7 +106,7 @@ All tasks begin as **Not Started**. A source-code commit alone does not complete
 #### HRMS-C-002 — Fix missing Razorpay webhook handler and server boot smoke test
 
 - **Stream/module:** C/F — Subscription, payments, server startup.
-- **Findings:** GAP-0021, GAP-0008.
+- **Findings:** GAP-0021, GAP-0008, GAP-0066.
 - **Dependencies:** None.
 - **Implementation steps:**
   1. Confirm the intended Razorpay webhook event contract and supported events.
@@ -120,7 +120,7 @@ All tasks begin as **Not Started**. A source-code commit alone does not complete
   - Replayed event does not double-activate or double-invoice.
   - Cross-tenant order/event is rejected.
   - Amount/currency mismatch is rejected.
-  - Server route bootstrap test passes.
+  - Server route bootstrap test passes and the payment controller parses/loads with all payment providers either verified or explicitly disabled.
 - **Tests:** Unit signature tests, webhook replay/idempotency integration tests with mocked gateway payloads, server boot test.
 - **Safety:** No real payment or production webhook secret change. Sandbox only after separate approval.
 
@@ -325,8 +325,8 @@ Every finding from the master register is accounted for below. “Merged” mean
 | GAP-0017 | HRMS-E-009 | Open — ESS nested route runtime verification |
 | GAP-0018 | HRMS-A-010 | Open P1 — attendance approval permission/scope |
 | GAP-0019 | HRMS-F-014 | Open P1 — CI/browser E2E |
-| GAP-0020 | HRMS-D-001 | Open P0 — WebSocket company broadcast |
-| GAP-0021 | HRMS-C-002 | Open P0 — missing webhook handler / boot |
+| GAP-0020 | HRMS-D-001 | Fixed — Awaiting real WebSocket integration test; unit isolation tests pass at Phase 23 CI SHA |
+| GAP-0021 | HRMS-C-002 | Verified Closed for missing export — route handler callable and router-load test passed; settlement tests remain |
 | GAP-0022 | HRMS-A-010 | Open P1 — leave list permissions |
 | GAP-0023 | HRMS-A-010 | Open P1 — leave balance controller/service/IDOR |
 | GAP-0024 | HRMS-A-010 | Open P1 — recruitment ownership |
@@ -370,7 +370,8 @@ Every finding from the master register is accounted for below. “Merged” mean
 | GAP-0062 | HRMS-F-013 / HRMS-F-011 | Open P1 — environment manifest and required runtime settings |
 | GAP-0063 | HRMS-F-011 / HRMS-F-013 | Open P1 — MinIO default credentials |
 | GAP-0064 | HRMS-F-019 | Open P1 — hard-coded encryption fallback |
-| GAP-0065 | HRMS-D-003 | Open P1 — multi-tenant email selection |
+| GAP-0065 | HRMS-D-003 | In Progress — explicit tenant-choice resolver added; login/OTP/refresh E2E pending |
+| GAP-0066 | HRMS-C-002 | Verified Closed — payment controller parse blocker fixed; backend CI passed at SHA 97c60ad1 |
 
 ## 6. Cross-task dependencies and execution order
 
