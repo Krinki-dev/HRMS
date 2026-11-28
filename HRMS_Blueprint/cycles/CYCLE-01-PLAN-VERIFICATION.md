@@ -83,7 +83,7 @@ Do not implement from the current draft. Revise `CYCLE-01-PLAN.md`, add the comp
 
 **Date:** 2026-11-28 (Asia/Kolkata)  
 **Plan blob SHA reviewed:** `7c3895a58e6553edaa4fdc346ed41be6e0ce4f4b`  
-**Result:** <VERIFIED>
+**Result:** **VERIFIED**
 
 Round 2 reviewed the revised plan from the beginning against R1–R8 and the frozen decisions. The plan was re-fetched from the working branch; its traceability matrix was checked programmatically for all 65 current gap IDs (GAP-0001 through GAP-0065), with no missing ID.
 
@@ -126,7 +126,7 @@ Round 2 reviewed the revised plan from the beginning against R1–R8 and the fro
 
 ## 4. Final result
 
-<badge color="success">VERIFIED</badge>
+**VERIFIED**
 
 The revised Cycle 01 plan is **Verified for implementation planning**. This verification does not authorize production database changes, deployment, real payments, destructive data operations, customer DB connections, or production secret/key changes. It also does not mean any task is implemented or tested.
 
