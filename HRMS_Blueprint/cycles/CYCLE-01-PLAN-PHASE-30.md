@@ -32,9 +32,9 @@ Phase 29's handoff names HRMS-D-004 operational ownership/query matrix as the ne
 
 The operational Prisma schema has 82 models:
 - 33 carry `company_id` directly;
-- 28 carry `employee_id` and must resolve ownership through the employee;
-- 12 are child models with a parent relation and inherit ownership through that parent;
-- 8 have no direct company/employee ownership key and require explicit classification;
+- 29 carry `employee_id` and must resolve ownership through the employee;
+- 13 are user/parent-owned models and inherit ownership through that parent or user key;
+- 7 have no direct company/employee/user ownership key and require explicit classification;
 - `companies` is the tenant-local root entity and must be selected by authenticated company ID.
 
 This is a source-schema inventory, not proof that every service query is correctly scoped. Query-by-query audit and composite same-company FK feasibility remain open.
