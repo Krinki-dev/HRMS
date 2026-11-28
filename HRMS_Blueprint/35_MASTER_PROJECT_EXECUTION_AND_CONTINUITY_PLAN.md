@@ -408,3 +408,9 @@ This supersedes the Phase 31 next-task line.
 - **Next exact task:** obtain/record the owner decisions needed for membership semantics and legacy backfill, then revise/verify the D-005 migration baseline. No schema migration or production activity without explicit approval.
 - HRMS-D-004 query-by-query operational ownership audit resumes after the identity mapping design is settled.
 - `main` untouched; no production DB, SQL, DDL, deployment, payment or customer-data operation.
+
+
+### Phase 32 owner-decision status update
+
+- Proposed membership defaults and required owner confirmations are recorded in `34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md`; they are not approved or frozen.
+- Next: obtain owner confirmation or amendments, then independently verify the D-005 migration baseline including the new membership mapping and legacy backfill. No DDL before approval.
