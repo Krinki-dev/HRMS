@@ -132,6 +132,7 @@ exports.approve = async (req, res) => {
 
     eventNotifier.notifyEmployeeUpdateRequestDecision({
       db,
+      tenantId: req.user.centralTenantId,
       companyId,
       requestId,
       decision: 'approved',
@@ -174,6 +175,7 @@ exports.reject = async (req, res) => {
 
     eventNotifier.notifyEmployeeUpdateRequestDecision({
       db,
+      tenantId: req.user.centralTenantId,
       companyId,
       requestId,
       decision: 'rejected',
