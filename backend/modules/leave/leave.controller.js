@@ -20,7 +20,9 @@ const wrap = (fn) => async (req, res) => {
 const ctrl = {
   dashboard: wrap(async (req, res) => {
     const isHR = ADMIN_ROLES.includes(req.user.role);
-    const empId = req.user.employeeId || req.query.employeeId;
+    // Employees always see their own dashboard. Only HR/admin may request
+    // another employee's dashboard, and the service verifies company ownership.
+    const empId = req.user.employeeId || (isHR ? req.query.employeeId : null);
     if (!empId) return sendSuccess(res, {
       balances: [], myPending: [], myUpcoming: [],
       pendingApprovals: await svc.list(req.db, req.user.companyId, { status: 'pending', limit: 1 }).then(r => r.length),
