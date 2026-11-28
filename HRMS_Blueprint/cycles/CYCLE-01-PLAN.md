@@ -190,14 +190,14 @@ All tasks begin as **Not Started**. A source-code commit alone does not complete
 #### HRMS-C-006 — Storage lifecycle and paid promotion state machine
 
 - **Stream/module:** C/D — Registration, tenant resolver, storage allocation.
-- **Findings:** GAP-0004, GAP-0005, GAP-0042, GAP-0043, GAP-0045.
+- **Findings:** GAP-0004, GAP-0005, GAP-0042, GAP-0043, GAP-0044, GAP-0045.
 - **Dependencies:** HRMS-D-003, HRMS-D-005.
 - **Implementation steps:**
   1. Define allowed storage modes and statuses from frozen PostgreSQL-only policy.
   2. Keep Free/Trial in public; Paid only after UUID-derived dedicated schema is created and verified.
   3. Add idempotent lease claim/retry/resume/compensation using existing lease fields.
-  4. Reconcile legacy Settings DB config so it cannot bypass canonical tenant storage policy.
-  5. Gate every customer-supplied DB connection path, including test endpoints.
+  4. Disable/deprecate legacy Settings DB-config writes that do not update canonical routing; encrypt credentials at rest and redact all secrets from API responses.
+  5. Gate every customer-supplied DB connection path, including test endpoints; validate PostgreSQL-only modes and block unsupported database types.
   6. Keep customer-managed DB modes disabled until SSRF/network egress policy is verified.
 - **Acceptance criteria:**
   - New Free/Trial signup uses only approved shared public schema.
@@ -206,6 +206,7 @@ All tasks begin as **Not Started**. A source-code commit alone does not complete
   - Expired leases can be safely reclaimed.
   - Failed provisioning is recoverable without unsafe duplicate email/subdomain records.
   - No unapproved DB URL/host path bypasses feature gate.
+  - Legacy DB config GET responses never return raw URLs/passwords; stored credentials use the approved encryption codec; unsupported DB modes are rejected and legacy UI cannot imply active routing changed.
 - **Tests:** State-machine unit tests, concurrent signup integration tests, crash-window/retry tests, mock network allow/deny tests.
 - **Safety:** Never connect to customer-supplied network endpoints in production until outbound policy passes independent review.
 
@@ -234,13 +235,11 @@ All tasks begin as **Not Started**. A source-code commit alone does not complete
 
 ### P1 — Core product and operational reliability
 
-#### HRMS-C-008 — Provisioning retry and recovery
-- **Findings:** GAP-0005; dependencies HRMS-C-006.
-- **Acceptance:** Failed registration can be resumed safely using a lease; duplicate email/subdomain and orphan schema are prevented; crash windows are covered by tests.
+<!-- HRMS-C-008 was merged into HRMS-C-006 during plan verification round 1; do not create a duplicate implementation task. -->
 
 #### HRMS-E-009 — Frontend/backend API contract repair
-- **Findings:** GAP-0032 residual, GAP-0034, GAP-0055, GAP-0056, GAP-0057, GAP-0058, GAP-0059, GAP-0060.
-- **Scope:** Employee address listing; photo upload method; expense receipt upload path/field; notification route; billing request shape; global response envelope; onboarding salary component route.
+- **Findings:** GAP-0015, GAP-0016, GAP-0017, GAP-0032 residual, GAP-0034, GAP-0055, GAP-0056, GAP-0057, GAP-0058, GAP-0059, GAP-0060.
+- **Scope:** Legacy tenant HR `/hr` API paths and sidebar/App route mismatches; ESS nested route prefixes; employee address listing; photo upload method; expense receipt upload path/field; notification route; Billing order request shape; global response envelope; onboarding salary component route.
 - **Acceptance:** Shared API contract tests cover path, method, request payload, multipart field, response envelope and status code. Dashboard, onboarding resume, Billing and employee/expense workflows pass browser E2E.
 - **Important:** Do not patch individual double-unwrapping sites without choosing one canonical API response convention.
 
@@ -265,13 +264,13 @@ All tasks begin as **Not Started**. A source-code commit alone does not complete
 - **Acceptance:** Missing/placeholder secrets fail startup; no default storage credentials; health/readiness endpoints accurately report dependencies; failed migration prevents release; exact deploy commit and health evidence recorded.
 
 #### HRMS-F-014 — CI and test reliability
-- **Findings:** GAP-0019, GAP-0031.
+- **Findings:** GAP-0019, GAP-0031; access-token persistence regression guard.
 - **Scope:** Ensure PostgreSQL RLS/auth/payroll/compliance suites actually execute; add API contract and browser E2E; detect skipped required suites.
-- **Acceptance:** CI fails when required integration env is missing or tests skip; backend tests, frontend build, PostgreSQL integration and core browser journeys pass at exact same commit SHA.
+- **Acceptance:** CI fails when required integration env is missing or tests skip; backend tests, frontend build, PostgreSQL integration and core browser journeys pass at exact same commit SHA. AuthStore regression test proves accessToken is excluded from persisted state and legacy values are purged.
 
 #### HRMS-A-015 — Core HR end-to-end workflows
-- **Findings:** GAP-0007, GAP-0012 and module tracker gaps.
-- **Scope:** Login → company selection → employee create/update → attendance → leave → payroll → compliance → reports.
+- **Findings:** GAP-0007, GAP-0012, GAP-0040 and module tracker gaps.
+- **Scope:** Login → company selection → employee create/update → attendance → leave → payroll → compliance → reports. Include attendance check-in metadata argument alignment and verify location/IP collection is limited to approved privacy requirements.
 - **Acceptance:** Each journey passes with correct role, tenant/company isolation, validation, error recovery and audit trail.
 
 ### P2 — Product completeness and optimisation
@@ -289,7 +288,91 @@ All tasks begin as **Not Started**. A source-code commit alone does not complete
 - **Findings:** GAP-0049.
 - **Acceptance:** Use live catalog and query plans; add only indexes supported by measured workload; validate migration impact and write overhead.
 
-## 5. Cross-task dependencies and execution order
+
+#### HRMS-F-019 — Remove static encryption fallback and harden key lifecycle
+
+- **Findings:** GAP-0064.
+- **Dependencies:** HRMS-F-013 (environment registry/validation).
+- **Scope:** Remove the literal fallback key from the shared encryption helper; fail closed in every process/script/worker; define versioned key rotation and legacy ciphertext handling.
+- **Acceptance:** Importing the encryption helper without a valid ENCRYPTION_KEY fails; all process entrypoints validate key configuration; AES-256-GCM round-trip succeeds; modified ciphertext/tag fails authentication; legacy CBC reads remain compatibility-only and have a documented retirement plan.
+- **Tests:** Missing/short key tests, tamper tests, helper-only script tests, process entrypoint tests, encrypted credential compatibility tests.
+- **Safety:** Do not run the incompatible `migrate-pii-encryption.js`; no production key rotation or ciphertext rewrite without a separately reviewed recovery/rollback plan.
+
+
+
+## 5. Gap-to-task traceability matrix
+
+Every finding from the master register is accounted for below. “Merged” means its evidence remains retained but the implementation work is performed under the parent task. “Superseded” means current source/frozen architecture corrected the original claim; any independent runtime verification remains assigned to the listed task.
+
+| Gap ID | Task / disposition | Status note |
+|---|---|---|
+| GAP-0001 | HRMS-D-003 | Open — tenant/company identity contract |
+| GAP-0002 | HRMS-D-004 | Open P0 — shared operational isolation proof |
+| GAP-0003 | HRMS-D-005 | Open P0 — PostgreSQL migration baseline |
+| GAP-0004 | HRMS-C-006 | Open P0 — storage lifecycle |
+| GAP-0005 | HRMS-C-006 | Open P1 — lease/retry/recovery |
+| GAP-0006 | HRMS-F-007 | Open P0 — backup/restore and shared tenant recovery |
+| GAP-0007 | HRMS-A-015 | Open P1 — core HR workflow E2E |
+| GAP-0008 | HRMS-C-002 | Open P1 — webhook idempotency/reconciliation |
+| GAP-0009 | HRMS-A-010 | Open P1 — RBAC and ownership |
+| GAP-0010 | HRMS-F-016 | Open P2 — CSV/XLSX pipeline |
+| GAP-0011 | HRMS-F-011 | Open P1 — storage/scanner validation |
+| GAP-0012 | HRMS-A-015 | Open P1 — browser E2E/responsive audit |
+| GAP-0013 | HRMS-F-013 | Open P1 — staging/deployment/monitoring |
+| GAP-0014 | HRMS-B-017 | Open P1 — module completeness |
+| GAP-0015 | HRMS-E-009 | Open P1 — legacy /hr API paths |
+| GAP-0016 | HRMS-E-009 | Open P1 — sidebar/App route alignment |
+| GAP-0017 | HRMS-E-009 | Open — ESS nested route runtime verification |
+| GAP-0018 | HRMS-A-010 | Open P1 — attendance approval permission/scope |
+| GAP-0019 | HRMS-F-014 | Open P1 — CI/browser E2E |
+| GAP-0020 | HRMS-D-001 | Open P0 — WebSocket company broadcast |
+| GAP-0021 | HRMS-C-002 | Open P0 — missing webhook handler / boot |
+| GAP-0022 | HRMS-A-010 | Open P1 — leave list permissions |
+| GAP-0023 | HRMS-A-010 | Open P1 — leave balance controller/service/IDOR |
+| GAP-0024 | HRMS-A-010 | Open P1 — recruitment ownership |
+| GAP-0025 | HRMS-A-010 | Open P1 — performance ownership |
+| GAP-0026 | HRMS-A-010 | Open P1 — training ownership |
+| GAP-0027 | HRMS-A-010 | Open P1 — asset ownership |
+| GAP-0028 | HRMS-F-011 | Open P1 — receipt upload security/ClamAV |
+| GAP-0029 | HRMS-A-010 | Open P1 — payroll controller/service contract |
+| GAP-0030 | Superseded under frozen design | Operational DB intentionally has no RLS; isolation remains tracked under GAP-0002/HRMS-D-004 |
+| GAP-0031 | HRMS-F-014 | Open P1 — PostgreSQL integration CI |
+| GAP-0032 | HRMS-E-009 | Partially superseded; missing salary-components endpoint remains GAP-0059 |
+| GAP-0033 | Superseded at source level; HRMS-F-011 | Routes now exist; storage/scanner/reviewer runtime verification remains |
+| GAP-0034 | HRMS-E-009 | Open P2 — notification route mismatch |
+| GAP-0035 | HRMS-F-007 | Open P1 — backup artifact encryption |
+| GAP-0036 | HRMS-A-010 | Open P1 — employee bank/document ownership |
+| GAP-0037 | HRMS-F-011 | Open P1 — public employee photo storage |
+| GAP-0038 | HRMS-F-016 | Open P2 — relational XLSX |
+| GAP-0039 | HRMS-F-016 | Open P1 — CSV formula injection |
+| GAP-0040 | HRMS-A-015 | Open P2 — attendance metadata argument mismatch |
+| GAP-0041 | HRMS-D-005 | Open P1 — MSSQL/PG migration history |
+| GAP-0042 | HRMS-C-006 | Open P1 — customer DB feature-gate coverage |
+| GAP-0043 | HRMS-C-006 | Open P1 — DB test endpoint SSRF boundary |
+| GAP-0044 | HRMS-C-006 | Open P1 — encrypt DB credentials and redact responses |
+| GAP-0045 | HRMS-C-006 | Open P2 — legacy DB config UI vs canonical routing |
+| GAP-0046 | HRMS-D-004 | Open P1 — same-company composite FK integrity |
+| GAP-0047 | HRMS-D-004 | Open P1 — Central RLS policy coverage |
+| GAP-0048 | HRMS-D-004 / HRMS-D-005 | Open P1 — fresh-install RLS/bootstrap parity |
+| GAP-0049 | HRMS-D-018 | Open P2 — evidence-based index review |
+| GAP-0050 | HRMS-F-007 | Open P1 — scheduler wiring and schedule field mismatch |
+| GAP-0051 | HRMS-F-013 | Open P1 — fail deployment on migration errors |
+| GAP-0052 | HRMS-F-007 | Merged into GAP-0006 — incomplete DR scope/restore |
+| GAP-0053 | HRMS-F-007 | Merged into GAP-0035 — dump encryption |
+| GAP-0054 | HRMS-E-009 | Merged into GAP-0034 — notification route mismatch |
+| GAP-0055 | HRMS-E-009 | Open P2 — employee address list endpoint |
+| GAP-0056 | HRMS-E-009 / HRMS-F-011 | Open P1 — receipt upload path/field and upload security |
+| GAP-0057 | HRMS-E-009 / HRMS-F-011 | Open P1 — employee photo upload method/storage |
+| GAP-0058 | HRMS-E-009 | Open P1 — Billing subscription order request contract |
+| GAP-0059 | HRMS-E-009 | Open P1 — onboarding salary-components route |
+| GAP-0060 | HRMS-E-009 | Open P1 — global response-envelope double unwrapping |
+| GAP-0061 | HRMS-F-012 | Open P1 — durable KYC task queue/restart recovery |
+| GAP-0062 | HRMS-F-013 / HRMS-F-011 | Open P1 — environment manifest and required runtime settings |
+| GAP-0063 | HRMS-F-011 / HRMS-F-013 | Open P1 — MinIO default credentials |
+| GAP-0064 | HRMS-F-019 | Open P1 — hard-coded encryption fallback |
+| GAP-0065 | HRMS-D-003 | Open P1 — multi-tenant email selection |
+
+## 6. Cross-task dependencies and execution order
 
 1. HRMS-D-003 → HRMS-D-004 → HRMS-D-005 → HRMS-C-006.
 2. HRMS-D-001 can begin immediately after identity contract is agreed; coordinate with HRMS-D-003.
@@ -301,11 +384,11 @@ All tasks begin as **Not Started**. A source-code commit alone does not complete
 8. HRMS-F-013 and HRMS-F-014 should be built alongside each code batch, not postponed to the end.
 9. HRMS-A-015 and P2 tasks follow after P0/P1 security and reliability exit criteria.
 
-## 6. Owner decisions required before the affected product work
+## 7. Owner decisions required before the affected product work
 
 These are not technical defaults to silently infer. Use the recommendation in `34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md` unless the owner chooses otherwise.
 
-- **OD-01 Pricing:** Frozen decision says unlimited employees on all plans, but current checkout still counts employees and price logic includes employee-count-based calculation. Confirm whether pricing is flat or per employee before billing UI/pricing implementation.
+- **OD-01 Pricing:** The frozen decision of no hard employee cap is settled and must not be reopened. Confirm only whether pricing is flat regardless of active employee count, or whether a customer may have unlimited employees while plan/add-on fees are still calculated per active employee. Current code contains employee caps/overage and per-employee module pricing, so the billing model must be reconciled before pricing implementation.
 - **OD-02 Free vs Trial:** Confirm whether users explicitly choose Free or 90-day Trial; current signup starts Free and trial activation is separate.
 - **OD-03 Self-hosted/offline:** Recommended launch scope is an independent local PostgreSQL installation, not cloud synchronization. Confirm before promising or implementing sync.
 - **OD-04 Backup destinations:** Confirm whether both Google Drive and OneDrive remain launch options or one is sufficient. Regardless, server-managed encrypted backup and restore verification are required.
@@ -313,7 +396,7 @@ These are not technical defaults to silently infer. Use the recommendation in `3
 
 Tasks that do not depend on these choices may proceed after plan verification. Do not block P0 security fixes waiting for unrelated pricing decisions.
 
-## 7. Explicitly excluded until separate approval
+## 8. Explicitly excluded until separate approval
 
 - Production or customer database migration/DDL.
 - Customer schema/data cleanup or deletion.
@@ -324,7 +407,7 @@ Tasks that do not depend on these choices may proceed after plan verification. D
 - Enabling paid tenants or changing live tenant storage allocations.
 - Enabling permanent deletion or claiming backup/restore readiness without a successful drill.
 
-## 8. Definition of Cycle 01 completion
+## 9. Definition of Cycle 01 completion
 
 Cycle 01 can be closed only when:
 - All P0 tasks are verified with tests and recorded evidence.
@@ -337,7 +420,7 @@ Cycle 01 can be closed only when:
 - The exact commit and CI evidence are recorded.
 - No production-ready claim is made until owner approvals and production operational gates pass.
 
-## 9. Plan verification requirement
+## 10. Plan verification requirement
 
 This plan is **not approved for implementation yet**. Create `CYCLE-01-PLAN-VERIFICATION.md` as a separate review. Verify:
 - all P0/P1 findings map to tasks,
