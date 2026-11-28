@@ -1262,3 +1262,14 @@ This block supersedes older branch/CI statements above where they conflict.
 - Central RLS policy/bootstrap parity is the current next gate; latest test run had one assertion failure, corrected with an explicit application-role ownership/BYPASSRLS migration comment. Latest rerun is pending.
 - Next: review Central RLS migration/bootstrap parity and test results; do not apply migration to production. Then continue D-004 operational ownership/query-scope and D-005 PostgreSQL migration baseline audit.
 - `main` untouched.
+
+
+## CURRENT HANDOFF — Cycle 01 Phase 25 (2026-11-28)
+
+- Latest implementation report: `HRMS_Blueprint/cycles/CYCLE-01-IMPLEMENTATION-PHASE-25.md`.
+- Central RLS migration: `backend/db-migrations/20261128_central_rls_policy_completion.sql`.
+- Fresh-install parity: `backend/prisma/central_schema.sql` includes the same policies for all 17 Central Prisma models.
+- Static backend CI passed at SHA `865d5f5d567f49b70967dbd82923047e7a870311`: 183 discovered, 178 pass, 0 fail, 5 skipped.
+- Do not execute the migration yet. Deployed Central DB role ownership/BYPASSRLS and live policy catalog are unknown. Legacy Settings DB-config endpoints use a direct Prisma client without tenant RLS context and must be migrated/disabled first.
+- No live DB, production migration, deployment or customer-data operation performed; main untouched.
+- Next: complete operational query ownership/scoping audit, then prepare PostgreSQL tenant migration baseline. Continue D-005 only after D-004 live verification preconditions are satisfied.
