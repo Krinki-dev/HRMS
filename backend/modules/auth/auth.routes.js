@@ -248,7 +248,14 @@ const ALLOWED_OTP_PURPOSES = new Set(['login', 'reset', 'verify', 'aadhaar']);
 
 async function getActiveContext(req, email) {
   const normalizedEmail = email.toLowerCase().trim();
-  if (req.db) return { activeDb: req.db, tenantId: req.tenant?.id, isTemporary: false };
+  if (req.db) {
+    const requestTenantId = req.body?.tenantId || null;
+    const resolvedTenantId = req.tenant?.id || null;
+    if (requestTenantId && requestTenantId !== resolvedTenantId) {
+      return { activeDb: null, tenantId: null, isTemporary: false };
+    }
+    return { activeDb: req.db, tenantId: resolvedTenantId, isTemporary: false };
+  }
   const selectedTenantId = req.body?.tenantId || null;
   const ctx = await authService.resolveTenantDb(normalizedEmail, selectedTenantId);
   if (!ctx) return { activeDb: null, isTemporary: false };
@@ -392,36 +399,34 @@ router.post('/refresh', async (req, res) => {
       return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Refresh token belongs to a different workspace.', 401);
     }
     let resolvedCentralTenantId = decoded.centralTenantId || req.tenant?.id || null;
-    let selectedIndex = null;
 
     if (!activeDb) {
-      // A refresh token is tenant-bound. Legacy tokens without a tenant claim
-      // may only resolve when there is exactly one active membership.
-      const memberships = await withPlatformAdminRLS(centralPrisma, (tx) => tx.central_user_index.findMany({
-        where: {
-          user_id: decoded.id,
-          is_active: true,
-          ...(resolvedCentralTenantId ? { company_id: resolvedCentralTenantId } : {}),
-        },
-        select: { company_id: true, is_platform_admin: true },
-        take: 2,
-      }));
-      if (memberships.length !== 1) {
-        res.clearCookie('refreshToken');
-        return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Workspace selection is required to refresh this session.', 401);
-      }
-      selectedIndex = memberships[0];
-      resolvedCentralTenantId = selectedIndex.company_id;
-      if (selectedIndex.is_platform_admin) {
-        activeDb = centralPrisma;
-      } else {
-        const ctx = await authService.resolveTenantDbById(selectedIndex.company_id);
-        if (ctx) {
-          const { PrismaClient } = require('@prisma/client');
-          activeDb = new PrismaClient({ datasources: { db: { url: ctx.url } } });
-          isTemporary = true;
+      // A signed tenant claim is already an explicit workspace selection.
+      // Resolve that tenant directly; do not depend on a possibly incomplete
+      // central_user_index user_id backfill for normal refreshes.
+      if (!resolvedCentralTenantId) {
+        // Legacy tokens without a tenant claim may only resolve when there is
+        // exactly one active membership. Never choose the first of many.
+        const memberships = await withPlatformAdminRLS(centralPrisma, (tx) => tx.central_user_index.findMany({
+          where: { user_id: decoded.id, is_active: true },
+          select: { company_id: true },
+          take: 2,
+        }));
+        if (memberships.length !== 1) {
+          res.clearCookie('refreshToken');
+          return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Workspace selection is required to refresh this session.', 401);
         }
+        resolvedCentralTenantId = memberships[0].company_id;
       }
+
+      const ctx = await authService.resolveTenantDbById(resolvedCentralTenantId);
+      if (!ctx) {
+        res.clearCookie('refreshToken');
+        return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Workspace is no longer available for this session.', 401);
+      }
+      const { PrismaClient } = require('@prisma/client');
+      activeDb = new PrismaClient({ datasources: { db: { url: ctx.url } } });
+      isTemporary = true;
     }
 
     if (!activeDb) return sendError(res, ERROR_CODES.SERVER, 'Configuration error.', 500);
