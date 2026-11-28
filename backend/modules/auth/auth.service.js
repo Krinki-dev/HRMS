@@ -305,11 +305,14 @@ const authService = {
     // Central index binds this email to one immutable tenant and the
     // corresponding operational user ID. Never search the shared public
     // users table by email alone: that would mix companies/tenants.
-    const memberships = await withPlatformAdminRLS(centralPrisma, (tx) => tx.central_user_index.findMany({
-      where: { email: normalizedEmail, company_id: tenantId, is_active: true },
-      select: { user_id: true },
-      take: 2,
-    }));
+    const memberships = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
+      SELECT user_id
+      FROM central_user_index
+      WHERE LOWER(email) = ${normalizedEmail}
+        AND company_id = ${tenantId}::uuid
+        AND is_active = true
+      LIMIT 2
+    `);
     if (memberships.length !== 1 || !memberships[0].user_id) {
       return { status: 'not_found' };
     }
