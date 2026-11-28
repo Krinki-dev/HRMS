@@ -124,3 +124,15 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - Deployment flag value and provider-level egress controls remain unknown; `backend/.env.example` does not document the flag and `railway.json` contains no egress policy evidence.
 - No runtime tests, server boot, browser, DB, network, migration, payment or deployment action was performed. No app code changed; main untouched.
 - Keep customer-managed DB connections disabled until every connection path and deployment egress controls are verified. Cycle 01 plan and independent verification remain pending.
+
+
+## Cycle 01 Phase 16 — PostgreSQL integrity and RLS coverage (2026-11-28)
+
+- Evidence: [CYCLE-01-SOURCE-AUDIT-PHASE-16.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-16.md).
+- **GAP-0046 (P1):** operational schema has multiple company-owned parent/child relations where FKs reference only parent id, not parent id + company_id. Examples: employees→branches/departments/designations, job_postings→job_requisitions, candidates→job_postings. Database does not enforce same-company ownership on these relations. Actual cross-company rows not inspected.
+- **GAP-0047 (P1):** central RLS coverage is incomplete in reviewed migrations for tenant-specific legacy `backup_config` and `tenant_db_config`; `payment_webhook_events` and `billing_events` also lack policies in reviewed SQL and need explicit access classification. Live DB catalog not inspected.
+- **GAP-0048 (P1):** `backend/prisma/central_schema.sql` bootstrap contains no RLS enable/force/policy statements. Fresh install applying only this bootstrap would not receive the separate RLS policy set.
+- **GAP-0049 (P2):** static scan found 30 of 55 declared operational Prisma relations with FK columns lacking a declared index/unique index. Verify actual catalog and query plans; do not blindly add all.
+- Operational Prisma schema: 82 models, 33 with direct company_id, 55 declared relations. Central schema: 17 models.
+- Frozen decisions explicitly state tenant operational tables have no RLS and rely on company_id filtering; central RLS owner/superuser bypass remains a release validation requirement. Production connection role not verified.
+- No database, tests, server, browser or production operation performed; no application code changed; main untouched.
