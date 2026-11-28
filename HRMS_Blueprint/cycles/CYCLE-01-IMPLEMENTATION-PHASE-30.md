@@ -91,3 +91,8 @@ This is a schema ownership map, not a claim that every query path has passed. Th
 - `main` untouched.
 - No production/customer DB connection or SQL execution.
 - No migration/DDL, deployment, real payment, deletion, credential rotation or customer-data operation.
+
+
+## Phase 31 follow-up — OTP namespace extension
+
+Phase 31 extended the Phase 30 OTP key from tenant + email to tenant + operational company + email. This prevents collisions between company accounts within the same tenant as well as across tenants. See `CYCLE-01-IMPLEMENTATION-PHASE-31.md`. The Phase 30 report's original tenant-only key is superseded by this final Phase 31 behavior.
