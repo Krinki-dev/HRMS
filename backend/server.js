@@ -189,9 +189,9 @@ const notifSvc = require('./modules/notifications/notifications.service');
 // server access logs and browser history. Clients must call POST /auth/ws-ticket first.
 httpServer.on('upgrade', (request, socket, head) => {
   const { query } = url.parse(request.url, true);
-  const userId = consumeTicket(query.ticket);
+  const wsIdentity = consumeTicket(query.ticket);
 
-  if (!userId) {
+  if (!wsIdentity) {
     socket.write('HTTP/1.1 401 Unauthorized\r
 \r
 ');
