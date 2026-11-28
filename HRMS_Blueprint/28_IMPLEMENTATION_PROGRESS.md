@@ -774,3 +774,14 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Frontend Build passed at SHA `2b27b3c8a319f02a16b01f2fb9fd092d0cff380b`.
 - Tenant migration inventory integration passed at SHA `3f495f016e8e56ecb6fc63770c836fc6e292ac7c`; it does not certify Central RLS.
 - No production DB, real login, production token or customer-data operation performed; main untouched.
+
+
+## 2026-11-28 — Cycle 01 Phase 25 Central RLS policy completion
+
+- Added `HRMS_Blueprint/cycles/CYCLE-01-IMPLEMENTATION-PHASE-25.md`.
+- Added `backend/db-migrations/20261128_central_rls_policy_completion.sql` with policies for all 17 Central Prisma models.
+- Aligned `backend/prisma/central_schema.sql` with the same fresh-install policy set.
+- Updated `rlsContext.js` and migration README with policy matrix and deployment safety gate.
+- Added `central-rls-policy-parity.test.js`; backend CI passed at SHA `865d5f5d567f49b70967dbd82923047e7a870311` (183 discovered, 178 passed, 0 failed, 5 skipped).
+- This is static source/CI evidence only. No live Central DB catalog, role ownership/BYPASSRLS, fresh install or migration execution was performed.
+- Legacy Settings DB-config direct Prisma access is a precondition to resolve before rollout.
