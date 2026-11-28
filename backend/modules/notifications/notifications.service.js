@@ -1,54 +1,82 @@
-﻿const clients = new Map();
+'use strict';
 
-const register = (userId, ws) => {
-  if (!clients.has(userId)) clients.set(userId, new Set());
-  clients.get(userId).add(ws);
+const clients = new Map();
+const socketIdentity = new WeakMap();
 
-  ws.on('close', () => {
-    clients.get(userId)?.delete(ws);
-    if (clients.get(userId)?.size === 0) clients.delete(userId);
+function removeSocket(userId, ws) {
+  const sockets = clients.get(userId);
+  if (!sockets) return;
+  sockets.delete(ws);
+  socketIdentity.delete(ws);
+  if (sockets.size === 0) clients.delete(userId);
+}
+
+const register = (identity, ws) => {
+  if (!identity || typeof identity.userId !== 'string' || !identity.userId) {
+    throw new TypeError('Verified WebSocket user identity is required.');
+  }
+  if (!ws || typeof ws.on !== 'function') {
+    throw new TypeError('A valid WebSocket connection is required.');
+  }
+
+  const normalizedIdentity = Object.freeze({
+    userId: identity.userId,
+    tenantId: identity.tenantId || null,
+    companyId: identity.companyId || null,
   });
 
-  ws.on('error', () => {
-    clients.get(userId)?.delete(ws);
-  });
+  if (!clients.has(normalizedIdentity.userId)) clients.set(normalizedIdentity.userId, new Set());
+  clients.get(normalizedIdentity.userId).add(ws);
+  socketIdentity.set(ws, normalizedIdentity);
+
+  ws.on('close', () => removeSocket(normalizedIdentity.userId, ws));
+  ws.on('error', () => removeSocket(normalizedIdentity.userId, ws));
 };
 
-const pushToUser = (userId, payload) => {
+const pushToUser = (userId, payload, tenantId, companyId) => {
+  // Do not emit cross-workspace user notifications when the caller cannot
+  // provide the same verified identity tuple used at socket registration.
+  if (!tenantId || !companyId) return;
   const sockets = clients.get(userId);
   if (!sockets) return;
   const msg = JSON.stringify(payload);
-  sockets.forEach(ws => {
+  sockets.forEach((ws) => {
+    const identity = socketIdentity.get(ws);
+    if (identity?.tenantId !== tenantId || identity?.companyId !== companyId) return;
     try { if (ws.readyState === 1) ws.send(msg); } catch (_) {}
   });
 };
 
-const pushToCompany = (companyId, payload) => {
+const pushToCompany = (tenantId, companyId, payload) => {
+  // Missing tenant context must fail closed, never become a global broadcast.
+  if (!tenantId || !companyId) return;
   const msg = JSON.stringify({ ...payload, _broadcast: true });
   clients.forEach((sockets) => {
-    sockets.forEach(ws => {
+    sockets.forEach((ws) => {
+      const identity = socketIdentity.get(ws);
+      if (identity?.tenantId !== tenantId || identity?.companyId !== companyId) return;
       try { if (ws.readyState === 1) ws.send(msg); } catch (_) {}
     });
   });
 };
 
-const create = async (db, companyId, { userIds, type, title, body, link, priority = 'normal' }) => {
+const create = async (db, companyId, { userIds, type, title, body, link, priority = 'normal' }, tenantId = null) => {
   const announcement = await db.announcements.create({
     data: {
-      company_id:    companyId,
+      company_id: companyId,
       title,
       body,
       type,
       priority,
       audience_type: userIds?.length ? 'specific' : 'all',
-      audience_ids:  JSON.stringify(userIds || []),
-      notify_inapp:  true,
+      audience_ids: JSON.stringify(userIds || []),
+      notify_inapp: true,
     },
   });
 
-  const targets   = userIds?.length ? userIds : [];
+  const targets = userIds?.length ? userIds : [];
   const wsPayload = {
-    id:         announcement.id,
+    id: announcement.id,
     type,
     title,
     body,
@@ -58,9 +86,9 @@ const create = async (db, companyId, { userIds, type, title, body, link, priorit
   };
 
   if (targets.length) {
-    targets.forEach(uid => pushToUser(uid, wsPayload));
+    targets.forEach((uid) => pushToUser(uid, wsPayload, tenantId, companyId));
   } else {
-    pushToCompany(companyId, wsPayload);
+    pushToCompany(tenantId, companyId, wsPayload);
   }
 
   return announcement;
@@ -68,8 +96,7 @@ const create = async (db, companyId, { userIds, type, title, body, link, priorit
 
 const list = async (db, companyId, userId, query = {}) => {
   const { limit = 20, cursor } = query;
-  const take = Math.min(parseInt(limit), 50);
-
+  const take = Math.min(parseInt(limit, 10) || 20, 50);
   const where = {
     company_id: companyId,
     OR: [
@@ -81,26 +108,26 @@ const list = async (db, companyId, userId, query = {}) => {
   const items = await db.announcements.findMany({
     where,
     orderBy: { created_at: 'desc' },
-    take:    take + 1,
+    take: take + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     select: {
-      id:         true,
-      title:      true,
-      body:       true,
-      type:       true,
-      priority:   true,
-      is_pinned:  true,
+      id: true,
+      title: true,
+      body: true,
+      type: true,
+      priority: true,
+      is_pinned: true,
       created_at: true,
       reads: { where: { user_id: userId }, select: { read_at: true } },
     },
   });
 
   const hasMore = items.length > take;
-  const data    = items.slice(0, take).map(n => ({
+  const data = items.slice(0, take).map((n) => ({
     ...n,
     is_read: n.reads.length > 0,
     read_at: n.reads[0]?.read_at || null,
-    reads:   undefined,
+    reads: undefined,
   }));
 
   return {
@@ -108,7 +135,7 @@ const list = async (db, companyId, userId, query = {}) => {
     pagination: {
       hasMore,
       nextCursor: hasMore ? data[data.length - 1]?.id : null,
-      count:      data.length,
+      count: data.length,
     },
   };
 };
@@ -116,7 +143,7 @@ const list = async (db, companyId, userId, query = {}) => {
 const unreadCount = async (db, companyId, userId) => {
   const total = await db.announcements.count({
     where: {
-      company_id:   companyId,
+      company_id: companyId,
       notify_inapp: true,
       OR: [
         { audience_type: 'all' },
@@ -130,7 +157,7 @@ const unreadCount = async (db, companyId, userId) => {
 
 const markRead = async (db, notificationId, userId) => {
   await db.announcement_reads.upsert({
-    where:  { announcement_id_user_id: { announcement_id: notificationId, user_id: userId } },
+    where: { announcement_id_user_id: { announcement_id: notificationId, user_id: userId } },
     create: { announcement_id: notificationId, user_id: userId },
     update: { read_at: new Date() },
   });
@@ -140,7 +167,7 @@ const markRead = async (db, notificationId, userId) => {
 const markAllRead = async (db, companyId, userId) => {
   const unread = await db.announcements.findMany({
     where: {
-      company_id:   companyId,
+      company_id: companyId,
       notify_inapp: true,
       OR: [
         { audience_type: 'all' },
@@ -152,7 +179,7 @@ const markAllRead = async (db, companyId, userId) => {
   });
 
   await db.announcement_reads.createMany({
-    data:           unread.map(n => ({ announcement_id: n.id, user_id: userId })),
+    data: unread.map((n) => ({ announcement_id: n.id, user_id: userId })),
     skipDuplicates: true,
   });
 
@@ -169,4 +196,3 @@ module.exports = {
   markRead,
   markAllRead,
 };
-
