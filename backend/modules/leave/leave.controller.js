@@ -9,6 +9,9 @@ const ADMIN_ROLES = ['super_admin','admin','hr_admin'];
 const wrap = (fn) => async (req, res) => {
   try { await fn(req, res); }
   catch (e) {
+    if (e.message === 'NOT_FOUND') {
+      return sendError(res, ERROR_CODES.NOT_FOUND, 'Leave record or employee not found.', 404);
+    }
     console.error('[Leave]', e.message);
     sendError(res, ERROR_CODES.SERVER, 'Server error.', 500);
   }
