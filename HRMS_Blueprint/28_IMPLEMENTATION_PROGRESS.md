@@ -661,3 +661,14 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Revalidated positive source controls: authenticated tenant-context match, fail-closed storage resolver, UUID-bound schema naming and transaction-scoped central RLS helpers.
 - Inspected storage resolver and RLS test source; tests were not executed and DB env variables may cause auto-skip under current CI (GAP-0031).
 - No application code, runtime, DB, customer network, payment or deployment operations performed; main untouched.
+
+
+## 2026-11-28 — Cycle 01 Phase 15 customer DB configuration audit
+
+- Added `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-15.md`.
+- Corrected Phase 14 interpretation: new tenant registration checks `customerDatabaseConnectionsEnabled()` before customer-managed DB preflight.
+- Identified GAP-0043: active legacy Settings DB connection-test endpoint bypasses that flag and attempts a Prisma connection using request-supplied details; outbound reachability is a potential SSRF boundary, not runtime-proven.
+- Identified GAP-0044: legacy DB config stores cloud URL/local password without encryption and returns cloud URL unredacted.
+- Identified GAP-0045: legacy Settings UI/API persists to `tenant_db_config`, whereas current tenant routing consumes canonical `tenants` storage fields; UI includes non-PostgreSQL options despite PostgreSQL-only current architecture.
+- Registration lifecycle source shows 30-minute lease, preflight, atomic tenant seed, failure state cleanup and token/expiry-checked activation. No separate recovery worker was verified.
+- No tests/boot/browser/DB/network/deployment operations were performed; no app code changed. main untouched.
