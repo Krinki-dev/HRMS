@@ -98,93 +98,123 @@ const authService = {
 
   // ─── Core Auth Logic ───────────────────────────────────────────────
 
-  async lookupEmail(email) {
+  async lookupEmail(email, selectedTenantId = null) {
     const normalizedEmail = email.toLowerCase().trim();
-    
-    // 1. Central Index
+    if (selectedTenantId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(selectedTenantId)) {
+      return { found: false, choices: [] };
+    }
+
     const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
-      SELECT ui.subdomain, ui.is_platform_admin, t.name AS company_name, t.logo_url, t.is_active, t.plan
+      SELECT ui.company_id AS tenant_id, ui.subdomain, ui.is_platform_admin,
+             t.name AS company_name, t.logo_url, t.is_active, t.plan
       FROM central_user_index ui
-      LEFT JOIN tenants t ON t.id = ui.company_id
-      WHERE ui.email = ${normalizedEmail} AND ui.is_active = true AND t.is_active = true AND t.storage_status = 'ready' AND t.deleted_at IS NULL
-      LIMIT 1
+      INNER JOIN tenants t ON t.id = ui.company_id
+      WHERE LOWER(ui.email) = ${normalizedEmail}
+        AND ui.is_active = true
+        AND t.is_active = true
+        AND t.storage_status = 'ready'
+        AND t.deleted_at IS NULL
+        AND (${selectedTenantId}::uuid IS NULL OR ui.company_id = ${selectedTenantId}::uuid)
+      ORDER BY LOWER(t.name), ui.company_id
     `);
 
-    if (rows && rows.length > 0) {
-          const r = rows[0]; return { found: true, subdomain: r.subdomain, is_platform_admin: r.is_platform_admin, companyName: r.company_name, logoUrl: r.logo_url, is_active: r.is_active, plan: r.plan };
+    let eligibleRows = rows || [];
+    if (eligibleRows.length === 0) {
+      const tenantRows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
+        SELECT id AS tenant_id, name AS company_name, subdomain, logo_url,
+               is_active, plan, false AS is_platform_admin
+        FROM tenants
+        WHERE LOWER(admin_email) = ${normalizedEmail}
+          AND is_active = true
+          AND storage_status = 'ready'
+          AND deleted_at IS NULL
+          AND (${selectedTenantId}::uuid IS NULL OR id = ${selectedTenantId}::uuid)
+        ORDER BY LOWER(name), id
+      `);
+      eligibleRows = tenantRows || [];
+
+      for (const tenant of eligibleRows) {
+        await withPlatformAdminRLS(centralPrisma, (tx) => tx.$executeRaw`
+          INSERT INTO central_user_index (id, email, subdomain, company_id, is_active, created_at)
+          VALUES (gen_random_uuid(), ${normalizedEmail}, ${tenant.subdomain}, ${tenant.tenant_id}::uuid, true, NOW())
+          ON CONFLICT DO NOTHING
+        `);
+      }
     }
 
-    // 2. Tenant Admin Check
-    const tenantRows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
-      SELECT id, name, subdomain, logo_url, is_active, plan
-      FROM tenants
-      WHERE admin_email = ${normalizedEmail} AND is_active = true AND storage_status = 'ready' AND deleted_at IS NULL
-      LIMIT 1
-    `);
+    const choices = eligibleRows.map((row) => ({
+      tenantId: row.tenant_id,
+      subdomain: row.subdomain,
+      is_platform_admin: !!row.is_platform_admin,
+      companyName: row.company_name,
+      logoUrl: row.logo_url || null,
+      is_active: row.is_active,
+      plan: row.plan,
+    }));
 
-    if (tenantRows.length > 0) {
-      const t = tenantRows[0];
-      // Auto-index for future
-      withPlatformAdminRLS(centralPrisma, (tx) => tx.$executeRaw`
-        INSERT INTO central_user_index (id, email, subdomain, company_id, is_active, created_at)
-        VALUES (gen_random_uuid(), ${normalizedEmail}, ${t.subdomain}, ${t.id}, true, NOW())
-        ON CONFLICT DO NOTHING
-      `).catch(() => {});
-
-      return { 
-        found: true, 
-        subdomain: t.subdomain, 
-        companyName: t.name, 
-        logoUrl: t.logo_url, 
-        is_active: t.is_active,
-        plan: t.plan 
-      };
-    }
-
-    return { found: false };
+    return {
+      found: choices.length > 0,
+      choices,
+      ...(choices.length === 1 ? choices[0] : {}),
+    };
   },
 
-  async resolveTenantDb(email) {
+  async resolveTenantDb(email, selectedTenantId = null) {
     try {
+      const normalizedEmail = email.toLowerCase().trim();
+      if (selectedTenantId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(selectedTenantId)) {
+        return null;
+      }
+
       const userRows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
-        SELECT * FROM central_user_index 
-        WHERE email = ${email.toLowerCase().trim()} AND is_active = true
-          AND EXISTS (SELECT 1 FROM tenants t WHERE t.id = central_user_index.company_id AND t.is_active = true AND t.storage_status = 'ready' AND t.deleted_at IS NULL) 
-        LIMIT 1
+        SELECT ui.company_id, ui.subdomain, ui.is_platform_admin
+        FROM central_user_index ui
+        INNER JOIN tenants t ON t.id = ui.company_id
+        WHERE LOWER(ui.email) = ${normalizedEmail}
+          AND ui.is_active = true
+          AND t.is_active = true
+          AND t.storage_status = 'ready'
+          AND t.deleted_at IS NULL
+          AND (${selectedTenantId}::uuid IS NULL OR ui.company_id = ${selectedTenantId}::uuid)
+        ORDER BY ui.company_id
       `);
-      let u = userRows[0];
-      if (!u) {
+
+      let selected = null;
+      if (userRows.length === 1) {
+        selected = userRows[0];
+      } else if (userRows.length > 1) {
+        // Never select an arbitrary workspace when an email belongs to more than one tenant.
+        return null;
+      } else {
         const tenantRows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
-          SELECT id, subdomain, db_mode, db_url, schema_name, local_db_type,
-                 local_db_host, local_db_port, local_db_name, local_db_user,
-                 local_db_pass, is_active, deleted_at
+          SELECT id, subdomain
           FROM tenants
-          WHERE LOWER(admin_email) = LOWER(${email.toLowerCase().trim()})
-            AND deleted_at IS NULL
+          WHERE LOWER(admin_email) = ${normalizedEmail}
             AND is_active = true
             AND storage_status = 'ready'
-          LIMIT 1
+            AND deleted_at IS NULL
+            AND (${selectedTenantId}::uuid IS NULL OR id = ${selectedTenantId}::uuid)
+          ORDER BY id
         `);
-        if (tenantRows.length > 0) {
+        if (tenantRows.length > 1) return null;
+        if (tenantRows.length === 1) {
           const tenant = tenantRows[0];
           await withPlatformAdminRLS(centralPrisma, (tx) => tx.$executeRaw`
             INSERT INTO central_user_index (id, email, subdomain, company_id, is_active, created_at)
-            VALUES (gen_random_uuid(), ${email.toLowerCase().trim()}, ${tenant.subdomain}, ${tenant.id}::uuid, true, NOW())
+            VALUES (gen_random_uuid(), ${normalizedEmail}, ${tenant.subdomain}, ${tenant.id}::uuid, true, NOW())
             ON CONFLICT DO NOTHING
           `);
-          u = { company_id: tenant.id, subdomain: tenant.subdomain, is_platform_admin: false };
+          selected = { company_id: tenant.id, subdomain: tenant.subdomain, is_platform_admin: false };
         }
       }
-      if (!u) return null;
 
-      // Platform admin users are still tied to a company index row
-      // and their actual user record lives in the tenant database.
-      const tenantCtx = await this.resolveTenantDbById(u.company_id);
+      if (!selected) return null;
+      const tenantCtx = await this.resolveTenantDbById(selected.company_id);
       if (!tenantCtx) return null;
       return {
         ...tenantCtx,
-        isPlatformAdmin: !!u.is_platform_admin,
-        subdomain: u.subdomain,
+        isPlatformAdmin: !!selected.is_platform_admin,
+        subdomain: selected.subdomain,
       };
     } catch (err) {
       logger.error('[AuthService/resolveTenantDb] Error:', err);
