@@ -180,3 +180,12 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - **GAP-0063 (P1):** MinIO silently falls back to `minioadmin/minioadmin`; production startup does not reject missing/default MinIO credentials. Deployment reachability/exploitability not tested.
 - `/health` is process liveness only; it does not establish DB/object-store/scanner/worker readiness. ClamAV intentionally fails uploads closed when unavailable.
 - No service, queue, DB, browser, test, backup, restore, migration or deployment was executed; main untouched.
+
+
+## Cycle 01 Phase 21 — authentication identity and encryption reconciliation (2026-11-28)
+
+- Evidence: [CYCLE-01-SOURCE-AUDIT-PHASE-21.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-21.md).
+- **GAP-0064 (P1):** shared encryption helper silently falls back to a hard-coded source-code key when ENCRYPTION_KEY is absent. Main server startup validates production configuration, but direct scripts/workers can bypass that bootstrap. Production use of fallback is unknown.
+- **GAP-0065 (P1):** email lookup and tenant DB resolution select an unordered `LIMIT 1` row from central_user_index although schema permits same email in multiple tenants. Lookup returns one subdomain without explicit tenant choice.
+- Positive control: current authStore persistence excludes accessToken; token is held in memory and legacy stored values are cleared. Correct the stale statement in frozen decisions; retain memory-only requirement and add regression tests.
+- No code, credentials, DB, browser, test, migration or deployment operation performed; main untouched.
