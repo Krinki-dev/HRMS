@@ -85,3 +85,24 @@ Plan/verification and register updates are committed separately and indexed in t
 - `main` untouched.
 - No production/customer DB connection or SQL execution.
 - No schema migration/DDL, deployment, real payment, deletion, credential rotation or customer-data operation.
+
+
+## 9. Final source and design references
+
+Final source commit evidence:
+- Auth service tenant-indexed identity resolver: `20bbde776024825b1d9554aa9f0917149edb07f0`
+- Auth route tenant/company binding: `28b05ef6b93fc7347b7d451bd10aade9ea7250d7`
+- OTP helper final tenant+company key: `1045f5cf6941983ffe691df236c100b2a2251663`
+- Login UI final selection state: `f6d6ccf1a62b900fe35ec9ac6379e94711fb8ee2`
+- Forgot-password UI final company state: `0956125e3e7608bace83fa06c2fc306eacff97ef`
+- Company identity regression tests: `dbe758108c27d83a04af1ed19ca993370d0cd53d`
+- OTP regression tests: `41d2f7b7c315f946b758fbbdb18789b4c2b7ae32`
+- Password-reset company assertion: `41347ae12a504616dd43c34ad1a635534c0807b7`
+
+The D-005 design dependency is now documented and verified for design-only work:
+- Design proposal: `CYCLE-01-CENTRAL-TENANT-COMPANY-MEMBERSHIP-DESIGN-PHASE-32.md`
+- Plan: `CYCLE-01-PLAN-PHASE-32.md`
+- Independent verification: `CYCLE-01-PLAN-VERIFICATION-PHASE-32.md`
+- D-005 plan update: `847669b8c09538113a1d60025f42e40e2da1f8db`
+
+The design is not a frozen owner decision and authorizes no DDL. The listed membership semantics and legacy backfill authority must be resolved before any migration.
