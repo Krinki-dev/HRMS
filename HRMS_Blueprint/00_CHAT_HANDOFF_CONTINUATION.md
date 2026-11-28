@@ -1210,3 +1210,13 @@ This block supersedes older branch/CI statements above where they conflict.
 - `/health` only confirms process response, not DB/object-store/scanner/worker readiness.
 - No application code, tests, services, DB, queue, backup, restore, migration, payment or deployment operation performed; main untouched.
 - Next: reconcile all findings and finish any remaining high-risk source audit. Then build a prioritized Cycle 01 improvement plan with task IDs, dependencies, rollback/safety controls and measurable acceptance tests. Have the plan independently verified before changing app code.
+
+
+## CURRENT HANDOFF — Cycle 01 Phase 21 (2026-11-28)
+
+- Latest completed audit: `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-21.md`.
+- GAP-0064: encryption helper contains a hard-coded fallback key; server startup validation does not protect direct helper scripts/workers.
+- GAP-0065: multi-tenant email resolution uses unordered `LIMIT 1` and returns one arbitrary workspace instead of explicit selection.
+- Positive correction: current authStore excludes accessToken from persistence and clears legacy localStorage tokens; preserve this behavior and test it.
+- No application code, credentials, DB, test, browser, migration or deployment operation performed; main untouched.
+- Next: reconcile full findings register, create Cycle 01 prioritized P0/P1 plan, then independently verify plan before application changes.
