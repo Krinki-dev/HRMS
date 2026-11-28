@@ -734,3 +734,12 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - GAP-0065: email-to-tenant resolution uses unordered LIMIT 1 despite multi-tenant email membership being allowed.
 - Corrected stale security note: current authStore persist partialize excludes accessToken; it is memory-only and legacy values are purged.
 - No app code, secret, DB, test, browser, migration or deployment operation performed; main untouched.
+
+
+## 2026-11-28 — Cycle 01 Phase 22 P0 revalidation and gap reconciliation
+
+- Added `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-22.md`.
+- Reconfirmed GAP-0020 unscoped company WebSocket broadcast and GAP-0021 missing Razorpay webhook handler export.
+- Corrected GAP-0030: operational RLS absence is intentional under frozen architecture; shared schema still requires company_id filters and negative tests.
+- Recorded duplicate relationships across GAP-0034/0054, GAP-0035/0053, GAP-0006/0052, GAP-0032/0059 and GAP-0058/0060; GAP-0033 source-level endpoint absence superseded.
+- No app code, runtime, test, DB, payment, migration or deployment operation performed; main untouched.
