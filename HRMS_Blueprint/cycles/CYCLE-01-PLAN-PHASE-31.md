@@ -63,3 +63,20 @@ No database schema migration is expected for the initial source correction; exis
 - Source-only implementation on working branch.
 - No production/customer DB, schema migration, DDL, deployment, real payment, deletion, credential change or customer-data operation.
 - `main` untouched.
+
+
+---
+
+## Phase 31 design correction — Central membership mapping constraint (2026-11-28)
+
+The initial proposal to enumerate all operational `users` rows by email was rejected during implementation review: the Free/Trial public schema is shared across tenants and operational `users` has no Central tenant_id. Querying all rows by email would disclose or accept company identities belonging to other SaaS tenants.
+
+Safe source behavior now uses the selected tenant's `central_user_index.user_id` as the anchor, then loads that exact operational user and validates its `company_id`. Login, OTP and forgot-password do not select an arbitrary operational user by email. OTP identity includes Central tenant UUID + operational company UUID + normalized email.
+
+**Architecture blocker:** `central_user_index` is unique on `(email, company_id)`, where `company_id` is the Central tenant UUID. It can currently map only one operational `user_id` for a given email/tenant. It cannot represent multiple operational company accounts with the same email inside one tenant. A new Central membership mapping (for example, tenant_id + operational company_id + user_id + normalized email) and a backfill/adoption plan are required. That work depends on HRMS-D-005 migration-baseline design and must not be improvised in this source-only phase.
+
+Therefore:
+- Existing indexed single-company membership is now resolved safely and explicitly.
+- The new UI is prepared to display company choices, but the current Central mapping returns at most one company.
+- Same-email multiple-company selection remains **Open / Blocked on schema mapping**, not complete.
+- Do not query the shared operational users table by email to fabricate company choices.
