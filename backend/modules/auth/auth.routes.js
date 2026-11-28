@@ -371,6 +371,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     const payload = authService.buildUserPayload(user, permissions, tenantInfo, isPlatformAdmin);
     eventNotifier.notifyLogin({
       db: activeDb,
+      tenantId,
       companyId: user.company_id,
       user,
       ipAddress: req.ip,
@@ -608,6 +609,7 @@ router.post('/reset-password', async (req, res) => {
     await req.db.password_resets.update({ where: { id: resetRecord.id }, data: { used: true } });
     eventNotifier.notifyPasswordChanged({
       db: req.db,
+      tenantId: req.tenant?.id || null,
       companyId: updatedByReset.company_id,
       userId: updatedByReset.id,
     }).catch((err) => {
