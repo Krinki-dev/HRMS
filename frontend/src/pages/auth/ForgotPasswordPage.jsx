@@ -111,7 +111,7 @@ export default function ForgotPasswordPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Company Workspace</label>
                 <select
                   value={selectedTenantId}
-                  onChange={(e) => setSelectedTenantId(e.target.value)}
+                  onChange={(e) => { setSelectedTenantId(e.target.value); setCompanyChoices([]); setSelectedCompanyId(''); }}
                   disabled={loading}
                   required
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-white"
