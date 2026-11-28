@@ -137,7 +137,7 @@ async function handleAuthLookup(req, res) {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    const result = await authService.lookupEmail(normalizedEmail);
+    const result = await authService.lookupEmail(normalizedEmail, req.tenant?.id || null);
     const isDev = process.env.NODE_ENV === 'development';
 
     if (result.found) {
@@ -147,10 +147,8 @@ async function handleAuthLookup(req, res) {
       }
       return sendSuccess(res, {
         found: true,
-        subdomain: result.subdomain,
-        companyName: result.company_name,
-        logoUrl: result.logo_url || null,
-        plan: result.plan,
+        choices: result.choices || [],
+        ...(result.choices?.length === 1 ? result.choices[0] : {}),
       });
     }
 
@@ -261,7 +259,8 @@ const ALLOWED_OTP_PURPOSES = new Set(['login', 'reset', 'verify', 'aadhaar']);
 async function getActiveContext(req, email) {
   const normalizedEmail = email.toLowerCase().trim();
   if (req.db) return { activeDb: req.db, tenantId: req.tenant?.id, isTemporary: false };
-  const ctx = await authService.resolveTenantDb(normalizedEmail);
+  const selectedTenantId = req.body?.tenantId || null;
+  const ctx = await authService.resolveTenantDb(normalizedEmail, selectedTenantId);
   if (!ctx) return { activeDb: null, isTemporary: false };
   const { PrismaClient } = require('@prisma/client');
   const client = new PrismaClient({ datasources: { db: { url: ctx.url } } });
