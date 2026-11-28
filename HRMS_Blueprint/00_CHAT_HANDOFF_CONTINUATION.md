@@ -1329,3 +1329,23 @@ This block supersedes older branch/CI statements above where they conflict.
 - **Verification:** tests have been committed but have NOT yet been run in this environment. Exact-head backend CI, frontend build and authenticated password-reset E2E are **Pending / Not Verified**. A blank combined-status response and a PR-only workflow-run query are not CI pass evidence.
 - **Next exact task:** resume `HRMS-D-004` operational model/query ownership matrix, then composite same-company FK feasibility/data review. HRMS-D-003 remains In Progress until exact-head CI and login/OTP/refresh/password-reset E2E evidence pass.
 - No production/customer DB connection, SQL, migration, deployment, real payment, credential change, destructive operation or customer-data modification occurred.
+
+
+---
+
+## CURRENT AUTHORITATIVE HANDOFF — Cycle 01 Phase 30 (2026-11-28)
+
+This Phase 30 handoff supersedes the Phase 29 next-task line.
+
+- Working branch: `architecture/postgres-tenant-isolation`; `main` untouched.
+- Latest Phase 30 report: `HRMS_Blueprint/cycles/CYCLE-01-IMPLEMENTATION-PHASE-30.md`.
+- Ownership inventory: `HRMS_Blueprint/cycles/CYCLE-01-POSTGRES-OWNERSHIP-INVENTORY-PHASE-30.md`.
+- Plan and verification: `CYCLE-01-PLAN-PHASE-30.md`, `CYCLE-01-PLAN-VERIFICATION-PHASE-30.md`.
+- Phase 30 resumes HRMS-D-004 and discovers GAP-0067: OTP records used raw email + purpose in shared public operational storage. Source fix namespaces OTP identifiers by immutable Central tenant UUID + normalized email for both create and verify.
+- Code commits: helper `e884c37ad792c9f7c6c96797f5ba26761d83251e`; service `9c73d007630c3447c7b7b7cb56ecad421233ba50`; route `5d51ff1ff06c4616f64974f57d5c88565b9b0c5a`; tests `9e0432b1520622a5661874b492076f7186ec16c5`.
+- Static ownership inventory: 82 operational models (33 direct company_id, 29 employee_id, 13 parent/user-owned, 7 root/auth/reference/unresolved) and 17 Central models.
+- GAP-0067 is **Fixed — Awaiting Verification**. Six tests are committed but have not been executed in this session; exact-head backend CI and authenticated OTP E2E remain pending.
+- Phase 29 GAP-0065 forgot-password fix also remains awaiting exact-head CI/auth E2E. Do not close HRMS-D-003.
+- **Next exact work:** continue HRMS-D-004 query-by-query operational ownership audit across controllers/services, background workers, reports/exports and WebSockets; prepare disposable PostgreSQL cross-company tests and composite same-company FK feasibility checks.
+- Central production role owner/superuser/BYPASSRLS and live catalog evidence remain pending. Static RLS parity is not deployed-role proof.
+- No production/customer DB connection, SQL, migration/DDL, deployment, real payment, deletion, credential rotation or customer-data operation was performed.
