@@ -704,3 +704,14 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - GAP-0057: employee photo upload HTTP method differs (frontend POST, backend PUT).
 - Reviewed core service/router prefixes for auth, employee, attendance, leave, payroll, compliance, dashboard, recruitment, performance, training, assets, expenses, settings, notifications and reports. This remains static route mapping; request/response and runtime verification pending.
 - No application code, test, browser, DB, migration, deployment, backup, restore or payment operation performed; main untouched.
+
+
+## 2026-11-28 — Cycle 01 Phase 19 onboarding/billing/platform API audit
+
+- Added `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-19.md`.
+- GAP-0058: Billing page order request fields differ from backend contract; Billing and onboarding also expect nested response data after the Axios interceptor already unwraps it.
+- GAP-0059: onboarding payroll step calls missing `/payroll/salary-components` route.
+- GAP-0060: dashboard/onboarding/Billing consumers double-unwrap API responses.
+- Corrected GAP-0032: onboarding progress/save-step/complete routes now exist; missing salary-components endpoint remains.
+- Corrected GAP-0033: company document upload/list/review endpoints now exist in mounted platform brand router; runtime verification remains pending.
+- No app code, tests, browser, payment, DB, migration or deployment operation performed; main untouched.
