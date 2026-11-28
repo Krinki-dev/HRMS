@@ -17,13 +17,11 @@ test('WebSocket ticket carries verified user, tenant and company identity once',
   assert.equal(consumeTicket(ticket), null, 'ticket must be single-use');
 });
 
-test('WebSocket ticket permits a platform identity without operational company scope', () => {
-  const ticket = issueTicket({ userId: 'platform-admin', tenantId: null, companyId: null });
-  assert.deepEqual(consumeTicket(ticket), {
-    userId: 'platform-admin',
-    tenantId: null,
-    companyId: null,
-  });
+test('WebSocket ticket refuses identities without a verified tenant and company', () => {
+  assert.throws(
+    () => issueTicket({ userId: 'platform-admin', tenantId: null, companyId: null }),
+    /tenantId and companyId are required/
+  );
 });
 
 test('WebSocket ticket refuses missing or invalid user identity', () => {
