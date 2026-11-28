@@ -304,3 +304,11 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - **GAP-0068:** the earlier Phase 30 observation is confirmed. Password login, OTP login and forgot-password must not search shared public operational `users` by email alone. Phase 31 source now anchors the selected operational user through `central_user_index.user_id` for the selected Central tenant, then validates the operational `company_id`. This prevents arbitrary cross-tenant user selection.
 - **Remaining blocker:** Central `central_user_index` has one row per email + Central tenant and only one `user_id`; it cannot represent the same email as separate user accounts in multiple operational companies inside that tenant. Full company-choice support requires an explicit Central tenant-user-company membership mapping and legacy backfill, coordinated with HRMS-D-005. Status: **Open — Blocked on schema/migration design**.
 - The first draft of the Phase 31 plan proposed enumerating operational users by email. That approach was rejected before finalization because the shared public schema contains users from multiple SaaS tenants and has no tenant_id on those rows. Do not reintroduce that query.
+
+
+## Cycle 01 Phase 31 source disposition
+
+- **GAP-0067:** OTP identity now includes Central tenant UUID + operational company UUID + normalized email in both send and verify. Status Fixed — Awaiting Verification; tests/CI pending.
+- **GAP-0068:** Login, OTP and forgot-password now anchor the operational user through Central `central_user_index.user_id` for the selected tenant and bind the resolved operational companyId. The unsafe alternative of searching all shared-public operational users by email was rejected.
+- **GAP-0068 remains Open / Blocked on schema mapping:** Central index uniqueness `(email, Central tenant_id)` supports only one operational userId for an email/tenant. Multi-company same-email selection requires a Central tenant-user-company mapping and legacy backfill under HRMS-D-005. No migration was created.
+- Phase 31 evidence: `cycles/CYCLE-01-IMPLEMENTATION-PHASE-31.md`.
