@@ -96,7 +96,7 @@ This is recorded as **GAP-0066 (P0, fixed in source; verified by backend CI)** a
 
 ## 5. CI evidence
 
-<badge color="success">Backend CI passed on tested commit</badge>
+**Backend CI passed on tested commit**
 
 - Workflow: Backend Tests
 - Run: [46103433237](https://github.com/Krinki-dev/HRMS/actions/runs/46103433237)
