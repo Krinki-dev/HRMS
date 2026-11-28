@@ -743,3 +743,13 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Corrected GAP-0030: operational RLS absence is intentional under frozen architecture; shared schema still requires company_id filters and negative tests.
 - Recorded duplicate relationships across GAP-0034/0054, GAP-0035/0053, GAP-0006/0052, GAP-0032/0059 and GAP-0058/0060; GAP-0033 source-level endpoint absence superseded.
 - No app code, runtime, test, DB, payment, migration or deployment operation performed; main untouched.
+
+
+## 2026-11-28 — Cycle 01 plan drafted and independently verified
+
+- Created `HRMS_Blueprint/cycles/CYCLE-01-PLAN.md` with P0/P1/P2 workstreams, dependencies, acceptance criteria, safety gates and a complete GAP-0001–GAP-0065 traceability matrix.
+- Independent review Round 1 rejected the initial draft and required corrections R1–R8.
+- Revised the plan; merged duplicate tasks, added missing HR route/navigation, legacy DB credential, encryption fallback and attendance metadata work, clarified pricing decision, and added access-token persistence regression test.
+- Independent review Round 2 verified revised plan blob `7c3895a58e6553edaa4fdc346ed41be6e0ce4f4b`. Report: `HRMS_Blueprint/cycles/CYCLE-01-PLAN-VERIFICATION.md`.
+- **Plan status: VERIFIED FOR IMPLEMENTATION PLANNING.** This does not authorize production migrations, deployments, real payments, destructive operations, customer DB connectivity or production key rotation.
+- No application code changed in the plan/review work.
