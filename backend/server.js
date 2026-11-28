@@ -204,9 +204,9 @@ httpServer.on('upgrade', (request, socket, head) => {
 });
 
 wss.on('connection', (ws, request) => {
-  const userId = request.userId;
-  logger.info(`${THEME.ICONS.USER} [WS] Client connected: ${userId}`);
-  notifSvc.register(userId, ws);
+  const identity = request.wsIdentity;
+  logger.info(`${THEME.ICONS.USER} [WS] Client connected: ${identity.userId}`);
+  notifSvc.register(identity, ws);
   ws.send(JSON.stringify({ type: 'connected', message: 'Real-time notifications active.' }));
 });
 
