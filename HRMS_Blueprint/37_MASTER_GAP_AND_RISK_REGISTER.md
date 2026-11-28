@@ -270,3 +270,14 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - Added `backend/shared/utils/passwordResetWorkspace.js` and `backend/test/password-reset-workspace.test.js`; added a workspace chooser to `ForgotPasswordPage.jsx`.
 - Status: **Fixed — Awaiting Verification**. Regression tests and exact-head CI have not yet been observed passing; authenticated password-reset E2E remains unrun.
 - No production DB, migration, deployment, real payment or customer-data operation performed; `main` untouched.
+
+
+## Cycle 01 Phase 30 — PostgreSQL ownership inventory and OTP isolation
+
+- **GAP-0067 (P1, Auth/Database): OTP lookup namespace is shared across tenants in public operational storage.** The operational `otp_store` model had no tenant/company key. `sendOtp` stored raw email and `verifyOtp` queried raw email + purpose; Free/Trial tenants share the public operational schema, so same-email OTP requests could overwrite/interfere across tenant contexts.
+- Phase 30 source correction: `backend/shared/utils/otpIdentity.js` namespaces the existing identifier with the immutable Central tenant UUID and normalized email; OTP create and verify both use the helper, and verification now receives the resolved tenant UUID.
+- Regression tests: `backend/test/otp-tenant-isolation.test.js` covers tenant separation, normalization, missing-context fail-closed behavior, shared helper use and request-tenant mismatch guard.
+- Status: **Fixed — Awaiting Verification**. Tests committed; execution and exact-head CI remain pending. No schema migration was made.
+- Ownership inventory: `cycles/CYCLE-01-POSTGRES-OWNERSHIP-INVENTORY-PHASE-30.md` records all 82 operational models and 17 Central models. Static inventory is not a runtime query-scope certification.
+- HRMS-D-003 and HRMS-D-004 remain In Progress. Query-by-query operational audit, cross-company integration tests, composite-FK feasibility, and Central app-role/catalog proof remain open.
+- No production/customer DB, migration, deployment, payment, deletion or customer-data operation; `main` untouched.
