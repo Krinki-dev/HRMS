@@ -351,7 +351,7 @@ router.post('/verify-otp', otpLimiter, async (req, res) => {
     if (!activeDb) {
       return sendError(res, ERROR_CODES.SERVER, 'Unable to verify OTP at this time.', 500);
     }
-    const companyResolution = await resolveCompanyForEmail(activeDb, normalizedEmail, requestedCompanyId);
+    const companyResolution = await resolveCompanyForEmail(activeDb, tenantId, normalizedEmail, requestedCompanyId);
     if (companyResolution.status === 'selection_required') {
       if (isTemporary) await activeDb.$disconnect();
       return sendError(res, ERROR_CODES.VALIDATION, 'COMPANY_SELECTION_REQUIRED', 409, { choices: companyResolution.choices });
