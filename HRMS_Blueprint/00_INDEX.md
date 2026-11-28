@@ -187,3 +187,8 @@ Product domain:     PRODUCT_DOMAIN env var
 ## Latest Cycle 01 implementation
 
 - Phase 23 — tenant-scoped WebSocket identity, payment router/load fix and backend CI evidence: [CYCLE-01-IMPLEMENTATION-PHASE-23.md](cycles/CYCLE-01-IMPLEMENTATION-PHASE-23.md)
+
+
+## Latest Cycle 01 implementation
+
+- Phase 24 — explicit workspace selection, tenant-bound login/refresh tokens and regression test evidence: [CYCLE-01-IMPLEMENTATION-PHASE-24.md](cycles/CYCLE-01-IMPLEMENTATION-PHASE-24.md)
