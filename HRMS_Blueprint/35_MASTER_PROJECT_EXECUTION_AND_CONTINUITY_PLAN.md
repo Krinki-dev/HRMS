@@ -359,3 +359,18 @@ This section supersedes the Phase 28 next-task line above where it conflicts.
 - The D-003 task remains In Progress until test/CI/E2E gates pass.
 - **Next exact task after verification:** resume HRMS-D-004 operational ownership/query matrix and composite same-company FK review.
 - `main` remains untouched. No production/customer DB connection, migration, deployment, real payment, destructive action or customer-data modification was performed.
+
+
+---
+
+## CURRENT EXECUTION OVERRIDE — Cycle 01 Phase 30 (2026-11-28)
+
+This section supersedes Phase 29 as the current continuation point.
+
+- Latest report: `cycles/CYCLE-01-IMPLEMENTATION-PHASE-30.md`.
+- Phase 30 plan: `cycles/CYCLE-01-PLAN-PHASE-30.md`; independently verified in `cycles/CYCLE-01-PLAN-VERIFICATION-PHASE-30.md`.
+- HRMS-D-004 resumed. Schema ownership inventory covers 82 operational Prisma models and 17 Central Prisma models. It is a schema-level map only; exhaustive query-by-query ownership verification remains open.
+- GAP-0067: shared public `otp_store` previously keyed records by raw email + purpose. Source now namespaces identifier by immutable Central tenant UUID + normalized email in both OTP creation and verification. Six regression tests committed; execution and exact-head CI remain pending. Status Fixed — Awaiting Verification.
+- Phase 29 GAP-0065 and HRMS-D-003 remain In Progress pending exact-head CI and authenticated login/OTP/refresh/password-reset E2E.
+- **Next exact task:** continue HRMS-D-004 operational query ownership tracing, then cross-company negative tests and composite same-company FK feasibility/data checks. Prepare a non-production Central catalog/role evidence path.
+- `main` untouched. No production/customer DB connection, SQL, migration, deployment, real payment, destructive operation or customer-data modification.
