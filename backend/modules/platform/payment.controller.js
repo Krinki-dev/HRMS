@@ -123,8 +123,6 @@ exports.createOrder = async (req, res) => {
       return sendError(res, ERROR_CODES.FORBIDDEN, 'Unauthorized to pay this invoice', 403);
     }
 
-    if (invoice.status === 'paid') return sendError(res, ERROR_CODES.VALIDATION, 'Invoice already paid', 400);
-
     const existingOrder = await withBillingRLS(req, invoice.tenant_id, (tx) => tx.payment_orders.findFirst({
       where: { invoice_id: invoice.id, tenant_id: invoice.tenant_id, gateway: 'razorpay', status: 'created' },
       orderBy: { created_at: 'desc' },
@@ -268,12 +266,21 @@ exports.verifyPayment = async (req, res) => {
         invoice_id: invoice.id,
         tenant_id: invoice.tenant_id,
         gateway: 'razorpay',
-        status: 'created',
+        status: { in: ['created', 'captured'] },
       },
     }));
     if (!storedOrder || Number(storedOrder.amount_paise) !== Number(invoice.total_paise) ||
         String(storedOrder.currency).toUpperCase() !== String(invoice.currency).toUpperCase()) {
       return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Payment order is not registered for this invoice', 400);
+    }
+    if (storedOrder.status === 'captured' &&
+        storedOrder.gateway_payment_id === resolvedPaymentId &&
+        invoice.status === 'paid' &&
+        invoice.payment_id === resolvedPaymentId) {
+      return sendSuccess(res, null, 'Payment already verified.');
+    }
+    if (storedOrder.status !== 'created') {
+      return sendError(res, ERROR_CODES.VALIDATION, 'This payment order is no longer payable.', 409);
     }
 
     const razorpay = getRazorpay();
@@ -898,14 +905,9 @@ exports.handleWebhook = async (req, res) => {
     }
 
     if (eventType === 'payment.failed') {
-      if (storedOrder.status === 'created') {
-        await withPlatformAdminRLS(centralPrisma, (tx) =>
-          tx.payment_orders.updateMany({
-            where: { id: storedOrder.id, tenant_id: storedOrder.tenant_id, status: 'created' },
-            data: { status: 'failed', updated_at: new Date() },
-          })
-        );
-      }
+      // A Razorpay order can have multiple payment attempts. Do not mark the
+      // order terminally failed here; a later attempt on the same order may
+      // still be captured successfully.
       await updateEvent({ status: 'processed', processed_at: new Date(), last_error: null });
       return res.status(200).json({ success: true, received: true });
     }
