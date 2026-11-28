@@ -27,7 +27,7 @@ test('legacy database configuration endpoints fail closed with HTTP 410', async 
 test('legacy settings controller no longer opens direct database connections or reads/writes tenant_db_config', () => {
   const source = fs.readFileSync(path.join(__dirname, '../modules/settings/settings.controller.js'), 'utf8');
   assert.doesNotMatch(source, /new PrismaClient/);
-  assert.doesNotMatch(source, /\\.tenant_db_config\\.(find|upsert|update|create)/);
+  assert.doesNotMatch(source, /\.tenant_db_config\.(find|upsert|update|create)/);
   assert.doesNotMatch(source, /sqlserver:\/\//i);
   assert.doesNotMatch(source, /cloudDbUrl/);
 });
