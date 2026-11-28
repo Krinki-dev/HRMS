@@ -82,25 +82,39 @@
   },
 
   remove: async (db, companyId, id) => {
-    return db.trainings.update({ where: { id }, data: { deleted_at: new Date() } });
+    const training = await db.trainings.findFirst({ where: { id, company_id: companyId, deleted_at: null } });
+    if (!training) throw new Error('NOT_FOUND');
+    return db.trainings.update({ where: { id: training.id }, data: { deleted_at: new Date() } });
   },
 
   listNominations: async (db, companyId, trainingId) => {
+    const training = await db.trainings.findFirst({ where: { id: trainingId, company_id: companyId, deleted_at: null } });
+    if (!training) throw new Error('NOT_FOUND');
     return db.training_nominations.findMany({
-      where: { training_id: trainingId },
+      where: { training_id: training.id },
       orderBy: { created_at: 'asc' },
     });
   },
 
-  nominate: async (db, companyId, trainingId, { employeeIds, nominatedBy }) => {
+  nominate: async (db, companyId, trainingId, { employeeIds = [], nominatedBy }) => {
+    const training = await db.trainings.findFirst({ where: { id: trainingId, company_id: companyId, deleted_at: null } });
+    if (!training) throw new Error('NOT_FOUND');
+
+    const uniqueEmployeeIds = [...new Set(employeeIds)];
+    const employees = uniqueEmployeeIds.length ? await db.employees.findMany({
+      where: { id: { in: uniqueEmployeeIds }, company_id: companyId },
+      select: { id: true },
+    }) : [];
+    if (employees.length !== uniqueEmployeeIds.length) throw new Error('NOT_FOUND');
+
     const results = [];
-    for (const empId of employeeIds) {
+    for (const empId of uniqueEmployeeIds) {
       const exists = await db.training_nominations.findFirst({
-        where: { training_id: trainingId, employee_id: empId },
+        where: { training_id: training.id, employee_id: empId },
       });
       if (!exists) {
         const n = await db.training_nominations.create({
-          data: { training_id: trainingId, employee_id: empId, nominated_by: nominatedBy, status: 'nominated' },
+          data: { training_id: training.id, employee_id: empId, nominated_by: nominatedBy, status: 'nominated' },
         });
         results.push(n);
       }
@@ -108,13 +122,26 @@
     return results;
   },
 
-  removeNomination: async (db, trainingId, empId) => {
+  removeNomination: async (db, companyId, trainingId, empId) => {
+    const training = await db.trainings.findFirst({ where: { id: trainingId, company_id: companyId, deleted_at: null } });
+    if (!training) throw new Error('NOT_FOUND');
+    const employee = await db.employees.findFirst({ where: { id: empId, company_id: companyId }, select: { id: true } });
+    if (!employee) throw new Error('NOT_FOUND');
     return db.training_nominations.deleteMany({
-      where: { training_id: trainingId, employee_id: empId },
+      where: { training_id: training.id, employee_id: employee.id },
     });
   },
 
-  markAttendance: async (db, companyId, trainingId, records) => {
+  markAttendance: async (db, companyId, trainingId, records = []) => {
+    const training = await db.trainings.findFirst({ where: { id: trainingId, company_id: companyId, deleted_at: null } });
+    if (!training) throw new Error('NOT_FOUND');
+    const employeeIds = [...new Set(records.map((record) => record.employeeId))];
+    const employees = employeeIds.length ? await db.employees.findMany({
+      where: { id: { in: employeeIds }, company_id: companyId },
+      select: { id: true },
+    }) : [];
+    if (employees.length !== employeeIds.length) throw new Error('NOT_FOUND');
+
     const results = [];
     for (const r of records) {
       const existing = await db.training_attendance.findFirst({
@@ -139,9 +166,13 @@
     return results;
   },
 
-  submitFeedback: async (db, trainingId, employeeId, data) => {
+  submitFeedback: async (db, companyId, trainingId, employeeId, data) => {
+    const training = await db.trainings.findFirst({ where: { id: trainingId, company_id: companyId, deleted_at: null } });
+    if (!training) throw new Error('NOT_FOUND');
+    const employee = await db.employees.findFirst({ where: { id: employeeId, company_id: companyId }, select: { id: true } });
+    if (!employee) throw new Error('NOT_FOUND');
     const existing = await db.training_feedback.findFirst({
-      where: { training_id: trainingId, employee_id: employeeId },
+      where: { training_id: training.id, employee_id: employee.id },
     });
     const payload = {
       training_id:    trainingId,
@@ -156,9 +187,14 @@
     return db.training_feedback.create({ data: payload });
   },
 
-  myTrainings: async (db, employeeId) => {
+  myTrainings: async (db, companyId, employeeId) => {
+    const employee = await db.employees.findFirst({ where: { id: employeeId, company_id: companyId }, select: { id: true } });
+    if (!employee) throw new Error('NOT_FOUND');
     const nominations = await db.training_nominations.findMany({
-      where: { employee_id: employeeId },
+      where: {
+        employee_id: employee.id,
+        training: { company_id: companyId, deleted_at: null },
+      },
       include: { training: true },
     });
     return nominations.map(n => ({ ...n.training, nominationStatus: n.status }));
