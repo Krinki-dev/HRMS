@@ -44,6 +44,13 @@ test('OTP send and verify bind to tenant and operational company identity', () =
   assert.match(routes, /id: companyResolution\.userId, email: normalizedEmail, company_id: companyResolution\.companyId/);
 });
 
+test('forgot-password passes Central tenant ID and normalized email in resolver argument order', () => {
+  const start = routes.indexOf("router.post('/forgot-password'");
+  const end = routes.indexOf("router.post('/reset-password'", start);
+  const route = routes.slice(start, end);
+  assert.match(route, /resolveCompanyForEmail\(activeDb, tenantId, normalizedEmail, requestedCompanyId\)/);
+});
+
 test('forgot-password resolves a tenant-indexed operational user before creating reset token', () => {
   const start = routes.indexOf("router.post('/forgot-password'");
   const end = routes.indexOf("router.post('/reset-password'", start);
