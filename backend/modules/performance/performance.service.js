@@ -246,7 +246,7 @@ const performanceService = {
 
     const empIds = [...new Set(appraisals.map(a => a.employee_id))];
     const emps   = await db.employees.findMany({
-      where: { id: { in: empIds } },
+      where: { id: { in: empIds }, company_id: companyId },
       select: { id: true, first_name: true, last_name: true, employee_code: true,
                 department: { select: { name: true } } },
     });
