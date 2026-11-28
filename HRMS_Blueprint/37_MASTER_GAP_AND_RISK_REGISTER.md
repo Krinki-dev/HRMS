@@ -221,3 +221,12 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - Frontend Build run [46103852916](https://github.com/Krinki-dev/HRMS/actions/runs/46103852916) passed at SHA `2b27b3c8a319f02a16b01f2fb9fd092d0cff380b`.
 - Tenant migration inventory integration run [46103861464](https://github.com/Krinki-dev/HRMS/actions/runs/46103861464) passed at SHA `3f495f016e8e56ecb6fc63770c836fc6e292ac7c`; this is not Central RLS integration.
 - No live auth browser test, DB migration, production token change or customer-data operation performed; main untouched.
+
+
+## Cycle 01 Phase 25 — Central RLS policy completion status (2026-11-28)
+
+- Evidence: [CYCLE-01-IMPLEMENTATION-PHASE-25.md](cycles/CYCLE-01-IMPLEMENTATION-PHASE-25.md).
+- **GAP-0047:** Central RLS policy source coverage is now prepared for all 17 Central Prisma models, including backup_config, tenant_db_config, payment_webhook_events and billing_events. Backend static policy-parity tests passed at SHA `865d5f5d567f49b70967dbd82923047e7a870311`. Live DB catalog/role verification and migration execution remain pending.
+- **GAP-0048:** `central_schema.sql` now contains the same policy set as the incremental migration. Clean-install execution remains untested.
+- Rollout blockers: deployed Central application role ownership/BYPASSRLS is unknown; legacy Settings DB-config endpoints still use a direct Prisma client without transaction-scoped tenant RLS. Migrate or disable those paths before rollout.
+- No production DB, customer DB, migration, role/grant, deployment or customer-data operation performed; main untouched.
