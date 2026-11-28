@@ -66,7 +66,7 @@ const ctrl = {
         INSUFFICIENT_BALANCE: 'Insufficient leave balance.',
         INVALID_LEAVE_TYPE:   'Invalid leave type.',
       };
-      if (map[e.message]) return sendError(res, ERROR_CODES.VALIDATION, map[e.message]);
+      if (map[e.message]) return sendError(res, e.message === 'NOT_FOUND' ? ERROR_CODES.NOT_FOUND : ERROR_CODES.VALIDATION, map[e.message], e.message === 'NOT_FOUND' ? 404 : 400);
       throw e;
     }
   }),
