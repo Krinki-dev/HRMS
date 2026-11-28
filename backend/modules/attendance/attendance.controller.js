@@ -20,7 +20,7 @@ const ctrl = {
 
   checkIn: async (req, res) => {
     try {
-      const data = await svc.checkIn(req.db, req.user.employeeId, req.user.companyId, req.body);
+      const data = await svc.checkIn(req.db, req.user.companyId, req.user.employeeId);
       sendSuccess(res, data, data.message, 201);
     } catch (e) {
       if (e.message === 'ALREADY_CHECKED_IN') return sendError(res, ERROR_CODES.DUPLICATE, 'Already checked in today.');
@@ -30,7 +30,7 @@ const ctrl = {
 
   checkOut: async (req, res) => {
     try {
-      const data = await svc.checkOut(req.db, req.user.employeeId, req.user.companyId);
+      const data = await svc.checkOut(req.db, req.user.companyId, req.user.employeeId);
       sendSuccess(res, data, data.message);
     } catch (e) {
       if (e.message === 'NOT_CHECKED_IN')    return sendError(res, ERROR_CODES.NOT_FOUND, 'Not checked in today.');
