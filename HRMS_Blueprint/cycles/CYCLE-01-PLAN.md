@@ -188,14 +188,18 @@ All tasks begin as **Not Started**. A source-code commit alone does not complete
   4. Use explicit migration locks, version markers, idempotency and safe retry.
   5. Verify Central bootstrap and RLS policy ordering.
   6. Remove automatic schema migration from application startup; use a serialized release migration job.
+  7. Design a Central tenant-user-company membership mapping so one email can map to multiple operational company user IDs within one Central tenant; keep `central_user_index` as tenant discovery only.
+  8. Define a verified legacy backfill/adoption process for existing `central_user_index.user_id` rows and ambiguous/unindexed users. Never infer a tenant/company mapping by querying shared-public users by email alone.
 - **Acceptance criteria:**
   - Clean PostgreSQL database can be provisioned from the documented baseline.
   - Existing tenant schema can be classified and migrated without data loss.
   - Re-running migration is safe and recorded.
   - Partial failure is detectable and recoverable.
   - App cannot become ready when a required migration failed.
+  - Central membership mapping supports multiple operational companies per email/tenant with tenant_id, operational company_id and user_id identity; RLS and uniqueness rules prevent cross-tenant/company ambiguity.
+  - Legacy membership rows are either explicitly verified/backfilled or left fail-closed; no arbitrary email-only mapping is created.
   - No MSSQL SQL is executed against PostgreSQL.
-- **Tests:** Disposable PostgreSQL 16 clean install, upgrade, partial failure, concurrent lock, rollback/forward-fix tests.
+- **Tests:** Disposable PostgreSQL 16 clean install, upgrade, partial failure, concurrent lock, rollback/forward-fix tests; membership mapping uniqueness/RLS tests and verified legacy backfill fixture tests.
 - **Safety:** No live tenant migration or production DDL without explicit approval and verified backups.
 
 #### HRMS-C-006 — Storage lifecycle and paid promotion state machine
