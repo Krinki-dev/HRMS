@@ -184,6 +184,9 @@ export default function SmartLoginPage() {
   const [company,     setCompany]     = useState(null);
   const [tenantChoices, setTenantChoices] = useState([]);
   const [selectedTenantId, setSelectedTenantId] = useState('');
+  const [companyChoices, setCompanyChoices] = useState([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState('');
+  const [companyLookupLoading, setCompanyLookupLoading] = useState(false);
   const [error,       setError]       = useState('');
   const [tenantError, setTenantError] = useState('');
 
@@ -330,43 +333,7 @@ export default function SmartLoginPage() {
 
       setTenantChoices([]);
       setSelectedTenantId('');
-      const sub = choice.subdomain;
-      if (sub && sub !== 'dev') {
-        api.get(`/platform/brand?subdomain=${sub}`)
-          .then(res => {
-            const brand = res.data?.data || {};
-            setCompany({
-              companyName:     choice.companyName || brand.companyName || 'Your Company',
-              subdomain:       sub,
-              tenantId:        choice.tenantId,
-              logoUrl:         choice.logoUrl || brand.logoUrl || null,
-              primaryColor:    brand.primaryColor || '#2563EB',
-              backgroundColor: brand.backgroundColor || '#040C1A',
-              backgroundUrl:   brand.backgroundUrl || null,
-            });
-            setStep(2);
-            setError('');
-          })
-          .catch(() => {
-            setCompany({
-              companyName: choice.companyName,
-              subdomain: sub,
-              tenantId: choice.tenantId,
-              logoUrl: choice.logoUrl,
-            });
-            setStep(2);
-            setError('');
-          });
-      } else {
-        setCompany({
-          companyName: choice.companyName,
-          subdomain: choice.subdomain,
-          tenantId: choice.tenantId,
-          logoUrl: choice.logoUrl,
-        });
-        setStep(2);
-        setError('');
-      }
+      continueWithCompanySelection(choice);
     },
     onError: (err) => {
       const msg = err.response?.data?.message;
@@ -382,7 +349,7 @@ export default function SmartLoginPage() {
 
       const res = await api.post(
         '/auth/login',
-        { email: normalizedEmail, password, tenantId: company?.tenantId || null },
+        { email: normalizedEmail, password, tenantId: company?.tenantId || null, companyId: selectedCompanyId || company?.companyId || null },
         { headers }
       );
 
@@ -426,24 +393,66 @@ export default function SmartLoginPage() {
     },
   });
 
+  async function continueWithCompanySelection(choice) {
+    setCompanyLookupLoading(true);
+    setError('');
+    try {
+      const headers = choice.subdomain ? { 'X-Tenant-Subdomain': choice.subdomain } : {};
+      const response = await api.post('/auth/lookup-companies', {
+        email: normalizeEmail(email),
+        tenantId: choice.tenantId || null,
+      }, { headers });
+      const result = response.data?.data ?? response.data;
+      const companies = Array.isArray(result?.choices) ? result.choices : [];
+      if (!companies.length) {
+        setError('No active company account was found in this workspace.');
+        return;
+      }
+
+      let brand = {};
+      if (choice.subdomain && choice.subdomain !== 'dev') {
+        try {
+          const brandResponse = await api.get(`/platform/brand?subdomain=${choice.subdomain}`);
+          brand = brandResponse.data?.data || {};
+        } catch { /* Brand metadata is optional for authentication. */ }
+      }
+
+      setCompany({
+        companyName: choice.companyName || brand.companyName || 'Your Workspace',
+        subdomain: choice.subdomain,
+        tenantId: choice.tenantId || null,
+        logoUrl: choice.logoUrl || brand.logoUrl || null,
+        primaryColor: brand.primaryColor || '#2563EB',
+        backgroundColor: brand.backgroundColor || '#040C1A',
+        backgroundUrl: brand.backgroundUrl || null,
+        companyId: companies.length === 1 ? companies[0].companyId : null,
+      });
+      if (companies.length > 1) {
+        setCompanyChoices(companies);
+        setSelectedCompanyId('');
+        setError('This email is registered in more than one company in this workspace. Select the correct company.');
+      } else {
+        setCompanyChoices([]);
+        setSelectedCompanyId(companies[0].companyId);
+        setStep(2);
+        setError('');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Could not load company choices. Please try again.');
+    } finally {
+      setCompanyLookupLoading(false);
+    }
+  }
+
   function continueWithSelectedTenant() {
     const choice = tenantChoices.find((item) => item.tenantId === selectedTenantId);
     if (!choice) {
       setError('Select a company workspace to continue.');
       return;
     }
-    setCompany({
-      companyName: choice.companyName || 'Your Company',
-      subdomain: choice.subdomain,
-      tenantId: choice.tenantId,
-      logoUrl: choice.logoUrl || null,
-      primaryColor: '#2563EB',
-      backgroundColor: '#040C1A',
-    });
     setTenantChoices([]);
     setSelectedTenantId('');
-    setStep(2);
-    setError('');
+    continueWithCompanySelection(choice);
   }
 
   function fireLookup(emailVal = email) {
@@ -465,6 +474,10 @@ export default function SmartLoginPage() {
       setStep(1);
       return;
     }
+    if (companyChoices.length > 1 && !selectedCompanyId) {
+      setError('Select the legal company for this account.');
+      return;
+    }
     if (!password) {
       setError('Enter your password.');
       return;
@@ -476,11 +489,13 @@ export default function SmartLoginPage() {
     setStep(1);
     setPassword('');
     setCompany(null);
+    setCompanyChoices([]);
+    setSelectedCompanyId('');
     setError('');
     lookupFiredRef.current = false;
   }
 
-  const isLoading = lookupMutation.isPending || loginMutation.isPending;
+  const isLoading = lookupMutation.isPending || loginMutation.isPending || companyLookupLoading;
   const isTenant  = domain.isSubdomain || domain.isCustomDomain;
 
   const isUnregisteredPortal = isTenant && brandLoaded && tenantError === 'not_found';
@@ -834,6 +849,25 @@ export default function SmartLoginPage() {
               </p>
 
               {error && <div style={S.errorBox}>{error}</div>}
+
+              {companyChoices.length > 1 && (
+                <div style={{ marginBottom: 20 }}>
+                  <label style={S.label}>Choose your legal company</label>
+                  <select
+                    value={selectedCompanyId}
+                    onChange={e => { setSelectedCompanyId(e.target.value); setError(''); }}
+                    style={{ ...S.input(primaryColor), background: '#0D1A30' }}
+                    required
+                  >
+                    <option value="">Select a company…</option>
+                    {companyChoices.map(choice => (
+                      <option key={choice.companyId} value={choice.companyId}>
+                        {choice.companyName || 'Company'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div style={{ marginBottom: 24 }}>
                 <label style={S.label}>Password</label>
