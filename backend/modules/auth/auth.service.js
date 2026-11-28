@@ -9,6 +9,7 @@ const { centralPrisma } = require('../../shared/utils/centralPrisma');
 const { withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 const { decrypt } = require('../../shared/utils/encryption');
 const { resolveTenantStorageTarget } = require('../../shared/utils/tenantStorageResolver');
+const { chooseTenantRow } = require('../../shared/utils/tenantSelection');
 
 /**
  * Service to handle Authentication, OTP, and Password logic.
@@ -179,13 +180,12 @@ const authService = {
         ORDER BY ui.company_id
       `);
 
-      let selected = null;
-      if (userRows.length === 1) {
-        selected = userRows[0];
-      } else if (userRows.length > 1) {
-        // Never select an arbitrary workspace when an email belongs to more than one tenant.
+      let selected = chooseTenantRow(userRows, selectedTenantId);
+      if (userRows.length > 0 && !selected) {
+        // Never select an arbitrary workspace when an email belongs to multiple tenants.
         return null;
-      } else {
+      }
+      if (!selected) {
         const tenantRows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
           SELECT id, subdomain
           FROM tenants
@@ -196,9 +196,9 @@ const authService = {
             AND (${selectedTenantId}::uuid IS NULL OR id = ${selectedTenantId}::uuid)
           ORDER BY id
         `);
-        if (tenantRows.length > 1) return null;
-        if (tenantRows.length === 1) {
-          const tenant = tenantRows[0];
+        const tenant = chooseTenantRow(tenantRows, selectedTenantId);
+        if (tenantRows.length > 0 && !tenant) return null;
+        if (tenant) {
           await withPlatformAdminRLS(centralPrisma, (tx) => tx.$executeRaw`
             INSERT INTO central_user_index (id, email, subdomain, company_id, is_active, created_at)
             VALUES (gen_random_uuid(), ${normalizedEmail}, ${tenant.subdomain}, ${tenant.id}::uuid, true, NOW())
