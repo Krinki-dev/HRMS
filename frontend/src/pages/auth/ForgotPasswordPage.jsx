@@ -9,6 +9,8 @@ export default function ForgotPasswordPage() {
   const [submitted, setSubmitted] = useState(false);
   const [tenantChoices, setTenantChoices] = useState([]);
   const [selectedTenantId, setSelectedTenantId] = useState('');
+  const [companyChoices, setCompanyChoices] = useState([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,7 +33,32 @@ export default function ForgotPasswordPage() {
         if (choices.length === 1) tenantId = choices[0].tenantId;
       }
 
-      await api.post('/auth/forgot-password', { email: email.toLowerCase().trim(), tenantId });
+      const companyLookupResponse = await api.post('/auth/lookup-companies', {
+        email: email.toLowerCase().trim(),
+        tenantId,
+      });
+      const companyLookup = companyLookupResponse.data?.data ?? companyLookupResponse.data;
+      const availableCompanies = Array.isArray(companyLookup?.choices) ? companyLookup.choices : [];
+      let companyId = selectedCompanyId || null;
+
+      if (companyId && !availableCompanies.some((choice) => choice.companyId === companyId)) {
+        companyId = null;
+        setSelectedCompanyId('');
+      }
+      if (!companyId && availableCompanies.length > 1) {
+        setCompanyChoices(availableCompanies);
+        toast('This email belongs to more than one company in this workspace. Select the correct company.');
+        return;
+      }
+      if (!companyId && availableCompanies.length === 1) {
+        companyId = availableCompanies[0].companyId;
+      }
+
+      await api.post('/auth/forgot-password', {
+        email: email.toLowerCase().trim(),
+        tenantId,
+        companyId,
+      });
       setSubmitted(true);
     } catch {
       // Keep the same confirmation state to avoid disclosing whether an
@@ -73,7 +100,7 @@ export default function ForgotPasswordPage() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); setTenantChoices([]); setSelectedTenantId(''); }}
+                onChange={(e) => { setEmail(e.target.value); setTenantChoices([]); setSelectedTenantId(''); setCompanyChoices([]); setSelectedCompanyId(''); }}
                 disabled={loading || !!searchParams.get('email')} // Disable if loading or pre-filled from URL
                 placeholder="your@email.com"
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm" // The disabled attribute is already handled above
@@ -93,6 +120,25 @@ export default function ForgotPasswordPage() {
                   {tenantChoices.map((choice) => (
                     <option key={choice.tenantId} value={choice.tenantId}>
                       {choice.companyName || choice.subdomain || 'Company workspace'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {companyChoices.length > 1 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Legal Company</label>
+                <select
+                  value={selectedCompanyId}
+                  onChange={(e) => setSelectedCompanyId(e.target.value)}
+                  disabled={loading}
+                  required
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-white"
+                >
+                  <option value="">Select your company</option>
+                  {companyChoices.map((choice) => (
+                    <option key={choice.companyId} value={choice.companyId}>
+                      {choice.companyName || 'Company'}
                     </option>
                   ))}
                 </select>
