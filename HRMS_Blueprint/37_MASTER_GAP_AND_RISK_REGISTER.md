@@ -296,3 +296,11 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - Recommendation: add an explicit operational-company selection within the selected Central tenant; bind companyId through password login, OTP, password reset, access/refresh tokens, WebSocket tickets and all relevant route context. Reject ambiguous requests rather than selecting first.
 - Status: **Open — In Analysis**. No code change has been made for this finding. A company-selection contract and E2E acceptance plan must be verified before implementation.
 - Keep HRMS-D-003 In Progress. This finding takes precedence over continuing deeper D-004 query work because authentication identity must be unambiguous first.
+
+
+### GAP-0067 / GAP-0068 — Phase 31 identity re-analysis correction
+
+- **GAP-0067:** OTP identifier now includes Central tenant UUID + operational company UUID + normalized email. OTP create and verify use the same helper. Status remains Fixed — Awaiting Verification; focused tests and exact-head CI have not yet been run/observed.
+- **GAP-0068:** the earlier Phase 30 observation is confirmed. Password login, OTP login and forgot-password must not search shared public operational `users` by email alone. Phase 31 source now anchors the selected operational user through `central_user_index.user_id` for the selected Central tenant, then validates the operational `company_id`. This prevents arbitrary cross-tenant user selection.
+- **Remaining blocker:** Central `central_user_index` has one row per email + Central tenant and only one `user_id`; it cannot represent the same email as separate user accounts in multiple operational companies inside that tenant. Full company-choice support requires an explicit Central tenant-user-company membership mapping and legacy backfill, coordinated with HRMS-D-005. Status: **Open — Blocked on schema/migration design**.
+- The first draft of the Phase 31 plan proposed enumerating operational users by email. That approach was rejected before finalization because the shared public schema contains users from multiple SaaS tenants and has no tenant_id on those rows. Do not reintroduce that query.
