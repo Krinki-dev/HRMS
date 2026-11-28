@@ -753,3 +753,13 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Independent review Round 2 verified revised plan blob `7c3895a58e6553edaa4fdc346ed41be6e0ce4f4b`. Report: `HRMS_Blueprint/cycles/CYCLE-01-PLAN-VERIFICATION.md`.
 - **Plan status: VERIFIED FOR IMPLEMENTATION PLANNING.** This does not authorize production migrations, deployments, real payments, destructive operations, customer DB connectivity or production key rotation.
 - No application code changed in the plan/review work.
+
+
+## 2026-11-28 — Cycle 01 Phase 23 P0 implementation
+
+- Added `HRMS_Blueprint/cycles/CYCLE-01-IMPLEMENTATION-PHASE-23.md`.
+- HRMS-D-001: WebSocket tickets now carry verified user/tenant/company identity; server socket registry and company/user delivery filter by exact tenantId + companyId. Event-notifier call sites propagate tenantId. Focused unit tests added. Live WebSocket integration remains pending.
+- HRMS-C-002: current Razorpay webhook export and route wiring verified by router-load test. CI exposed an unterminated disabled PhonePe handler; removed dead commented implementation and closed handler.
+- GAP-0021 missing-export defect marked Verified Closed; GAP-0066 added for the payment controller syntax blocker and verified closed.
+- Backend Tests passed on exact SHA `97c60ad1ed3549d4c780c8506f871ada8e7cd1bb`: 171 tests, 166 pass, 0 fail, 5 skipped. This is not the latest branch HEAD; later auth/session commits require a fresh CI result.
+- No production DB, real payment, live WS, migration, deployment or customer-data operation performed; main untouched.
