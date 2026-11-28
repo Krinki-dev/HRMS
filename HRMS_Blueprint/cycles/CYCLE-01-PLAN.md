@@ -148,7 +148,7 @@ All tasks begin as **Not Started**. A source-code commit alone does not complete
 #### HRMS-D-004 — Shared-schema isolation and Central RLS verification
 
 - **Stream/module:** D — PostgreSQL schemas, RLS, all company-scoped services.
-- **Implementation note (Phase 25):** all 17 Central tables now have explicit RLS policies in both the incremental migration and fresh-install bootstrap. Static parity tests and a real PostgreSQL non-owner `hrms_app` pooling test pass in CI. Before production rollout, resolve legacy Settings direct-client access and obtain a DBA report proving the deployed role is not owner/superuser/BYPASSRLS. Full operational query ownership matrix remains open.
+- **Implementation note (Phase 25/27):** all 17 Central tables now have explicit RLS policies in both the incremental migration and fresh-install bootstrap. Static parity tests and a real PostgreSQL non-owner `hrms_app` pooling test pass in CI. The identified legacy Settings direct-client path is now disabled with HTTP 410; other Central access paths must still be reviewed. Before production rollout, obtain a DBA report proving the deployed role is not owner/superuser/BYPASSRLS. Full operational query ownership matrix remains open.
 - **Findings:** GAP-0002, GAP-0030 (reclassified under frozen architecture), GAP-0047, GAP-0048, GAP-0046.
 - **Dependencies:** HRMS-D-003.
 - **Implementation steps:**
@@ -192,6 +192,7 @@ All tasks begin as **Not Started**. A source-code commit alone does not complete
 #### HRMS-C-006 — Storage lifecycle and paid promotion state machine
 
 - **Stream/module:** C/D — Registration, tenant resolver, storage allocation.
+- **Implementation note (Phase 27):** legacy Settings DB-config GET/PUT/test endpoints now return 410; direct Central Prisma access, plaintext credential writes and arbitrary outbound connection tests are removed; obsolete UI tab removed. Existing legacy credential rows remain untouched and require a separately approved inventory/remediation. Other provisioning/preflight DB connection paths still require feature-gate and egress-policy verification.
 - **Findings:** GAP-0004, GAP-0005, GAP-0042, GAP-0043, GAP-0044, GAP-0045.
 - **Dependencies:** HRMS-D-003, HRMS-D-005.
 - **Implementation steps:**
@@ -350,9 +351,9 @@ Every finding from the master register is accounted for below. “Merged” mean
 | GAP-0040 | HRMS-A-015 | Open P2 — attendance metadata argument mismatch |
 | GAP-0041 | HRMS-D-005 | Open P1 — MSSQL/PG migration history |
 | GAP-0042 | HRMS-C-006 | Open P1 — customer DB feature-gate coverage |
-| GAP-0043 | HRMS-C-006 | Open P1 — DB test endpoint SSRF boundary |
-| GAP-0044 | HRMS-C-006 | Open P1 — encrypt DB credentials and redact responses |
-| GAP-0045 | HRMS-C-006 | Open P2 — legacy DB config UI vs canonical routing |
+| GAP-0043 | HRMS-C-006 | Fixed for legacy Settings test endpoint — HTTP 410; other provisioning/preflight egress paths remain under GAP-0042 |
+| GAP-0044 | HRMS-C-006 | Fixed for legacy Settings API — read/write path disabled; existing stored legacy credentials inventory/remediation pending |
+| GAP-0045 | HRMS-C-006 | Fixed — legacy Database Settings UI removed and endpoints return HTTP 410; existing rows untouched |
 | GAP-0046 | HRMS-D-004 | Open P1 — same-company composite FK integrity |
 | GAP-0047 | HRMS-D-004 | Fixed in source — 17-table migration/bootstrap policies and RLS pooling test; live app-role/catalog verification pending |
 | GAP-0048 | HRMS-D-004 / HRMS-D-005 | Fixed in source — 17-table bootstrap/migration parity test; clean-install execution and live catalog comparison pending |
