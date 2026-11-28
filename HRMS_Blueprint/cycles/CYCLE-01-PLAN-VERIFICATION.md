@@ -75,3 +75,59 @@ Current authStore correctly excludes accessToken from persisted Zustand state. A
 ## 4. Re-review rule
 
 Do not implement from the current draft. Revise `CYCLE-01-PLAN.md`, add the complete traceability matrix, then perform a fresh review and record the new plan blob SHA. The plan can be marked Verified only if all R1–R8 items are satisfied and no frozen decision or safety gate is contradicted.
+
+
+---
+
+# Cycle 01 Plan Verification — Review Round 2
+
+**Date:** 2026-11-28 (Asia/Kolkata)  
+**Plan blob SHA reviewed:** `7c3895a58e6553edaa4fdc346ed41be6e0ce4f4b`  
+**Result:** <VERIFIED>
+
+Round 2 reviewed the revised plan from the beginning against R1–R8 and the frozen decisions. The plan was re-fetched from the working branch; its traceability matrix was checked programmatically for all 65 current gap IDs (GAP-0001 through GAP-0065), with no missing ID.
+
+## 1. Corrections confirmed
+
+| Required correction | Result | Evidence in revised plan |
+|---|---|---|
+| R1 — legacy HR API, sidebar and ESS route gaps | Pass | HRMS-E-009 includes GAP-0015/0016/0017; HRMS-A-015 includes browser E2E |
+| R2 — legacy DB credentials/config | Pass | HRMS-C-006 includes GAP-0044/0045, encryption at rest, response redaction, PostgreSQL-only validation and legacy path deprecation |
+| R3 — encryption helper fallback | Pass | HRMS-F-019 includes GAP-0064, fail-closed helper and process tests |
+| R4 — attendance metadata | Pass | HRMS-A-015 includes GAP-0040 and privacy-limited metadata verification |
+| R5 — duplicate tasks | Pass | C-008 merged into C-006; F-012 now covers only durable KYC queue; backup scheduling stays in F-007 |
+| R6 — full gap traceability | Pass | Matrix maps every GAP-0001–GAP-0065; superseded/merged findings are explicitly identified |
+| R7 — pricing wording | Pass | Frozen no-hard-employee-cap decision remains settled; only flat-vs-per-employee pricing is an owner decision |
+| R8 — access-token regression | Pass | HRMS-F-014 adds a test that accessToken is excluded from persistence and legacy values are purged |
+
+## 2. Safety and architecture verification
+
+- PostgreSQL-only, Prisma and modular monolith constraints are preserved.
+- Free/Trial shared public and Paid UUID-derived schema lifecycle is preserved.
+- Operational DB isolation remains tenant routing + explicit company_id filters under frozen design; no unapproved operational RLS redesign is proposed.
+- Central RLS, non-owner role verification and fresh-install policy parity are included.
+- Memory-only access token and httpOnly refresh cookie requirements are preserved.
+- AES-256-GCM remains the current write codec; incompatible legacy PII migration is explicitly prohibited.
+- Customer-managed DB connectivity remains disabled pending SSRF/network policy verification.
+- Paid activation waits for dedicated storage readiness.
+- Backup/restore is a prerequisite for deletion; destructive deletion remains gated.
+- Production migrations, deployment, real payments, customer data changes and key rotation require separate explicit approval.
+- CI and tests are required at exact commit SHA; no test/CI success is asserted by this plan.
+
+## 3. Dependency and task quality review
+
+- P0 WebSocket, webhook/startup, identity, shared isolation, migration and storage tasks are distinct and have objective tests.
+- D-003 → D-004 → D-005 → C-006 sequencing is correct.
+- F-007 is independent as a backup/restore gate and does not duplicate the durable queue task.
+- P1 API, permission/ownership, files, queue, deployment, CI and core workflow tasks are assigned.
+- P2 import/export, module completeness and index optimisation remain after P0/P1 gates.
+- Owner decisions are isolated and do not block unrelated security tasks.
+- Each task has acceptance criteria, test expectations and safety constraints.
+
+## 4. Final result
+
+<badge color="success">VERIFIED</badge>
+
+The revised Cycle 01 plan is **Verified for implementation planning**. This verification does not authorize production database changes, deployment, real payments, destructive data operations, customer DB connections, or production secret/key changes. It also does not mean any task is implemented or tested.
+
+Implementation may begin on the protected working branch only, in small task-mapped commits, with tests added alongside each change. Re-verify each task after implementation and re-run the full audit at cycle end.
