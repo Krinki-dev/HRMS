@@ -12,8 +12,9 @@ function removeSocket(userId, ws) {
 }
 
 const register = (identity, ws) => {
-  if (!identity || typeof identity.userId !== 'string' || !identity.userId) {
-    throw new TypeError('Verified WebSocket user identity is required.');
+  if (!identity || ![identity.userId, identity.tenantId, identity.companyId]
+    .every((value) => typeof value === 'string' && value.trim())) {
+    throw new TypeError('Verified WebSocket user, tenant and company identity are required.');
   }
   if (!ws || typeof ws.on !== 'function') {
     throw new TypeError('A valid WebSocket connection is required.');
