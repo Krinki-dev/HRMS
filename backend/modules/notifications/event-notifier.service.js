@@ -87,6 +87,7 @@ async function getStakeholderUsers(db, companyId) {
 
 async function dispatch({
   db,
+  tenantId,
   companyId,
   title,
   body,
@@ -111,7 +112,7 @@ async function dispatch({
         body,
         link,
         priority,
-      });
+      }, tenantId);
     } catch (err) {
       logger.warn('[EventNotifier] In-app notification failed', { error: err.message, title });
     }
@@ -140,7 +141,7 @@ async function dispatch({
 }
 
 const eventNotifier = {
-  async notifyLogin({ db, companyId, user, ipAddress }) {
+  async notifyLogin({ db, tenantId, companyId, user, ipAddress }) {
     if (!user?.email) return;
     const when = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     const title = 'New sign-in detected';
@@ -149,6 +150,7 @@ const eventNotifier = {
 
     await dispatch({
       db,
+      tenantId,
       companyId,
       title,
       body,
@@ -161,7 +163,7 @@ const eventNotifier = {
     });
   },
 
-  async notifyEmployeeCreated({ db, companyId, employee, actorLabel }) {
+  async notifyEmployeeCreated({ db, tenantId, companyId, employee, actorLabel }) {
     if (!employee) return;
     const stakeholders = await getStakeholderUsers(db, companyId);
     const recipients = [
@@ -173,6 +175,7 @@ const eventNotifier = {
     const body = `${employee.fullName} (${employee.employeeCode}) was added by ${actorLabel || 'system'}.`;
     await dispatch({
       db,
+      tenantId,
       companyId,
       title,
       body,
@@ -184,7 +187,7 @@ const eventNotifier = {
     });
   },
 
-  async notifyEmployeeUpdated({ db, companyId, employee, actorLabel }) {
+  async notifyEmployeeUpdated({ db, tenantId, companyId, employee, actorLabel }) {
     if (!employee) return;
     const stakeholders = await getStakeholderUsers(db, companyId);
     const recipients = [
@@ -196,6 +199,7 @@ const eventNotifier = {
     const body = `${employee.fullName} (${employee.employeeCode}) profile was updated by ${actorLabel || 'system'}.`;
     await dispatch({
       db,
+      tenantId,
       companyId,
       title,
       body,
@@ -207,7 +211,7 @@ const eventNotifier = {
     });
   },
 
-  async notifyEmployeeLoginProvisioned({ db, companyId, employeeId, loginEmail, actorLabel }) {
+  async notifyEmployeeLoginProvisioned({ db, tenantId, companyId, employeeId, loginEmail, actorLabel }) {
     if (!employeeId) return;
     const employee = await db.employees.findFirst({
       where: { id: employeeId, company_id: companyId, deleted_at: null },
@@ -224,6 +228,7 @@ const eventNotifier = {
     const body = `Login access was created for ${empName} by ${actorLabel || 'system'}.`;
     await dispatch({
       db,
+      tenantId,
       companyId,
       title,
       body,
@@ -235,7 +240,7 @@ const eventNotifier = {
     });
   },
 
-  async notifyEmployeeLoginToggled({ db, companyId, employeeId, isActive, actorLabel }) {
+  async notifyEmployeeLoginToggled({ db, tenantId, companyId, employeeId, isActive, actorLabel }) {
     if (!employeeId) return;
     const employee = await db.employees.findFirst({
       where: { id: employeeId, company_id: companyId, deleted_at: null },
@@ -253,6 +258,7 @@ const eventNotifier = {
     const body = `Login access for ${empName} was ${action} by ${actorLabel || 'system'}.`;
     await dispatch({
       db,
+      tenantId,
       companyId,
       title,
       body,
@@ -264,12 +270,13 @@ const eventNotifier = {
     });
   },
 
-  async notifyRoleChanged({ db, companyId, roleName, actorLabel, action = 'updated' }) {
+  async notifyRoleChanged({ db, tenantId, companyId, roleName, actorLabel, action = 'updated' }) {
     const stakeholders = await getStakeholderUsers(db, companyId);
     const title = `Role ${action}`;
     const body = `Role ${roleName || 'Unknown role'} was ${action} by ${actorLabel || 'system'}.`;
     await dispatch({
       db,
+      tenantId,
       companyId,
       title,
       body,
@@ -281,7 +288,7 @@ const eventNotifier = {
     });
   },
 
-  async notifyRoleAssigned({ db, companyId, userId, roleId, actorLabel }) {
+  async notifyRoleAssigned({ db, tenantId, companyId, userId, roleId, actorLabel }) {
     const [user, role, stakeholders] = await Promise.all([
       db.users.findFirst({ where: { id: userId, company_id: companyId, deleted_at: null }, include: { employee: true } }),
       db.roles.findFirst({ where: { id: roleId, deleted_at: null } }),
@@ -296,6 +303,7 @@ const eventNotifier = {
 
     await dispatch({
       db,
+      tenantId,
       companyId,
       title,
       body,
@@ -307,7 +315,7 @@ const eventNotifier = {
     });
   },
 
-  async notifyPasswordChanged({ db, companyId, userId }) {
+  async notifyPasswordChanged({ db, tenantId, companyId, userId }) {
     if (!userId) return;
     const user = await db.users.findFirst({
       where: { id: userId, company_id: companyId, is_active: true, deleted_at: null },
@@ -320,6 +328,7 @@ const eventNotifier = {
 
     await dispatch({
       db,
+      tenantId,
       companyId,
       title,
       body,
@@ -331,7 +340,7 @@ const eventNotifier = {
     });
   },
 
-  async notifyEmployeeUpdateRequestDecision({ db, companyId, requestId, decision, reason }) {
+  async notifyEmployeeUpdateRequestDecision({ db, tenantId, companyId, requestId, decision, reason }) {
     if (!requestId) return;
     const request = await db.audit_logs.findFirst({
       where: { id: requestId, company_id: companyId },
@@ -363,6 +372,7 @@ const eventNotifier = {
     const recipients = [{ email: user?.email || employee.work_email || employee.personal_email, phone: employee.phone }];
     await dispatch({
       db,
+      tenantId,
       companyId,
       title,
       body,
@@ -374,7 +384,7 @@ const eventNotifier = {
     });
   },
 
-  async notifyLeaveDecision({ db, companyId, application, decision, reason }) {
+  async notifyLeaveDecision({ db, tenantId, companyId, application, decision, reason }) {
     if (!application) return;
     const user = await db.users.findFirst({
       where: {
@@ -394,6 +404,7 @@ const eventNotifier = {
 
     await dispatch({
       db,
+      tenantId,
       companyId,
       title,
       body,
@@ -409,7 +420,7 @@ const eventNotifier = {
     });
   },
 
-  async notifyExpenseDecision({ db, companyId, claim, decision, reason }) {
+  async notifyExpenseDecision({ db, tenantId, companyId, claim, decision, reason }) {
     if (!claim?.employee_id) return;
 
     const [employee, user] = await Promise.all([
@@ -432,6 +443,7 @@ const eventNotifier = {
 
     await dispatch({
       db,
+      tenantId,
       companyId,
       title,
       body,
@@ -444,7 +456,7 @@ const eventNotifier = {
     });
   },
 
-  async notifyRegularizationDecision({ db, companyId, requestId, decision, reason }) {
+  async notifyRegularizationDecision({ db, tenantId, companyId, requestId, decision, reason }) {
     if (!requestId) return;
     const request = await db.regularization_requests.findFirst({
       where: { id: requestId, company_id: companyId },
@@ -469,6 +481,7 @@ const eventNotifier = {
 
     await dispatch({
       db,
+      tenantId,
       companyId,
       title,
       body,
