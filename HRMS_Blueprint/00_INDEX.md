@@ -192,3 +192,8 @@ Product domain:     PRODUCT_DOMAIN env var
 ## Latest Cycle 01 implementation
 
 - Phase 24 — explicit workspace selection, tenant-bound login/refresh tokens and regression test evidence: [CYCLE-01-IMPLEMENTATION-PHASE-24.md](cycles/CYCLE-01-IMPLEMENTATION-PHASE-24.md)
+
+
+## Latest Cycle 01 implementation report
+
+- Phase 25 — Central RLS policy completion, all-17-model matrix and bootstrap parity: [CYCLE-01-IMPLEMENTATION-PHASE-25.md](cycles/CYCLE-01-IMPLEMENTATION-PHASE-25.md)
