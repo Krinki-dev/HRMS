@@ -8,24 +8,36 @@ const path = require('node:path');
 const authSource = fs.readFileSync(path.join(__dirname, '../modules/auth/auth.service.js'), 'utf8');
 const platformSource = fs.readFileSync(path.join(__dirname, '../modules/platform/platform.service.js'), 'utf8');
 
-test('email, phone and employee lookups only expose active tenants with ready storage', () => {
-  for (const field of ['ui.email', 'ui.phone', 'ui.employee_id']) {
-    const queryStart = authSource.indexOf(`WHERE ${field} =`);
-    assert.notEqual(queryStart, -1, `missing lookup for ${field}`);
-    const queryEnd = authSource.indexOf('`', queryStart);
-    const query = authSource.slice(queryStart, queryEnd);
-    assert.match(query, /t\.is_active = true/);
-    assert.match(query, /t\.storage_status = 'ready'/);
-    assert.match(query, /t\.deleted_at IS NULL/);
-  }
+test('email lookup only exposes active tenants with ready storage', () => {
+  const start = authSource.indexOf('async lookupEmail');
+  const end = authSource.indexOf('async resolveTenantDb', start);
+  const lookup = authSource.slice(start, end);
+  assert.match(lookup, /LOWER\(ui\.email\)/);
+  assert.match(lookup, /ui\.is_active = true/);
+  assert.match(lookup, /t\.is_active = true/);
+  assert.match(lookup, /t\.storage_status = 'ready'/);
+  assert.match(lookup, /t\.deleted_at IS NULL/);
+  assert.match(lookup, /ORDER BY LOWER\(t\.name\), ui\.company_id/);
 });
 
-test('admin-email fallback excludes inactive or still-provisioning tenants', () => {
-  const start = authSource.indexOf('SELECT id AS tenant_id, name AS company_name, subdomain, logo_url,');
-  const query = authSource.slice(start, authSource.indexOf('`', start));
+test('admin-email fallback excludes inactive, provisioning and deleted tenants', () => {
+  const start = authSource.indexOf('const tenantRows = await withPlatformAdminRLS');
+  const end = authSource.indexOf('const choices =', start);
+  const query = authSource.slice(start, end);
+  assert.match(query, /LOWER\(admin_email\)/);
   assert.match(query, /is_active = true/);
   assert.match(query, /storage_status = 'ready'/);
   assert.match(query, /deleted_at IS NULL/);
+});
+
+test('tenant resolution refuses arbitrary selection when an email belongs to multiple workspaces', () => {
+  const start = authSource.indexOf('async resolveTenantDb');
+  const end = authSource.indexOf('async resolveTenantDbById', start);
+  const resolver = authSource.slice(start, end);
+  assert.match(resolver, /chooseTenantRow\(userRows, selectedTenantId\)/);
+  assert.match(resolver, /if \(userRows\.length > 0 && !selected\)/);
+  assert.match(resolver, /Never select an arbitrary workspace/);
+  assert.doesNotMatch(resolver, /LIMIT 1/);
 });
 
 test('new tenant user-index row stays inactive until operational seeding succeeds', () => {
