@@ -168,3 +168,8 @@ Central RLS policy source coverage and bootstrap parity are implemented for all 
 - Backend Tests run 46104242869 passed 210/210, zero skipped at SHA `c3790b43c30b5895fd2eb9b156ef939a54db2055`.
 - Tenant Migration PostgreSQL Integration run 46104242863 passed.
 - D-004 remains open pending full operational query ownership matrix, legacy Settings direct-client remediation, deployed app-role ownership/BYPASSRLS verification and live catalog review.
+
+
+## 2026-11-28 audit evidence — Phase 26
+
+HRMS-D-005 remains **Blocked / Not Implemented**: the existing migration history is misnamed and MSSQL, while the operational Prisma schema is PostgreSQL. HRMS-F-013 remains **Open**: Railway runs a non-fatal Central migration script at app startup. The migration layout, database catalog, role and adoption baseline must be resolved before production readiness.
