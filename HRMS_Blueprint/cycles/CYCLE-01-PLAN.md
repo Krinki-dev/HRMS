@@ -137,16 +137,18 @@ All tasks begin as **Not Started**. A source-code commit alone does not complete
   4. Bind login, OTP, refresh, logout and WebSocket ticket to tenantId and operational companyId.
   5. Reject JWT/header/host/company context mismatch; define company switching as a separate audited flow.
   6. Apply the same explicit workspace rule to forgot-password; create the reset token and send the email through the same selected tenant database.
+  7. Namespace OTP creation and verification by immutable Central tenant UUID so same-email OTP records cannot collide in shared public operational storage.
 - **Acceptance criteria:**
   - Same email in two tenants produces two explicit choices.
   - Login and password reset cannot silently pick an arbitrary tenant.
   - A body-selected tenant that conflicts with the verified request host is rejected.
   - Password-reset token storage and reset-email delivery use the same selected tenant database.
+  - OTP send and verify use the same tenant-scoped identifier; missing tenant context fails closed.
   - Unknown or invalid memberships receive a generic confirmation and do not disclose account existence.
   - Refresh preserves the same tenant context and rejects cross-tenant reuse.
   - JWT tenantId and operational companyId are distinct and consistently validated.
   - Platform admin scope is explicit and audited.
-- **Tests:** Multi-tenant duplicate-email tests; login/OTP/refresh/tenant-switch/password-reset negative tests; reset-token/email DB-context test; middleware forged-header and custom-domain tests.
+- **Tests:** Multi-tenant duplicate-email tests; login/OTP/refresh/tenant-switch/password-reset negative tests; OTP same-email cross-tenant namespace test; reset-token/email DB-context test; middleware forged-header and custom-domain tests.
 - **Safety:** Do not change existing user memberships or tokens in production without a reviewed migration plan.
 
 #### HRMS-D-004 — Shared-schema isolation and Central RLS verification
