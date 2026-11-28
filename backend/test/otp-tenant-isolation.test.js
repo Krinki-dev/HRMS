@@ -29,6 +29,7 @@ test('the same email and purpose are isolated across tenants in shared public st
 
 test('OTP identity fails closed when tenant or email context is missing', () => {
   assert.throws(() => buildOtpIdentifier(null, 'company-a', 'person@example.com'), /tenant context is required/);
+  assert.throws(() => buildOtpIdentifier('tenant-a', null, 'person@example.com'), /company context is required/);
   assert.throws(() => buildOtpIdentifier('tenant-a', 'company-a', ' '), /email is required/);
 });
 
