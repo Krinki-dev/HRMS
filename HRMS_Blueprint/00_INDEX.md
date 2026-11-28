@@ -253,3 +253,11 @@ Product domain:     PRODUCT_DOMAIN env var
 - Plan: [CYCLE-01-PLAN-PHASE-32.md](cycles/CYCLE-01-PLAN-PHASE-32.md)
 - Independent verification: [CYCLE-01-PLAN-VERIFICATION-PHASE-32.md](cycles/CYCLE-01-PLAN-VERIFICATION-PHASE-32.md)
 - Design-only; no DDL or migration authorized. D-005 must settle membership semantics and legacy backfill authority before implementation.
+
+
+## Cycle 01 Phase 33 — Forgot-password resolver correction
+
+- Plan: [CYCLE-01-PLAN-PHASE-33.md](cycles/CYCLE-01-PLAN-PHASE-33.md)
+- Plan verification: [CYCLE-01-PLAN-VERIFICATION-PHASE-33.md](cycles/CYCLE-01-PLAN-VERIFICATION-PHASE-33.md)
+- Implementation report: [CYCLE-01-IMPLEMENTATION-PHASE-33.md](cycles/CYCLE-01-IMPLEMENTATION-PHASE-33.md)
+- Scope: corrected forgot-password tenant/email/company resolver argument order and added a regression assertion. Source-level check only; test execution and CI remain unverified.
