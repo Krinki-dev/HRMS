@@ -281,3 +281,18 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - Ownership inventory: `cycles/CYCLE-01-POSTGRES-OWNERSHIP-INVENTORY-PHASE-30.md` records all 82 operational models and 17 Central models. Static inventory is not a runtime query-scope certification.
 - HRMS-D-003 and HRMS-D-004 remain In Progress. Query-by-query operational audit, cross-company integration tests, composite-FK feasibility, and Central app-role/catalog proof remain open.
 - No production/customer DB, migration, deployment, payment, deletion or customer-data operation; `main` untouched.
+
+
+## Cycle 01 Phase 30 full re-analysis — GAP-0068
+
+- **GAP-0068 (P1, Auth/Identity): same email can map to multiple operational companies inside one Central tenant, but authentication/reset selects an arbitrary user.**
+- Evidence:
+  - `backend/prisma/schema.prisma` defines `users @@unique([company_id, email])`, which permits the same email under different operational companies.
+  - `backend/prisma/central.prisma` defines `central_user_index @@unique([email, company_id])`; its `company_id` is the Central tenant UUID, not the operational `companies.id`, so it cannot represent multiple operational-company memberships for the same email within one tenant.
+  - `authService.validateUserLogin` uses `users.findFirst({ where: { email } })` without operational company ID.
+  - OTP login uses `users.findFirst({ where: { email } })` without operational company ID.
+  - Forgot-password uses `users.findFirst({ where: { email } })` after selecting only the Central tenant, so duplicate operational-company accounts remain ambiguous.
+- Impact: login, OTP login or password reset can bind to an arbitrary company account within the selected tenant. The Phase 30 OTP namespace fixes cross-tenant collisions but does not solve same-tenant multi-company ambiguity.
+- Recommendation: add an explicit operational-company selection within the selected Central tenant; bind companyId through password login, OTP, password reset, access/refresh tokens, WebSocket tickets and all relevant route context. Reject ambiguous requests rather than selecting first.
+- Status: **Open — In Analysis**. No code change has been made for this finding. A company-selection contract and E2E acceptance plan must be verified before implementation.
+- Keep HRMS-D-003 In Progress. This finding takes precedence over continuing deeper D-004 query work because authentication identity must be unambiguous first.
