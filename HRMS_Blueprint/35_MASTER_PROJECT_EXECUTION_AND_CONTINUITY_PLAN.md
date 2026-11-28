@@ -343,3 +343,19 @@ This section supersedes the initial adoption snapshot in Section 12 where it con
 - HRMS-A-010 remains In Progress; Phase 28 closes only the documented subpaths. HRMS-D-004 remains In Progress pending exhaustive operational ownership matrix, composite FK review and live Central role/catalog evidence.
 - Next source-only task: HRMS-D-003 forgot-password explicit workspace selection and multi-membership tests; then resume D-004. No owner decision required for this next task.
 - `main` untouched. No production DB, migration, deployment, payment, destructive operation or customer-data change performed.
+
+
+---
+
+## CURRENT EXECUTION OVERRIDE — Cycle 01 Phase 29 (2026-11-28)
+
+This section supersedes the Phase 28 next-task line above where it conflicts.
+
+- Latest source implementation report: `cycles/CYCLE-01-IMPLEMENTATION-PHASE-29.md`.
+- Latest source-code commit for this increment: `e644c3b5e233257c1359ed53b2daef4a1aa9dd5d` (forgot-password workspace chooser and stale-selection reset).
+- The branch's prior documentation-only Phase 28 sync was `d5f19306bb3fc9d87a7e52a428b2dbec24dc0d5a`; the Phase 29 source increment consists of five commits recorded in the handoff and report.
+- HRMS-D-003 / GAP-0065: unordered forgot-password workspace fallback removed in source; ambiguous memberships require explicit eligible workspace; request tenant/body mismatch is rejected; reset token and email delivery use the same selected tenant DB.
+- Regression tests were added but exact-head execution is **Pending / Not Verified**. Backend CI, frontend build and authenticated auth E2E must be checked against the final branch head. Do not infer a pass from absent status entries.
+- The D-003 task remains In Progress until test/CI/E2E gates pass.
+- **Next exact task after verification:** resume HRMS-D-004 operational ownership/query matrix and composite same-company FK review.
+- `main` remains untouched. No production/customer DB connection, migration, deployment, real payment, destructive action or customer-data modification was performed.
