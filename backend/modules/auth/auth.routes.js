@@ -200,7 +200,7 @@ router.post('/lookup-companies', lookupLimiter, async (req, res) => {
       activeDb = new PrismaClient({ datasources: { db: { url: tenantContext.url } } });
       isTemporary = true;
     }
-    const choices = await authService.lookupCompanies(activeDb, normalizedEmail);
+    const choices = await authService.lookupCompanies(activeDb, normalizedEmail, tenantId);
     return sendSuccess(res, { found: choices.length > 0, choices });
   } catch (err) {
     logger.error('[Auth/LookupCompanies] Failure:', { message: err.message });
@@ -302,17 +302,8 @@ async function getActiveContext(req, email) {
   return { activeDb: client, tenantId: ctx.tenantId, isTemporary: true };
 }
 
-async function resolveCompanyForEmail(activeDb, email, requestedCompanyId = null) {
-  const choices = await authService.lookupCompanies(activeDb, email);
-  if (requestedCompanyId) {
-    const selected = choices.find((choice) => choice.companyId === requestedCompanyId);
-    return selected
-      ? { status: 'selected', companyId: selected.companyId }
-      : { status: 'invalid_selection', companyId: null };
-  }
-  if (choices.length === 1) return { status: 'selected', companyId: choices[0].companyId };
-  if (choices.length > 1) return { status: 'selection_required', choices };
-  return { status: 'not_found', companyId: null };
+async function resolveCompanyForEmail(activeDb, tenantId, email, requestedCompanyId = null) {
+  return authService.resolveUserIdentity(activeDb, tenantId, email, requestedCompanyId);
 }
 
 router.post('/send-otp', otpLimiter, async (req, res) => {
@@ -328,7 +319,7 @@ router.post('/send-otp', otpLimiter, async (req, res) => {
     const { activeDb, tenantId, isTemporary } = await getActiveContext(req, normalizedEmail);
     if (!activeDb) return sendSuccess(res, null, 'Process completed');
     try {
-      const companyResolution = await resolveCompanyForEmail(activeDb, normalizedEmail, requestedCompanyId);
+      const companyResolution = await resolveCompanyForEmail(activeDb, tenantId, normalizedEmail, requestedCompanyId);
       if (companyResolution.status === 'selection_required') {
         return sendSuccess(res, { requiresCompanySelection: true, choices: companyResolution.choices }, 'Select a company to continue.');
       }
@@ -377,7 +368,7 @@ router.post('/verify-otp', otpLimiter, async (req, res) => {
     }
     if (purpose === 'login') {
       const user = await activeDb.users.findFirst({
-        where: { email: normalizedEmail, company_id: companyId, is_active: true },
+        where: { id: companyResolution.userId, email: normalizedEmail, company_id: companyResolution.companyId, is_active: true },
         include: { role: true, employee: true },
       });
       const permissions = safeParseJSON(user.role?.permissions);
@@ -418,7 +409,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     if (!activeDb) {
       return sendError(res, ERROR_CODES.UNAUTHORIZED, 'INVALID_CREDENTIALS', 401);
     }
-    const result = await authService.validateUserLogin(activeDb, normalizedEmail, password, companyId);
+    const result = await authService.validateUserLogin(activeDb, tenantId, normalizedEmail, password, companyId);
     if (!result.success) {
       if (isTemporary) setTimeout(() => activeDb.$disconnect(), 5000);
       return sendError(res, ERROR_CODES.UNAUTHORIZED, result.code, 401);
@@ -633,7 +624,7 @@ router.post('/forgot-password', async (req, res) => {
     }
     const companyId = companyResolution.companyId;
     const user = await activeDb.users.findFirst({
-      where: { email: normalizedEmail, company_id: companyId, is_active: true },
+      where: { id: companyResolution.userId, email: normalizedEmail, company_id: companyResolution.companyId, is_active: true },
       include: { employee: true },
     });
     if (!user) {
