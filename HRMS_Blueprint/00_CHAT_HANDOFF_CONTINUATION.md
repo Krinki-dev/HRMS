@@ -1136,3 +1136,16 @@ This block supersedes older branch/CI statements above where they conflict.
 - Positive controls noted: auth tenant-context match, fail-closed storage resolver, UUID-derived schema names and transaction-scoped central RLS helpers. Runtime DB tests were not executed; CI skip concern GAP-0031 remains.
 - No application source, tests, server, browser, DB, customer network, payment or deployment was changed/exercised. main untouched.
 - Next session: trace DB-config write routes and provisioning lifecycle; verify feature flag + egress policy; continue schema/FK/index/RLS and frontend/ops audits. Only after audit complete draft and independently verify Cycle 01 plan.
+
+
+
+## CURRENT HANDOFF — Cycle 01 Phase 15 (2026-11-28)
+
+- Working branch: `architecture/postgres-tenant-isolation`. Never modify `main`.
+- New audit record: `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-15.md`.
+- Phase 15 corrects GAP-0042: new tenant registration does gate customer-managed DB modes using `CUSTOMER_DATABASE_CONNECTIONS_ENABLED`.
+- New open findings: GAP-0043 (legacy Settings DB connection-test endpoint bypasses feature flag and accepts request-supplied destinations), GAP-0044 (legacy DB credentials stored/read without adequate protection), GAP-0045 (legacy Settings DB config writes a separate table not used by canonical tenant routing and exposes non-PostgreSQL options).
+- Do not call SSRF exploitability confirmed. Deployment flag value and provider-level egress controls are not known. Keep customer-managed DB connections disabled until verified.
+- Registration source shows lease-based lifecycle, but separate recovery worker and full retry lifecycle are not verified.
+- No application source changed; no tests, boot, browser, DB, network, migration, payment or deployment operation was performed. main untouched.
+- Next: complete PostgreSQL schema/FK/index/RLS matrix, then frontend/API and backup/restore/deployment audit; reconcile duplicates/root causes; draft Cycle 01 plan only after audit completion and independently verify it before implementation.
