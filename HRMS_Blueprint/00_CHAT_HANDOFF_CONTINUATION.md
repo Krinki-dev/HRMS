@@ -1368,3 +1368,22 @@ This supersedes the Phase 30 next-task line.
 - Isolated Node helper smoke: 4/4 passed. Full repository tests, exact-head CI and authenticated E2E have not been run/verified.
 - Next exact task: design the Central tenant-user-company membership mapping and backfill/adoption requirements as part of HRMS-D-005 without applying a migration; then complete Phase 31 auth E2E plan. After identity mapping is resolved, resume D-004 query-by-query ownership audit.
 - No production/customer DB connection, SQL, migration/DDL, deployment, real payment, deletion, credential rotation or customer-data operation.
+
+
+---
+
+## CURRENT AUTHORITATIVE HANDOFF — Cycle 01 Phase 32 design checkpoint (2026-11-28)
+
+This supersedes the Phase 31 next-task line.
+
+- Working branch: `architecture/postgres-tenant-isolation`; `main` untouched.
+- Phase 31 implementation report: `cycles/CYCLE-01-IMPLEMENTATION-PHASE-31.md`.
+- Phase 32 Central membership mapping design: `cycles/CYCLE-01-CENTRAL-TENANT-COMPANY-MEMBERSHIP-DESIGN-PHASE-32.md`.
+- Phase 32 plan/verification: `CYCLE-01-PLAN-PHASE-32.md`, `CYCLE-01-PLAN-VERIFICATION-PHASE-32.md`.
+- Final auth source binds login, OTP and forgot-password to Central `central_user_index.user_id` for the selected tenant, then validates operational companyId. OTP identity includes tenant + company + normalized email.
+- GAP-0067 Fixed — Awaiting Verification. GAP-0068 Open / Blocked: the current Central index supports only one operational user per email/tenant. The proposed new Central tenant-user-company mapping is design-only; no DDL or migration exists.
+- The proposed mapping requires decisions on whether one user can belong to multiple companies, whether one company can belong to multiple Central tenants, membership lifecycle and trusted legacy backfill authority. These are not silently frozen by the design.
+- Full backend tests, frontend build, exact-head GitHub CI and authenticated login/OTP/refresh/password-reset E2E remain unverified. Only isolated OTP helper smoke passed 4/4.
+- **Next exact task:** resolve/document the membership semantics and legacy backfill owner decisions; then incorporate the approved mapping into the D-005 canonical PostgreSQL migration baseline plan. No DDL until explicit approval and baseline verification.
+- HRMS-D-003 remains In Progress; HRMS-D-004 remains In Progress; HRMS-D-005 remains Blocked on migration baseline.
+- No production/customer DB connection, SQL, migration/DDL, deployment, real payment, deletion, credential rotation or customer-data operation.
