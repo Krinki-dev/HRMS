@@ -199,7 +199,7 @@ httpServer.on('upgrade', (request, socket, head) => {
     return;
   }
 
-  request.userId = userId;
+  request.wsIdentity = wsIdentity;
   wss.handleUpgrade(request, socket, head, (ws) => wss.emit('connection', ws, request));
 });
 
