@@ -385,6 +385,8 @@ export default function SmartLoginPage() {
       const msg = err.response?.data?.message;
       if (msg === 'INVALID_CREDENTIALS') {
         setError('Email or password is incorrect. Please try again.');
+      } else if (msg === 'COMPANY_SELECTION_REQUIRED') {
+        setError('Select the legal company for this account before signing in.');
       } else if (msg === 'ACCOUNT_INACTIVE') {
         setError('Your account is disabled. Please contact your HR administrator.');
       } else {
@@ -430,6 +432,7 @@ export default function SmartLoginPage() {
       if (companies.length > 1) {
         setCompanyChoices(companies);
         setSelectedCompanyId('');
+        setStep(2);
         setError('This email is registered in more than one company in this workspace. Select the correct company.');
       } else {
         setCompanyChoices([]);
