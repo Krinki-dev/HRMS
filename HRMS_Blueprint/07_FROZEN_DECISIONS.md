@@ -431,3 +431,10 @@ Phase 19:  Mobile App (React Native)    ❌ Phase 2 — not started
 - **Login/workspace selection correction:** Phase 24 added explicit workspace selection for login and binds refresh tokens to the selected immutable tenant ID. Keep the memory-only access-token and tenant-bound refresh rules.
 - **Phase 29 password-reset source correction:** forgot-password no longer uses an unordered Central membership `LIMIT 1`; ambiguous memberships require an eligible explicit workspace, request-host/body tenant mismatch is rejected, and reset-token persistence plus email delivery use the same selected tenant DB. Keep HRMS-D-003 In Progress until exact-head CI and authenticated login/OTP/refresh/password-reset E2E pass. The source correction is not production-readiness evidence.
 - Evidence report: `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-21.md`.
+
+
+### Phase 30 identity-isolation implementation note (2026-11-28)
+
+- In shared public operational storage, OTP records must be namespaced by immutable Central tenant UUID as well as normalized email. Raw email + purpose is not a sufficient OTP identity.
+- Phase 30 applies this rule inside the existing `otp_store.identifier` field for both OTP creation and verification; missing tenant context fails closed.
+- This is a source correction, not a schema migration or a change to the frozen tenant/company identity model. Keep GAP-0067 Fixed — Awaiting Verification until tests and exact-head CI pass.
