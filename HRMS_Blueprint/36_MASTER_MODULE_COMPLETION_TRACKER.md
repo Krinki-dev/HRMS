@@ -191,3 +191,11 @@ HRMS-D-005 remains **Blocked / Not Implemented**: the existing migration history
 - Password-reset workspace selection now has source changes and focused regression tests committed under `HRMS-D-003` / `GAP-0065`.
 - The auth module remains **Not Assessed** at full module/dimension level: login/OTP/refresh/password reset E2E, route-wide authorization, DB integration and recovery evidence are not complete.
 - Exact-head CI and authenticated password-reset E2E remain pending. No authentication module completion status is promoted by this source increment.
+
+
+## 2026-11-28 — Phase 30 authentication/database ownership evidence
+
+- Auth OTP records now use a tenant-namespaced identifier derived from immutable Central tenant UUID and normalized email; create and verify share the same helper.
+- Added six focused regression tests. Test execution, exact-head CI and authenticated OTP E2E remain pending.
+- Authentication module remains **Not Assessed** at full module/dimension level. HRMS-D-003 remains In Progress; no module completion is inferred.
+- D-004 schema inventory covers 82 operational and 17 Central models; query-level ownership proof and live role/catalog verification remain open.
