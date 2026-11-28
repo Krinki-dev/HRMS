@@ -474,7 +474,14 @@ const employeeService = {
   },
 
   updateBankAccount: async (db, companyId, employeeId, bankId, data) => {
-    const bank = await db.employee_bank_accounts.findFirst({ where: { id: bankId, employee_id: employeeId } });
+    const emp = await db.employees.findFirst({
+      where: { id: employeeId, company_id: companyId, deleted_at: null },
+      select: { id: true },
+    });
+    if (!emp) throw new Error('NOT_FOUND');
+    const bank = await db.employee_bank_accounts.findFirst({
+      where: { id: bankId, employee_id: emp.id, deleted_at: null },
+    });
     if (!bank) throw new Error('NOT_FOUND');
     logger.info(`${THEME.ICONS.PROCESS} Updating bank account ${bankId} for employee: ${employeeId}`);
     return db.employee_bank_accounts.update({
@@ -489,7 +496,14 @@ const employeeService = {
   },
 
   deleteBankAccount: async (db, companyId, employeeId, bankId) => {
-    const bank = await db.employee_bank_accounts.findFirst({ where: { id: bankId, employee_id: employeeId } });
+    const emp = await db.employees.findFirst({
+      where: { id: employeeId, company_id: companyId, deleted_at: null },
+      select: { id: true },
+    });
+    if (!emp) throw new Error('NOT_FOUND');
+    const bank = await db.employee_bank_accounts.findFirst({
+      where: { id: bankId, employee_id: emp.id, deleted_at: null },
+    });
     if (!bank) throw new Error('NOT_FOUND');
     logger.warn(`${THEME.ICONS.LOCK} Deleting bank account ${bankId} for employee: ${employeeId}`);
     return db.employee_bank_accounts.update({ where: { id: bankId }, data: { deleted_at: new Date() } });
@@ -521,7 +535,14 @@ const employeeService = {
 },
 
   deleteDocument: async (db, companyId, employeeId, docId) => {
-    const doc = await db.employee_documents.findFirst({ where: { id: docId, employee_id: employeeId } });
+    const emp = await db.employees.findFirst({
+      where: { id: employeeId, company_id: companyId, deleted_at: null },
+      select: { id: true },
+    });
+    if (!emp) throw new Error('NOT_FOUND');
+    const doc = await db.employee_documents.findFirst({
+      where: { id: docId, employee_id: emp.id, deleted_at: null },
+    });
     if (!doc) throw new Error('NOT_FOUND');
     logger.warn(`${THEME.ICONS.LOCK} Deleting document ${docId} for employee: ${employeeId}`);
     return db.employee_documents.update({ where: { id: docId }, data: { deleted_at: new Date() } });

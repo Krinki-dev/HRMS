@@ -312,7 +312,7 @@ const payrollService = {
 
     const limit = Math.min(parseInt(query.limit) || 50, 200);
     const payslips = await db.payslips.findMany({
-      where: { payroll_run_id: runId },
+      where: { payroll_run_id: runId, employee: { company_id: companyId } },
       include: {
         employee: {
           select: {
@@ -346,8 +346,10 @@ const payrollService = {
   },
 
   getPayslip: async (db, runId, empId, companyId) => {
+    const run = await db.payroll_runs.findFirst({ where: { id: runId, company_id: companyId } });
+    if (!run) throw new Error('NOT_FOUND');
     const payslip = await db.payslips.findFirst({
-      where: { payroll_run_id: runId, employee_id: empId },
+      where: { payroll_run_id: runId, employee_id: empId, employee: { company_id: companyId } },
       include: {
         payroll_run: true,
         employee: {
@@ -370,7 +372,9 @@ const payrollService = {
     if (!run)               throw new Error('NOT_FOUND');
     if (run.status === 'locked') throw new Error('RUN_LOCKED');
 
-    const payslip = await db.payslips.findFirst({ where: { payroll_run_id: runId, employee_id: empId } });
+    const payslip = await db.payslips.findFirst({
+      where: { payroll_run_id: runId, employee_id: empId, employee: { company_id: companyId } },
+    });
     if (!payslip) throw new Error('NOT_FOUND');
 
     const allowed = ['other_earnings', 'other_deductions', 'tds', 'lop_days'];
@@ -391,8 +395,13 @@ const payrollService = {
 
   addBonus: async (db, runId, companyId, data) => {
     const run = await db.payroll_runs.findFirst({ where: { id: runId, company_id: companyId } });
-    if (!run)               throw new Error('NOT_FOUND');
+    if (!run) throw new Error('NOT_FOUND');
     if (run.status === 'locked') throw new Error('RUN_LOCKED');
+    const employee = await db.employees.findFirst({
+      where: { id: data.employee_id, company_id: companyId, deleted_at: null },
+      select: { id: true },
+    });
+    if (!employee) throw new Error('NOT_FOUND');
     return db.payroll_bonuses.create({
       data: {
         payroll_run_id: runId,
@@ -408,9 +417,18 @@ const payrollService = {
 
   removeBonus: async (db, bonusId, runId, companyId) => {
     const run = await db.payroll_runs.findFirst({ where: { id: runId, company_id: companyId } });
-    if (!run)               throw new Error('NOT_FOUND');
+    if (!run) throw new Error('NOT_FOUND');
     if (run.status === 'locked') throw new Error('RUN_LOCKED');
-    await db.payroll_bonuses.delete({ where: { id: bonusId } });
+    const bonus = await db.payroll_bonuses.findFirst({
+      where: { id: bonusId, payroll_run_id: runId },
+    });
+    if (!bonus) throw new Error('NOT_FOUND');
+    const employee = await db.employees.findFirst({
+      where: { id: bonus.employee_id, company_id: companyId, deleted_at: null },
+      select: { id: true },
+    });
+    if (!employee) throw new Error('NOT_FOUND');
+    await db.payroll_bonuses.delete({ where: { id: bonus.id } });
     return { deleted: true };
   },
 

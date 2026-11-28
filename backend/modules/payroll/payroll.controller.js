@@ -51,16 +51,16 @@ module.exports = {
     res.json({ success: true, ...result });
   }),
 
-  getPayslip:   wrap(async (req, res) => sendSuccess(res, await svc.getPayslip(req.params.runId, req.params.empId, req.user.companyId))),
+  getPayslip:   wrap(async (req, res) => sendSuccess(res, await svc.getPayslip(req.db, req.params.runId, req.params.empId, req.user.companyId))),
 
-  updatePayslip: wrap(async (req, res) => sendSuccess(res, await svc.updatePayslip(req.params.runId, req.params.empId, req.body, req.user.companyId), 'Payslip updated.')),
+  updatePayslip: wrap(async (req, res) => sendSuccess(res, await svc.updatePayslip(req.db, req.params.runId, req.params.empId, req.body, req.user.companyId), 'Payslip updated.')),
 
   addBonus:     wrap(async (req, res) => {
     if (!req.body.employee_id || !req.body.amount) return sendError(res, ERROR_CODES.VALIDATION, 'employee_id and amount required.');
     sendSuccess(res, await svc.addBonus(req.db, req.params.runId, req.user.companyId, { ...req.body, created_by: req.user.id }), 'Bonus added.', 201);
   }),
 
-  removeBonus:  wrap(async (req, res) => { await svc.removeBonus(req.params.id, req.params.runId, req.user.companyId); sendSuccess(res, null, 'Removed.'); }),
+  removeBonus:  wrap(async (req, res) => { await svc.removeBonus(req.db, req.params.id, req.params.runId, req.user.companyId); sendSuccess(res, null, 'Removed.'); }),
 
   listSalaryStructures:  wrap(async (req, res) => sendSuccess(res, await svc.listSalaryStructures(req.db, req.user.companyId))),
   createSalaryStructure: wrap(async (req, res) => sendSuccess(res, await svc.createSalaryStructure(req.db, req.user.companyId, req.body), 'Structure created.', 201)),

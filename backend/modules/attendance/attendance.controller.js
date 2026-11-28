@@ -175,7 +175,10 @@ const ctrl = {
 
   deleteHoliday: async (req, res) => {
     try { sendSuccess(res, await svc.deleteHoliday(req.db, req.params.id, req.user.companyId), 'Holiday removed.'); }
-    catch (e) { sendError(res, ERROR_CODES.SERVER, 'Failed.', 500); }
+    catch (e) {
+      if (e.message === 'NOT_FOUND') return sendError(res, ERROR_CODES.NOT_FOUND, 'Holiday not found.', 404);
+      sendError(res, ERROR_CODES.SERVER, 'Failed.', 500);
+    }
   },
 
   loadNationalHolidays: async (req, res) => {

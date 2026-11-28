@@ -509,7 +509,12 @@ const attendanceService = {
   },
 
   deleteHoliday: async (db, id, companyId) => {
-    return db.holidays.update({ where: { id }, data: { deleted_at: new Date() } });
+    const holiday = await db.holidays.findFirst({
+      where: { id, company_id: companyId, deleted_at: null },
+      select: { id: true },
+    });
+    if (!holiday) throw new Error('NOT_FOUND');
+    return db.holidays.update({ where: { id: holiday.id }, data: { deleted_at: new Date() } });
   },
 
   monthlyReport: async (db, companyId, month, year) => {
