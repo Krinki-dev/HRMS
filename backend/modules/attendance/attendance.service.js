@@ -247,6 +247,11 @@ const attendanceService = {
 
     for (const rec of records) {
       try {
+        const employee = await db.employees.findFirst({
+          where: { id: rec.employeeId, company_id: companyId, deleted_at: null },
+          select: { id: true },
+        });
+        if (!employee) throw new Error('NOT_FOUND');
         const workingHours = rec.checkIn && rec.checkOut
           ? calcWorkingHours(rec.checkIn, rec.checkOut) : 0;
 
@@ -315,16 +320,21 @@ const attendanceService = {
   submitRegularization: async (db, employeeId, companyId, data) => {
     const { date, requestedCheckIn, requestedCheckOut, reason } = data;
     if (!reason || reason.length < 5) throw new Error('REASON_TOO_SHORT');
+    const employee = await db.employees.findFirst({
+      where: { id: employeeId, company_id: companyId, deleted_at: null },
+      select: { id: true },
+    });
+    if (!employee) throw new Error('NOT_FOUND');
 
     const existing = await db.regularization_requests.findFirst({
-      where: { employee_id: employeeId, date: new Date(date), status: 'pending' },
+      where: { employee_id: employee.id, company_id: companyId, date: new Date(date), status: 'pending' },
     });
     if (existing) throw new Error('DUPLICATE_REQUEST');
 
     return db.regularization_requests.create({
       data: {
         company_id:          companyId,
-        employee_id:         employeeId,
+        employee_id:         employee.id,
         date:                new Date(date),
         requested_check_in:  requestedCheckIn  ? new Date(requestedCheckIn)  : null,
         requested_check_out: requestedCheckOut ? new Date(requestedCheckOut) : null,
@@ -384,8 +394,12 @@ const attendanceService = {
 
   rejectRegularization: async (db, requestId, companyId, approverId, reason) => {
     if (!reason) throw new Error('REASON_REQUIRED');
+    const request = await db.regularization_requests.findFirst({
+      where: { id: requestId, company_id: companyId, status: 'pending' },
+    });
+    if (!request) throw new Error('NOT_FOUND');
     return db.regularization_requests.update({
-      where: { id: requestId },
+      where: { id: request.id },
       data:  { status: 'rejected', approved_by: approverId, rejection_reason: reason },
     });
   },
