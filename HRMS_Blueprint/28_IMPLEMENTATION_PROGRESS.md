@@ -763,3 +763,14 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - GAP-0021 missing-export defect marked Verified Closed; GAP-0066 added for the payment controller syntax blocker and verified closed.
 - Backend Tests passed on exact SHA `97c60ad1ed3549d4c780c8506f871ada8e7cd1bb`: 171 tests, 166 pass, 0 fail, 5 skipped. This is not the latest branch HEAD; later auth/session commits require a fresh CI result.
 - No production DB, real payment, live WS, migration, deployment or customer-data operation performed; main untouched.
+
+
+## 2026-11-28 — Cycle 01 Phase 24 explicit tenant selection and session binding
+
+- Added `HRMS_Blueprint/cycles/CYCLE-01-IMPLEMENTATION-PHASE-24.md`.
+- HRMS-D-003: workspace choices are deterministic; no arbitrary tenant selection; frontend sends selected tenant UUID; backend checks request tenant; access/refresh tokens bind Central tenant and operational company IDs; refresh resolves signed tenant claims and rejects mismatch.
+- GAP-0001 and GAP-0065 source fixes plus regression tests are implemented; remain Fixed — Awaiting end-to-end login/OTP/refresh verification.
+- Backend Tests passed at SHA `3f495f016e8e56ecb6fc63770c836fc6e292ac7c`: 177 discovered, 172 passed, 0 failed, 5 skipped.
+- Frontend Build passed at SHA `2b27b3c8a319f02d0cff380b`.
+- Tenant migration inventory integration passed at SHA `3f495f016e8e56ecb6fc63770c836fc6e292ac7c`; it does not certify Central RLS.
+- No production DB, real login, production token or customer-data operation performed; main untouched.
