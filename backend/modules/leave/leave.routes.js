@@ -9,7 +9,7 @@ router.use(auth);
 router.use(checkModuleEnabled('leave'));
 
 router.get('/dashboard',                  ctrl.dashboard);
-router.get('/calendar',                   ctrl.calendar);
+router.get('/calendar',                   checkPermission('leave', 'view'), ctrl.calendar);
 router.get('/',                           checkPermission('leave', 'view'), ctrl.list);
 router.get('/my',                         ctrl.myApplications);
 router.get('/balances',                   ctrl.getBalances);
