@@ -99,7 +99,7 @@
 
     const empIds = a.allocations.map(al => al.employee_id);
     const emps   = empIds.length ? await db.employees.findMany({
-      where: { id: { in: empIds } },
+      where: { id: { in: empIds }, company_id: companyId },
       select: { id: true, first_name: true, last_name: true, employee_code: true },
     }) : [];
     const empMap = Object.fromEntries(emps.map(e => [e.id, e]));
