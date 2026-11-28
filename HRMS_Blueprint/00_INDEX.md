@@ -202,3 +202,8 @@ Product domain:     PRODUCT_DOMAIN env var
 ## Latest Cycle 01 implementation
 
 - Phase 25 — Central RLS 17-table migration/bootstrap parity and zero-skip PostgreSQL CI: [CYCLE-01-IMPLEMENTATION-PHASE-25.md](cycles/CYCLE-01-IMPLEMENTATION-PHASE-25.md)
+
+
+## Latest Cycle 01 implementation report
+
+- Phase 26 — PostgreSQL migration baseline layout, MSSQL legacy history and non-fatal deploy migration runner: [CYCLE-01-IMPLEMENTATION-PHASE-26.md](cycles/CYCLE-01-IMPLEMENTATION-PHASE-26.md)
