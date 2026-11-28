@@ -50,7 +50,7 @@
 
     const empIds = items.flatMap(a => a.allocations.map(al => al.employee_id)).filter(Boolean);
     const emps   = empIds.length ? await db.employees.findMany({
-      where: { id: { in: empIds } },
+      where: { id: { in: empIds }, company_id: companyId },
       select: { id: true, first_name: true, last_name: true, employee_code: true },
     }) : [];
     const empMap = Object.fromEntries(emps.map(e => [e.id, e]));
@@ -130,15 +130,22 @@
   },
 
   remove: async (db, companyId, id) => {
-    const active = await db.asset_allocations.findFirst({ where: { asset_id: id, returned_at: null } });
+    const asset = await db.assets.findFirst({ where: { id, company_id: companyId, deleted_at: null } });
+    if (!asset) throw new Error('NOT_FOUND');
+    const active = await db.asset_allocations.findFirst({ where: { asset_id: asset.id, returned_at: null } });
     if (active) throw new Error('ASSET_ALLOCATED');
-    return db.assets.update({ where: { id }, data: { deleted_at: new Date() } });
+    return db.assets.update({ where: { id: asset.id }, data: { deleted_at: new Date() } });
   },
 
   allocate: async (db, companyId, assetId, { employeeId, allocatedDate, conditionAtAlloc, allocatedBy }) => {
     const asset = await db.assets.findFirst({ where: { id: assetId, company_id: companyId } });
     if (!asset) throw new Error('NOT_FOUND');
     if (asset.status === 'allocated') throw new Error('ALREADY_ALLOCATED');
+    const employee = await db.employees.findFirst({
+      where: { id: employeeId, company_id: companyId, deleted_at: null },
+      select: { id: true },
+    });
+    if (!employee) throw new Error('NOT_FOUND');
 
     const alloc = await db.asset_allocations.create({
       data: {
@@ -155,6 +162,8 @@
   },
 
   returnAsset: async (db, companyId, assetId, { returnDate, conditionAtReturn, damageNotes, deductFromFnF, deductionAmount }) => {
+    const asset = await db.assets.findFirst({ where: { id: assetId, company_id: companyId, deleted_at: null } });
+    if (!asset) throw new Error('NOT_FOUND');
     const alloc = await db.asset_allocations.findFirst({
       where: { asset_id: assetId, returned_at: null },
     });
@@ -177,8 +186,17 @@
   },
 
   byEmployee: async (db, companyId, employeeId) => {
+    const employee = await db.employees.findFirst({
+      where: { id: employeeId, company_id: companyId, deleted_at: null },
+      select: { id: true },
+    });
+    if (!employee) throw new Error('NOT_FOUND');
     const allocations = await db.asset_allocations.findMany({
-      where: { employee_id: employeeId, returned_at: null },
+      where: {
+        employee_id: employee.id,
+        returned_at: null,
+        asset: { company_id: companyId, deleted_at: null },
+      },
       include: { asset: true },
     });
     return allocations;
