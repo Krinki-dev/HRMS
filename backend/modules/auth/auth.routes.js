@@ -177,6 +177,43 @@ async function handleAuthLookup(req, res) {
 
 // Apply lookupLimiter to all lookup variants
 router.post('/lookup',             lookupLimiter, handleAuthLookup);
+
+router.post('/lookup-companies', lookupLimiter, async (req, res) => {
+  let activeDb = req.db || null;
+  let isTemporary = false;
+  try {
+    const { email, tenantId: requestedTenantId = null } = req.body || {};
+    if (!email?.trim()) return sendSuccess(res, { found: false, choices: [] });
+    const normalizedEmail = email.toLowerCase().trim();
+    const requestTenantId = req.tenant?.id || null;
+    if (requestedTenantId && requestTenantId && requestedTenantId !== requestTenantId) {
+      return sendSuccess(res, { found: false, choices: [] });
+    }
+    const tenantId = requestTenantId || requestedTenantId;
+    if (!activeDb) {
+      if (!tenantId) return sendSuccess(res, { found: false, choices: [] });
+      const membership = await authService.lookupEmail(normalizedEmail, tenantId);
+      if (!membership.found) return sendSuccess(res, { found: false, choices: [] });
+      const tenantContext = await authService.resolveTenantDbById(tenantId);
+      if (!tenantContext?.url) return sendSuccess(res, { found: false, choices: [] });
+      const { PrismaClient } = require('@prisma/client');
+      activeDb = new PrismaClient({ datasources: { db: { url: tenantContext.url } } });
+      isTemporary = true;
+    }
+    const choices = await authService.lookupCompanies(activeDb, normalizedEmail);
+    return sendSuccess(res, { found: choices.length > 0, choices });
+  } catch (err) {
+    logger.error('[Auth/LookupCompanies] Failure:', { message: err.message });
+    return sendSuccess(res, { found: false, choices: [] });
+  } finally {
+    if (isTemporary && activeDb) {
+      try { await activeDb.$disconnect(); } catch (err) {
+        logger.warn('[Auth/LookupCompanies] Temporary client disconnect failed', { error: err.message });
+      }
+    }
+  }
+});
+
 lookupRouter.post('/',             lookupLimiter, handleAuthLookup);
 router.post('/lookup-phone',       lookupLimiter, async (req, res) => {
   try {
@@ -265,9 +302,22 @@ async function getActiveContext(req, email) {
   return { activeDb: client, tenantId: ctx.tenantId, isTemporary: true };
 }
 
+async function resolveCompanyForEmail(activeDb, email, requestedCompanyId = null) {
+  const choices = await authService.lookupCompanies(activeDb, email);
+  if (requestedCompanyId) {
+    const selected = choices.find((choice) => choice.companyId === requestedCompanyId);
+    return selected
+      ? { status: 'selected', companyId: selected.companyId }
+      : { status: 'invalid_selection', companyId: null };
+  }
+  if (choices.length === 1) return { status: 'selected', companyId: choices[0].companyId };
+  if (choices.length > 1) return { status: 'selection_required', choices };
+  return { status: 'not_found', companyId: null };
+}
+
 router.post('/send-otp', otpLimiter, async (req, res) => {
   try {
-    const { email, purpose = 'login' } = req.body;
+    const { email, companyId: requestedCompanyId = null, purpose = 'login' } = req.body;
     if (!email || !email.trim()) {
       return sendError(res, ERROR_CODES.VALIDATION, 'Email is required', 400);
     }
@@ -278,7 +328,12 @@ router.post('/send-otp', otpLimiter, async (req, res) => {
     const { activeDb, tenantId, isTemporary } = await getActiveContext(req, normalizedEmail);
     if (!activeDb) return sendSuccess(res, null, 'Process completed');
     try {
-      await authService.sendOtp(activeDb, tenantId, normalizedEmail, purpose);
+      const companyResolution = await resolveCompanyForEmail(activeDb, normalizedEmail, requestedCompanyId);
+      if (companyResolution.status === 'selection_required') {
+        return sendSuccess(res, { requiresCompanySelection: true, choices: companyResolution.choices }, 'Select a company to continue.');
+      }
+      if (companyResolution.status !== 'selected') return sendSuccess(res, null, 'If that email is registered, an OTP has been sent.');
+      await authService.sendOtp(activeDb, tenantId, companyResolution.companyId, normalizedEmail, purpose);
     } catch (err) {
       logger.error('[Auth/SendOTP] Error:', err);
     } finally {
@@ -293,7 +348,7 @@ router.post('/send-otp', otpLimiter, async (req, res) => {
 
 router.post('/verify-otp', otpLimiter, async (req, res) => {
   try {
-    const { email, otp, purpose = 'login' } = req.body;
+    const { email, otp, companyId: requestedCompanyId = null, purpose = 'login' } = req.body;
     if (!email || !otp || !email.trim() || !otp.trim()) {
       return sendError(res, ERROR_CODES.VALIDATION, 'Email and OTP are required', 400);
     }
@@ -305,14 +360,24 @@ router.post('/verify-otp', otpLimiter, async (req, res) => {
     if (!activeDb) {
       return sendError(res, ERROR_CODES.SERVER, 'Unable to verify OTP at this time.', 500);
     }
-    const verify = await authService.verifyOtp(activeDb, tenantId, normalizedEmail, otp, purpose);
+    const companyResolution = await resolveCompanyForEmail(activeDb, normalizedEmail, requestedCompanyId);
+    if (companyResolution.status === 'selection_required') {
+      if (isTemporary) await activeDb.$disconnect();
+      return sendError(res, ERROR_CODES.VALIDATION, 'COMPANY_SELECTION_REQUIRED', 409, { choices: companyResolution.choices });
+    }
+    if (companyResolution.status !== 'selected') {
+      if (isTemporary) await activeDb.$disconnect();
+      return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Invalid or expired OTP', 401);
+    }
+    const companyId = companyResolution.companyId;
+    const verify = await authService.verifyOtp(activeDb, tenantId, companyId, normalizedEmail, otp, purpose);
     if (!verify.valid) {
       if (isTemporary) setTimeout(() => activeDb.$disconnect(), 5000);
       return sendError(res, ERROR_CODES.UNAUTHORIZED, verify.message, 401);
     }
     if (purpose === 'login') {
       const user = await activeDb.users.findFirst({
-        where: { email: normalizedEmail, is_active: true },
+        where: { email: normalizedEmail, company_id: companyId, is_active: true },
         include: { role: true, employee: true },
       });
       const permissions = safeParseJSON(user.role?.permissions);
@@ -344,7 +409,7 @@ router.post('/verify-otp', otpLimiter, async (req, res) => {
 
 router.post('/login', loginLimiter, async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, companyId = null } = req.body;
     if (!email || !password) {
       return sendError(res, ERROR_CODES.VALIDATION, 'Email and password are required', 400);
     }
@@ -353,7 +418,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     if (!activeDb) {
       return sendError(res, ERROR_CODES.UNAUTHORIZED, 'INVALID_CREDENTIALS', 401);
     }
-    const result = await authService.validateUserLogin(activeDb, normalizedEmail, password);
+    const result = await authService.validateUserLogin(activeDb, normalizedEmail, password, companyId);
     if (!result.success) {
       if (isTemporary) setTimeout(() => activeDb.$disconnect(), 5000);
       return sendError(res, ERROR_CODES.UNAUTHORIZED, result.code, 401);
@@ -526,7 +591,7 @@ router.post('/forgot-password', async (req, res) => {
   let activeDb = null;
   let isTemporaryClient = false;
   try {
-    const { email, tenantId: requestedTenantId = null } = req.body;
+    const { email, tenantId: requestedTenantId = null, companyId: requestedCompanyId = null } = req.body;
     if (!email?.trim()) return sendError(res, ERROR_CODES.VALIDATION, 'Email is required', 400);
 
     const normalizedEmail = email.toLowerCase().trim();
@@ -562,8 +627,13 @@ router.post('/forgot-password', async (req, res) => {
       isTemporaryClient = true;
     }
 
+    const companyResolution = await resolveCompanyForEmail(activeDb, normalizedEmail, requestedCompanyId);
+    if (companyResolution.status !== 'selected') {
+      return sendSuccess(res, null, 'If that email exists, a reset link has been sent.');
+    }
+    const companyId = companyResolution.companyId;
     const user = await activeDb.users.findFirst({
-      where: { email: normalizedEmail, is_active: true },
+      where: { email: normalizedEmail, company_id: companyId, is_active: true },
       include: { employee: true },
     });
     if (!user) {
