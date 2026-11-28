@@ -106,22 +106,26 @@ const attendanceService = {
     return records.map(attendanceService._fmt);
   },
 
-  getToday: async (db, employeeId) => {
+  getToday: async (db, employeeId, companyId) => {
     const today  = todayIST();
     logger.debug(`${THEME.ICONS.INFO} Getting today's record for employee: ${employeeId}`);
+    const employee = await db.employees.findFirst({ where: { id: employeeId, company_id: companyId, deleted_at: null }, select: { id: true } });
+    if (!employee) throw new Error('NOT_FOUND');
     const record = await db.attendance.findFirst({
-      where: { employee_id: employeeId, date: new Date(today) },
+      where: { employee_id: employee.id, date: new Date(today), employee: { company_id: companyId } },
     });
     return record ? attendanceService._fmt(record) : null;
   },
 
-  checkIn: async (db, employeeId, data) => {
+  checkIn: async (db, companyId, employeeId) => {
+    const employee = await db.employees.findFirst({ where: { id: employeeId, company_id: companyId, deleted_at: null }, select: { id: true } });
+    if (!employee) throw new Error('NOT_FOUND');
     const today = todayIST();
     const now   = new Date();
     logger.info(`${THEME.ICONS.WAIT} Check-in attempt: ${employeeId} at ${now.toISOString()}`);
 
     const existing = await db.attendance.findFirst({
-      where: { employee_id: employeeId, date: new Date(today) },
+      where: { employee_id: employee.id, date: new Date(today), employee: { company_id: companyId } },
     });
     if (existing?.check_in) throw new Error('ALREADY_CHECKED_IN');
 
@@ -148,9 +152,10 @@ const attendanceService = {
         check_in:     now,
         status:       'present',
         late_arrival: isLate,
-        location_lat: data?.latitude  ? parseFloat(data.latitude)  : null,
-        location_lng: data?.longitude ? parseFloat(data.longitude) : null,
-        ip_address:   data?.ipAddress || null,
+        // Location and IP collection is disabled until an explicit privacy/consent policy is approved.
+        location_lat: null,
+        location_lng: null,
+        ip_address:   null,
       },
     });
 
@@ -162,13 +167,15 @@ const attendanceService = {
     };
   },
 
-  checkOut: async (db, employeeId) => {
+  checkOut: async (db, companyId, employeeId) => {
+    const employee = await db.employees.findFirst({ where: { id: employeeId, company_id: companyId, deleted_at: null }, select: { id: true } });
+    if (!employee) throw new Error('NOT_FOUND');
     const today  = todayIST();
     const now    = new Date();
     logger.info(`${THEME.ICONS.WAIT} Check-out attempt: ${employeeId}`);
 
     const record = await db.attendance.findFirst({
-      where: { employee_id: employeeId, date: new Date(today) },
+      where: { employee_id: employee.id, date: new Date(today), employee: { company_id: companyId } },
     });
     if (!record?.check_in) throw new Error('NOT_CHECKED_IN');
     if (record.check_out)  throw new Error('ALREADY_CHECKED_OUT');
