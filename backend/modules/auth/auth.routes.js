@@ -327,6 +327,7 @@ router.post('/verify-otp', otpLimiter, async (req, res) => {
       const payload = authService.buildUserPayload(user, permissions, tenantInfo, isPlatformAdmin);
       eventNotifier.notifyLogin({
         db: activeDb,
+        tenantId,
         companyId: user.company_id,
         user,
         ipAddress: req.ip,
