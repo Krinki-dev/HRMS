@@ -129,3 +129,8 @@ Phase 20 recorded in `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-20.md`. 
 ## 2026-11-28 audit evidence note — Phase 21
 
 Phase 21 recorded in `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-21.md`. GAP-0064 and GAP-0065 cover hard-coded encryption fallback and ambiguous multi-tenant email resolution. Positive source control: authStore excludes accessToken from persistence. Auth and encryption modules remain unverified for full security readiness until fail-closed helper tests, explicit tenant selection and end-to-end session tests pass.
+
+
+## 2026-11-28 audit evidence note — Phase 22
+
+Phase 22 revalidated GAP-0020 and GAP-0021 as open P0 source findings and corrected GAP-0030 to reflect the frozen design (Central RLS; operational DB tenant isolation via routing and company_id filters). Duplicate finding IDs are linked in the master register. Runtime boot and cross-company WebSocket tests remain pending.
