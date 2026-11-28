@@ -96,3 +96,20 @@ This is already recorded as settled in the current handoff: Razorpay only, manua
 ## D. How to reply
 
 Please respond only to the items where you want a different choice. For example: "1. Per employee pricing; 2. Trial automatic; 3. one schema per SaaS tenant; 4. fully local only; 6. both clouds; 7. legal retention schedule." Any item you accept as recommended needs no further discussion.
+
+
+---
+
+## Pending owner decisions — Central tenant/company user membership (2026-11-28)
+
+**Status: Proposed defaults only. Not approved and not frozen.** These decisions are required before the Central membership mapping DDL under HRMS-D-005.
+
+| Decision needed | Recommended default | Reason / consequence |
+|---|---|---|
+| Can one operational user ID belong to multiple companies? | No. One operational user row belongs to exactly one company; the same email may have separate user rows per company. | Matches current `users.company_id` and `@@unique([company_id, email])` model; makes userId → companyId immutable. |
+| Can one operational company belong to multiple Central tenants? | No, one company maps to one Central tenant. | Prevents the same operational data from becoming reachable through multiple SaaS storage boundaries. Any branch/legal-entity sharing must use an explicit audited linkage, not shared ownership. |
+| How are memberships activated? | Registration/verified admin invite creates pending mapping; explicit verified activation is required before authentication. | Prevents unverified Central index rows from granting access. |
+| How are legacy Central index rows with null user_id handled? | Manual/reliable source reconciliation; unresolved rows remain pending and fail closed. | Shared public operational users cannot safely be searched by email alone to infer tenant/company ownership. |
+| Can company membership be transferred? | No implicit transfer. Require audited revoke + new membership and preserve historical audit trail. | Avoids silently changing the company bound to existing sessions/tokens. |
+
+No database schema or migration is authorized until the owner confirms or changes these defaults. The design proposal is in `cycles/CYCLE-01-CENTRAL-TENANT-COMPANY-MEMBERSHIP-DESIGN-PHASE-32.md`.
