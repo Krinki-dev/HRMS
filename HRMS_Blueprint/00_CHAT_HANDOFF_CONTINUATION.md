@@ -1387,3 +1387,10 @@ This supersedes the Phase 31 next-task line.
 - **Next exact task:** resolve/document the membership semantics and legacy backfill owner decisions; then incorporate the approved mapping into the D-005 canonical PostgreSQL migration baseline plan. No DDL until explicit approval and baseline verification.
 - HRMS-D-003 remains In Progress; HRMS-D-004 remains In Progress; HRMS-D-005 remains Blocked on migration baseline.
 - No production/customer DB connection, SQL, migration/DDL, deployment, real payment, deletion, credential rotation or customer-data operation.
+
+
+### Phase 32 owner-decision status update
+
+- Proposed defaults are recorded (not approved/frozen) in `HRMS_Blueprint/34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md`.
+- Pending confirmation: one operational user ID belongs to one company; one operational company maps to one Central tenant; membership activation/revocation lifecycle; manual verified reconciliation for null/ambiguous legacy user_id.
+- Until owner confirmation, continue design and tests only. Do not create the membership table or migration.
