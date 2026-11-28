@@ -33,7 +33,7 @@ test('OTP identity fails closed when tenant or email context is missing', () => 
   assert.throws(() => buildOtpIdentifier('tenant-a', 'company-a', ' '), /email is required/);
 });
 
-test('OTP creation and verification both use the tenant-scoped identifier helper', () => {
+test('OTP creation and verification both use the tenant-and-company-scoped identifier helper', () => {
   const sendStart = service.indexOf('async sendOtp(');
   const verifyStart = service.indexOf('async verifyOtp(');
   const loginStart = service.indexOf('async validateUserLogin(');
