@@ -834,3 +834,16 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Test execution and exact-head CI: **Pending / Not Verified**. Do not close GAP-0065 or HRMS-D-003 until these checks and authenticated password-reset E2E pass.
 - No production DB connection, SQL, migration, deployment, real payment, credential change, destructive action or customer-data modification. `main` untouched.
 - Next exact task after verification: resume `HRMS-D-004` operational ownership/query matrix and composite same-company FK review.
+
+
+## 2026-11-28 — Cycle 01 Phase 30 PostgreSQL ownership inventory and OTP isolation
+
+- Resumed HRMS-D-004 from the Phase 29 handoff.
+- Created `cycles/CYCLE-01-POSTGRES-OWNERSHIP-INVENTORY-PHASE-30.md`: all 82 operational Prisma models and 17 Central models are classified by ownership/policy intent.
+- New finding GAP-0067 (P1): OTP records were stored by raw email + purpose in the shared public operational schema. Phase 30 added `backend/shared/utils/otpIdentity.js`, used by both OTP creation and verification; route now passes the immutable Central tenant UUID into verification.
+- Added `backend/test/otp-tenant-isolation.test.js` (six focused tests). Tests and exact-head CI have not yet been executed/observed; GAP-0067 is Fixed — Awaiting Verification.
+- Central RLS helper and policy source review completed at static level. Production/deployed role ownership, superuser/BYPASSRLS, grants and live catalog evidence remain pending.
+- HRMS-D-003 and HRMS-D-004 remain In Progress. Full query-by-query service/worker/report/export/WebSocket review and composite FK feasibility remain open.
+- Phase 30 plan and independent plan verification: `cycles/CYCLE-01-PLAN-PHASE-30.md` and `cycles/CYCLE-01-PLAN-VERIFICATION-PHASE-30.md`.
+- Code commits: `e884c37ad792c9f7c6c96797f5ba26761d83251e`, `9c73d007630c3447c7b7b7cb56ecad421233ba50`, `5d51ff1ff06c4616f64974f57d5c88565b9b0c5a`, `9e0432b1520622a5661874b492076f7186ec16c5`.
+- No production DB connection, SQL, migration, deployment, payment, deletion, credential rotation or customer-data mutation. `main` untouched.
