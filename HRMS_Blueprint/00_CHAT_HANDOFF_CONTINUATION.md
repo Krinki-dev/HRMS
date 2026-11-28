@@ -1273,3 +1273,13 @@ This block supersedes older branch/CI statements above where they conflict.
 - Do not execute the migration yet. Deployed Central DB role ownership/BYPASSRLS and live policy catalog are unknown. Legacy Settings DB-config endpoints use a direct Prisma client without tenant RLS context and must be migrated/disabled first.
 - No live DB, production migration, deployment or customer-data operation performed; main untouched.
 - Next: complete operational query ownership/scoping audit, then prepare PostgreSQL tenant migration baseline. Continue D-005 only after D-004 live verification preconditions are satisfied.
+
+
+## CURRENT HANDOFF — Cycle 01 Phase 25 (2026-11-28)
+
+- Latest report: `HRMS_Blueprint/cycles/CYCLE-01-IMPLEMENTATION-PHASE-25.md`.
+- Central RLS policies now cover all 17 Central models in migration and bootstrap. Real RLS pooling test uses non-owner `hrms_app` in disposable PostgreSQL CI.
+- Backend CI now runs all five previously skipped DB suites. Run 46104242869 passed 210/210, zero skipped at SHA `c3790b43c30b5895fd2eb9b156ef939a54db2055`; tenant migration integration run 46104242863 passed.
+- GAP-0031 backend CI skip issue fixed; GAP-0047/0048 source parity fixed, live role/catalog and clean-install verification pending.
+- **Do not apply Central RLS migration to production yet:** legacy Settings direct Prisma access to `tenant_db_config` lacks RLS context; deployed DB role owner/superuser/BYPASSRLS status is unknown.
+- Next: complete HRMS-D-004 operational model/query ownership audit and remediate legacy Settings path; then D-005 PostgreSQL migration baseline. Keep main untouched.
