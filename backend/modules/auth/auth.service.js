@@ -116,7 +116,7 @@ const authService = {
         AND t.storage_status = 'ready'
         AND t.deleted_at IS NULL
         AND (${selectedTenantId}::uuid IS NULL OR ui.company_id = ${selectedTenantId}::uuid)
-      ORDER BY LOWER(t.name), ui.company_id
+      ORDER BY company_name, ui.company_id
     `);
 
     let eligibleRows = rows || [];
