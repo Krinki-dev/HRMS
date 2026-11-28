@@ -1176,3 +1176,14 @@ This block supersedes older branch/CI statements above where they conflict.
 - **GAP-0054:** frontend notification settings endpoint does not match backend router mounts (revalidates GAP-0034).
 - Phase 17 was source-only. No app code, test, server, database, backup, restore, migration, deployment, payment or customer-data operation was performed. Current-HEAD CI success was not verified.
 - Next: complete the wider frontend-to-backend route/payload/permission matrix for auth, platform admin, employees, attendance, leave, payroll, documents, billing and onboarding. Then reconcile all findings into a prioritized Cycle 01 improvement plan and subject it to independent verification before any implementation. Do not ask the user to repeat documented decisions or run DB tasks during the source audit.
+
+
+## CURRENT HANDOFF — Cycle 01 Phase 18 (2026-11-28)
+
+- Latest completed audit: `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-18.md`.
+- GAP-0055: frontend employee address-list call has no matching backend route.
+- GAP-0056: expense receipt upload frontend path and multipart field mismatch backend path/field.
+- GAP-0057: employee photo upload method mismatch (frontend POST vs backend PUT).
+- Core API service prefixes were compared against route mounts for major HR modules. Static path matching is not runtime verification; full payload/response, permission, object ownership and browser mapping remains incomplete.
+- Phases 17 and 18 were source-only; no app code, tests, browser, DB, backup, restore, migration, deployment, payment or customer-data operation performed. Keep main untouched.
+- Next: complete platform-admin, onboarding, billing, documents and remaining frontend page API mapping; reconcile duplicate and superseded findings; then draft and independently verify the Cycle 01 P0/P1 implementation plan before changing application code.
