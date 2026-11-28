@@ -11,6 +11,16 @@ const todayIST = () => {
   return now.toISOString().slice(0, 10);
 };
 
+async function requireCompanyEmployee(db, companyId, employeeId) {
+  if (!employeeId) throw new Error('NOT_FOUND');
+  const employee = await db.employees.findFirst({
+    where: { id: employeeId, company_id: companyId, deleted_at: null },
+    select: { id: true, reporting_to: true },
+  });
+  if (!employee) throw new Error('NOT_FOUND');
+  return employee;
+}
+
 const leaveService = {
 
   dashboard: async (db, employeeId, companyId, isHR = false) => {
@@ -18,38 +28,43 @@ const leaveService = {
     const year  = today.getFullYear();
     logger.debug(`${THEME.ICONS.INFO} Fetching leave dashboard for employee ${employeeId}`);
 
+    const employee = employeeId ? await requireCompanyEmployee(db, companyId, employeeId) : null;
+    const teamEmployeeScope = isHR
+      ? { company_id: companyId }
+      : { company_id: companyId, reporting_to: employee?.id || '__no_employee__' };
+
     const [balances, myPending, myUpcoming, pendingCount, teamOnLeave] = await Promise.all([
       
-      db.leave_balances.findMany({
-        where: { employee_id: employeeId, year },
+      employee ? db.leave_balances.findMany({
+        where: { employee_id: employee.id, year },
         include: { leave_type: { select: { id: true, name: true, code: true, is_paid: true } } },
-      }),
+      }) : Promise.resolve([]),
       
-      db.leave_applications.findMany({
-        where: { employee_id: employeeId, status: 'pending' },
+      employee ? db.leave_applications.findMany({
+        where: { employee_id: employee.id, status: 'pending', employee: { company_id: companyId } },
         include: { leave_type: { select: { name: true, code: true } } },
         orderBy: { from_date: 'asc' },
-      }),
+      }) : Promise.resolve([]),
       
-      db.leave_applications.findMany({
-        where: { employee_id: employeeId, status: 'approved', from_date: { gte: today } },
+      employee ? db.leave_applications.findMany({
+        where: { employee_id: employee.id, status: 'approved', from_date: { gte: today }, employee: { company_id: companyId } },
         include: { leave_type: { select: { name: true, code: true } } },
         take: 5, orderBy: { from_date: 'asc' },
-      }),
+      }) : Promise.resolve([]),
       
-      isHR ? db.leave_applications.count({
+      db.leave_applications.count({
         where: {
           status: 'pending',
-          employee: { company_id: companyId },
+          employee: teamEmployeeScope,
         },
-      }) : Promise.resolve(0),
+      }),
       
       db.leave_applications.findMany({
         where: {
           status:    'approved',
           from_date: { lte: today },
           to_date:   { gte: today },
-          employee:  { company_id: companyId },
+          employee: teamEmployeeScope,
         },
         include: {
           employee:   { select: { id: true, first_name: true, last_name: true, photo_url: true } },
@@ -128,9 +143,10 @@ const leaveService = {
     });
   },
 
-  myApplications: async (db, employeeId, query = {}) => {
+  myApplications: async (db, employeeId, companyId, query = {}) => {
+    await requireCompanyEmployee(db, companyId, employeeId);
     const { status, year } = query;
-    const where = { employee_id: employeeId };
+    const where = { employee_id: employeeId, employee: { company_id: companyId } };
     if (status) where.status = status;
     if (year) {
       where.from_date = {
@@ -146,6 +162,7 @@ const leaveService = {
   },
 
   calculateDays: async (db, companyId, employeeId, { fromDate, toDate, halfDay }) => {
+    await requireCompanyEmployee(db, companyId, employeeId);
     if (halfDay) return { days: 0.5, workingDays: 0.5 };
     logger.debug(`${THEME.ICONS.PROCESS} Calculating leave days: ${fromDate} to ${toDate}`);
 
@@ -182,6 +199,7 @@ const leaveService = {
   },
 
   apply: async (db, employeeId, companyId, data) => {
+    await requireCompanyEmployee(db, companyId, employeeId);
     const { leaveTypeId, fromDate, toDate, halfDay, halfDaySession, reason } = data;
     logger.info(`${THEME.ICONS.WAIT} Applying for leave: Employee ${employeeId}, Type ${leaveTypeId}`);
 
@@ -195,6 +213,7 @@ const leaveService = {
     const overlap = await db.leave_applications.findFirst({
       where: {
         employee_id: employeeId,
+        employee:    { company_id: companyId },
         status:      { not: 'rejected' },
         AND: [
           { from_date: { lte: to } },
@@ -316,9 +335,10 @@ const leaveService = {
     ]);
   },
 
-  cancelLeave: async (db, applicationId, employeeId) => {
+  cancelLeave: async (db, applicationId, employeeId, companyId) => {
+    await requireCompanyEmployee(db, companyId, employeeId);
     const app = await db.leave_applications.findFirst({
-      where: { id: applicationId, employee_id: employeeId },
+      where: { id: applicationId, employee_id: employeeId, employee: { company_id: companyId } },
     });
     if (!app) throw new Error('NOT_FOUND');
     if (!['pending','approved'].includes(app.status)) throw new Error('CANNOT_CANCEL');
@@ -333,17 +353,18 @@ const leaveService = {
         where: { id: applicationId },
         data: { status: 'cancelled', cancelled_at: new Date() },
       }),
-      leaveService._updateBalance(db, app.employee_id, app.leave_type_id, year, null, {
+      leaveService._updateBalance(db, app.employee_id, app.leave_type_id, year, companyId, {
         pendingDelta: app.status === 'pending' ? -app.days : 0,
         usedDelta:    app.status === 'approved' ? -app.days : 0,
       }),
     ]);
   },
 
-  getBalances: async (db, employeeId, year) => {
+  getBalances: async (db, employeeId, companyId, year) => {
+    await requireCompanyEmployee(db, companyId, employeeId);
     const y = parseInt(year) || new Date().getFullYear();
     const balances = await db.leave_balances.findMany({
-      where: { employee_id: employeeId, year: y },
+      where: { employee_id: employeeId, year: y, employee: { company_id: companyId } },
       include: { leave_type: { select: { id: true, name: true, code: true, is_paid: true, encashable: true } } },
     });
     return balances.map(leaveService._fmtBalance);
@@ -424,8 +445,10 @@ const leaveService = {
   },
 
   deleteLeaveType: async (db, id, companyId) => {
+    const leaveType = await db.leave_types.findFirst({ where: { id, company_id: companyId } });
+    if (!leaveType) throw new Error('NOT_FOUND');
     return db.leave_types.update({
-      where: { id },
+      where: { id: leaveType.id },
       data: { deleted_at: new Date(), is_active: false },
     });
   },
