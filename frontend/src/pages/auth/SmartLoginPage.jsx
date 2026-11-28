@@ -182,6 +182,8 @@ export default function SmartLoginPage() {
   const [password,    setPassword]    = useState('');
   const [showPass,    setShowPass]    = useState(false);
   const [company,     setCompany]     = useState(null);
+  const [tenantChoices, setTenantChoices] = useState([]);
+  const [selectedTenantId, setSelectedTenantId] = useState('');
   const [error,       setError]       = useState('');
   const [tenantError, setTenantError] = useState('');
 
@@ -303,41 +305,68 @@ export default function SmartLoginPage() {
     },
     onSuccess: (lookupData) => {
       if (!lookupData?.found) {
+        setTenantChoices([]);
+        setSelectedTenantId('');
         setError('Account not found for this email on this portal. Check the email or contact your administrator.');
         return;
       }
 
-      const sub = lookupData.subdomain;
+      const choices = Array.isArray(lookupData.choices) && lookupData.choices.length
+        ? lookupData.choices
+        : (lookupData.subdomain ? [lookupData] : []);
+
+      if (choices.length > 1) {
+        setTenantChoices(choices);
+        setSelectedTenantId('');
+        setError('This email belongs to more than one company workspace. Select the correct workspace to continue.');
+        return;
+      }
+
+      const choice = choices[0];
+      if (!choice) {
+        setError('No active company workspace is available for this account.');
+        return;
+      }
+
+      setTenantChoices([]);
+      setSelectedTenantId('');
+      const sub = choice.subdomain;
       if (sub && sub !== 'dev') {
         api.get(`/platform/brand?subdomain=${sub}`)
           .then(res => {
             const brand = res.data?.data || {};
             setCompany({
-              companyName:     lookupData.companyName || brand.companyName || 'Your Company',
+              companyName:     choice.companyName || brand.companyName || 'Your Company',
               subdomain:       sub,
-              logoUrl:         lookupData.logoUrl || brand.logoUrl || null,
+              tenantId:        choice.tenantId,
+              logoUrl:         choice.logoUrl || brand.logoUrl || null,
               primaryColor:    brand.primaryColor || '#2563EB',
               backgroundColor: brand.backgroundColor || '#040C1A',
               backgroundUrl:   brand.backgroundUrl || null,
             });
+            setStep(2);
+            setError('');
           })
           .catch(() => {
             setCompany({
-              companyName: lookupData.companyName,
-              subdomain:   sub,
-              logoUrl:     lookupData.logoUrl,
+              companyName: choice.companyName,
+              subdomain: sub,
+              tenantId: choice.tenantId,
+              logoUrl: choice.logoUrl,
             });
+            setStep(2);
+            setError('');
           });
       } else {
         setCompany({
-          companyName: lookupData.companyName,
-          subdomain:   lookupData.subdomain,
-          logoUrl:     lookupData.logoUrl,
+          companyName: choice.companyName,
+          subdomain: choice.subdomain,
+          tenantId: choice.tenantId,
+          logoUrl: choice.logoUrl,
         });
+        setStep(2);
+        setError('');
       }
-
-      setStep(2);
-      setError('');
     },
     onError: (err) => {
       const msg = err.response?.data?.message;
@@ -396,6 +425,26 @@ export default function SmartLoginPage() {
       }
     },
   });
+
+  function continueWithSelectedTenant() {
+    const choice = tenantChoices.find((item) => item.tenantId === selectedTenantId);
+    if (!choice) {
+      setError('Select a company workspace to continue.');
+      return;
+    }
+    setCompany({
+      companyName: choice.companyName || 'Your Company',
+      subdomain: choice.subdomain,
+      tenantId: choice.tenantId,
+      logoUrl: choice.logoUrl || null,
+      primaryColor: '#2563EB',
+      backgroundColor: '#040C1A',
+    });
+    setTenantChoices([]);
+    setSelectedTenantId('');
+    setStep(2);
+    setError('');
+  }
 
   function fireLookup(emailVal = email) {
     setTenantError('');
@@ -685,7 +734,7 @@ export default function SmartLoginPage() {
                   name="email"
                   autoComplete="email"
                   value={email}
-                  onChange={e => { setEmail(e.target.value); setError(''); }}
+                  onChange={e => { setEmail(e.target.value); setError(''); setTenantChoices([]); setSelectedTenantId(''); }}
                   onKeyDown={e => e.key === 'Enter' && fireLookup()}
                   placeholder="you@yourcompany.com"
                   style={S.input(primaryColor)}
@@ -695,14 +744,32 @@ export default function SmartLoginPage() {
                 />
               </div>
 
+              {tenantChoices.length > 1 && (
+                <div style={{ marginBottom: 18 }}>
+                  <label style={S.label}>Choose your company workspace</label>
+                  <select
+                    value={selectedTenantId}
+                    onChange={e => { setSelectedTenantId(e.target.value); setError(''); }}
+                    style={{ ...S.input(primaryColor), background: '#0D1A30' }}
+                  >
+                    <option value="">Select a workspace…</option>
+                    {tenantChoices.map(choice => (
+                      <option key={choice.tenantId} value={choice.tenantId}>
+                        {choice.companyName || choice.subdomain} · {choice.subdomain}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <button
                 style={{ ...S.btnPrimary(primaryColor), opacity: isLoading ? 0.7 : 1 }}
-                onClick={() => fireLookup()}
-                disabled={isLoading}
+                onClick={() => tenantChoices.length > 1 ? continueWithSelectedTenant() : fireLookup()}
+                disabled={isLoading || (tenantChoices.length > 1 && !selectedTenantId)}
                 onMouseEnter={e => !isLoading && (e.target.style.background = `${primaryColor}DD`)}
                 onMouseLeave={e => (e.target.style.background = primaryColor)}
               >
-                {lookupMutation.isPending ? 'Looking up…' : 'Continue →'}
+                {lookupMutation.isPending ? 'Looking up…' : tenantChoices.length > 1 ? 'Continue to selected workspace →' : 'Continue →'}
               </button>
 
               {domain.isPlatformRoot && (
