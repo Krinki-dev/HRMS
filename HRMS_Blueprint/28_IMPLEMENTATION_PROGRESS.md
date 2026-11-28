@@ -856,3 +856,13 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - OTP identifier now includes Central tenant UUID + operational company UUID + normalized email.
 - Added company identity and OTP regression tests. Full repo test execution, exact-head CI and authenticated E2E remain pending. Isolated helper smoke test passed 4/4; this is not full-suite evidence.
 - Full multi-company membership selection remains blocked on a Central mapping schema and legacy backfill under HRMS-D-005. No migration was made.
+
+
+## 2026-11-28 — Cycle 01 Phase 33 forgot-password resolver correction
+
+- Focused auth source trace found a positional-argument defect: forgot-password passed the email in the `tenantId` slot and omitted the email argument required by `resolveCompanyForEmail(activeDb, tenantId, email, requestedCompanyId)`.
+- Corrected the call and added a regression assertion for the exact argument order.
+- Commits: route `3ea6243b82d7233cace326d55e4525263af720aa`; test `5fcb3f7d36bcc392cb5f14837ac6aee2dbb82d45`; plan `b544101883c09a92b9c51def7dedc7747d10d219`; plan verification `28ef6aa14826eb114ba6b2f73f964f1777494348`; report `07d5973b6fcd4d989c6a890671d6e07684ef77df`.
+- Post-commit source re-fetch confirmed the corrected call and regression assertion. Test runner/full suite/exact-head CI/authenticated E2E were not run/verified. GAP-0069 is Fixed — Awaiting Verification; HRMS-D-003 remains In Progress.
+- GAP-0068 remains blocked on the Central tenant-user-company mapping and trusted legacy backfill. HRMS-D-004 query-by-query audit remains pending; HRMS-D-005 remains blocked on canonical migration baseline and owner decisions.
+- No DB, SQL, DDL, migration, deployment, payment, destructive action, credential change or customer-data operation. `main` untouched.
