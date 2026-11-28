@@ -176,3 +176,9 @@ Product domain:     PRODUCT_DOMAIN env var
 ## Latest Cycle 01 source audit
 
 - Phase 22 — P0 WebSocket/webhook revalidation, operational RLS decision correction and gap deduplication: [CYCLE-01-SOURCE-AUDIT-PHASE-22.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-22.md)
+
+
+## Cycle 01 planning
+
+- Prioritised implementation plan: [CYCLE-01-PLAN.md](cycles/CYCLE-01-PLAN.md)
+- Independent plan verification: [CYCLE-01-PLAN-VERIFICATION.md](cycles/CYCLE-01-PLAN-VERIFICATION.md) — **Verified** after Round 2.
