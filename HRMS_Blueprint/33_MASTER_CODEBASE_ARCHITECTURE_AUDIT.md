@@ -799,3 +799,11 @@ Phase 28 source review and implementation are recorded in [CYCLE-01-IMPLEMENTATI
 - Final source binds password login, OTP and forgot-password to the exact Central-indexed user_id and validates the corresponding operational companyId. OTP identity now includes tenant + company + normalized email.
 - GAP-0068 remains Open / Blocked on a new Central tenant-user-company mapping and legacy backfill under HRMS-D-005. D-003 remains In Progress; no full multi-company selection or auth E2E is claimed.
 - No schema change, migration, production DB or customer-data operation occurred.
+
+
+## 2026-11-28 audit addendum — Phase 33 forgot-password argument-order defect
+
+- Focused source trace found that `resolveCompanyForEmail` requires `(activeDb, tenantId, email, requestedCompanyId)`, while forgot-password supplied only `(activeDb, normalizedEmail, requestedCompanyId)`. This placed values in the wrong positions and omitted the email.
+- Corrected the call and added an exact-argument-order regression assertion. Evidence is recorded in `cycles/CYCLE-01-IMPLEMENTATION-PHASE-33.md`.
+- GAP-0069 (P1) is **Fixed — Awaiting Verification**. Post-commit source re-fetch is confirmed; Node tests, full backend suite, exact-head CI and authenticated password-reset E2E remain unverified.
+- This small correction does not resolve GAP-0068's one-user-per-email/tenant Central index limitation. No multi-company mapping or DDL was created.
