@@ -158,3 +158,15 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - **GAP-0057 (P1):** employee photo frontend uses POST; backend declares PUT for `/:id/photo`.
 - Core route prefixes and reviewed endpoint paths for auth, attendance, leave, payroll, compliance, dashboard, recruitment, performance, training, assets, settings and reports were compared. This is static path matching only; payload/response, permissions, object ownership and browser behavior remain unverified.
 - GAP-0034/GAP-0054 notification settings mismatch revalidated. No app code, tests, browser, DB or deployment action performed; main untouched.
+
+
+## Cycle 01 Phase 19 — onboarding, billing and platform API contracts (2026-11-28)
+
+- Evidence: [CYCLE-01-SOURCE-AUDIT-PHASE-19.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-19.md).
+- **GAP-0058 (P1):** tenant Billing page sends `planId/period` while backend subscription order requires `planSlug/selectedAddons/billingMonths`; Billing and onboarding also double-read `response.data.data` after the global Axios interceptor has already unwrapped the response.
+- **GAP-0059 (P1):** onboarding payroll step calls `POST /payroll/salary-components`, but the mounted payroll router has no such route. GAP-0032 is narrowed to this remaining gap.
+- **GAP-0060 (P1):** global API interceptor unwraps `response.data.data`, while dashboard, onboarding and Billing consumers still double-unwrap. Expected impact includes undefined payloads, failed resume and checkout; runtime reproduction pending.
+- **GAP-0032 correction:** onboarding progress/save-step/complete routes now exist in mounted `brand.routes.js`; only salary-components remains missing. Mark prior broad “all onboarding endpoints missing” description as partially superseded.
+- **GAP-0033 correction:** tenant company-document upload/list/download and platform review routes exist in mounted `brand.routes.js`, and the frontend upload field matches. Mark prior “no matching backend endpoints” description as superseded at source level; runtime storage/review verification remains pending.
+- Registration, plan list/calculate/promo, subscription trial/order/verify and platform admin settings paths were also checked at route-presence level.
+- No app code, test, browser, payment, DB, migration or deployment operation was performed; main untouched.
