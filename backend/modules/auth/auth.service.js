@@ -298,54 +298,72 @@ const authService = {
     return { valid: true };
   },
 
-  async lookupCompanies(db, email) {
+  async resolveUserIdentity(db, tenantId, email, requestedCompanyId = null) {
     const normalizedEmail = email.toLowerCase().trim();
-    const rows = await db.users.findMany({
-      where: { email: normalizedEmail, is_active: true },
-      select: {
-        company_id: true,
-        company: { select: { name: true, is_active: true, deleted_at: true } },
-      },
-      orderBy: { company_id: 'asc' },
-    });
-    const byCompany = new Map();
-    for (const row of rows) {
-      if (!row.company?.is_active || row.company.deleted_at) continue;
-      if (!byCompany.has(row.company_id)) {
-        byCompany.set(row.company_id, {
-          companyId: row.company_id,
-          companyName: row.company.name || 'Company',
-        });
-      }
+    if (!tenantId) return { status: 'not_found' };
+
+    // Central index binds this email to one immutable tenant and the
+    // corresponding operational user ID. Never search the shared public
+    // users table by email alone: that would mix companies/tenants.
+    const memberships = await withPlatformAdminRLS(centralPrisma, (tx) => tx.central_user_index.findMany({
+      where: { email: normalizedEmail, company_id: tenantId, is_active: true },
+      select: { user_id: true },
+      take: 2,
+    }));
+    if (memberships.length !== 1 || !memberships[0].user_id) {
+      return { status: 'not_found' };
     }
-    return [...byCompany.values()];
+
+    const user = await db.users.findFirst({
+      where: { id: memberships[0].user_id, email: normalizedEmail, is_active: true },
+      include: { company: true },
+    });
+    if (!user || !user.company?.is_active || user.company.deleted_at) {
+      return { status: 'not_found' };
+    }
+    if (requestedCompanyId && requestedCompanyId !== user.company_id) {
+      return { status: 'invalid_selection' };
+    }
+
+    return {
+      status: 'selected',
+      userId: user.id,
+      companyId: user.company_id,
+      companyName: user.company.name || 'Company',
+    };
   },
 
-  async validateUserLogin(db, email, password, companyId = null) {
-    const normalizedEmail = email.toLowerCase().trim();
-    const candidates = await db.users.findMany({
+  async lookupCompanies(db, email, tenantId) {
+    const identity = await this.resolveUserIdentity(db, tenantId, email);
+    if (identity.status !== 'selected') return [];
+    return [{
+      companyId: identity.companyId,
+      companyName: identity.companyName,
+    }];
+  },
+
+  async validateUserLogin(db, tenantId, email, password, companyId = null) {
+    const identity = await this.resolveUserIdentity(db, tenantId, email, companyId);
+    if (identity.status !== 'selected') {
+      return { success: false, code: identity.status === 'invalid_selection' ? 'INVALID_CREDENTIALS' : 'INVALID_CREDENTIALS' };
+    }
+
+    const user = await db.users.findFirst({
       where: {
-        email: normalizedEmail,
+        id: identity.userId,
+        email: email.toLowerCase().trim(),
+        company_id: identity.companyId,
         is_active: true,
-        ...(companyId ? { company_id: companyId } : {}),
       },
       include: { role: true, employee: true, company: true },
     });
-
-    if (!companyId && candidates.length > 1) {
-      return { success: false, code: 'COMPANY_SELECTION_REQUIRED' };
-    }
-    if (candidates.length !== 1) return { success: false, code: 'INVALID_CREDENTIALS' };
-
-    const user = candidates[0];
-    if (!user.is_active || !user.company?.is_active || user.company.deleted_at) {
+    if (!user || !user.company?.is_active || user.company.deleted_at) {
       return { success: false, code: 'ACCOUNT_INACTIVE' };
     }
 
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return { success: false, code: 'INVALID_CREDENTIALS' };
 
-    // Background update
     db.users.update({
       where: { id: user.id },
       data: { last_login_at: new Date() },
