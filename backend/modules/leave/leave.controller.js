@@ -25,7 +25,9 @@ const ctrl = {
     const empId = req.user.employeeId || (isHR ? req.query.employeeId : null);
     if (!empId) return sendSuccess(res, {
       balances: [], myPending: [], myUpcoming: [],
-      pendingApprovals: await svc.list(req.db, req.user.companyId, { status: 'pending', limit: 1 }).then(r => r.length),
+      pendingApprovals: isHR
+        ? await svc.list(req.db, req.user.companyId, { status: 'pending', limit: 1 }).then(r => r.length)
+        : 0,
       teamOnLeave: [],
     });
     sendSuccess(res, await svc.dashboard(req.db, empId, req.user.companyId, isHR));
@@ -79,7 +81,8 @@ const ctrl = {
 
   approveLeave: wrap(async (req, res) => {
     try {
-      await svc.approveLeave(req.db, req.params.id, req.user.companyId, req.user.id);
+      const isHR = ADMIN_ROLES.includes(req.user.role);
+      await svc.approveLeave(req.db, req.params.id, req.user.companyId, req.user.id, req.user.employeeId, isHR);
 
       try {
         const application = await req.db.leave_applications.findUnique({
@@ -125,7 +128,8 @@ const ctrl = {
     const { reason } = req.body;
     if (!reason?.trim()) return sendError(res, ERROR_CODES.VALIDATION, 'Rejection reason required.');
     try {
-      await svc.rejectLeave(req.db, req.params.id, req.user.companyId, req.user.id, reason);
+      const isHR = ADMIN_ROLES.includes(req.user.role);
+      await svc.rejectLeave(req.db, req.params.id, req.user.companyId, req.user.id, reason, req.user.employeeId, isHR);
 
       try {
         const application = await req.db.leave_applications.findUnique({
