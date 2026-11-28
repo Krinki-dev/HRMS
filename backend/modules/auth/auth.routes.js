@@ -363,7 +363,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     const { user } = result;
     const permissions = safeParseJSON(user.role?.permissions);
     const accessToken = authService.signAccessToken(user, permissions, tenantId || null);
-    const refreshToken = authService.signRefreshToken(user.id);
+    const refreshToken = authService.signRefreshToken(user.id, tenantId || null, user.company_id || null);
     setRefreshCookie(res, refreshToken);
     const tenantInfo = await authService.getTenantInfo(tenantId || null);
     const isPlatformAdmin = await authService.isPlatformAdmin(user.id);
