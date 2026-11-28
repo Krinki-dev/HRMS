@@ -95,3 +95,44 @@ A later branch commit was still running backend CI at the time of this report. D
 - `main` untouched.
 
 **Next:** complete a code-level query/ownership audit for the shared operational schema, then establish the PostgreSQL migration baseline. Before any Central RLS rollout, resolve the legacy Settings direct-client path and obtain a DBA-confirmed application role/owner/BYPASSRLS report. Continue to HRMS-D-005 only after the D-004 policy matrix is reviewed and test coverage is adequate.
+
+
+---
+
+## 8. Phase 25 addendum — zero-skip PostgreSQL CI (2026-11-28)
+
+The backend workflow was subsequently upgraded from static-only CI to a disposable PostgreSQL 16 integration environment. This supersedes the earlier five-skipped-test result above for the newer exact commit.
+
+### Workflow setup
+
+- Separate disposable Central and tenant databases are created per run.
+- Both Prisma schemas are pushed to those test databases.
+- The Central RLS completion migration is applied only to the disposable Central DB.
+- A non-owning `hrms_app` role is created for the real RLS pooling test.
+- Controlled auth, tenant and tenant-module fixtures are seeded.
+- Auth middleware, RLS pooling, payroll, compliance and tenant migration inventory suites all execute.
+
+Supporting artifacts:
+- `.github/workflows/backend-tests.yml` — blob SHA `3090b34c2db8d37e0f44f5984c504f9c9e22fb7b`
+- `backend/test/ci/create-test-databases.js` — blob SHA `863fd8bca2e1f61aef95acf8e359b81e58b85500`
+- `backend/test/ci/central-rls-seed.sql` — blob SHA `71211e7964d16a7da770683fa49bb8ebfe1e3264`
+- `backend/test/README.md` — CI/local database setup documented.
+
+### Zero-skip backend CI evidence
+
+**Backend Tests passed**
+- Run: [46104242869](https://github.com/Krinki-dev/HRMS/actions/runs/46104242869)
+- Tested commit: `c3790b43c30b5895fd2eb9b156ef939a54db2055`
+- Tests discovered: 210
+- Passed: 210
+- Failed: 0
+- Skipped: 0
+
+The logs confirm successful execution of Central auth middleware integration, Central RLS pooling under the non-owner app role, payroll integration, compliance company-isolation integration and PostgreSQL tenant migration inventory integration.
+
+**Tenant Migration PostgreSQL Integration passed**
+- Run: [46104242863](https://github.com/Krinki-dev/HRMS/actions/runs/46104242863)
+- Tested commit: `c3790b43c30b5895fd2eb9b156ef939a54db2055`
+- Result: success.
+
+This evidence is stronger than the earlier 183-test run with five skips. It still does not prove the live Central production role is non-owner/non-BYPASSRLS or that every Central policy has been exercised against production data. The latest branch HEAD is newer than `c3790b4`; its exact CI run must complete before declaring the branch green.
