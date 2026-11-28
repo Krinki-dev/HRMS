@@ -159,3 +159,12 @@ Cycle 01 plan `HRMS_Blueprint/cycles/CYCLE-01-PLAN.md` is **Verified** by indepe
 ## 2026-11-28 audit/implementation evidence — Phase 25
 
 Central RLS policy source coverage and bootstrap parity are implemented for all 17 Central Prisma models; static backend test passed at SHA `865d5f5d567f49b70967dbd82923047e7a870311`. HRMS-D-004 remains **Implemented in source / Live DB verification pending** until catalog policies, application role ownership/BYPASSRLS, legacy Settings DB-config access and a clean-install path are independently verified. No SQL migration was executed.
+
+
+## 2026-11-28 implementation evidence — Phase 25
+
+- Central RLS source coverage: 17/17 Central models have policies in migration and bootstrap; parity test passes.
+- Real PostgreSQL RLS pooling test executes as non-owning `hrms_app` role in CI.
+- Backend Tests run 46104242869 passed 210/210, zero skipped at SHA `c3790b43c30b5895fd2eb9b156ef939a54db2055`.
+- Tenant Migration PostgreSQL Integration run 46104242863 passed.
+- D-004 remains open pending full operational query ownership matrix, legacy Settings direct-client remediation, deployed app-role ownership/BYPASSRLS verification and live catalog review.
