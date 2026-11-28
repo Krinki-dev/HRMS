@@ -723,9 +723,27 @@ router.post('/ott/exchange', async (req, res) => {
 // ── Phase-0: WS Ticket endpoint ──────────────────────────────────────────────
 // Replaces raw JWT in WebSocket upgrade URL (which leaks into server access logs)
 // Client calls POST /auth/ws-ticket → gets { ticket } → opens ws://host/ws?ticket=...
-router.post('/ws-ticket', auth, (req, res) => {
+router.post('/ws-ticket', auth, async (req, res) => {
   try {
-    const ticket = issueTicket({ userId: req.user.id, tenantId: req.user.centralTenantId, companyId: req.user.companyId });
+    const tenantId = req.tenant?.id;
+    const companyId = req.user?.companyId;
+    if (!req.db || !tenantId || !companyId || req.user?.centralTenantId !== tenantId) {
+      return sendError(res, ERROR_CODES.FORBIDDEN, 'A verified tenant workspace is required for real-time notifications.', 403);
+    }
+
+    const membership = await req.db.users.findFirst({
+      where: { id: req.user.id, company_id: companyId, is_active: true },
+      select: { id: true, company_id: true },
+    });
+    if (!membership || membership.company_id !== companyId) {
+      return sendError(res, ERROR_CODES.FORBIDDEN, 'Active company membership is required for real-time notifications.', 403);
+    }
+
+    const ticket = issueTicket({
+      userId: membership.id,
+      tenantId,
+      companyId: membership.company_id,
+    });
     return sendSuccess(res, { ticket }, 'WS ticket issued');
   } catch (err) {
     logger.error('[Auth/WsTicket] Error:', err);
