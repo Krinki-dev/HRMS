@@ -715,3 +715,13 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Corrected GAP-0032: onboarding progress/save-step/complete routes now exist; missing salary-components endpoint remains.
 - Corrected GAP-0033: company document upload/list/review endpoints now exist in mounted platform brand router; runtime verification remains pending.
 - No app code, tests, browser, payment, DB, migration or deployment operation performed; main untouched.
+
+
+## 2026-11-28 — Cycle 01 Phase 20 background jobs and runtime configuration
+
+- Added `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-20.md`.
+- GAP-0061: automation task queue is in-memory and has no startup recovery for persisted pending/running task rows.
+- GAP-0062: environment template omits active ClamAV, customer DB, cloud tenant DB and Central direct URL variables; Razorpay settings documentation is stale.
+- GAP-0063: MinIO credentials fall back to minioadmin/minioadmin and are not rejected by production startup validation.
+- Health endpoint is process-only liveness, not dependency readiness. ClamAV upload scanning fails closed when unavailable.
+- Source-only review; no app code, tests, services, DB, queue, backup, restore, migration, payment or deployment operation performed; main untouched.
