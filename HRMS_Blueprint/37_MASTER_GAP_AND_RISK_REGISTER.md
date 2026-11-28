@@ -218,6 +218,6 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - **GAP-0001 (P0):** access and refresh tokens now carry Central tenant UUID and operational company UUID separately; login request includes selected tenant UUID; backend rejects body/request tenant mismatch. Refresh resolves the signed tenant UUID directly and checks company identity. Status: Fixed — Awaiting real login/OTP/refresh E2E verification.
 - **GAP-0065 (P1):** email lookup returns sorted eligible workspace choices; ambiguous memberships require explicit selection; no arbitrary LIMIT 1 selection. Status: Fixed — Awaiting E2E and legacy membership backfill verification.
 - Backend Tests run [46103861483](https://github.com/Krinki-dev/HRMS/actions/runs/46103861483) passed at SHA `3f495f016e8e56ecb6fc63770c836fc6e292ac7c`: 177 tests, 172 pass, 0 fail, 5 skipped.
-- Frontend Build run [46103852916](https://github.com/Krinki-dev/HRMS/actions/runs/46103852916) passed at SHA `2b27b3c8a319f02d0cff380b`.
+- Frontend Build run [46103852916](https://github.com/Krinki-dev/HRMS/actions/runs/46103852916) passed at SHA `2b27b3c8a319f02a16b01f2fb9fd092d0cff380b`.
 - Tenant migration inventory integration run [46103861464](https://github.com/Krinki-dev/HRMS/actions/runs/46103861464) passed at SHA `3f495f016e8e56ecb6fc63770c836fc6e292ac7c`; this is not Central RLS integration.
 - No live auth browser test, DB migration, production token change or customer-data operation performed; main untouched.
