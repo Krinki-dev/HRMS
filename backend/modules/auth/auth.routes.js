@@ -141,7 +141,7 @@ async function handleAuthLookup(req, res) {
     const isDev = process.env.NODE_ENV === 'development';
 
     if (result.found) {
-      if (!result.is_active) {
+      if (result.is_active === false) {
         return sendError(res, ERROR_CODES.LICENCE,
           'This account is suspended. Contact support@syntern.in', 403);
       }
