@@ -672,3 +672,14 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Identified GAP-0045: legacy Settings UI/API persists to `tenant_db_config`, whereas current tenant routing consumes canonical `tenants` storage fields; UI includes non-PostgreSQL options despite PostgreSQL-only current architecture.
 - Registration lifecycle source shows 30-minute lease, preflight, atomic tenant seed, failure state cleanup and token/expiry-checked activation. No separate recovery worker was verified.
 - No tests/boot/browser/DB/network/deployment operations were performed; no app code changed. main untouched.
+
+
+## 2026-11-28 — Cycle 01 Phase 16 PostgreSQL integrity and RLS audit
+
+- Added `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-16.md`.
+- Recorded GAP-0046: company-owned operational relations generally use single-column parent ID FKs, not composite company-aware constraints; cross-company reference rows not inspected.
+- Recorded GAP-0047: central RLS policy coverage gaps for legacy tenant config models and unclassified global/webhook tables.
+- Recorded GAP-0048: central SQL bootstrap defines no RLS policies; fresh-install policy application must be guaranteed.
+- Recorded GAP-0049: static Prisma scan identified 30 FK columns without declared indexes among 55 relations; catalog/query-plan validation required before changes.
+- Confirmed frozen architecture relies on company_id filters for operational DB isolation and warns of PostgreSQL table-owner RLS bypass. Production DB role not verified.
+- Static source review only; no tests, DB connection, catalog query, migration, runtime or app code change. main untouched.
