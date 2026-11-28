@@ -1283,3 +1283,13 @@ This block supersedes older branch/CI statements above where they conflict.
 - GAP-0031 backend CI skip issue fixed; GAP-0047/0048 source parity fixed, live role/catalog and clean-install verification pending.
 - **Do not apply Central RLS migration to production yet:** legacy Settings direct Prisma access to `tenant_db_config` lacks RLS context; deployed DB role owner/superuser/BYPASSRLS status is unknown.
 - Next: complete HRMS-D-004 operational model/query ownership audit and remediate legacy Settings path; then D-005 PostgreSQL migration baseline. Keep main untouched.
+
+
+## CURRENT HANDOFF — Cycle 01 Phase 26 (2026-11-28)
+
+- Latest migration audit: `HRMS_Blueprint/cycles/CYCLE-01-IMPLEMENTATION-PHASE-26.md`.
+- No valid PostgreSQL Prisma migration history exists at the expected path. The legacy directory is literally `migrations     11223`, with `provider = "mssql"` and SQL Server DDL.
+- Tenant and Central schemas target separate PostgreSQL databases; plan independent migration histories and baseline paths.
+- Railway app start invokes `apply_canonical_schema_migration.js`; that script catches migration errors and allows server startup to continue. No deploy config changed.
+- No DB connection, baseline generation, migration, deployment or customer data operation performed.
+- Next: complete the remaining operational ownership review and harden source-level RBAC/IDOR findings. Then implement the Central/tenant migration directory split with disposable PostgreSQL CI. Do not execute production migration/deploy without explicit approval.
