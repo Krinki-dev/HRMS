@@ -768,3 +768,13 @@ Phase 28 source review and implementation are recorded in [CYCLE-01-IMPLEMENTATI
 - This is a partial source audit, not an exhaustive sign-off. Continue inventory of all workers, schedulers, exports/reports, WebSockets and admin paths.
 - D-004 blockers remain: complete operational ownership matrix, composite same-company FK review, deployed Central app role owner/superuser/BYPASSRLS proof, and live Central catalog verification. No production DB access or migration was performed.
 - Re-analysis found a D-003 residual: forgot-password fallback in `auth.routes.js` still selects an unordered Central membership with `LIMIT 1` when no tenant context exists. Login selection/refresh binding were corrected in Phase 24; password-reset selection still needs explicit workspace handling.
+
+
+## 2026-11-28 audit addendum — Phase 29 forgot-password workspace binding
+
+- Source evidence: `cycles/CYCLE-01-IMPLEMENTATION-PHASE-29.md`.
+- The Phase 28 arbitrary forgot-password workspace fallback has been removed in source. Workspace selection is now explicit for ambiguous memberships and tenant-host/body mismatches are rejected.
+- Reset-token creation and reset-email delivery use the same selected tenant database in the updated route.
+- New helper, unit/regression tests and frontend workspace selector are committed.
+- **Verification limit:** exact-head CI and authenticated password-reset E2E have not been verified. Keep HRMS-D-003 In Progress and GAP-0065 Fixed — Awaiting Verification; do not claim auth module completion.
+- Continue D-004 operational ownership/query matrix, composite same-company FK feasibility and non-production Central role/catalog evidence. No live database access or migration was performed.
