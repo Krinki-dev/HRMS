@@ -1163,3 +1163,16 @@ This block supersedes older branch/CI statements above where they conflict.
 - Operational DB intentionally has no RLS; isolation depends on database/schema routing plus explicit company_id filters. Production central DB role must be checked for owner/BYPASSRLS.
 - No DB connection, test, runtime, migration, deployment, customer-data operation or app-code change performed. main untouched.
 - Next: finish ownership/FK and central RLS matrix; inspect backup/restore, frontend/API and deployment runbooks; reconcile all findings before drafting Cycle 01 plan. Independent plan verification is mandatory before implementation.
+
+
+## CURRENT HANDOFF — Cycle 01 Phase 17 (2026-11-28)
+
+- Working branch: `architecture/postgres-tenant-isolation`. Never modify `main`.
+- Latest completed audit: `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-17.md`.
+- **GAP-0050:** backup scheduler is not started in inspected server bootstrap; scheduler checks `backup_time` while Prisma/SQL define `schedule_time`.
+- **GAP-0051:** Railway start command runs a Central schema SQL script every deployment; the script catches errors and exits successfully, so the app can start after migration failure.
+- **GAP-0052:** tenant backup only handles ready dedicated DB/schema. Central DB and MinIO files are not included; `include_files` is unused; no restore implementation/drill exists. Permanent deletion correctly fails closed pending independently verified restore and approval.
+- **GAP-0053:** gzip dump artifact is not application-layer encrypted before cloud upload (revalidates GAP-0035).
+- **GAP-0054:** frontend notification settings endpoint does not match backend router mounts (revalidates GAP-0034).
+- Phase 17 was source-only. No app code, test, server, database, backup, restore, migration, deployment, payment or customer-data operation was performed. Current-HEAD CI success was not verified.
+- Next: complete the wider frontend-to-backend route/payload/permission matrix for auth, platform admin, employees, attendance, leave, payroll, documents, billing and onboarding. Then reconcile all findings into a prioritized Cycle 01 improvement plan and subject it to independent verification before any implementation. Do not ask the user to repeat documented decisions or run DB tasks during the source audit.
