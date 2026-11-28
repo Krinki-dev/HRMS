@@ -1308,3 +1308,24 @@ This block supersedes older branch/CI statements above where they conflict.
 - New residual from full re-analysis: forgot-password fallback in `backend/modules/auth/auth.routes.js` still chooses an unordered `LIMIT 1` Central membership when request tenant context is absent. Extend GAP-0065. Login selection/refresh binding have Phase 24 source fixes; real auth E2E remains pending.
 - **Next exact task:** HRMS-D-003 forgot-password explicit workspace selection and multi-membership tests; then resume D-004 operational ownership matrix.
 - No production DB connection, migration, deployment, real payment, destructive tenant operation or customer-data modification occurred. No owner decision is needed for the next source-only task.
+
+
+---
+
+## CURRENT AUTHORITATIVE HANDOFF — Cycle 01 Phase 29 (2026-11-28)
+
+- Working branch: `architecture/postgres-tenant-isolation`; protected `main` untouched.
+- Source implementation report: `HRMS_Blueprint/cycles/CYCLE-01-IMPLEMENTATION-PHASE-29.md`.
+- Resumed the exact Phase 28 next task: `HRMS-D-003` forgot-password explicit workspace selection; finding `GAP-0065`.
+- Source commits:
+  - Helper: `3a6a8f8d388c28346fb139a5f307afa1c7102328`.
+  - Regression tests: `ffca840d666112c3bcf63bdb08f86b0e24ce3be7`.
+  - Backend route: `1b3bc154b44b9bb796aaa7d6ce810ea5c01eea34`.
+  - Frontend workspace chooser: `2891a1107b66a754d7319dda0d43604465416272`.
+  - Clear stale workspace selection on email edit: `e644c3b5e233257c1359ed53b2daef4a1aa9dd5d`.
+- Forgot-password no longer uses an unordered Central membership `LIMIT 1`; ambiguous memberships require an eligible explicit workspace. Request-host/body mismatch is rejected. Reset token creation and email delivery use the same selected tenant database.
+- New tests cover one/multiple workspaces, explicit selection, request tenant binding, mismatch and invalid selection, plus source guards for the route.
+- Frontend now shows workspace choices for multi-membership email and clears selection if the email changes.
+- **Verification:** tests have been committed but have NOT yet been run in this environment. Exact-head backend CI, frontend build and authenticated password-reset E2E are **Pending / Not Verified**. A blank combined-status response and a PR-only workflow-run query are not CI pass evidence.
+- **Next exact task:** resume `HRMS-D-004` operational model/query ownership matrix, then composite same-company FK feasibility/data review. HRMS-D-003 remains In Progress until exact-head CI and login/OTP/refresh/password-reset E2E evidence pass.
+- No production/customer DB connection, SQL, migration, deployment, real payment, credential change, destructive operation or customer-data modification occurred.
