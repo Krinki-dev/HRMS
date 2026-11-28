@@ -37,7 +37,7 @@ const ctrl = {
   myApplications: wrap(async (req, res) => {
     const empId = req.user.employeeId;
     if (!empId) return sendSuccess(res, []);
-    sendSuccess(res, await svc.myApplications(empId, req.query));
+    sendSuccess(res, await svc.myApplications(req.db, empId, req.user.companyId, req.query));
   }),
 
   calculateDays: wrap(async (req, res) => {
@@ -167,7 +167,7 @@ const ctrl = {
 
   cancelLeave: wrap(async (req, res) => {
     try {
-      await svc.cancelLeave(req.params.id, req.user.employeeId);
+      await svc.cancelLeave(req.db, req.params.id, req.user.employeeId, req.user.companyId);
 
       try {
         const application = await req.db.leave_applications.findUnique({
@@ -204,9 +204,10 @@ const ctrl = {
   }),
 
   getBalances: wrap(async (req, res) => {
-    const empId = req.query.employeeId || req.user.employeeId;
+    const canViewAll = ADMIN_ROLES.includes(req.user.role);
+    const empId = canViewAll && req.query.employeeId ? req.query.employeeId : req.user.employeeId;
     if (!empId) return sendSuccess(res, []);
-    sendSuccess(res, await svc.getBalances(empId, req.query.year));
+    sendSuccess(res, await svc.getBalances(req.db, empId, req.user.companyId, req.query.year));
   }),
 
   getAllBalances: wrap(async (req, res) => {
@@ -233,7 +234,7 @@ const ctrl = {
   }),
 
   manualAccrue: wrap(async (req, res) => {
-    sendSuccess(res, await svc.manualAccrue(req.db, req.user.companyId), 'Accrual processed.');
+    sendSuccess(res, await svc.manualAccrue(req.db, req.user.companyId, req.user.id), 'Accrual processed.');
   }),
 
   accrualLog: wrap(async (req, res) => {
@@ -245,7 +246,14 @@ const ctrl = {
     if (!empId) return sendError(res, ERROR_CODES.VALIDATION, 'No employee record for this account.');
     const { leaveTypeId, days, reason } = req.body;
     if (!leaveTypeId || !days) return sendError(res, ERROR_CODES.VALIDATION, 'leaveTypeId and days required.');
-    sendSuccess(res, await svc.encashLeave(req.db, empId, req.user.companyId, req.body), 'Encashment request submitted.', 201);
+    try {
+      sendSuccess(res, await svc.encashLeave(req.db, empId, req.user.companyId, req.body), 'Encashment request submitted.', 201);
+    } catch (e) {
+      if (e.message === 'ENCASHMENT_POLICY_REQUIRED') {
+        return sendError(res, ERROR_CODES.VALIDATION, 'Leave encashment is not enabled until the company payroll valuation policy is configured.', 409);
+      }
+      throw e;
+    }
   }),
 
   report: wrap(async (req, res) => {
