@@ -104,3 +104,8 @@ Phase 15 recorded in `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-15.md`. 
 ## 2026-11-28 audit evidence note — Phase 16
 
 Phase 16 recorded in `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-16.md`. GAP-0046 through GAP-0049 cover same-company FK enforcement, central RLS coverage, missing RLS in the fresh-install bootstrap, and candidate missing FK indexes. These are source-level findings only; live DB/catalog and runtime verification were not performed. Keep module dimensions Not Assessed/Not Verified.
+
+
+## 2026-11-28 audit evidence note — Phase 17
+
+Phase 17 recorded in `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-17.md`. GAP-0050 through GAP-0054 cover backup scheduler wiring/schema mismatch, non-fatal deploy migration errors, incomplete backup/restore coverage, unencrypted dump artifacts, and notification settings route mismatch. Backup/restore, API, and deployment modules remain **Not Assessed / Not Verified** for runtime readiness: no tests, database, server, backup, restore or deployment were executed. The wider module API mapping is still pending; do not promote module completion status based on source inspection alone.
