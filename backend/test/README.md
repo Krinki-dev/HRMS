@@ -168,3 +168,28 @@ COMPLIANCE_TEST_TENANT_DATABASE_URL="postgresql://postgres:test@localhost:55435/
 docker rm -f hrms-compliance-test
 ```
 
+
+
+# GitHub Actions CI — disposable PostgreSQL integration environment
+
+The `.github/workflows/backend-tests.yml` workflow provisions an isolated PostgreSQL 16 service for every run. It does not connect to Supabase, Railway or any customer database.
+
+The workflow:
+1. Creates separate `hrms_central_test` and `hrms_tenant_test` databases.
+2. Pushes the current Central Prisma schema into the Central test database.
+3. Pushes the current operational tenant Prisma schema into the tenant test database.
+4. Applies `db-migrations/20261128_central_rls_policy_completion.sql` to the disposable Central test database.
+5. Creates a non-owning `hrms_app` role with access to the test `tenant_modules` table and seeds two tenant rows for the real RLS pooling test.
+6. Seeds Central auth middleware fixtures.
+7. Runs `npm test` with all five database-dependent test URLs configured.
+
+The following suites must execute in CI rather than silently skip:
+- Central auth middleware integration (`AUTH_TEST_CENTRAL_DATABASE_URL`)
+- Central RLS pooling test using a non-owner role (`RLS_TEST_APP_DATABASE_URL`)
+- Payroll integration (`PAYROLL_TEST_TENANT_DATABASE_URL`)
+- Compliance integration (`COMPLIANCE_TEST_TENANT_DATABASE_URL`)
+- Tenant migration inventory integration (`TENANT_MIGRATION_TEST_DATABASE_URL`)
+
+A successful backend test job should report zero skipped tests. If one of these suites cannot run, fix the disposable CI setup or make the test failure explicit; do not remove the integration test or mark the suite complete.
+
+The CI policy migration and fixtures are for disposable databases only. They do not authorize applying the RLS migration to production. Before production rollout, a DBA must verify the actual application role is not table owner/superuser and has no `BYPASSRLS`, inspect the live policy catalog, and confirm a verified backup and rollback plan.
