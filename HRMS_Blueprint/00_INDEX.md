@@ -146,3 +146,8 @@ Product domain:     PRODUCT_DOMAIN env var
 ## Latest Cycle 01 source audit
 
 - Phase 16 — PostgreSQL operational referential integrity, central RLS coverage, fresh-install baseline and FK index inventory: [CYCLE-01-SOURCE-AUDIT-PHASE-16.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-16.md)
+
+
+## Latest Cycle 01 source audit
+
+- Phase 17 — backup/restore lifecycle, frontend/backend notification route mapping, Railway migration startup behavior and CI workflow review: [CYCLE-01-SOURCE-AUDIT-PHASE-17.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-17.md)
