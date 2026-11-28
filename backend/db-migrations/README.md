@@ -105,3 +105,17 @@ Initial signup now creates a 30-minute lease and guards both failed-state record
 ## Customer-managed PostgreSQL network boundary
 
 Public signup for `local` and `external_cloud` PostgreSQL targets is disabled unless `CUSTOMER_DATABASE_CONNECTIONS_ENABLED=true` is explicitly configured. Keep it unset in every environment until the application host's outbound firewall/network policy has been verified to block loopback, link-local, cloud metadata endpoints, and unauthorized private infrastructure. A URL scheme check or one-time DNS lookup is not sufficient protection against SSRF or DNS rebinding. This application flag is an operational gate only; it does not replace network egress controls. Managed-cloud signup is not affected.
+
+
+## Central RLS policy completion (2026-11-28 — prepared, not executed)
+
+New migration artifact: `20261128_central_rls_policy_completion.sql`.
+
+- Completes RLS policy coverage for all 17 Central Prisma models, including `backup_config`, `tenant_db_config`, `payment_webhook_events` and `billing_events`.
+- Tenant-owned Central rows require `app.current_tenant` or the explicit platform-admin context. Global ledgers/settings and platform review tables are platform-admin-only.
+- The same policy set is included in `backend/prisma/central_schema.sql` for fresh installs.
+- `backend/shared/utils/rlsContext.js` documents the table-to-context matrix.
+- The migration deliberately does not use `FORCE ROW LEVEL SECURITY`. Before rollout, verify the actual Central application role is not a table owner, superuser or `BYPASSRLS`; the table owner can bypass ordinary RLS.
+- Review legacy Settings DB-config routes before applying the policy. Those old endpoints currently create a direct Prisma client and do not set tenant RLS context; they must be migrated to the approved tenant context or disabled first.
+- Verify `payment_webhook_events` and `billing_events` retention/operations and ensure only the platform service uses the platform-admin context.
+- This migration has **not** been executed against Supabase or any customer database. Do not run it until a verified backup, catalog preflight, application-role review and explicit owner approval are complete.
