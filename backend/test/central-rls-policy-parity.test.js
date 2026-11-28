@@ -80,5 +80,5 @@ test('global Central ledgers and settings are restricted to platform-admin conte
 
 test('migration does not force table-owner RLS before deployed role ownership is verified', () => {
   assert.doesNotMatch(migration, /FORCE ROW LEVEL SECURITY/i);
-  assert.match(migration, /application DB role must not own/i);
+  assert.match(migration, /app role must not own/i);
 });
