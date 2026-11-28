@@ -1252,3 +1252,13 @@ This block supersedes older branch/CI statements above where they conflict.
 - Backend CI run 46103433237 passed on SHA `97c60ad1ed3549d4c780c8506f871ada8e7cd1bb` (171 discovered, 166 pass, 0 fail, 5 skipped). This is not latest HEAD; later auth/session commits and docs updates require fresh CI.
 - Next: finish live WebSocket integration test; verify current multi-tenant login/OTP/refresh implementation and tests (D-003); then continue D-004 table ownership/Central RLS and D-005 migration baseline. Do not use production DB or real payments.
 - `main` untouched.
+
+
+## CURRENT HANDOFF — Cycle 01 Phase 24 (2026-11-28)
+
+- Latest implementation report: `HRMS_Blueprint/cycles/CYCLE-01-IMPLEMENTATION-PHASE-24.md`.
+- HRMS-D-003 explicit tenant selection and signed tenant/company refresh binding are implemented with regression tests. GAP-0001 and GAP-0065 are Fixed — Awaiting real login/OTP/refresh E2E verification.
+- Backend Tests passed at SHA `3f495f016e8e56ecb6fc63770c836fc6e292ac7c` (177 tests, 172 pass, 0 fail, 5 skipped); Frontend Build passed at SHA `2b27b3c8a319f02d0cff380b`.
+- Central RLS policy/bootstrap parity is the current next gate; latest test run had one assertion failure, corrected with an explicit application-role ownership/BYPASSRLS migration comment. Latest rerun is pending.
+- Next: review Central RLS migration/bootstrap parity and test results; do not apply migration to production. Then continue D-004 operational ownership/query-scope and D-005 PostgreSQL migration baseline audit.
+- `main` untouched.
