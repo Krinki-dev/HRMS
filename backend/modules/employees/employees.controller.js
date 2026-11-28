@@ -53,6 +53,7 @@ module.exports = {
     const created = await svc.create(req.db, req.user.companyId, req.body, actor(req));
     eventNotifier.notifyEmployeeCreated({
       db: req.db,
+      tenantId: req.user.centralTenantId,
       companyId: req.user.companyId,
       employee: created,
       actorLabel: req.user?.email,
@@ -64,6 +65,7 @@ module.exports = {
     const updated = await svc.update(req.db, req.user.companyId, req.params.id, req.body, actor(req));
     eventNotifier.notifyEmployeeUpdated({
       db: req.db,
+      tenantId: req.user.centralTenantId,
       companyId: req.user.companyId,
       employee: updated,
       actorLabel: req.user?.email,
@@ -145,6 +147,7 @@ module.exports = {
 
     eventNotifier.notifyEmployeeLoginProvisioned({
       db: req.db,
+      tenantId: req.user.centralTenantId,
       companyId: req.user.companyId,
       employeeId: req.params.id,
       loginEmail: loginResult.email,
@@ -157,6 +160,7 @@ module.exports = {
     const result = await svc.toggleLogin(req.db, req.user.companyId, req.params.id);
     eventNotifier.notifyEmployeeLoginToggled({
       db: req.db,
+      tenantId: req.user.centralTenantId,
       companyId: req.user.companyId,
       employeeId: req.params.id,
       isActive: result.isActive,
