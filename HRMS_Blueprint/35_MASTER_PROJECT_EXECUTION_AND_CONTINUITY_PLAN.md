@@ -414,3 +414,14 @@ This supersedes the Phase 31 next-task line.
 
 - Proposed membership defaults and required owner confirmations are recorded in `34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md`; they are not approved or frozen.
 - Next: obtain owner confirmation or amendments, then independently verify the D-005 migration baseline including the new membership mapping and legacy backfill. No DDL before approval.
+
+
+## 2026-11-28 — Current working checkpoint: Cycle 01 Phase 33
+
+- Latest focused task: forgot-password identity resolver argument correction. Plan and independent plan verification are recorded in `cycles/CYCLE-01-PLAN-PHASE-33.md` and `CYCLE-01-PLAN-VERIFICATION-PHASE-33.md`.
+- Corrected call: `resolveCompanyForEmail(activeDb, tenantId, normalizedEmail, requestedCompanyId)`; exact ordered-argument regression assertion added. Implementation evidence: `cycles/CYCLE-01-IMPLEMENTATION-PHASE-33.md`.
+- GAP-0069 (P1) is **Fixed — Awaiting Verification**. Source re-fetch confirms the fix; Node tests, full backend suite, frontend build, exact-head CI and authenticated password-reset E2E remain unverified.
+- GAP-0068 remains Open / Blocked on the proposed Central tenant-user-company membership mapping and trusted legacy backfill. Owner defaults remain proposed, not approved. No DDL or migration is authorized.
+- HRMS-D-003 remains In Progress. HRMS-D-004 remains In Progress; continue query-by-query ownership review after this focused auth correction. HRMS-D-005 remains blocked on canonical PostgreSQL migration baseline and owner decisions.
+- The protected main branch remains untouched. No database, SQL, migration, deployment, payment, credential, destructive or customer-data operation occurred.
+- Next safe action: verify the exact-head branch/CI and, where an executable checkout is available, run the focused auth test plus backend test suite. Do not mark GAP-0069 verified closed from source inspection alone.
