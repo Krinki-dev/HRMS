@@ -19,9 +19,9 @@ module.exports = {
   remove:           h(async (req, res) => { const tenantId = await resolveCompanyId(req); return sendSuccess(res, await svc.remove(req.db, tenantId, req.params.id), 'Deleted.'); }),
   listNominations:  h(async (req, res) => { const tenantId = await resolveCompanyId(req); return sendSuccess(res, await svc.listNominations(req.db, tenantId, req.params.id)); }),
   nominate:         h(async (req, res) => { const tenantId = await resolveCompanyId(req); return sendSuccess(res, await svc.nominate(req.db, tenantId, req.params.id, { ...req.body, nominatedBy: req.user.id }), 'Nominated.'); }),
-  removeNomination: h(async (req, res) => sendSuccess(res, await svc.removeNomination(req.params.id, req.params.empId), 'Removed.')),
+  removeNomination: h(async (req, res) => { const tenantId = await resolveCompanyId(req); return sendSuccess(res, await svc.removeNomination(req.db, tenantId, req.params.id, req.params.empId), 'Removed.'); }),
   markAttendance:   h(async (req, res) => { const tenantId = await resolveCompanyId(req); return sendSuccess(res, await svc.markAttendance(req.db, tenantId, req.params.id, req.body.records), 'Attendance marked.'); }),
-  submitFeedback:   h(async (req, res) => sendSuccess(res, await svc.submitFeedback(req.params.id, req.user.employeeId, req.body), 'Feedback submitted.')),
-  myTrainings:      h(async (req, res) => sendSuccess(res, await svc.myTrainings(req.user.employeeId))),
+  submitFeedback:   h(async (req, res) => { const tenantId = await resolveCompanyId(req); return sendSuccess(res, await svc.submitFeedback(req.db, tenantId, req.params.id, req.user.employeeId, req.body), 'Feedback submitted.'); }),
+  myTrainings:      h(async (req, res) => { const tenantId = await resolveCompanyId(req); return sendSuccess(res, await svc.myTrainings(req.db, tenantId, req.user.employeeId)); }),
 };
 
