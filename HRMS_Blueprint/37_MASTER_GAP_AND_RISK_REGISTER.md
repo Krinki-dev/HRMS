@@ -111,3 +111,16 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - Exploitability is NOT established: DB configuration write permissions, flag state, provisioning paths and deployment egress policy still require inspection. Do not describe this as a confirmed exploitable SSRF vulnerability.
 - Source confirms auth tenant-context matching and transaction-scoped central RLS helper patterns; runtime tests remain unexecuted. GAP-0031 CI skip concern remains.
 - Keep customer-managed DB modes disabled until application gate and outbound network controls are verified.
+
+
+## Cycle 01 Phase 15 — customer database configuration paths (2026-11-28)
+
+- Evidence: [CYCLE-01-SOURCE-AUDIT-PHASE-15.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-15.md).
+- **Correction to GAP-0042:** `platform.service.js` does enforce `customerDatabaseConnectionsEnabled()` during new tenant registration before customer-supplied PostgreSQL preflight. The storage resolver itself remains policy-agnostic, so every caller still needs an explicit gate.
+- **GAP-0043 (P1):** active `POST /settings/db-config/test` accepts request-supplied DB connection details and connects with Prisma without the customer DB feature-flag check or visible destination allow/deny policy. Route is protected by auth + `settings.edit`, with built-in admin-role bypass. Potential SSRF/network reachability is not runtime-proven.
+- **GAP-0044 (P1):** legacy `tenant_db_config` writes cloud URLs and local DB passwords without encryption; GET removes local password but returns `cloud_db_url` unredacted to callers with `settings.view` or built-in admin role.
+- **GAP-0045 (P1/P2):** legacy Settings UI/API writes `tenant_db_config`, while active tenant routing reads the canonical `tenants` storage fields. The UI also advertises SQL Server/MySQL while current Prisma and storage policy are PostgreSQL-only. Treat as conflicting/stale configuration until retired or reconciled.
+- Registration lifecycle has a 30-minute lease, atomic tenant seed, failed state/lease cleanup, and token/expiry-checked activation. A separate recovery worker was not verified.
+- Deployment flag value and provider-level egress controls remain unknown; `backend/.env.example` does not document the flag and `railway.json` contains no egress policy evidence.
+- No runtime tests, server boot, browser, DB, network, migration, payment or deployment action was performed. No app code changed; main untouched.
+- Keep customer-managed DB connections disabled until every connection path and deployment egress controls are verified. Cycle 01 plan and independent verification remain pending.
