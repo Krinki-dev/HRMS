@@ -94,3 +94,8 @@ Phase 13 is recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-13.md.
 ## 2026-11-27 audit evidence note — Phase 14
 
 Phase 14 recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-14.md. GAP-0042 is a P1 security-review item: customer DB connection enablement helper is not directly enforced in the inspected resolver; potential SSRF exposure is not proven and requires route authorization, provisioning and network-egress verification. Source review also reconfirmed auth tenant matching, fail-closed storage resolution and transaction-scoped RLS helpers. Runtime tests remain unexecuted; do not mark dimensions verified.
+
+
+## 2026-11-28 audit evidence note — Phase 15
+
+Phase 15 recorded in `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-15.md`. New findings GAP-0043 through GAP-0045 cover the legacy DB connection-test path, credential handling and conflicting legacy configuration model. The Phase 14 feature-flag concern is corrected: registration does enforce the flag, but the legacy Settings connection-test route does not. No runtime tests or deployment/network checks were run; keep module dimensions Not Assessed/Not Verified.
