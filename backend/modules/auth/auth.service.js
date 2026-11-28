@@ -34,9 +34,9 @@ const authService = {
     );
   },
 
-  signRefreshToken(userId) {
+  signRefreshToken(userId, centralTenantId = null, companyId = null) {
     return jwt.sign(
-      { id: userId },
+      { id: userId, centralTenantId: centralTenantId || null, companyId: companyId || null },
       process.env.JWT_REFRESH_SECRET,
       { expiresIn: process.env.JWT_REFRESH_EXPIRES || '7d' }
     );
