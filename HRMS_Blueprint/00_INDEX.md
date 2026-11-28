@@ -156,3 +156,8 @@ Product domain:     PRODUCT_DOMAIN env var
 ## Latest Cycle 01 source audit
 
 - Phase 18 — frontend/backend API path, HTTP method and multipart contract mapping for core HRMS modules: [CYCLE-01-SOURCE-AUDIT-PHASE-18.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-18.md)
+
+
+## Latest Cycle 01 source audit
+
+- Phase 19 — onboarding progress, company documents, subscription checkout, salary-component route and API response-envelope reconciliation: [CYCLE-01-SOURCE-AUDIT-PHASE-19.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-19.md)
