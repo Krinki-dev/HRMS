@@ -618,7 +618,7 @@ router.post('/forgot-password', async (req, res) => {
       isTemporaryClient = true;
     }
 
-    const companyResolution = await resolveCompanyForEmail(activeDb, normalizedEmail, requestedCompanyId);
+    const companyResolution = await resolveCompanyForEmail(activeDb, tenantId, normalizedEmail, requestedCompanyId);
     if (companyResolution.status !== 'selected') {
       return sendSuccess(res, null, 'If that email exists, a reset link has been sent.');
     }
