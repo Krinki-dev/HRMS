@@ -31,7 +31,7 @@ Evidence:
 | `backend/prisma/migrations     11223/20260310153658_init/migration.sql` | `5b6e6856144cfdecb5e7a7b8f84a379ce9c495f9` | SQL Server syntax; not executable on PostgreSQL |
 | `backend/package.json` | `57063e701a437714076c565c58bc85e04d53aa57` | `migrate` script runs `prisma migrate dev`; postinstall generates two clients |
 | `railway.json` | `db0d1378661a5dca9176966a8c9d9b1d7c945686` | Deploy start command runs migration script before server |
-| `backend/scripts/apply_canonical_schema_migration.js` | `dca9a4b4f1d991c4ef7b9a8739c44f503e34c1d0` | Applies one Central SQL file on each deploy; errors are caught and startup continues |
+| `backend/scripts/apply_canonical_schema_migration.js` | `054082af3f8f013c2ad8d1ae8abf677b4165d220` | Applies one Central SQL file on each deploy; errors are caught and startup continues |
 | `backend/db-migrations/README.md` | `079f6706e329f3482e89f7eecb1f12d4aae1657d` | Already warns that the legacy MSSQL history is invalid for PostgreSQL |
 
 ## 3. Required migration architecture
