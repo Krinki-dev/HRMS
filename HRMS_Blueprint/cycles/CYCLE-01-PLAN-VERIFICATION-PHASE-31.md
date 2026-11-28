@@ -25,3 +25,18 @@
 - HRMS-D-004 ownership matrix work resumes after identity binding is made unambiguous.
 
 **Verified:** Phase 31 source implementation may proceed on `architecture/postgres-tenant-isolation`. No owner business decision is changed or inferred beyond the already frozen multi-company model and distinct tenant/company identifiers.
+
+
+---
+
+## Re-verification correction — shared-schema membership safety (2026-11-28)
+
+The initial verification assumed operational company choices could be enumerated from the selected tenant database. Source review showed that Free/Trial tenants share the same public operational schema and the operational user/company tables do not carry Central tenantId. An email-only query there could return another SaaS tenant's company IDs. That approach is rejected.
+
+Revised verified source contract:
+- Resolve the exact operational user through Central `central_user_index.user_id` filtered by selected Central tenant UUID + normalized email.
+- Bind companyId to the resolved user's operational `company_id`.
+- Use that identity for password login, OTP send/verify and forgot-password.
+- Never enumerate shared public operational users by email alone.
+
+**Scope status:** Safe source-only identity binding is authorized. Full same-email multi-company selection is **Blocked** until a Central tenant-user-company membership schema and migration/backfill plan are designed under HRMS-D-005. This is not a pass for GAP-0068 or full HRMS-D-003.
