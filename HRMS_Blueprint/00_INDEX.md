@@ -218,3 +218,11 @@ Product domain:     PRODUCT_DOMAIN env var
 - Tenant Migration PostgreSQL Integration run 46105770068: 1/1 passed.
 - Frontend Build run 46104588048 passed on `cb3ebff3cc1fabd0c189ece8df09a01efcf82bd5`; no frontend source changed since that SHA.
 - Next: HRMS-D-003 forgot-password explicit workspace selection residual, then continue D-004 operational ownership matrix.
+
+
+## Cycle 01 Phase 29 — password-reset workspace binding
+
+- Report: [CYCLE-01-IMPLEMENTATION-PHASE-29.md](cycles/CYCLE-01-IMPLEMENTATION-PHASE-29.md)
+- Task: HRMS-D-003 / GAP-0065 — forgot-password explicit workspace selection.
+- Status: source changes committed; test execution and exact-head CI pending.
+- Next: resume HRMS-D-004 operational ownership/query matrix after Phase 29 verification.
