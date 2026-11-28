@@ -725,7 +725,7 @@ router.post('/ott/exchange', async (req, res) => {
 // Client calls POST /auth/ws-ticket → gets { ticket } → opens ws://host/ws?ticket=...
 router.post('/ws-ticket', auth, (req, res) => {
   try {
-    const ticket = issueTicket(req.user.id);
+    const ticket = issueTicket({ userId: req.user.id, tenantId: req.user.centralTenantId, companyId: req.user.companyId });
     return sendSuccess(res, { ticket }, 'WS ticket issued');
   } catch (err) {
     logger.error('[Auth/WsTicket] Error:', err);
