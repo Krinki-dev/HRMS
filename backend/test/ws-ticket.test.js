@@ -25,7 +25,7 @@ test('WebSocket ticket refuses identities without a verified tenant and company'
 });
 
 test('WebSocket ticket refuses missing or invalid user identity', () => {
-  assert.throws(() => issueTicket(), /userId is required/);
+  assert.throws(() => issueTicket(), /Verified userId, tenantId and companyId are required/);
   assert.throws(() => issueTicket({ userId: 'user-a', tenantId: '' }), /tenantId/);
   assert.throws(() => issueTicket({ userId: 'user-a', companyId: '' }), /companyId/);
 });
