@@ -725,3 +725,12 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - GAP-0063: MinIO credentials fall back to minioadmin/minioadmin and are not rejected by production startup validation.
 - Health endpoint is process-only liveness, not dependency readiness. ClamAV upload scanning fails closed when unavailable.
 - Source-only review; no app code, tests, services, DB, queue, backup, restore, migration, payment or deployment operation performed; main untouched.
+
+
+## 2026-11-28 — Cycle 01 Phase 21 authentication and encryption audit
+
+- Added `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-21.md`.
+- GAP-0064: encryption helper retains a hard-coded fallback key; main server validates production env, but direct scripts/workers can bypass startup validation.
+- GAP-0065: email-to-tenant resolution uses unordered LIMIT 1 despite multi-tenant email membership being allowed.
+- Corrected stale security note: current authStore persist partialize excludes accessToken; it is memory-only and legacy values are purged.
+- No app code, secret, DB, test, browser, migration or deployment operation performed; main untouched.
