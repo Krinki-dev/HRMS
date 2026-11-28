@@ -1199,3 +1199,14 @@ This block supersedes older branch/CI statements above where they conflict.
 - Correction: GAP-0033 company document upload/list/review endpoints are present and mounted; source-level route absence is superseded, runtime storage/review checks pending.
 - No app code, tests, browser, payment, DB, migration or deployment operation performed. Keep main untouched.
 - Next: final cross-cutting source audit of request/response contracts, permissions/object ownership, jobs, file storage and deployment; reconcile duplicate/stale findings; draft and independently verify Cycle 01 improvement plan before any app-code implementation.
+
+
+## CURRENT HANDOFF — Cycle 01 Phase 20 (2026-11-28)
+
+- Latest completed audit: `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-20.md`.
+- GAP-0061: KYC automation queue is in-process memory only; pending persisted task rows are not recovered on restart.
+- GAP-0062: environment template omits active runtime settings for ClamAV, customer DB gate, cloud tenant DB URL and Central direct URL; Razorpay documentation is stale.
+- GAP-0063: MinIO credentials fall back to well-known minioadmin defaults and are not rejected by production startup validation.
+- `/health` only confirms process response, not DB/object-store/scanner/worker readiness.
+- No application code, tests, services, DB, queue, backup, restore, migration, payment or deployment operation performed; main untouched.
+- Next: reconcile all findings and finish any remaining high-risk source audit. Then build a prioritized Cycle 01 improvement plan with task IDs, dependencies, rollback/safety controls and measurable acceptance tests. Have the plan independently verified before changing app code.
