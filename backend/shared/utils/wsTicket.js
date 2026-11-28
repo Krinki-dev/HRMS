@@ -18,8 +18,12 @@ function gc() {
 }
 
 function issueTicket({ userId, tenantId, companyId } = {}) {
-  if (![userId, tenantId, companyId].every((value) => typeof value === 'string' && value.trim())) {
-    throw new TypeError('Verified userId, tenantId and companyId are required to issue a WebSocket ticket.');
+  if (typeof userId !== 'string' || !userId.trim()) {
+    throw new TypeError('userId is required to issue a WebSocket ticket.');
+  }
+  if (typeof tenantId !== 'string' || !tenantId.trim() ||
+      typeof companyId !== 'string' || !companyId.trim()) {
+    throw new TypeError('tenantId and companyId are required to issue a WebSocket ticket.');
   }
 
   gc();
