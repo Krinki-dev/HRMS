@@ -391,3 +391,20 @@ This supersedes the Phase 30 next-task line.
 - Full backend tests, frontend build, exact-head CI and authenticated auth E2E remain pending. Isolated OTP helper smoke test: 4/4 passed only.
 - Next exact task: design the Central membership mapping/backfill and adoption plan as a source/documentation-only D-005 subtask; then complete auth E2E plan and resume D-004 query audit.
 - `main` untouched. No production DB, SQL, migration, deployment, payment, deletion or customer-data change.
+
+
+---
+
+## CURRENT EXECUTION OVERRIDE — Cycle 01 Phase 32 design checkpoint (2026-11-28)
+
+This supersedes the Phase 31 next-task line.
+
+- Phase 31 report: `cycles/CYCLE-01-IMPLEMENTATION-PHASE-31.md`.
+- Phase 32 design: `cycles/CYCLE-01-CENTRAL-TENANT-COMPANY-MEMBERSHIP-DESIGN-PHASE-32.md`, plan `CYCLE-01-PLAN-PHASE-32.md`, verification `CYCLE-01-PLAN-VERIFICATION-PHASE-32.md`.
+- D-005 now includes the required Central tenant-user-company membership mapping and verified legacy backfill as a migration-baseline requirement.
+- The proposed design is not a frozen owner decision and does not authorize DDL. Before schema implementation, resolve membership cardinality/lifecycle and trusted backfill authority.
+- GAP-0068 remains Open / Blocked on this schema mapping. GAP-0067 and GAP-0065 remain Fixed — Awaiting Verification; HRMS-D-003 remains In Progress.
+- Full repo tests, frontend build, exact-head CI and authenticated auth E2E remain unverified; isolated OTP helper smoke test passed 4/4 only.
+- **Next exact task:** obtain/record the owner decisions needed for membership semantics and legacy backfill, then revise/verify the D-005 migration baseline. No schema migration or production activity without explicit approval.
+- HRMS-D-004 query-by-query operational ownership audit resumes after the identity mapping design is settled.
+- `main` untouched; no production DB, SQL, DDL, deployment, payment or customer-data operation.
