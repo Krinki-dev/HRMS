@@ -127,7 +127,7 @@ const performanceService = {
 
     const empIds = [...new Set(goals.map(g => g.employee_id))];
     const emps = await db.employees.findMany({
-      where: { id: { in: empIds } },
+      where: { id: { in: empIds }, company_id: companyId },
       select: { id: true, first_name: true, last_name: true, employee_code: true },
     });
     const empMap = Object.fromEntries(emps.map(e => [e.id, e]));
@@ -186,6 +186,8 @@ const performanceService = {
   },
 
   approveGoal: async (db, companyId, approverId, id) => {
+    const approver = await db.users.findFirst({ where: { id: approverId, company_id: companyId, is_active: true }, select: { id: true } });
+    if (!approver) throw new Error('NOT_FOUND');
     const goal = await db.performance_goals.findFirst({ where: { id, cycle: { company_id: companyId } } });
     if (!goal) throw new Error('NOT_FOUND');
     return db.performance_goals.update({
@@ -228,15 +230,17 @@ const performanceService = {
   },
 
   getTeamAppraisals: async (db, companyId, cycleId) => {
-    const cid = cycleId || (await db.appraisal_cycles.findFirst({
-      where: { company_id: companyId, status: 'active' },
-      orderBy: { created_at: 'desc' },
-    }))?.id;
-
+    const selectedCycle = cycleId
+      ? await requireCompanyCycle(db, companyId, cycleId)
+      : await db.appraisal_cycles.findFirst({
+          where: { company_id: companyId, status: 'active' },
+          orderBy: { created_at: 'desc' },
+        });
+    const cid = selectedCycle?.id;
     if (!cid) return [];
 
     const appraisals = await db.appraisals.findMany({
-      where: { cycle_id: cid },
+      where: { cycle_id: cid, cycle: { company_id: companyId } },
       orderBy: [{ employee_id: 'asc' }, { type: 'asc' }],
     });
 
