@@ -1149,3 +1149,17 @@ This block supersedes older branch/CI statements above where they conflict.
 - Registration source shows lease-based lifecycle, but separate recovery worker and full retry lifecycle are not verified.
 - No application source changed; no tests, boot, browser, DB, network, migration, payment or deployment operation was performed. main untouched.
 - Next: complete PostgreSQL schema/FK/index/RLS matrix, then frontend/API and backup/restore/deployment audit; reconcile duplicates/root causes; draft Cycle 01 plan only after audit completion and independently verify it before implementation.
+
+
+
+## CURRENT HANDOFF — Cycle 01 Phase 16 (2026-11-28)
+
+- Working branch: `architecture/postgres-tenant-isolation`. Never modify `main`.
+- New audit report: `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-16.md`.
+- GAP-0046: single-column operational FKs do not enforce same-company parent/child relationships for multiple company-owned relations.
+- GAP-0047: reviewed central RLS migrations do not cover legacy tenant-specific backup_config/tenant_db_config; payment_webhook_events and billing_events need explicit access classification.
+- GAP-0048: central_schema.sql fresh-install bootstrap contains no RLS policies; separate policy migrations must be guaranteed and verified.
+- GAP-0049: static scan found 30 FK columns without declared indexes among 55 operational relations; actual catalog/query plan review required.
+- Operational DB intentionally has no RLS; isolation depends on database/schema routing plus explicit company_id filters. Production central DB role must be checked for owner/BYPASSRLS.
+- No DB connection, test, runtime, migration, deployment, customer-data operation or app-code change performed. main untouched.
+- Next: finish ownership/FK and central RLS matrix; inspect backup/restore, frontend/API and deployment runbooks; reconcile all findings before drafting Cycle 01 plan. Independent plan verification is mandatory before implementation.
