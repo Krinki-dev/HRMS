@@ -226,3 +226,13 @@ Product domain:     PRODUCT_DOMAIN env var
 - Task: HRMS-D-003 / GAP-0065 — forgot-password explicit workspace selection.
 - Status: source changes committed; test execution and exact-head CI pending.
 - Next: resume HRMS-D-004 operational ownership/query matrix after Phase 29 verification.
+
+
+## Cycle 01 Phase 30 — PostgreSQL ownership inventory and OTP isolation
+
+- Report: [CYCLE-01-IMPLEMENTATION-PHASE-30.md](cycles/CYCLE-01-IMPLEMENTATION-PHASE-30.md)
+- Ownership matrix: [CYCLE-01-POSTGRES-OWNERSHIP-INVENTORY-PHASE-30.md](cycles/CYCLE-01-POSTGRES-OWNERSHIP-INVENTORY-PHASE-30.md)
+- Plan: [CYCLE-01-PLAN-PHASE-30.md](cycles/CYCLE-01-PLAN-PHASE-30.md)
+- Independent verification: [CYCLE-01-PLAN-VERIFICATION-PHASE-30.md](cycles/CYCLE-01-PLAN-VERIFICATION-PHASE-30.md)
+- Task: HRMS-D-004 primary; HRMS-D-003 related. GAP-0067 OTP namespace fix is committed, tests/CI pending.
+- Next: continue model-by-model operational query tracing and cross-company negative-test coverage; retain production safety gates.
