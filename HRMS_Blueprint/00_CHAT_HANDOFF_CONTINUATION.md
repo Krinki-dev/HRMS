@@ -1187,3 +1187,15 @@ This block supersedes older branch/CI statements above where they conflict.
 - Core API service prefixes were compared against route mounts for major HR modules. Static path matching is not runtime verification; full payload/response, permission, object ownership and browser mapping remains incomplete.
 - Phases 17 and 18 were source-only; no app code, tests, browser, DB, backup, restore, migration, deployment, payment or customer-data operation performed. Keep main untouched.
 - Next: complete platform-admin, onboarding, billing, documents and remaining frontend page API mapping; reconcile duplicate and superseded findings; then draft and independently verify the Cycle 01 P0/P1 implementation plan before changing application code.
+
+
+## CURRENT HANDOFF — Cycle 01 Phase 19 (2026-11-28)
+
+- Latest completed audit: `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-19.md`.
+- GAP-0058: Billing page sends the wrong subscription-order request fields; Billing and onboarding double-read the response after Axios unwrapping.
+- GAP-0059: onboarding payroll setup calls missing `POST /payroll/salary-components`.
+- GAP-0060: global API interceptor unwrapping conflicts with dashboard/onboarding/Billing consumers.
+- Correction: GAP-0032 onboarding progress/save-step/complete routes are present; only salary-components remains missing.
+- Correction: GAP-0033 company document upload/list/review endpoints are present and mounted; source-level route absence is superseded, runtime storage/review checks pending.
+- No app code, tests, browser, payment, DB, migration or deployment operation performed. Keep main untouched.
+- Next: final cross-cutting source audit of request/response contracts, permissions/object ownership, jobs, file storage and deployment; reconcile duplicate/stale findings; draft and independently verify Cycle 01 improvement plan before any app-code implementation.
