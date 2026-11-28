@@ -138,12 +138,15 @@ All tasks begin as **Not Started**. A source-code commit alone does not complete
   5. Reject JWT/header/host/company context mismatch; define company switching as a separate audited flow.
   6. Apply the same explicit workspace rule to forgot-password; create the reset token and send the email through the same selected tenant database.
   7. Namespace OTP creation and verification by immutable Central tenant UUID so same-email OTP records cannot collide in shared public operational storage.
+  8. Resolve the operational user through the selected tenant's Central `central_user_index.user_id` mapping; never search shared public `users` by email alone. Require the resolved operational companyId to match the request.
 - **Acceptance criteria:**
   - Same email in two tenants produces two explicit choices.
   - Login and password reset cannot silently pick an arbitrary tenant.
   - A body-selected tenant that conflicts with the verified request host is rejected.
   - Password-reset token storage and reset-email delivery use the same selected tenant database.
-  - OTP send and verify use the same tenant-scoped identifier; missing tenant context fails closed.
+  - OTP send and verify use the same tenant + operational company-scoped identifier; missing tenant/company context fails closed.
+  - Password login, OTP login and forgot-password resolve the operational user by the selected Central tenant's indexed user_id and bind companyId; no unscoped shared-public-schema email lookup is allowed.
+  - Multiple operational company memberships for one email are not selectable until Central has an explicit tenant-user-company membership mapping; fail closed and defer schema change to the PostgreSQL migration-baseline plan.
   - Unknown or invalid memberships receive a generic confirmation and do not disclose account existence.
   - Refresh preserves the same tenant context and rejects cross-tenant reuse.
   - JWT tenantId and operational companyId are distinct and consistently validated.
