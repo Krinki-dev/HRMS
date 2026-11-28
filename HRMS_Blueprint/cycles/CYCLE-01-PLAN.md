@@ -273,6 +273,15 @@ All tasks begin as **Not Started**. A source-code commit alone does not complete
 - **Scope:** Login → company selection → employee create/update → attendance → leave → payroll → compliance → reports. Include attendance check-in metadata argument alignment and verify location/IP collection is limited to approved privacy requirements.
 - **Acceptance:** Each journey passes with correct role, tenant/company isolation, validation, error recovery and audit trail.
 
+#### HRMS-F-019 — Remove static encryption fallback and harden key lifecycle
+
+- **Findings:** GAP-0064.
+- **Dependencies:** HRMS-F-013 (environment registry/validation).
+- **Scope:** Remove the literal fallback key from the shared encryption helper; fail closed in every process/script/worker; define versioned key rotation and legacy ciphertext handling.
+- **Acceptance:** Importing the encryption helper without a valid ENCRYPTION_KEY fails; all process entrypoints validate key configuration; AES-256-GCM round-trip succeeds; modified ciphertext/tag fails authentication; legacy CBC reads remain compatibility-only and have a documented retirement plan.
+- **Tests:** Missing/short key tests, tamper tests, helper-only script tests, process entrypoint tests, encrypted credential compatibility tests.
+- **Safety:** Do not run the incompatible `migrate-pii-encryption.js`; no production key rotation or ciphertext rewrite without a separately reviewed recovery/rollback plan.
+
 ### P2 — Product completeness and optimisation
 
 #### HRMS-F-016 — Reusable CSV/XLSX import/export pipeline
@@ -288,15 +297,6 @@ All tasks begin as **Not Started**. A source-code commit alone does not complete
 - **Findings:** GAP-0049.
 - **Acceptance:** Use live catalog and query plans; add only indexes supported by measured workload; validate migration impact and write overhead.
 
-
-#### HRMS-F-019 — Remove static encryption fallback and harden key lifecycle
-
-- **Findings:** GAP-0064.
-- **Dependencies:** HRMS-F-013 (environment registry/validation).
-- **Scope:** Remove the literal fallback key from the shared encryption helper; fail closed in every process/script/worker; define versioned key rotation and legacy ciphertext handling.
-- **Acceptance:** Importing the encryption helper without a valid ENCRYPTION_KEY fails; all process entrypoints validate key configuration; AES-256-GCM round-trip succeeds; modified ciphertext/tag fails authentication; legacy CBC reads remain compatibility-only and have a documented retirement plan.
-- **Tests:** Missing/short key tests, tamper tests, helper-only script tests, process entrypoint tests, encrypted credential compatibility tests.
-- **Safety:** Do not run the incompatible `migrate-pii-encryption.js`; no production key rotation or ciphertext rewrite without a separately reviewed recovery/rollback plan.
 
 
 
