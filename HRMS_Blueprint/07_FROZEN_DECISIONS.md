@@ -421,3 +421,12 @@ Phase 19:  Mobile App (React Native)    ❌ Phase 2 — not started
 - Do NOT run backend/scripts/migrate-pii-encryption.js: it writes the separate ENC: format, while live Employee services currently use the colon-separated shared encryption codec. Replace with a tested compatible migration first.
 - A deployment may not be marked schema-ready if any required migration failed. A server that starts after a swallowed migration failure is not a green release.
 - Operator database sweep/migration scripts must never run automatically.
+
+---
+
+## 2026-11-28 source revalidation — authentication token and encryption rules
+
+- **Access token persistence correction:** current `frontend/src/store/authStore.js` persists only login/profile/branding fields through Zustand `partialize`; it does not persist `accessToken`. The token is held in memory, while legacy standalone/persisted token values are cleared during logout/rehydration. Keep the frozen memory-only rule. Add regression tests so future edits cannot reintroduce token persistence.
+- **Encryption helper remains non-compliant:** `backend/shared/utils/encryption.js` still defines a literal fallback when `ENCRYPTION_KEY` is missing. Main server startup has a production environment check, but direct scripts/workers can import the helper outside that gate. Remove the fallback and fail closed in every process entrypoint before security sign-off.
+- **Multi-tenant email selection remains non-compliant:** Central index uniqueness is per `(email, company_id)`; auth lookup and tenant resolution still use unordered `LIMIT 1`. Require explicit workspace selection and bind login/OTP/refresh to the selected immutable tenant ID.
+- Evidence report: `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-21.md`.
