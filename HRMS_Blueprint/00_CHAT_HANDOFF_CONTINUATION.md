@@ -1349,3 +1349,22 @@ This Phase 30 handoff supersedes the Phase 29 next-task line.
 - **Next exact work:** continue HRMS-D-004 query-by-query operational ownership audit across controllers/services, background workers, reports/exports and WebSockets; prepare disposable PostgreSQL cross-company tests and composite same-company FK feasibility checks.
 - Central production role owner/superuser/BYPASSRLS and live catalog evidence remain pending. Static RLS parity is not deployed-role proof.
 - No production/customer DB connection, SQL, migration/DDL, deployment, real payment, deletion, credential rotation or customer-data operation was performed.
+
+
+---
+
+## CURRENT AUTHORITATIVE HANDOFF — Cycle 01 Phase 31 (2026-11-28)
+
+This supersedes the Phase 30 next-task line.
+
+- Working branch: `architecture/postgres-tenant-isolation`; `main` untouched.
+- Phase 31 report: `HRMS_Blueprint/cycles/CYCLE-01-IMPLEMENTATION-PHASE-31.md`.
+- Phase 31 plan and verification: `CYCLE-01-PLAN-PHASE-31.md`, `CYCLE-01-PLAN-VERIFICATION-PHASE-31.md`.
+- Source now resolves password login, OTP and forgot-password through the selected Central tenant's `central_user_index.user_id`, then validates operational `company_id`. OTP identifier includes tenant UUID + company UUID + normalized email.
+- Important correction: do NOT enumerate operational users by email from shared public storage. Those rows do not contain Central tenantId and can belong to multiple SaaS tenants. Final source does not use this unsafe approach.
+- GAP-0067: tenant+company OTP namespace committed; Fixed — Awaiting Verification.
+- GAP-0068: same email across multiple operational companies is not fully selectable because Central index has one user_id per email/tenant. Open / Blocked on explicit Central membership mapping and legacy backfill under HRMS-D-005.
+- HRMS-D-003 remains In Progress. HRMS-D-004 remains In Progress with the 82-model inventory complete but query-by-query audit pending. HRMS-D-005 remains blocked on canonical PostgreSQL migration baseline.
+- Isolated Node helper smoke: 4/4 passed. Full repository tests, exact-head CI and authenticated E2E have not been run/verified.
+- Next exact task: design the Central tenant-user-company membership mapping and backfill/adoption requirements as part of HRMS-D-005 without applying a migration; then complete Phase 31 auth E2E plan. After identity mapping is resolved, resume D-004 query-by-query ownership audit.
+- No production/customer DB connection, SQL, migration/DDL, deployment, real payment, deletion, credential rotation or customer-data operation.
