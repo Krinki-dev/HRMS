@@ -151,3 +151,8 @@ Product domain:     PRODUCT_DOMAIN env var
 ## Latest Cycle 01 source audit
 
 - Phase 17 — backup/restore lifecycle, frontend/backend notification route mapping, Railway migration startup behavior and CI workflow review: [CYCLE-01-SOURCE-AUDIT-PHASE-17.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-17.md)
+
+
+## Latest Cycle 01 source audit
+
+- Phase 18 — frontend/backend API path, HTTP method and multipart contract mapping for core HRMS modules: [CYCLE-01-SOURCE-AUDIT-PHASE-18.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-18.md)
