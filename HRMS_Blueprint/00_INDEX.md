@@ -245,3 +245,11 @@ Product domain:     PRODUCT_DOMAIN env var
 - Plan verification and safety correction: [CYCLE-01-PLAN-VERIFICATION-PHASE-31.md](cycles/CYCLE-01-PLAN-VERIFICATION-PHASE-31.md)
 - Safe source binding uses Central `user_id` + operational `company_id`; OTP includes tenant+company identity.
 - GAP-0068 remains open pending Central multi-company membership mapping and legacy backfill. No schema migration was made.
+
+
+## Cycle 01 Phase 32 — Central membership mapping design
+
+- Design proposal: [CYCLE-01-CENTRAL-TENANT-COMPANY-MEMBERSHIP-DESIGN-PHASE-32.md](cycles/CYCLE-01-CENTRAL-TENANT-COMPANY-MEMBERSHIP-DESIGN-PHASE-32.md)
+- Plan: [CYCLE-01-PLAN-PHASE-32.md](cycles/CYCLE-01-PLAN-PHASE-32.md)
+- Independent verification: [CYCLE-01-PLAN-VERIFICATION-PHASE-32.md](cycles/CYCLE-01-PLAN-VERIFICATION-PHASE-32.md)
+- Design-only; no DDL or migration authorized. D-005 must settle membership semantics and legacy backfill authority before implementation.
