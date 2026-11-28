@@ -19,6 +19,7 @@ const { centralPrisma } = require('../../shared/utils/centralPrisma');
 
 const { issueTicket } = require('../../shared/utils/wsTicket');
 const { withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
+const { selectPasswordResetWorkspace } = require('../../shared/utils/passwordResetWorkspace');
 
 const router       = express.Router();
 const lookupRouter = express.Router();
@@ -522,92 +523,95 @@ router.get('/me', auth, async (req, res) => {
 });
 
 router.post('/forgot-password', async (req, res) => {
+  let activeDb = null;
+  let isTemporaryClient = false;
   try {
-    const { email } = req.body;
-    if (!email) return sendError(res, ERROR_CODES.VALIDATION, 'Email is required', 400);
-    if (!req.db) return sendError(res, ERROR_CODES.SERVER, 'Server configuration error.', 500);
+    const { email, tenantId: requestedTenantId = null } = req.body;
+    if (!email?.trim()) return sendError(res, ERROR_CODES.VALIDATION, 'Email is required', 400);
+
     const normalizedEmail = email.toLowerCase().trim();
-    const user = await req.db.users.findFirst({
-      where:   { email: normalizedEmail },
+    const requestTenantId = req.tenant?.id || null;
+    if (requestedTenantId && requestTenantId && requestedTenantId !== requestTenantId) {
+      return sendSuccess(res, null, 'If that email exists, a reset link has been sent.');
+    }
+
+    // lookupEmail validates that the selected Central tenant is an eligible
+    // workspace for this address. Multiple memberships require an explicit
+    // selection; never fall back to the first Central index row.
+    const lookup = await authService.lookupEmail(normalizedEmail, requestedTenantId || requestTenantId);
+    const resolution = selectPasswordResetWorkspace(
+      lookup.choices || [],
+      requestedTenantId,
+      requestTenantId
+    );
+    if (resolution.status !== 'selected') {
+      return sendSuccess(res, null, 'If that email exists, a reset link has been sent.');
+    }
+
+    const tenantId = resolution.tenant.tenantId;
+    const tenantContext = await authService.resolveTenantDbById(tenantId);
+    if (!tenantContext?.url) {
+      return sendSuccess(res, null, 'If that email exists, a reset link has been sent.');
+    }
+
+    if (req.db && requestTenantId === tenantId) {
+      activeDb = req.db;
+    } else {
+      const { PrismaClient } = require('@prisma/client');
+      activeDb = new PrismaClient({ datasources: { db: { url: tenantContext.url } } });
+      isTemporaryClient = true;
+    }
+
+    const user = await activeDb.users.findFirst({
+      where: { email: normalizedEmail, is_active: true },
       include: { employee: true },
     });
-    if (!user) return sendSuccess(res, null, 'If that email exists, a reset link has been sent.');
-    await req.db.password_resets.deleteMany({ where: { user_id: user.id } });
-    let subdomain = 'app';
-    let tenantId = null;
-    let activeDb = req.db;
-    let isTemporaryClient = false;
-    if (req.tenant?.subdomain) {
-      subdomain = req.tenant.subdomain;
-      tenantId = req.tenant.id;
-    } else {
-      try {
-        const indexRows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
-          SELECT * FROM central_user_index WHERE email = ${normalizedEmail} AND is_active = true LIMIT 1
-        `);
-        const idx = indexRows[0];
-        if (idx?.company_id) {
-          const ctx = await authService.resolveTenantDbById(idx.company_id);
-          if (ctx) {
-            const { PrismaClient } = require('@prisma/client');
-            activeDb = new PrismaClient({ datasources: { db: { url: ctx.url } } });
-            isTemporaryClient = true;
-            subdomain = ctx.subdomain || subdomain;
-            tenantId = ctx.tenantId || tenantId;
-          }
-        } else {
-          const tenantRows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
-            SELECT id, subdomain, db_mode, db_url, schema_name, local_db_type,
-                   local_db_host, local_db_port, local_db_name, local_db_user, local_db_pass
-            FROM tenants
-            WHERE LOWER(admin_email) = LOWER(${normalizedEmail})
-              AND deleted_at IS NULL AND is_active = true
-            LIMIT 1
-          `);
-          const tenantRecord = tenantRows[0];
-          if (tenantRecord) {
-            subdomain = tenantRecord.subdomain || subdomain;
-            tenantId = tenantRecord.id || tenantId;
-            try {
-              const tenantContext = await authService.resolveTenantDbById(tenantRecord.id);
-              if (tenantContext?.url) {
-                const { PrismaClient: TenantClient } = require('@prisma/client');
-                activeDb = new TenantClient({ datasources: { db: { url: tenantContext.url } } });
-                isTemporaryClient = true;
-              }
-            } catch (dbErr) {
-              logger.warn('[Auth/ForgotPwd] Tenant DB resolution fallback failed', { error: dbErr.message });
-            }
-          }
-        }
-      } catch (e) {
-        logger.warn('[Auth/ForgotPwd] central lookup failed', { error: e.message });
-      }
+    if (!user) {
+      return sendSuccess(res, null, 'If that email exists, a reset link has been sent.');
     }
+
+    // Keep reset-token creation and email delivery in the same selected
+    // tenant database. This prevents cross-workspace token/database mismatch.
+    await activeDb.password_resets.deleteMany({ where: { user_id: user.id } });
     const token = crypto.randomBytes(32).toString('hex');
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-    await req.db.password_resets.create({
-      data: { user_id: user.id, token_hash: tokenHash, type: 'reset', expires_at: new Date(Date.now() + 60 * 60 * 1000) },
+    await activeDb.password_resets.create({
+      data: {
+        user_id: user.id,
+        token_hash: tokenHash,
+        type: 'reset',
+        expires_at: new Date(Date.now() + 60 * 60 * 1000),
+      },
     });
-    const isDev = process.env.NODE_ENV === 'development';
-    const resetLink = isDev
+
+    const subdomain = tenantContext.subdomain || resolution.tenant.subdomain || 'app';
+    const resetLink = process.env.NODE_ENV === 'development'
       ? `http://${subdomain}.syntern.in:5173/reset-password?token=${token}`
       : `https://${subdomain}.syntern.in/reset-password?token=${token}`;
+
     try {
       await emailSvc.sendPasswordReset(activeDb, tenantId, {
         email: normalizedEmail,
-        name: user.employee ? `${user.employee.first_name} ${user.employee.last_name}` : normalizedEmail,
+        name: user.employee
+          ? `${user.employee.first_name} ${user.employee.last_name}`
+          : normalizedEmail,
         resetLink,
       });
     } catch (err) {
       logger.error('[Auth/ForgotPwd] Email send failed', { error: err.message });
     }
-    if (isDev) console.log(`[DEV] Reset link: ${resetLink}`);
-    if (isTemporaryClient) setTimeout(() => activeDb.$disconnect(), 5000);
+
+    if (process.env.NODE_ENV === 'development') console.log(`[DEV] Reset link: ${resetLink}`);
     return sendSuccess(res, null, 'If that email exists, a reset link has been sent.');
   } catch (err) {
-    console.error('[Auth/ForgotPwd] Error:', err.message);
+    logger.error('[Auth/ForgotPwd] Error:', { message: err.message });
     return sendError(res, ERROR_CODES.SERVER, 'Reset request failed. Please try again.', 500);
+  } finally {
+    if (isTemporaryClient && activeDb) {
+      try { await activeDb.$disconnect(); } catch (err) {
+        logger.warn('[Auth/ForgotPwd] Temporary tenant client disconnect failed', { error: err.message });
+      }
+    }
   }
 });
 
