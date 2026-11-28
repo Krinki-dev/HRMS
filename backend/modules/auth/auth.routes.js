@@ -84,10 +84,10 @@ function signAccessToken(user, permissions, centralTenantId = null) {
   );
 }
 
-function signRefreshToken(userId) {
+function signRefreshToken(userId, centralTenantId = null, companyId = null) {
   if (!process.env.JWT_REFRESH_SECRET) throw new Error('SERVER_CONFIG_ERROR: JWT_REFRESH_SECRET is not set');
   return jwt.sign(
-    { id: userId },
+    { id: userId, centralTenantId: centralTenantId || null, companyId: companyId || null },
     process.env.JWT_REFRESH_SECRET,
     { expiresIn: process.env.JWT_REFRESH_EXPIRES || '7d' }
   );
@@ -319,7 +319,7 @@ router.post('/verify-otp', otpLimiter, async (req, res) => {
       });
       const permissions = safeParseJSON(user.role?.permissions);
       const accessToken = authService.signAccessToken(user, permissions, tenantId || null);
-      const refreshToken = authService.signRefreshToken(user.id);
+      const refreshToken = authService.signRefreshToken(user.id, tenantId || null, user.company_id || null);
       setRefreshCookie(res, refreshToken);
       const tenantInfo = await authService.getTenantInfo(tenantId || null);
       const isPlatformAdmin = await authService.isPlatformAdmin(user.id);
@@ -397,19 +397,35 @@ router.post('/refresh', async (req, res) => {
     }
     let activeDb = req.db;
     let isTemporary = false;
-    let resolvedCentralTenantId = req.tenant?.id || null;
+    if (decoded.centralTenantId && req.tenant?.id && decoded.centralTenantId !== req.tenant.id) {
+      res.clearCookie('refreshToken');
+      return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Refresh token belongs to a different workspace.', 401);
+    }
+    let resolvedCentralTenantId = decoded.centralTenantId || req.tenant?.id || null;
+    let selectedIndex = null;
+
     if (!activeDb) {
-      // No tenant is known yet at this point, so this lookup runs with the
-      // platform-admin RLS predicate (SET LOCAL scoped to this transaction —
-      // see shared/utils/rlsContext.js) rather than an unprotected bare query.
-      const userIndex = await withPlatformAdminRLS(centralPrisma, (tx) => tx.central_user_index.findFirst({
-        where: { user_id: decoded.id, is_active: true }
+      // A refresh token is tenant-bound. Legacy tokens without a tenant claim
+      // may only resolve when there is exactly one active membership.
+      const memberships = await withPlatformAdminRLS(centralPrisma, (tx) => tx.central_user_index.findMany({
+        where: {
+          user_id: decoded.id,
+          is_active: true,
+          ...(resolvedCentralTenantId ? { company_id: resolvedCentralTenantId } : {}),
+        },
+        select: { company_id: true, is_platform_admin: true },
+        take: 2,
       }));
-      resolvedCentralTenantId = userIndex?.company_id || resolvedCentralTenantId;
-      if (userIndex?.is_platform_admin) {
+      if (memberships.length !== 1) {
+        res.clearCookie('refreshToken');
+        return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Workspace selection is required to refresh this session.', 401);
+      }
+      selectedIndex = memberships[0];
+      resolvedCentralTenantId = selectedIndex.company_id;
+      if (selectedIndex.is_platform_admin) {
         activeDb = centralPrisma;
-      } else if (userIndex?.company_id) {
-        const ctx = await authService.resolveTenantDbById(userIndex.company_id);
+      } else {
+        const ctx = await authService.resolveTenantDbById(selectedIndex.company_id);
         if (ctx) {
           const { PrismaClient } = require('@prisma/client');
           activeDb = new PrismaClient({ datasources: { db: { url: ctx.url } } });
@@ -417,9 +433,12 @@ router.post('/refresh', async (req, res) => {
         }
       }
     }
+
     if (!activeDb) return sendError(res, ERROR_CODES.SERVER, 'Configuration error.', 500);
+    const userWhere = { id: decoded.id, is_active: true };
+    if (decoded.companyId && activeDb !== centralPrisma) userWhere.company_id = decoded.companyId;
     const user = await activeDb.users.findFirst({
-      where:   { id: decoded.id, is_active: true },
+      where: userWhere,
       include: { role: true, employee: true },
     });
     if (!user) {
@@ -427,8 +446,15 @@ router.post('/refresh', async (req, res) => {
       res.clearCookie('refreshToken');
       return sendError(res, ERROR_CODES.UNAUTHORIZED, 'User not found.', 401);
     }
+    if (decoded.companyId && user.company_id && decoded.companyId !== user.company_id) {
+      if (isTemporary) await activeDb.$disconnect();
+      res.clearCookie('refreshToken');
+      return sendError(res, ERROR_CODES.UNAUTHORIZED, 'Refresh token company identity does not match the user.', 401);
+    }
     const permissions = safeParseJSON(user.role?.permissions);
     const accessToken = authService.signAccessToken(user, permissions, resolvedCentralTenantId);
+    const rotatedRefreshToken = authService.signRefreshToken(user.id, resolvedCentralTenantId, user.company_id || decoded.companyId || null);
+    setRefreshCookie(res, rotatedRefreshToken);
     const tenantInfo = await authService.getTenantInfo(resolvedCentralTenantId);
     const isPlatformAdmin = await authService.isPlatformAdmin(user.id);
     const payload = authService.buildUserPayload(user, permissions, tenantInfo, isPlatformAdmin);
@@ -708,7 +734,7 @@ router.post('/ott/exchange', async (req, res) => {
       if (user) {
         const permissions  = safeParseJSON(user.role?.permissions);
         const accessToken  = signAccessToken(user, permissions, req.tenant?.id || null);
-        const refreshToken = signRefreshToken(user.id);
+        const refreshToken = signRefreshToken(user.id, req.tenant?.id || null, user.company_id || null);
         setRefreshCookie(res, refreshToken);
         const tenantInfo = await authService.getTenantInfo(req.tenant?.id || null);
         const payload = buildUserPayload(user, permissions, tenantInfo);
