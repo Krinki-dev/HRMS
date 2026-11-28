@@ -146,3 +146,11 @@ Cycle 01 plan `HRMS_Blueprint/cycles/CYCLE-01-PLAN.md` is **Verified** by indepe
 - HRMS-D-001 WebSocket company isolation: source changes and focused unit tests implemented; backend suite passed at SHA `97c60ad1ed3549d4c780c8506f871ada8e7cd1bb`. Status remains Fixed — Awaiting real WebSocket integration test.
 - HRMS-C-002 payment router: handler export and router-load test verified. CI found/fixed the disabled PhonePe handler's unterminated function; new GAP-0066 is Verified Closed at the tested SHA.
 - Backend CI: 171 tests, 166 pass, 0 fail, 5 skipped. Latest branch HEAD is newer and its CI was still pending; do not mark the whole branch verified.
+
+
+## 2026-11-28 implementation evidence — Phase 24
+
+- HRMS-D-003: explicit workspace selection, signed tenant/company token identity, refresh resolution and mismatch guards are implemented with regression tests.
+- Backend CI run 46103861483 passed (177 tests; 172 pass, 0 fail, 5 skipped) at SHA `3f495f016e8e56ecb6fc63770c836fc6e292ac7c`.
+- Frontend Build run 46103852916 passed at SHA `2b27b3c8a319f02d0cff380b`.
+- Keep D-003 at Fixed — Awaiting E2E Verification; no live auth/OTP/refresh flow was exercised.
