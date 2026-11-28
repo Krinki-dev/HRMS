@@ -56,7 +56,7 @@ test('forgot-password route contains no unordered Central membership fallback', 
   assert.doesNotMatch(handler, /LIMIT\s+1/i);
   assert.match(handler, /selectPasswordResetWorkspace/);
   assert.match(handler, /resolveCompanyForEmail/);
-  assert.match(handler, /company_id: companyId/);
+  assert.match(handler, /company_id: companyResolution\\.companyId/);
   assert.match(handler, /activeDb\.password_resets\.create/);
   assert.match(handler, /sendPasswordReset\(activeDb, tenantId/);
 });
