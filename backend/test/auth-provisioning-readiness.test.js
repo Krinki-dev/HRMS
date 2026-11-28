@@ -21,7 +21,7 @@ test('email, phone and employee lookups only expose active tenants with ready st
 });
 
 test('admin-email fallback excludes inactive or still-provisioning tenants', () => {
-  const start = authSource.indexOf('SELECT id, name, subdomain, logo_url, is_active, plan');
+  const start = authSource.indexOf('SELECT id AS tenant_id, name AS company_name, subdomain, logo_url,');
   const query = authSource.slice(start, authSource.indexOf('`', start));
   assert.match(query, /is_active = true/);
   assert.match(query, /storage_status = 'ready'/);
