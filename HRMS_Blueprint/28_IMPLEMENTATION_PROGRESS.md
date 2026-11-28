@@ -683,3 +683,14 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Recorded GAP-0049: static Prisma scan identified 30 FK columns without declared indexes among 55 relations; catalog/query-plan validation required before changes.
 - Confirmed frozen architecture relies on company_id filters for operational DB isolation and warns of PostgreSQL table-owner RLS bypass. Production DB role not verified.
 - Static source review only; no tests, DB connection, catalog query, migration, runtime or app code change. main untouched.
+
+
+## 2026-11-28 — Cycle 01 Phase 17 backup/restore, API and deployment audit
+
+- Added `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-17.md`.
+- GAP-0050: backup scheduler is not started in inspected server bootstrap and compares a non-existent schema field (`backup_time` vs `schedule_time`).
+- GAP-0051: Railway deploy runs a Central SQL migration on every start; migration errors are caught without a non-zero exit, allowing server startup to continue.
+- GAP-0052: tenant backup only covers ready dedicated DB/schema; Central DB and MinIO files are excluded, include_files is unused, and restore drill is absent. Permanent deletion remains fail-closed.
+- GAP-0053: dump artifacts are gzip-compressed but not application-layer encrypted before cloud upload (revalidates GAP-0035).
+- GAP-0054: notification settings frontend route does not match the backend router mounts (revalidates GAP-0034).
+- CI workflow definitions were inspected, but no current-HEAD workflow pass was verified. No app code, runtime, DB, backup, restore, migration, deployment, payment or customer-data operation was performed; main untouched.
