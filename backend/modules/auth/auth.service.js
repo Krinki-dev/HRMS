@@ -244,8 +244,8 @@ const authService = {
     return { url: target.databaseUrl, tenantId: t.id, subdomain: t.subdomain, t, storageTarget: target };
   },
 
-  async sendOtp(db, tenantId, email, purpose) {
-    const identifier = buildOtpIdentifier(tenantId, email);
+  async sendOtp(db, tenantId, companyId, email, purpose) {
+    const identifier = buildOtpIdentifier(tenantId, companyId, email);
     const otp = crypto.randomInt(100000, 1000000).toString();
     const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
@@ -269,8 +269,8 @@ const authService = {
     return true;
   },
 
-  async verifyOtp(db, tenantId, email, otp, purpose) {
-    const identifier = buildOtpIdentifier(tenantId, email);
+  async verifyOtp(db, tenantId, companyId, email, otp, purpose) {
+    const identifier = buildOtpIdentifier(tenantId, companyId, email);
     const otpRecord = await db.otp_store.findFirst({
       where: {
         identifier,
@@ -298,14 +298,49 @@ const authService = {
     return { valid: true };
   },
 
-  async validateUserLogin(db, email, password) {
-    const user = await db.users.findFirst({
-      where: { email: email.toLowerCase().trim() },
-      include: { role: true, employee: true },
+  async lookupCompanies(db, email) {
+    const normalizedEmail = email.toLowerCase().trim();
+    const rows = await db.users.findMany({
+      where: { email: normalizedEmail, is_active: true },
+      select: {
+        company_id: true,
+        company: { select: { name: true, is_active: true, deleted_at: true } },
+      },
+      orderBy: { company_id: 'asc' },
+    });
+    const byCompany = new Map();
+    for (const row of rows) {
+      if (!row.company?.is_active || row.company.deleted_at) continue;
+      if (!byCompany.has(row.company_id)) {
+        byCompany.set(row.company_id, {
+          companyId: row.company_id,
+          companyName: row.company.name || 'Company',
+        });
+      }
+    }
+    return [...byCompany.values()];
+  },
+
+  async validateUserLogin(db, email, password, companyId = null) {
+    const normalizedEmail = email.toLowerCase().trim();
+    const candidates = await db.users.findMany({
+      where: {
+        email: normalizedEmail,
+        is_active: true,
+        ...(companyId ? { company_id: companyId } : {}),
+      },
+      include: { role: true, employee: true, company: true },
     });
 
-    if (!user) return { success: false, code: 'INVALID_CREDENTIALS' };
-    if (!user.is_active) return { success: false, code: 'ACCOUNT_INACTIVE' };
+    if (!companyId && candidates.length > 1) {
+      return { success: false, code: 'COMPANY_SELECTION_REQUIRED' };
+    }
+    if (candidates.length !== 1) return { success: false, code: 'INVALID_CREDENTIALS' };
+
+    const user = candidates[0];
+    if (!user.is_active || !user.company?.is_active || user.company.deleted_at) {
+      return { success: false, code: 'ACCOUNT_INACTIVE' };
+    }
 
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return { success: false, code: 'INVALID_CREDENTIALS' };
