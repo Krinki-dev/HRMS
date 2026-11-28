@@ -253,9 +253,9 @@ All tasks begin as **Not Started**. A source-code commit alone does not complete
 - **Scope:** Private employee photos/documents/receipts, MinIO least privilege, ClamAV config, file size/type/content checks, signed downloads, no public static sensitive file paths.
 - **Acceptance:** Uploads fail closed without scanner; default MinIO credentials rejected in production; cross-tenant downloads denied; signed URLs expire; cleanup and malware rollback work.
 
-#### HRMS-F-012 — Durable automation queue and scheduler reliability
-- **Findings:** GAP-0061 plus GAP-0050 scheduler dependency.
-- **Scope:** Replace in-memory-only KYC queue with durable Redis/BullMQ or approved PostgreSQL lease queue; recover pending tasks after restart; ensure duplicate-safe workers.
+#### HRMS-F-012 — Durable KYC automation queue
+- **Findings:** GAP-0061.
+- **Scope:** Replace in-memory-only KYC queue with durable Redis/BullMQ or approved PostgreSQL lease queue; recover pending tasks after restart; ensure duplicate-safe workers. Backup scheduling remains exclusively in HRMS-F-007.
 - **Acceptance:** Restart, retry, concurrent worker and dead-letter tests pass; no task silently disappears.
 
 #### HRMS-F-013 — Deployment and environment readiness
