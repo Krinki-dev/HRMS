@@ -99,6 +99,7 @@ const ctrl = {
           }
           eventNotifier.notifyLeaveDecision({
             db: req.db,
+            tenantId: req.user.centralTenantId,
             companyId: req.user.companyId,
             application,
             decision: 'approved',
@@ -145,6 +146,7 @@ const ctrl = {
           }
           eventNotifier.notifyLeaveDecision({
             db: req.db,
+            tenantId: req.user.centralTenantId,
             companyId: req.user.companyId,
             application,
             decision: 'rejected',
