@@ -241,3 +241,12 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - Central RLS migration `20261128_central_rls_policy_completion.sql` was applied only to the disposable CI database. No production DB was accessed.
 - **Important rollout blocker:** legacy Settings DB-config endpoints still create a direct Prisma client and query `tenant_db_config` without RLS context. Resolve/disable that path and verify app role is not owner/superuser/BYPASSRLS before applying Central RLS to production.
 - No production migration, deployment, customer-data operation or payment; main untouched.
+
+
+## Cycle 01 Phase 26 — PostgreSQL migration baseline and deployment gate (2026-11-28)
+
+- Evidence: [CYCLE-01-IMPLEMENTATION-PHASE-26.md](cycles/CYCLE-01-IMPLEMENTATION-PHASE-26.md).
+- **GAP-0003 / GAP-0041:** the operational Prisma schema is PostgreSQL, but the legacy migration history sits in a directory literally named `migrations     11223`; its lock provider is `mssql` and its initial SQL uses SQL Server syntax. No discoverable canonical `backend/prisma/migrations` history exists.
+- **GAP-0051:** Railway starts `apply_canonical_schema_migration.js` before the app. The script applies one Central SQL file on every deploy and catches errors without failing startup. This is not a controlled, fail-closed migration release gate.
+- Recommended D-005 architecture: independent Central and tenant Prisma schemas/migration histories, generated baselines, read-only existing-schema adoption, serialized migration worker for shared/dedicated targets, and deploy readiness gated on schema version.
+- No baseline was generated, no database was connected, no migration or deploy executed. Railway config remains unchanged pending approval.
