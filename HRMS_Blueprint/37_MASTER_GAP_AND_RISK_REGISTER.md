@@ -259,5 +259,14 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - **GAP-0026 remains Open:** training detail now filters employee joins by company and removes foreign-company nomination/attendance rows. Continue full training lifecycle/source audit before closure.
 - **GAP-0029 is Fixed — Awaiting E2E:** payroll controller DB arguments corrected; payslip/run/employee and bonus/run/employee ownership checks added; CI regression tests pass. Authenticated API E2E remains.
 - **GAP-0036 is Fixed — Awaiting E2E:** employee bank/document child mutation methods validate the parent employee company; CI regression tests pass. Authenticated API E2E remains.
-- **GAP-0065 remains Open — residual password-reset path:** Phase 24 fixed login workspace selection and refresh binding, but forgot-password fallback still uses unordered `LIMIT 1` when no request tenant is present. Require explicit workspace selection or safe ambiguous-membership handling; add multi-membership password-reset tests.
+- **GAP-0065 — password-reset residual addressed in source, verification pending:** Phase 29 removes the unordered `LIMIT 1` fallback, requires a selected eligible workspace for ambiguous memberships, binds reset-token persistence and email delivery to the same tenant DB, and adds selector/regression tests. Status: Fixed — Awaiting Verification; exact-head CI and authenticated password-reset E2E are still pending.
 - HRMS-A-010 and HRMS-D-004 remain In Progress. Do not close the broader task based on this increment.
+
+
+## Cycle 01 Phase 29 — password-reset workspace binding
+
+- Evidence: `cycles/CYCLE-01-IMPLEMENTATION-PHASE-29.md`.
+- **GAP-0065:** source-level arbitrary workspace fallback removed. Multi-membership forgot-password now requires an explicit eligible workspace; request-host/body tenant mismatch is rejected; reset token and email use the same selected tenant DB.
+- Added `backend/shared/utils/passwordResetWorkspace.js` and `backend/test/password-reset-workspace.test.js`; added a workspace chooser to `ForgotPasswordPage.jsx`.
+- Status: **Fixed — Awaiting Verification**. Regression tests and exact-head CI have not yet been observed passing; authenticated password-reset E2E remains unrun.
+- No production DB, migration, deployment, real payment or customer-data operation performed; `main` untouched.
