@@ -15,7 +15,10 @@ const ctrl = {
 
   getToday: async (req, res) => {
     try { sendSuccess(res, await svc.getToday(req.db, req.user.employeeId, req.user.companyId)); }
-    catch (e) { sendError(res, ERROR_CODES.SERVER, 'Failed.', 500); }
+    catch (e) {
+      if (e.message === 'NOT_FOUND') return sendError(res, ERROR_CODES.NOT_FOUND, 'Employee not found.', 404);
+      sendError(res, ERROR_CODES.SERVER, 'Failed.', 500);
+    }
   },
 
   checkIn: async (req, res) => {
@@ -24,6 +27,7 @@ const ctrl = {
       sendSuccess(res, data, data.message, 201);
     } catch (e) {
       if (e.message === 'ALREADY_CHECKED_IN') return sendError(res, ERROR_CODES.DUPLICATE, 'Already checked in today.');
+      if (e.message === 'NOT_FOUND') return sendError(res, ERROR_CODES.NOT_FOUND, 'Employee not found.', 404);
       sendError(res, ERROR_CODES.SERVER, 'Check-in failed.', 500);
     }
   },
@@ -35,6 +39,7 @@ const ctrl = {
     } catch (e) {
       if (e.message === 'NOT_CHECKED_IN')    return sendError(res, ERROR_CODES.NOT_FOUND, 'Not checked in today.');
       if (e.message === 'ALREADY_CHECKED_OUT') return sendError(res, ERROR_CODES.DUPLICATE, 'Already checked out today.');
+      if (e.message === 'NOT_FOUND') return sendError(res, ERROR_CODES.NOT_FOUND, 'Employee not found.', 404);
       sendError(res, ERROR_CODES.SERVER, 'Check-out failed.', 500);
     }
   },
@@ -113,6 +118,7 @@ const ctrl = {
       sendSuccess(res, null, 'Regularization rejected.');
     } catch (e) {
       if (e.message === 'REASON_REQUIRED') return sendError(res, ERROR_CODES.VALIDATION, 'Rejection reason is required.');
+      if (e.message === 'NOT_FOUND') return sendError(res, ERROR_CODES.NOT_FOUND, 'Request not found.', 404);
       sendError(res, ERROR_CODES.SERVER, 'Failed.', 500);
     }
   },
