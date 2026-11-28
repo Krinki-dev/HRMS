@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setTenantChoices([]); setSelectedTenantId(''); }}
                 disabled={loading || !!searchParams.get('email')} // Disable if loading or pre-filled from URL
                 placeholder="your@email.com"
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm" // The disabled attribute is already handled above
