@@ -57,82 +57,26 @@ module.exports = {
   updateBranch:  wrap(async (req, res) => { const tenantId = await resolveCompanyId(req); return sendSuccess(res, await svc.updateBranch(req.db, tenantId, req.params.id, req.body), 'Branch updated.'); }),
   deleteBranch:  wrap(async (req, res) => { const tenantId = await resolveCompanyId(req); await svc.deleteBranch(req.db, tenantId, req.params.id); sendSuccess(res, null, 'Branch deleted.'); }),
   
-  getDbConfig: async (req, res) => {
-    try {
-      const { PrismaClient } = require('@prisma/client');
-      const central = new PrismaClient({ datasources: { db: { url: process.env.CENTRAL_DATABASE_URL } } });
-      const tenantId = await resolveCompanyId(req);
-      let cfg = await central.tenant_db_config.findFirst({ where: { company_id: tenantId } });
-      await central.$disconnect();
-      if (!cfg) cfg = { db_mode:'local', local_db_type:'sqlserver', local_db_host:'localhost',
-                        local_db_port:55747, local_db_name:'hrms_dev_tenant',
-                        local_db_user:null, cloud_db_url:null, sync_interval_min:5 };
-      const safe = { ...cfg };
-      delete safe.local_db_pass;
-      return res.json({ success:true, data:safe });
-    } catch(e) { return res.status(500).json({ success:false, message:e.message }); }
-  },
-
-  updateDbConfig: async (req, res) => {
-    try {
-      const { dbMode, localDbType, localDbHost, localDbPort, localDbName,
-              localDbUser, localDbPass, cloudDbUrl, syncIntervalMin } = req.body;
-      if (!['local','cloud'].includes(dbMode))
-        return res.status(400).json({ success:false, message:'dbMode must be local or cloud' });
-      if (dbMode === 'cloud' && !cloudDbUrl?.trim())
-        return res.status(400).json({ success:false, message:'Cloud database URL is required' });
-      if (dbMode === 'local' && (!localDbHost || !localDbName))
-        return res.status(400).json({ success:false, message:'Host and database name are required' });
-      const { PrismaClient } = require('@prisma/client');
-      const central = new PrismaClient({ datasources: { db: { url: process.env.CENTRAL_DATABASE_URL } } });
-      const data = {
-        db_mode:           dbMode,
-        local_db_type:     localDbType   || 'sqlserver',
-        local_db_host:     localDbHost   || null,
-        local_db_port:     localDbPort   ? parseInt(localDbPort) : null,
-        local_db_name:     localDbName   || null,
-        local_db_user:     localDbUser   || null,
-        cloud_db_url:      dbMode === 'cloud' ? (cloudDbUrl?.trim() || null) : null,
-        sync_interval_min: syncIntervalMin ? parseInt(syncIntervalMin) : 5,
-      };
-      if (localDbPass?.trim()) data.local_db_pass = localDbPass.trim();
-      const tenantId = await resolveCompanyId(req);
-      await central.tenant_db_config.upsert({
-        where:  { company_id: tenantId },
-        create: { company_id: tenantId, ...data },
-        update: data,
-      });
-      await central.$disconnect();
-      return res.json({ success:true, data:null,
-        message: dbMode === 'cloud'
-          ? 'Saved. Update DEV_TENANT_DATABASE_URL in .env and restart.'
-          : 'Saved. Using local SQL Server.' });
-    } catch(e) { return res.status(500).json({ success:false, message:e.message }); }
-  },
-
-  testDbConnection: async (req, res) => {
-    try {
-      const { dbMode, cloudDbUrl, localDbHost, localDbPort, localDbName, localDbUser, localDbPass } = req.body;
-      let testUrl;
-      if (dbMode === 'cloud') {
-        testUrl = cloudDbUrl;
-      } else {
-        const auth = localDbUser
-          ? `;user=${localDbUser};password=${localDbPass || ''}`
-          : ';integratedSecurity=true';
-        testUrl = `sqlserver://${localDbHost}:${localDbPort || 55747};database=${localDbName};trustServerCertificate=true${auth}`;
-      }
-      if (!testUrl) return res.status(400).json({ success:false, message:'No URL to test' });
-      const { PrismaClient } = require('@prisma/client');
-      const test = new PrismaClient({ datasources: { db: { url: testUrl } } });
-      await test.$queryRaw`SELECT 1 AS test`;
-      await test.$disconnect();
-      return res.json({ success:true, data:null, message:'Connection successful ✓' });
-    } catch(e) {
-      return res.status(400).json({ success:false,
-        message: 'Connection failed: ' + e.message.split('\n')[0] });
-    }
-  },
+  // Legacy tenant_db_config settings are intentionally disabled. Active
+  // tenant storage is controlled by the Central provisioning lifecycle.
+  // These endpoints previously opened a direct Prisma client (bypassing
+  // Central RLS context), stored raw credentials and accepted arbitrary DB
+  // URLs/hosts. Keep explicit 410 responses for old clients; never connect.
+  getDbConfig: (_req, res) => res.status(410).json({
+    success: false,
+    code: 'LEGACY_DB_CONFIG_DISABLED',
+    message: 'Legacy database settings are disabled. Tenant storage is managed by secure platform provisioning.',
+  }),
+  updateDbConfig: (_req, res) => res.status(410).json({
+    success: false,
+    code: 'LEGACY_DB_CONFIG_DISABLED',
+    message: 'Legacy database settings are disabled. Contact support for tenant storage changes.',
+  }),
+  testDbConnection: (_req, res) => res.status(410).json({
+    success: false,
+    code: 'LEGACY_DB_CONFIG_DISABLED',
+    message: 'Direct database connection testing is disabled.',
+  }),
 
 };
 
