@@ -189,3 +189,13 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - **GAP-0065 (P1):** email lookup and tenant DB resolution select an unordered `LIMIT 1` row from central_user_index although schema permits same email in multiple tenants. Lookup returns one subdomain without explicit tenant choice.
 - Positive control: current authStore persistence excludes accessToken; token is held in memory and legacy stored values are cleared. Correct the stale statement in frozen decisions; retain memory-only requirement and add regression tests.
 - No code, credentials, DB, browser, test, migration or deployment operation performed; main untouched.
+
+
+## Cycle 01 Phase 22 — P0 revalidation and gap deduplication (2026-11-28)
+
+- Evidence: [CYCLE-01-SOURCE-AUDIT-PHASE-22.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-22.md).
+- GAP-0020 remains P0: WebSocket company broadcast still ignores companyId and sends to all connected sockets.
+- GAP-0021 remains P0: subscription.routes.js passes undefined paymentController.handleWebhook; server mounts this router directly. Boot failure is expected but not runtime reproduced.
+- **GAP-0030 disposition correction:** operational DB RLS is not required by frozen architecture. Tenant business tables intentionally rely on tenant DB/schema routing plus mandatory company_id filters. Mark the original “missing operational RLS” finding Superseded / Not a defect under frozen design. GAP-0002 remains P0 until shared-schema scoping and negative integration tests pass. Central RLS gaps GAP-0047/0048 remain open.
+- Deduplication: GAP-0053 rolls into GAP-0035; GAP-0054 rolls into GAP-0034; GAP-0052 expands GAP-0006; GAP-0059 is residual GAP-0032; GAP-0058 is billing request payload only and GAP-0060 is response unwrapping; GAP-0033 is superseded at source level.
+- No boot, test, DB, WebSocket, webhook, payment, migration, deployment or application code operation performed; main untouched.
