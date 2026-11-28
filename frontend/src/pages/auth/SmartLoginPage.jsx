@@ -752,7 +752,7 @@ export default function SmartLoginPage() {
                   name="email"
                   autoComplete="email"
                   value={email}
-                  onChange={e => { setEmail(e.target.value); setError(''); setTenantChoices([]); setSelectedTenantId(''); }}
+                  onChange={e => { setEmail(e.target.value); setError(''); setTenantChoices([]); setSelectedTenantId(''); setCompanyChoices([]); setSelectedCompanyId(''); setCompany(null); }}
                   onKeyDown={e => e.key === 'Enter' && fireLookup()}
                   placeholder="you@yourcompany.com"
                   style={S.input(primaryColor)}
