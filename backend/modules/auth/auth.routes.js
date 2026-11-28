@@ -650,6 +650,7 @@ router.post('/change-password', auth, async (req, res) => {
     }
     eventNotifier.notifyPasswordChanged({
       db: req.db,
+      tenantId: req.tenant?.id || null,
       companyId: changedUser.company_id,
       userId: changedUser.id,
     }).catch((err) => {
