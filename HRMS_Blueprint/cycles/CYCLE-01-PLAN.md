@@ -148,6 +148,7 @@ All tasks begin as **Not Started**. A source-code commit alone does not complete
 #### HRMS-D-004 — Shared-schema isolation and Central RLS verification
 
 - **Stream/module:** D — PostgreSQL schemas, RLS, all company-scoped services.
+- **Implementation note (Phase 25):** all 17 Central tables now have explicit RLS policies in both the incremental migration and fresh-install bootstrap. Static parity tests and a real PostgreSQL non-owner `hrms_app` pooling test pass in CI. Before production rollout, resolve legacy Settings direct-client access and obtain a DBA report proving the deployed role is not owner/superuser/BYPASSRLS. Full operational query ownership matrix remains open.
 - **Findings:** GAP-0002, GAP-0030 (reclassified under frozen architecture), GAP-0047, GAP-0048, GAP-0046.
 - **Dependencies:** HRMS-D-003.
 - **Implementation steps:**
@@ -337,7 +338,7 @@ Every finding from the master register is accounted for below. “Merged” mean
 | GAP-0028 | HRMS-F-011 | Open P1 — receipt upload security/ClamAV |
 | GAP-0029 | HRMS-A-010 | Open P1 — payroll controller/service contract |
 | GAP-0030 | Superseded under frozen design | Operational DB intentionally has no RLS; isolation remains tracked under GAP-0002/HRMS-D-004 |
-| GAP-0031 | HRMS-F-014 | Open P1 — PostgreSQL integration CI |
+| GAP-0031 | HRMS-F-014 | Fixed for backend integration execution — 5 DB suites run with zero skips at Phase 25 SHA; frontend E2E remains GAP-0019 |
 | GAP-0032 | HRMS-E-009 | Partially superseded; missing salary-components endpoint remains GAP-0059 |
 | GAP-0033 | Superseded at source level; HRMS-F-011 | Routes now exist; storage/scanner/reviewer runtime verification remains |
 | GAP-0034 | HRMS-E-009 | Open P2 — notification route mismatch |
@@ -353,8 +354,8 @@ Every finding from the master register is accounted for below. “Merged” mean
 | GAP-0044 | HRMS-C-006 | Open P1 — encrypt DB credentials and redact responses |
 | GAP-0045 | HRMS-C-006 | Open P2 — legacy DB config UI vs canonical routing |
 | GAP-0046 | HRMS-D-004 | Open P1 — same-company composite FK integrity |
-| GAP-0047 | HRMS-D-004 | Open P1 — Central RLS policy coverage |
-| GAP-0048 | HRMS-D-004 / HRMS-D-005 | Open P1 — fresh-install RLS/bootstrap parity |
+| GAP-0047 | HRMS-D-004 | Fixed in source — 17-table migration/bootstrap policies and RLS pooling test; live app-role/catalog verification pending |
+| GAP-0048 | HRMS-D-004 / HRMS-D-005 | Fixed in source — 17-table bootstrap/migration parity test; clean-install execution and live catalog comparison pending |
 | GAP-0049 | HRMS-D-018 | Open P2 — evidence-based index review |
 | GAP-0050 | HRMS-F-007 | Open P1 — scheduler wiring and schedule field mismatch |
 | GAP-0051 | HRMS-F-013 | Open P1 — fail deployment on migration errors |
