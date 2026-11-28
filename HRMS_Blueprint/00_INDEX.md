@@ -171,3 +171,8 @@ Product domain:     PRODUCT_DOMAIN env var
 ## Latest Cycle 01 source audit
 
 - Phase 21 — authentication tenant selection, encryption key fallback and access-token persistence revalidation: [CYCLE-01-SOURCE-AUDIT-PHASE-21.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-21.md)
+
+
+## Latest Cycle 01 source audit
+
+- Phase 22 — P0 WebSocket/webhook revalidation, operational RLS decision correction and gap deduplication: [CYCLE-01-SOURCE-AUDIT-PHASE-22.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-22.md)
