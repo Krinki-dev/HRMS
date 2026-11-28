@@ -1220,3 +1220,14 @@ This block supersedes older branch/CI statements above where they conflict.
 - Positive correction: current authStore excludes accessToken from persistence and clears legacy localStorage tokens; preserve this behavior and test it.
 - No application code, credentials, DB, test, browser, migration or deployment operation performed; main untouched.
 - Next: reconcile full findings register, create Cycle 01 prioritized P0/P1 plan, then independently verify plan before application changes.
+
+
+## CURRENT HANDOFF — Cycle 01 Phase 22 (2026-11-28)
+
+- Latest completed audit: `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-22.md`.
+- GAP-0020 P0 is still source-confirmed: company WebSocket broadcasts are not scoped by companyId.
+- GAP-0021 P0 is still source-confirmed: subscription router references missing paymentController.handleWebhook export; boot failure expected but not run.
+- GAP-0030 corrected: operational tables intentionally have no RLS under frozen design; shared public isolation relies on tenant routing + company_id filters. GAP-0002 remains P0 until proved.
+- Duplicate findings consolidated in the Phase22 report and master register.
+- No app code, tests, server boot, DB, webhook, payment, migration or deployment operation performed; main untouched.
+- Next: prepare Cycle 01 improvement plan from consolidated findings, then independently verify it before any code implementation.
