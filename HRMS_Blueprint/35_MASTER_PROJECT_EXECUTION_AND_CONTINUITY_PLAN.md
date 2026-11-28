@@ -374,3 +374,20 @@ This section supersedes Phase 29 as the current continuation point.
 - Phase 29 GAP-0065 and HRMS-D-003 remain In Progress pending exact-head CI and authenticated login/OTP/refresh/password-reset E2E.
 - **Next exact task:** continue HRMS-D-004 operational query ownership tracing, then cross-company negative tests and composite same-company FK feasibility/data checks. Prepare a non-production Central catalog/role evidence path.
 - `main` untouched. No production/customer DB connection, SQL, migration, deployment, real payment, destructive operation or customer-data modification.
+
+
+---
+
+## CURRENT EXECUTION OVERRIDE — Cycle 01 Phase 31 (2026-11-28)
+
+This supersedes the Phase 30 next-task line.
+
+- Latest report: `cycles/CYCLE-01-IMPLEMENTATION-PHASE-31.md`.
+- Phase 31 plan/verification: `cycles/CYCLE-01-PLAN-PHASE-31.md` and `cycles/CYCLE-01-PLAN-VERIFICATION-PHASE-31.md`.
+- Source hardening: password login, OTP and forgot-password resolve the operational user through Central `central_user_index.user_id` for the selected tenant and validate the operational companyId. OTP identity includes tenant + company + email.
+- Do not query shared public operational users by email alone; no Central tenantId exists on those rows.
+- GAP-0067 remains Fixed — Awaiting Verification. GAP-0068 remains Open / Blocked because the current Central index cannot map multiple operational company accounts for the same email within one tenant. Design an explicit Central tenant-user-company membership mapping and backfill under HRMS-D-005; no DDL or production change is authorized.
+- HRMS-D-003 and D-004 remain In Progress. D-005 migration baseline remains blocked.
+- Full backend tests, frontend build, exact-head CI and authenticated auth E2E remain pending. Isolated OTP helper smoke test: 4/4 passed only.
+- Next exact task: design the Central membership mapping/backfill and adoption plan as a source/documentation-only D-005 subtask; then complete auth E2E plan and resume D-004 query audit.
+- `main` untouched. No production DB, SQL, migration, deployment, payment, deletion or customer-data change.
