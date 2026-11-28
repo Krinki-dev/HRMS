@@ -12,9 +12,34 @@ on:
 jobs:
   backend-tests:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     defaults:
       run:
         working-directory: backend
+    env:
+      CI_POSTGRES_ADMIN_URL: postgresql://postgres:test@localhost:5432/postgres
+      CENTRAL_DATABASE_URL: postgresql://postgres:test@localhost:5432/hrms_central_test?schema=public
+      AUTH_TEST_CENTRAL_DATABASE_URL: postgresql://postgres:test@localhost:5432/hrms_central_test?schema=public
+      AUTH_TEST_JWT_SECRET: auth-integration-test-secret-32-chars-min
+      DEV_TENANT_DATABASE_URL: postgresql://postgres:test@localhost:5432/hrms_tenant_test?schema=public
+      DEV_TENANT_DIRECT_URL: postgresql://postgres:test@localhost:5432/hrms_tenant_test?schema=public
+      PAYROLL_TEST_TENANT_DATABASE_URL: postgresql://postgres:test@localhost:5432/hrms_tenant_test?schema=public
+      COMPLIANCE_TEST_TENANT_DATABASE_URL: postgresql://postgres:test@localhost:5432/hrms_tenant_test?schema=public
+      TENANT_MIGRATION_TEST_DATABASE_URL: postgresql://postgres:test@localhost:5432/hrms_tenant_test?schema=public
+      RLS_TEST_APP_DATABASE_URL: postgresql://hrms_app:app_pw@localhost:5432/hrms_central_test?schema=public
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,9 +51,19 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - name: Install dependencies
         run: npm ci --ignore-scripts
+      - name: Create disposable test databases
+        run: node test/ci/create-test-databases.js
       - name: Generate Prisma clients
         run: |
           npx prisma generate --schema=prisma/schema.prisma
           npx prisma generate --schema=prisma/central.prisma
+      - name: Push Central test schema
+        run: npx prisma db push --schema=prisma/central.prisma --skip-generate --accept-data-loss
+      - name: Push tenant test schema
+        run: npx prisma db push --schema=prisma/schema.prisma --skip-generate --accept-data-loss
+      - name: Apply Central RLS policies
+        run: npx prisma db execute --schema=prisma/central.prisma --file=db-migrations/20261128_central_rls_policy_completion.sql
+      - name: Seed Central auth and RLS fixtures
+        run: npx prisma db execute --schema=prisma/central.prisma --file=test/ci/central-rls-seed.sql
       - name: Run backend tests
         run: npm test
