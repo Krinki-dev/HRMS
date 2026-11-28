@@ -7,6 +7,7 @@ const path = require('node:path');
 
 const authSource = fs.readFileSync(path.join(__dirname, '../modules/auth/auth.service.js'), 'utf8');
 const platformSource = fs.readFileSync(path.join(__dirname, '../modules/platform/platform.service.js'), 'utf8');
+const authRoutesSource = fs.readFileSync(path.join(__dirname, '../modules/auth/auth.routes.js'), 'utf8');
 
 test('email lookup only exposes active tenants with ready storage', () => {
   const start = authSource.indexOf('async lookupEmail');
@@ -18,6 +19,13 @@ test('email lookup only exposes active tenants with ready storage', () => {
   assert.match(lookup, /t\.storage_status = 'ready'/);
   assert.match(lookup, /t\.deleted_at IS NULL/);
   assert.match(lookup, /ORDER BY LOWER\(t\.name\), ui\.company_id/);
+});
+
+
+test('multi-workspace email lookup returns explicit choices instead of a false suspended-account response', () => {
+  assert.match(authRoutesSource, /choices: result\.choices \|\| \[\]/);
+  assert.match(authRoutesSource, /result\.is_active === false/);
+  assert.match(authSource, /choices,\s*\.\.\.\(choices\.length === 1 \? choices\[0\] : \{\}\)/);
 });
 
 test('admin-email fallback excludes inactive, provisioning and deleted tenants', () => {
