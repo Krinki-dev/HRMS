@@ -348,9 +348,10 @@ exports.verifyPayment = async (req, res) => {
  * Creates a PhonePe Order for an unpaid invoice.
  */
 exports.createPhonePeOrder = async (_req, res) => {
-  return sendError(res, ERROR_CODES.VALIDATION, 'PhonePe checkout is temporarily disabled until the current Standard Checkout v2 integration is configured and verified.', 503);
+  return sendError(res, ERROR_CODES.VALIDATION,
+    'PhonePe checkout is temporarily disabled until the current Standard Checkout v2 integration is configured and verified.',
+    503);
 };
-
 
 /**
  * Handles PhonePe Webhooks for asynchronous payment status updates.
