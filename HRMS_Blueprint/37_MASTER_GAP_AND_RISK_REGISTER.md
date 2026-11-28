@@ -199,3 +199,14 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - **GAP-0030 disposition correction:** operational DB RLS is not required by frozen architecture. Tenant business tables intentionally rely on tenant DB/schema routing plus mandatory company_id filters. Mark the original “missing operational RLS” finding Superseded / Not a defect under frozen design. GAP-0002 remains P0 until shared-schema scoping and negative integration tests pass. Central RLS gaps GAP-0047/0048 remain open.
 - Deduplication: GAP-0053 rolls into GAP-0035; GAP-0054 rolls into GAP-0034; GAP-0052 expands GAP-0006; GAP-0059 is residual GAP-0032; GAP-0058 is billing request payload only and GAP-0060 is response unwrapping; GAP-0033 is superseded at source level.
 - No boot, test, DB, WebSocket, webhook, payment, migration, deployment or application code operation performed; main untouched.
+
+
+## Cycle 01 Phase 23 — implementation and CI evidence (2026-11-28)
+
+- Detailed report: [CYCLE-01-IMPLEMENTATION-PHASE-23.md](cycles/CYCLE-01-IMPLEMENTATION-PHASE-23.md).
+- **GAP-0020 (P0):** WebSocket ticket/socket identity and user/company delivery now use the verified Central tenant ID + operational company ID pair. Focused unit tests passed at backend CI SHA `97c60ad1ed3549d4c780c8506f871ada8e7cd1bb`. Status: Fixed — Awaiting real WebSocket integration verification.
+- **GAP-0021 (P0):** current payment controller exports `handleWebhook`; subscription router registers a callable handler; router-load test passed. The missing-export defect is Verified Closed. Full successful settlement/replay tests remain in HRMS-C-002.
+- **GAP-0066 (P0, new):** `payment.controller.js` had an unterminated `createPhonePeOrder` function because the closing brace was inside a block comment. CI reported `SyntaxError: Unexpected end of input`. Dead commented code was removed and the disabled handler properly closed. Status: Verified Closed by backend CI at SHA `97c60ad1ed3549d4c780c8506f871ada8e7cd1bb`.
+- Backend Tests workflow run [46103433237](https://github.com/Krinki-dev/HRMS/actions/runs/46103433237): success; 171 discovered, 166 passed, 0 failed, 5 skipped.
+- This CI result is for the exact SHA above, not the latest branch HEAD. Later auth/session and documentation commits were still running CI at report time. Five skipped tests mean PostgreSQL/RLS integration is not fully proven.
+- No live WebSocket network test, production server boot, database migration, production payment or deployment was performed; main untouched.
