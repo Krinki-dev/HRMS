@@ -86,7 +86,7 @@ These models contain `employee_id`. Every query must prove the employee belongs 
 | `training_feedback` | employee_id    String | training → trainings (training_id) |
 | `training_nominations` | employee_id  String | training → trainings (training_id) |
 
-### 1.3 Parent-owned child models (13 models)
+### 1.3 Parent/user-owned child models (13 models)
 
 These models inherit ownership through the listed parent. Query the parent through the authenticated company's ownership predicate before reading or mutating the child.
 
@@ -103,6 +103,8 @@ These models inherit ownership through the listed parent. Query the parent throu
 | `offers` | — | candidate → candidates (candidate_id) |
 | `password_resets` | user_id    String | user → users (user_id) |
 | `survey_questions` | — | survey → surveys (survey_id) |
+
+**User-owned exception:** `temp_auth_tokens` is included in this group because it carries `user_id`, but the Prisma schema declares no relation/FK. Query ownership must bind `user_id` to the authenticated/resolved user; add referential integrity during the migration-baseline review.
 | `temp_auth_tokens` | user_id    String | — |
 | `token_blacklist` | user_id    String | user → users (user_id) |
 
