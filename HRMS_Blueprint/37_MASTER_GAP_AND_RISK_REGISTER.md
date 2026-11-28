@@ -312,3 +312,13 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - **GAP-0068:** Login, OTP and forgot-password now anchor the operational user through Central `central_user_index.user_id` for the selected tenant and bind the resolved operational companyId. The unsafe alternative of searching all shared-public operational users by email was rejected.
 - **GAP-0068 remains Open / Blocked on schema mapping:** Central index uniqueness `(email, Central tenant_id)` supports only one operational userId for an email/tenant. Multi-company same-email selection requires a Central tenant-user-company mapping and legacy backfill under HRMS-D-005. No migration was created.
 - Phase 31 evidence: `cycles/CYCLE-01-IMPLEMENTATION-PHASE-31.md`.
+
+
+## Cycle 01 Phase 33 — GAP-0069 forgot-password identity resolver argument mismatch
+
+- **GAP-0069 (P1, Auth/Identity):** the forgot-password handler called `resolveCompanyForEmail(activeDb, normalizedEmail, requestedCompanyId)`, but the helper requires `(activeDb, tenantId, email, requestedCompanyId)`. The call shifted the values and omitted the normalized email, preventing correct tenant-indexed user resolution.
+- Evidence: `backend/modules/auth/auth.routes.js` helper declaration and forgot-password handler; `backend/modules/auth/auth.service.js` resolver signature; `backend/test/auth-company-selection.test.js` previously asserted helper presence but not exact ordered arguments.
+- Fix: pass `activeDb, tenantId, normalizedEmail, requestedCompanyId`; add a regression assertion for the exact ordered call.
+- Commits: route `3ea6243b82d7233cace326d55e4525263af720aa`; regression test `5fcb3f7d36bcc392cb5f14837ac6aee2dbb82d45`; report `07d5973b6fcd4d989c6a890671d6e07684ef77df`.
+- Status: **Fixed — Awaiting Verification**. Post-commit source re-fetch confirms the new call, absence of the old call, and regression assertion. Node test runner, full suite, exact-head CI and authenticated E2E have not been run/verified.
+- This does not resolve GAP-0068's multi-company mapping blocker. No DDL, migration, DB connection, deployment or customer-data operation; `main` untouched.
