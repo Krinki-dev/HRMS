@@ -820,3 +820,17 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Backend Tests run 46105770148: 258 tests, 258 pass, 0 fail, 0 skipped. Tenant Migration PostgreSQL Integration run 46105770068: 1 pass, 0 fail, 0 skipped.
 - Frontend Build run 46104588048 passed at `cb3ebff3cc1fabd0c189ece8df09a01efcf82bd5`; compare confirms no frontend source changes since that SHA.
 - Re-analysis: HRMS-A-010 and HRMS-D-004 remain open. HRMS-D-003 has a forgot-password arbitrary workspace selection residual (GAP-0065). No production operation performed.
+
+
+## 2026-11-28 — Cycle 01 Phase 29 password-reset workspace binding
+
+- Resumed the exact Phase 28 handoff task: `HRMS-D-003`, residual `GAP-0065`.
+- Confirmed the forgot-password route used an unordered Central `LIMIT 1` membership fallback and could select the wrong workspace. The prior implementation also risked writing the reset token in `req.db` while delivering email through a different tenant client.
+- Added `backend/shared/utils/passwordResetWorkspace.js` and `backend/test/password-reset-workspace.test.js`.
+- Updated `backend/modules/auth/auth.routes.js` to require an eligible explicit workspace when membership is ambiguous, reject request-host/body mismatch, and use one selected tenant DB for reset-token storage and email delivery.
+- Updated `frontend/src/pages/auth/ForgotPasswordPage.jsx` to display workspace choices for multi-membership emails and clear stale selections when the email changes.
+- Code commits: helper `3a6a8f8d388c28346fb139a5f307afa1c7102328`; tests `ffca840d666112c3bcf63bdb08f86b0e24ce3be7`; backend route `1b3bc154b44b9bb796aaa7d6ce810ea5c01eea34`; frontend `2891a1107b66a754d7319dda0d43604465416272`; stale-selection fix `e644c3b5e233257c1359ed53b2daef4a1aa9dd5d`.
+- Documentation report: `cycles/CYCLE-01-IMPLEMENTATION-PHASE-29.md`.
+- Test execution and exact-head CI: **Pending / Not Verified**. Do not close GAP-0065 or HRMS-D-003 until these checks and authenticated password-reset E2E pass.
+- No production DB connection, SQL, migration, deployment, real payment, credential change, destructive action or customer-data modification. `main` untouched.
+- Next exact task after verification: resume `HRMS-D-004` operational ownership/query matrix and composite same-company FK review.
