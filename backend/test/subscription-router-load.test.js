@@ -1,5 +1,9 @@
 'use strict';
 
+// PrismaClient validates its datasource URL at construction time. This
+// placeholder is never connected to; the tests exercise route wiring only.
+process.env.CENTRAL_DATABASE_URL ||= 'postgresql://test:test@127.0.0.1:5432/hrms_test?schema=public';
+
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
