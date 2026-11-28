@@ -187,11 +187,8 @@ router.post('/lookup-phone',       lookupLimiter, async (req, res) => {
     if (!result.found) return sendSuccess(res, { found: false });
     return sendSuccess(res, {
       found: true,
-      subdomain: result.subdomain,
-      is_platform_admin: result.is_platform_admin,
-      companyName: result.companyName,
-      logoUrl: result.logoUrl,
-      plan: result.plan,
+      choices: result.choices || [],
+      ...(result.choices?.length === 1 ? result.choices[0] : {}),
     });
   } catch (err) {
     logger.error('[Auth/LookupPhone] Failure:', err);
@@ -209,12 +206,8 @@ router.post('/lookup-employeeid', lookupLimiter, async (req, res) => {
     if (!result.found) return sendSuccess(res, { found: false });
     return sendSuccess(res, {
       found: true,
-      subdomain: result.subdomain,
-      is_platform_admin: result.is_platform_admin,
-      companyName: result.companyName,
-      logoUrl: result.logoUrl,
-      plan: result.plan,
-      email: result.email,
+      choices: result.choices || [],
+      ...(result.choices?.length === 1 ? result.choices[0] : {}),
     });
   } catch (err) {
     logger.error('[Auth/LookupEmployeeId] Failure:', err);
