@@ -756,3 +756,15 @@ Recommendation:
 ## 2026-11-26 audit addendum — provisioning lease schema
 
 The Central tenant schema now includes additive lease metadata (`storage_lease_token`, `storage_lease_expires_at`, `provisioning_attempts`) via `backend/db-migrations/20261126_tenant_provisioning_leases.sql`. These fields are currently unused by registration; they do not resolve the provisioning crash/retry gap. The migration and static schema test have been committed, but exact-head CI and real Central PostgreSQL migration verification remain outstanding. Treat safe retry as an unresolved P0 blocker until application claim logic and crash-window integration tests pass. No production migration was applied.
+
+---
+
+## 2026-11-28 audit addendum — Phase 28 operational ownership and Central context
+
+Phase 28 source review and implementation are recorded in [CYCLE-01-IMPLEMENTATION-PHASE-28.md](cycles/CYCLE-01-IMPLEMENTATION-PHASE-28.md).
+
+- Fixed in source and CI-tested: attendance holiday company ownership; employee bank/document child ownership; payroll payslip/bonus controller contract and run/employee scope; training detail employee join company filter.
+- Reviewed Central query-context helpers and high-risk call paths: `rlsContext.js` uses same-transaction `set_config`; KYC Central data uses tenant-scoped RLS; reviewed auth/platform/billing/brand/payment/subscription/backup call paths use platform-admin transaction context; Settings legacy DB-config path returns 410; tenant deletion remains fail-closed.
+- This is a partial source audit, not an exhaustive sign-off. Continue inventory of all workers, schedulers, exports/reports, WebSockets and admin paths.
+- D-004 blockers remain: complete operational ownership matrix, composite same-company FK review, deployed Central app role owner/superuser/BYPASSRLS proof, and live Central catalog verification. No production DB access or migration was performed.
+- Re-analysis found a D-003 residual: forgot-password fallback in `auth.routes.js` still selects an unordered Central membership with `LIMIT 1` when no tenant context exists. Login selection/refresh binding were corrected in Phase 24; password-reset selection still needs explicit workspace handling.

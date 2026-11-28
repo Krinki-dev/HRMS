@@ -1293,3 +1293,18 @@ This block supersedes older branch/CI statements above where they conflict.
 - Railway app start invokes `apply_canonical_schema_migration.js`; that script catches migration errors and allows server startup to continue. No deploy config changed.
 - No DB connection, baseline generation, migration, deployment or customer data operation performed.
 - Next: complete the remaining operational ownership review and harden source-level RBAC/IDOR findings. Then implement the Central/tenant migration directory split with disposable PostgreSQL CI. Do not execute production migration/deploy without explicit approval.
+
+---
+
+## CURRENT AUTHORITATIVE HANDOFF — Cycle 01 Phase 28 (2026-11-28)
+
+- Latest source implementation report: `HRMS_Blueprint/cycles/CYCLE-01-IMPLEMENTATION-PHASE-28.md`.
+- Working branch: `architecture/postgres-tenant-isolation`; `main` untouched.
+- Phase 28 code commit: `2254f855b884deb51f7f7783d6acae17fd6523c3`.
+- Changes: attendance holiday deletion now checks company ownership; employee bank/document child mutations validate parent employee ownership; payroll controller passes the tenant DB correctly and payslip/bonus operations bind run + employee ownership; training detail filters foreign-company employee joins.
+- Backend CI run 46105770148 passed 258/258, 0 skipped. Tenant PostgreSQL migration integration run 46105770068 passed 1/1, 0 skipped.
+- Frontend Build run 46104588048 passed at `cb3ebff3cc1fabd0c189ece8df09a01efcf82bd5`; no frontend source changed since.
+- HRMS-A-010 remains In Progress; only the Phase 28 subpaths are fixed in source and CI-tested. HRMS-D-004 remains In Progress: full operational query ownership matrix, composite same-company FK review, live Central catalog and deployed app-role ownership/BYPASSRLS remain open.
+- New residual from full re-analysis: forgot-password fallback in `backend/modules/auth/auth.routes.js` still chooses an unordered `LIMIT 1` Central membership when request tenant context is absent. Extend GAP-0065. Login selection/refresh binding have Phase 24 source fixes; real auth E2E remains pending.
+- **Next exact task:** HRMS-D-003 forgot-password explicit workspace selection and multi-membership tests; then resume D-004 operational ownership matrix.
+- No production DB connection, migration, deployment, real payment, destructive tenant operation or customer-data modification occurred. No owner decision is needed for the next source-only task.

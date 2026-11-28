@@ -59,14 +59,14 @@ These are inherited from prior source-audit notes and must be rechecked against 
 | GAP-0026 | B | Training operations ignore companyId for nominations, attendance, feedback and deletion | P1 | Open | Training service methods accept but omit company scoping; cross-company tests |
 | GAP-0027 | B | Asset allocation/return/by-employee operations omit employee or asset company checks | P1 | Open | Asset service methods and controller call contract; cross-company lifecycle tests |
 | GAP-0028 | F | Expense receipt upload has no Multer limits/content filter and bypasses ClamAV | P1 | Open | expenses.routes.js, expenses.service.js and minio upload path; fail-closed upload tests |
-| GAP-0029 | A | Payroll payslip GET/update and bonus delete controller calls omit req.db and misalign service args | P1 | Open | payroll.controller.js vs payroll.service.js signatures; API contract and ownership tests |
+| GAP-0029 | A | Payroll payslip GET/update and bonus delete controller contract and ownership checks | P1 | Fixed — Awaiting E2E | Phase 28: req.db contract corrected; run/employee/bonus ownership scoped; regression tests pass CI; authenticated API E2E remains |
 | GAP-0030 | D | Shared operational public schema has no demonstrated company/tenant RLS coverage | P0 | Open | Operational Prisma table inventory + SQL RLS policy scan + non-owner runtime role tests |
 | GAP-0031 | F | RLS/auth/payroll/compliance PostgreSQL integration suites are not configured in standard backend CI | P1 | Open | Test README env requirements vs backend workflow; configure disposable DB roles/services and fail on required skips |
 | GAP-0032 | E | Onboarding wizard calls missing progress/save/complete endpoints and mismatched payroll salary-components endpoint | P1 | Open | OnboardingWizard API calls vs platform/subscription/payroll mounted routes |
 | GAP-0033 | E | Company document upload/review UI endpoints are absent despite Central metadata tables | P1 | Open | CompanyDocumentsStep/AdminDocuments/adminApi vs platform/admin mounted routes; secure file workflow absent |
 | GAP-0034 | E | Notification settings frontend URL differs from mounted notification config route | P2 | Open | settingsApi/adminApi /settings/notifications vs server mount /config/notifications |
 | GAP-0035 | F | PostgreSQL backup dumps are gzip-compressed but not application-layer encrypted before cloud upload | P1 | Open | backupService.js pg_dump/gzip → Google Drive/OneDrive upload; design key management and restore/decrypt tests |
-| GAP-0036 | A | Employee bank/document update/delete service methods omit company ownership checks | P1 | Open | employees.service.js child-record lookups use only child ID + employee ID; cross-company tests |
+| GAP-0036 | A | Employee bank/document update/delete service methods omit company ownership checks | P1 | Fixed — Awaiting E2E | Phase 28 validates parent employee company before child lookup/write; negative regression tests pass CI; authenticated API E2E remains |
 | GAP-0037 | E/F | Employee photos are stored under a public static /uploads directory with no read authorization | P1 | Open — Product Visibility Verify | employees.routes.js upload path + server.js express.static; private access or explicit public-avatar consent |
 | GAP-0038 | F | Relational XLSX schema/validator is not wired to actual workbook import/export; current employee pipeline is JSON bulk import + CSV | P2 | Open | No XLSX parser/writer or transactional reusable import/export route; add end-to-end roundtrip tests |
 | GAP-0039 | F | Employee CSV export quotes fields but does not neutralize spreadsheet formula injection | P1 | Open | downloadExportCsv escapeCsv helper; formula-leading/control-character export tests |
@@ -250,3 +250,14 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - **GAP-0051:** Railway starts `apply_canonical_schema_migration.js` before the app. The script applies one Central SQL file on every deploy and catches errors without failing startup. This is not a controlled, fail-closed migration release gate.
 - Recommended D-005 architecture: independent Central and tenant Prisma schemas/migration histories, generated baselines, read-only existing-schema adoption, serialized migration worker for shared/dedicated targets, and deploy readiness gated on schema version.
 - No baseline was generated, no database was connected, no migration or deploy executed. Railway config remains unchanged pending approval.
+
+---
+
+## Cycle 01 Phase 28 — gap dispositions and residuals
+
+- **GAP-0018 remains Open:** Phase 28 fixed the holiday deletion company-scope subpath and added 404 handling. The original attendance approval/rejection permission and company-scope audit is not fully closed.
+- **GAP-0026 remains Open:** training detail now filters employee joins by company and removes foreign-company nomination/attendance rows. Continue full training lifecycle/source audit before closure.
+- **GAP-0029 is Fixed — Awaiting E2E:** payroll controller DB arguments corrected; payslip/run/employee and bonus/run/employee ownership checks added; CI regression tests pass. Authenticated API E2E remains.
+- **GAP-0036 is Fixed — Awaiting E2E:** employee bank/document child mutation methods validate the parent employee company; CI regression tests pass. Authenticated API E2E remains.
+- **GAP-0065 remains Open — residual password-reset path:** Phase 24 fixed login workspace selection and refresh binding, but forgot-password fallback still uses unordered `LIMIT 1` when no request tenant is present. Require explicit workspace selection or safe ambiguous-membership handling; add multi-membership password-reset tests.
+- HRMS-A-010 and HRMS-D-004 remain In Progress. Do not close the broader task based on this increment.

@@ -150,3 +150,25 @@ Phase 23 added one new source-confirmed P0 finding, GAP-0066, for a payment-cont
 The revised traceability matrix was re-read and checked for every ID GAP-0001 through GAP-0066. No ID is missing and no duplicate implementation task was introduced.
 
 The change does not alter architecture constraints, task dependencies or production safety gates. Cycle 01 plan remains **VERIFIED for implementation planning**. Production DB changes, deployments, real payments, customer-data operations, customer DB connections and production key rotation remain separately gated.
+
+---
+
+## Cycle 01 Plan Verification — Review Round 4 Addendum (2026-11-28)
+
+**Scope:** Phase 28 implementation increment mapped to existing `HRMS-A-010`; source-audit evidence contributes to `HRMS-D-004`.  
+**Reviewed plan:** `cycles/CYCLE-01-PLAN.md` (existing Round 2 VERIFIED plan plus Round 3 traceability addendum).
+
+### Verification checklist
+
+- [x] Every Phase 28 change maps to the existing A-010 scope: attendance, employee child records, payroll payslips/bonuses and training ownership.
+- [x] No duplicate task ID or duplicate GAP ID created.
+- [x] Each fix has an explicit negative ownership test in `backend/test/ownership-regression.test.js`.
+- [x] Controller/service argument contracts were checked against their service signatures.
+- [x] The work is source-only and does not require a production schema change.
+- [x] CI runs on the exact code commit: Backend Tests 46105770148 (258/258, zero skipped) and Tenant Migration PostgreSQL Integration 46105770068 (1/1, zero skipped).
+- [x] Frontend source was unchanged after the latest successful frontend build; exact-head frontend run is not claimed.
+- [x] Production DB, migration, deployment, payment and destructive-operation gates remain intact.
+
+### Result
+
+**VERIFIED for this implementation increment.** This does not close HRMS-A-010 or HRMS-D-004. Full permission/ownership coverage, API E2E, composite FK review, production Central role/catalog proof and the forgot-password multi-tenant residual remain open. The next task is the HRMS-D-003 forgot-password workspace-selection residual, followed by the remaining D-004 ownership matrix.

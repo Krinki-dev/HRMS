@@ -173,3 +173,14 @@ Central RLS policy source coverage and bootstrap parity are implemented for all 
 ## 2026-11-28 audit evidence — Phase 26
 
 HRMS-D-005 remains **Blocked / Not Implemented**: the existing migration history is misnamed and MSSQL, while the operational Prisma schema is PostgreSQL. HRMS-F-013 remains **Open**: Railway runs a non-fatal Central migration script at app startup. The migration layout, database catalog, role and adoption baseline must be resolved before production readiness.
+
+---
+
+## 2026-11-28 — Phase 28 module evidence (do not inflate completion)
+
+- Attendance: holiday deletion company-scope regression fixed and tested; full attendance permission/approval audit remains open (GAP-0018).
+- Employees: bank-account update/delete and document deletion now validate parent employee ownership; GAP-0036 is Fixed — Awaiting E2E.
+- Payroll: payslip get/update and bonus delete controller contracts now pass the tenant DB; service checks bind run, employee and bonus ownership; GAP-0029 is Fixed — Awaiting E2E.
+- Training: detail employee joins are now company-filtered; broader module audit remains open (GAP-0026).
+- CI evidence: Backend Tests 46105770148 passed 258/258, zero skipped; Tenant Migration PostgreSQL Integration 46105770068 passed 1/1, zero skipped.
+- No module is marked fully complete by this increment. HRMS-A-010 and HRMS-D-004 remain In Progress.

@@ -328,3 +328,18 @@ Use plain language in user-facing summaries. Keep technical detail and reproduci
 11. Re-analyze the whole repository and start Cycle 02 from evidence.
 
 **Do not jump directly to implementation merely because this process document exists.**
+
+---
+
+## CURRENT EXECUTION OVERRIDE — Cycle 01 Phase 28 (2026-11-28)
+
+This section supersedes the initial adoption snapshot in Section 12 where it conflicts with later cycle evidence.
+
+- Cycle 01 plan is **VERIFIED for implementation planning** (verification Round 2 and Round 3 addendum); this does not authorize production operations.
+- Latest source report: `cycles/CYCLE-01-IMPLEMENTATION-PHASE-28.md`.
+- Latest code commit at the Phase 28 implementation checkpoint: `2254f855b884deb51f7f7783d6acae17fd6523c3` on `architecture/postgres-tenant-isolation`.
+- Exact code-head CI: Backend Tests 46105770148 passed 258/258 with 0 skipped; Tenant Migration PostgreSQL Integration 46105770068 passed 1/1 with 0 skipped.
+- Frontend Build 46104588048 passed at `cb3ebff3cc1fabd0c189ece8df09a01efcf82bd5`; no frontend source changes occurred after that SHA through Phase 28.
+- HRMS-A-010 remains In Progress; Phase 28 closes only the documented subpaths. HRMS-D-004 remains In Progress pending exhaustive operational ownership matrix, composite FK review and live Central role/catalog evidence.
+- Next source-only task: HRMS-D-003 forgot-password explicit workspace selection and multi-membership tests; then resume D-004. No owner decision required for this next task.
+- `main` untouched. No production DB, migration, deployment, payment, destructive operation or customer-data change performed.

@@ -207,3 +207,14 @@ Product domain:     PRODUCT_DOMAIN env var
 ## Latest Cycle 01 implementation report
 
 - Phase 26 — PostgreSQL migration baseline layout, MSSQL legacy history and non-fatal deploy migration runner: [CYCLE-01-IMPLEMENTATION-PHASE-26.md](cycles/CYCLE-01-IMPLEMENTATION-PHASE-26.md)
+
+---
+
+## Cycle 01 Phase 28 — operational ownership regression increment
+
+- Report: [CYCLE-01-IMPLEMENTATION-PHASE-28.md](cycles/CYCLE-01-IMPLEMENTATION-PHASE-28.md)
+- Code commit: `2254f855b884deb51f7f7783d6acae17fd6523c3`
+- Backend Tests run 46105770148: 258/258 passed, 0 skipped.
+- Tenant Migration PostgreSQL Integration run 46105770068: 1/1 passed.
+- Frontend Build run 46104588048 passed on `cb3ebff3cc1fabd0c189ece8df09a01efcf82bd5`; no frontend source changed since that SHA.
+- Next: HRMS-D-003 forgot-password explicit workspace selection residual, then continue D-004 operational ownership matrix.

@@ -806,3 +806,17 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Central and tenant schemas require separate migration histories because they target separate PostgreSQL databases.
 - Railway invokes a Central SQL migration at app start; the script catches errors and continues, so a failed migration does not block startup.
 - No DB connection, baseline generation, migration, deploy or customer-data operation performed.
+
+---
+
+## 2026-11-28 — Cycle 01 Phase 28 ownership regression increment
+
+- Code commit: `2254f855b884deb51f7f7783d6acae17fd6523c3`.
+- Attendance holiday deletion now scopes the holiday to company; controller maps non-owned/missing holiday to 404.
+- Employee bank-account update/delete and document deletion now validate the employee's company and active state before child lookup/write.
+- Payroll controller now passes `req.db` to getPayslip/updatePayslip/removeBonus; service binds payslips to company-owned runs/employees and bonuses to the requested run and company employee.
+- Training detail employee join now filters by company and excludes foreign-company child records.
+- Added `backend/test/ownership-regression.test.js`.
+- Backend Tests run 46105770148: 258 tests, 258 pass, 0 fail, 0 skipped. Tenant Migration PostgreSQL Integration run 46105770068: 1 pass, 0 fail, 0 skipped.
+- Frontend Build run 46104588048 passed at `cb3ebff3cc1fabd0c189ece8df09a01efcf82bd5`; compare confirms no frontend source changes since that SHA.
+- Re-analysis: HRMS-A-010 and HRMS-D-004 remain open. HRMS-D-003 has a forgot-password arbitrary workspace selection residual (GAP-0065). No production operation performed.
