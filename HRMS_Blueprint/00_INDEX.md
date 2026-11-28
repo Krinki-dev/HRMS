@@ -161,3 +161,8 @@ Product domain:     PRODUCT_DOMAIN env var
 ## Latest Cycle 01 source audit
 
 - Phase 19 — onboarding progress, company documents, subscription checkout, salary-component route and API response-envelope reconciliation: [CYCLE-01-SOURCE-AUDIT-PHASE-19.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-19.md)
+
+
+## Latest Cycle 01 source audit
+
+- Phase 20 — KYC queue durability, MinIO credentials, ClamAV and runtime environment/readiness configuration: [CYCLE-01-SOURCE-AUDIT-PHASE-20.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-20.md)
