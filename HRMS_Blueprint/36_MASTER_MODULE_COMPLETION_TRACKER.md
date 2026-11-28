@@ -99,3 +99,8 @@ Phase 14 recorded in HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-14.md. GA
 ## 2026-11-28 audit evidence note — Phase 15
 
 Phase 15 recorded in `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-15.md`. New findings GAP-0043 through GAP-0045 cover the legacy DB connection-test path, credential handling and conflicting legacy configuration model. The Phase 14 feature-flag concern is corrected: registration does enforce the flag, but the legacy Settings connection-test route does not. No runtime tests or deployment/network checks were run; keep module dimensions Not Assessed/Not Verified.
+
+
+## 2026-11-28 audit evidence note — Phase 16
+
+Phase 16 recorded in `HRMS_Blueprint/cycles/CYCLE-01-SOURCE-AUDIT-PHASE-16.md`. GAP-0046 through GAP-0049 cover same-company FK enforcement, central RLS coverage, missing RLS in the fresh-install bootstrap, and candidate missing FK indexes. These are source-level findings only; live DB/catalog and runtime verification were not performed. Keep module dimensions Not Assessed/Not Verified.
