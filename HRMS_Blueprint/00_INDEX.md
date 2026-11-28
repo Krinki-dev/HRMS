@@ -182,3 +182,8 @@ Product domain:     PRODUCT_DOMAIN env var
 
 - Prioritised implementation plan: [CYCLE-01-PLAN.md](cycles/CYCLE-01-PLAN.md)
 - Independent plan verification: [CYCLE-01-PLAN-VERIFICATION.md](cycles/CYCLE-01-PLAN-VERIFICATION.md) — **Verified** after Round 2.
+
+
+## Latest Cycle 01 implementation
+
+- Phase 23 — tenant-scoped WebSocket identity, payment router/load fix and backend CI evidence: [CYCLE-01-IMPLEMENTATION-PHASE-23.md](cycles/CYCLE-01-IMPLEMENTATION-PHASE-23.md)
