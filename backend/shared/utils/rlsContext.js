@@ -14,9 +14,19 @@
  *
  * The only way to make `SET LOCAL` scope correctly is to issue it and run
  * the query it protects inside the SAME `$transaction`. These helpers do
- * that for the two RLS predicates used in backend/db-migrations/20260606_rls_and_function_fix.sql:
- *   - `app.current_tenant`          → tenant_modules, tenant_pricing_configs, invoices, tenant_branch_links
- *   - `jwt.claims.is_platform_admin` → tenants, central_user_index, central_kyc_records, central_gst_records, platform_settings
+ * that for the complete Central RLS policy set:
+ *   - `app.current_tenant` → tenant_modules, tenant_pricing_configs, invoices,
+ *     tenant_branch_links, backup_config, tenant_db_config, payment_orders,
+ *     billing_events, company_documents, and central_user_index.
+ *   - `jwt.claims.is_platform_admin` → platform-wide access to tenant-scoped
+ *     rows and exclusive access to tenants, central_kyc_records,
+ *     central_gst_records, platform_settings, payment_webhook_events,
+ *     company_document_reviews, and tenant_migration_jobs.
+ *
+ * Policy parity is maintained in both
+ * `backend/db-migrations/20261128_central_rls_policy_completion.sql` and
+ * `backend/prisma/central_schema.sql`. The application DB role must not own
+ * these tables or have BYPASSRLS; verify the deployed role before release.
  */
 
 /**
