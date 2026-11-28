@@ -438,3 +438,11 @@ Phase 19:  Mobile App (React Native)    ❌ Phase 2 — not started
 - In shared public operational storage, OTP records must be namespaced by immutable Central tenant UUID as well as normalized email. Raw email + purpose is not a sufficient OTP identity.
 - Phase 30 applies this rule inside the existing `otp_store.identifier` field for both OTP creation and verification; missing tenant context fails closed.
 - This is a source correction, not a schema migration or a change to the frozen tenant/company identity model. Keep GAP-0067 Fixed — Awaiting Verification until tests and exact-head CI pass.
+
+
+### Phase 31 operational user identity mapping constraint (2026-11-28)
+
+- Authentication must not search shared public operational `users` by email alone. Resolve the selected Central tenant's `central_user_index.user_id`, then load that exact operational user and bind its operational `company_id`.
+- OTP records must be keyed by Central tenant UUID + operational company UUID + normalized email.
+- Current `central_user_index` uniqueness `(email, Central tenant UUID)` supports one operational userId for an email/tenant. Multiple operational company accounts with the same email require a future explicit Central tenant-user-company membership mapping and legacy backfill. Do not enumerate shared-public users to simulate that mapping.
+- This mapping is a migration-baseline dependency; no DDL is authorized by this note.
