@@ -10,6 +10,7 @@ const { withPlatformAdminRLS } = require('../../shared/utils/rlsContext');
 const { decrypt } = require('../../shared/utils/encryption');
 const { resolveTenantStorageTarget } = require('../../shared/utils/tenantStorageResolver');
 const { chooseTenantRow } = require('../../shared/utils/tenantSelection');
+const { buildOtpIdentifier } = require('../../shared/utils/otpIdentity');
 
 /**
  * Service to handle Authentication, OTP, and Password logic.
@@ -244,13 +245,14 @@ const authService = {
   },
 
   async sendOtp(db, tenantId, email, purpose) {
+    const identifier = buildOtpIdentifier(tenantId, email);
     const otp = crypto.randomInt(100000, 1000000).toString();
     const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     await db.otp_store.create({
       data: {
-        identifier: email,
+        identifier,
         otp_hash: otpHash,
         purpose,
         expires_at: expiresAt,
@@ -267,10 +269,11 @@ const authService = {
     return true;
   },
 
-  async verifyOtp(db, email, otp, purpose) {
+  async verifyOtp(db, tenantId, email, otp, purpose) {
+    const identifier = buildOtpIdentifier(tenantId, email);
     const otpRecord = await db.otp_store.findFirst({
       where: {
-        identifier: email,
+        identifier,
         purpose,
         expires_at: { gt: new Date() },
       },
