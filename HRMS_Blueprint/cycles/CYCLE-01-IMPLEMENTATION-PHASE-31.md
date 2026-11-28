@@ -106,3 +106,13 @@ The D-005 design dependency is now documented and verified for design-only work:
 - D-005 plan update: `847669b8c09538113a1d60025f42e40e2da1f8db`
 
 The design is not a frozen owner decision and authorizes no DDL. The listed membership semantics and legacy backfill authority must be resolved before any migration.
+
+
+## 10. Phase 32 D-005 design follow-through
+
+- Central membership mapping design proposal: `CYCLE-01-CENTRAL-TENANT-COMPANY-MEMBERSHIP-DESIGN-PHASE-32.md` (commit `0818f32f1e443def65d9084c16d2a392896ed3fe`).
+- Phase 32 design plan: `e6d8c1e6582e4c9961db77a37ce25d1f6d87e5ca`.
+- Phase 32 independent design verification: `a706283b5f556afa52e3cce02a083721367587b1`.
+- D-005 plan now includes the Central tenant-user-company membership and verified legacy backfill requirement: `847669b8c09538113a1d60025f42e40e2da1f8db`.
+- Proposed owner decisions are recorded but not approved/frozen in `34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md` (commit `c1e119d72420a4a063b3f37bd6c8425be44a8d85`).
+- No DDL, migration or production activity was performed. The next step is owner confirmation/amendment, then D-005 migration-baseline plan verification.
