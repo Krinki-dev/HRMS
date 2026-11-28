@@ -236,3 +236,12 @@ Product domain:     PRODUCT_DOMAIN env var
 - Independent verification: [CYCLE-01-PLAN-VERIFICATION-PHASE-30.md](cycles/CYCLE-01-PLAN-VERIFICATION-PHASE-30.md)
 - Task: HRMS-D-004 primary; HRMS-D-003 related. GAP-0067 OTP namespace fix is committed, tests/CI pending.
 - Next: continue model-by-model operational query tracing and cross-company negative-test coverage; retain production safety gates.
+
+
+## Cycle 01 Phase 31 — tenant-indexed company identity
+
+- Report: [CYCLE-01-IMPLEMENTATION-PHASE-31.md](cycles/CYCLE-01-IMPLEMENTATION-PHASE-31.md)
+- Plan: [CYCLE-01-PLAN-PHASE-31.md](cycles/CYCLE-01-PLAN-PHASE-31.md)
+- Plan verification and safety correction: [CYCLE-01-PLAN-VERIFICATION-PHASE-31.md](cycles/CYCLE-01-PLAN-VERIFICATION-PHASE-31.md)
+- Safe source binding uses Central `user_id` + operational `company_id`; OTP includes tenant+company identity.
+- GAP-0068 remains open pending Central multi-company membership mapping and legacy backfill. No schema migration was made.
