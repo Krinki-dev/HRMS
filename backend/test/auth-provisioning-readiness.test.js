@@ -18,7 +18,7 @@ test('email lookup only exposes active tenants with ready storage', () => {
   assert.match(lookup, /t\.is_active = true/);
   assert.match(lookup, /t\.storage_status = 'ready'/);
   assert.match(lookup, /t\.deleted_at IS NULL/);
-  assert.match(lookup, /ORDER BY LOWER\(t\.name\), ui\.company_id/);
+  assert.match(lookup, /ORDER BY company_name, ui\.company_id/);
 });
 
 
