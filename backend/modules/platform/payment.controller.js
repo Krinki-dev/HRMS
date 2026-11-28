@@ -864,6 +864,9 @@ exports.handleWebhook = async (req, res) => {
       }
     }
     if (!eventRow) throw new Error('WEBHOOK_EVENT_INBOX_WRITE_FAILED');
+    if (eventRow.payload_sha256 !== payloadSha) {
+      return res.status(400).json({ success: false, message: 'Razorpay event ID payload mismatch.' });
+    }
 
     const updateEvent = (data) => withPlatformAdminRLS(centralPrisma, (tx) =>
       tx.payment_webhook_events.update({ where: { id: eventRow.id }, data })
