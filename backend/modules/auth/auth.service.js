@@ -362,7 +362,7 @@ const authService = {
           AND t.is_active = true
           AND t.storage_status = 'ready'
           AND t.deleted_at IS NULL
-        ORDER BY LOWER(t.name), ui.company_id
+        ORDER BY company_name, ui.company_id
       `);
       const choices = (rows || []).map((row) => ({
         tenantId: row.tenant_id, subdomain: row.subdomain,
@@ -391,7 +391,7 @@ const authService = {
           AND t.storage_status = 'ready'
           AND t.deleted_at IS NULL
         GROUP BY ui.company_id, ui.subdomain, ui.is_platform_admin, t.name, t.logo_url, t.is_active, t.plan
-        ORDER BY LOWER(t.name), ui.company_id
+        ORDER BY company_name, ui.company_id
       `);
       const choices = (rows || []).map((row) => ({
         tenantId: row.tenant_id, subdomain: row.subdomain,
@@ -423,7 +423,7 @@ const authService = {
           AND t.is_active = true
           AND t.storage_status = 'ready'
           AND t.deleted_at IS NULL
-        ORDER BY LOWER(t.name), ui.company_id
+        ORDER BY company_name, ui.company_id
       `);
       const choices = (rows || []).map((row) => ({
         tenantId: row.tenant_id, subdomain: row.subdomain,
