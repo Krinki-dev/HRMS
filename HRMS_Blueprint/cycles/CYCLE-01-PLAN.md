@@ -127,6 +127,7 @@ All tasks begin as **Not Started**. A source-code commit alone does not complete
 #### HRMS-D-003 — Explicit tenant selection and identity binding
 
 - **Stream/module:** D/A/C — Auth, Central user index, tenant middleware.
+- **Implementation note (Phase 24):** explicit workspace chooser, tenant UUID request binding, tenant/company access and refresh token claims, direct signed-tenant refresh resolution, and source regression tests are implemented. Keep this task open until real login/OTP/refresh E2E and legacy membership backfill checks pass.
 - **Findings:** GAP-0001, GAP-0065.
 - **Dependencies:** None.
 - **Implementation steps:**
@@ -306,7 +307,7 @@ Every finding from the master register is accounted for below. “Merged” mean
 
 | Gap ID | Task / disposition | Status note |
 |---|---|---|
-| GAP-0001 | HRMS-D-003 | Open — tenant/company identity contract |
+| GAP-0001 | HRMS-D-003 | Fixed — Awaiting end-to-end login/OTP/refresh verification; token identity and explicit selection tests pass at Phase 24 SHAs |
 | GAP-0002 | HRMS-D-004 | Open P0 — shared operational isolation proof |
 | GAP-0003 | HRMS-D-005 | Open P0 — PostgreSQL migration baseline |
 | GAP-0004 | HRMS-C-006 | Open P0 — storage lifecycle |
@@ -370,7 +371,7 @@ Every finding from the master register is accounted for below. “Merged” mean
 | GAP-0062 | HRMS-F-013 / HRMS-F-011 | Open P1 — environment manifest and required runtime settings |
 | GAP-0063 | HRMS-F-011 / HRMS-F-013 | Open P1 — MinIO default credentials |
 | GAP-0064 | HRMS-F-019 | Open P1 — hard-coded encryption fallback |
-| GAP-0065 | HRMS-D-003 | In Progress — explicit tenant-choice resolver added; login/OTP/refresh E2E pending |
+| GAP-0065 | HRMS-D-003 | Fixed — Awaiting end-to-end login/refresh verification; explicit selector and signed tenant binding tests pass at Phase 24 SHAs |
 | GAP-0066 | HRMS-C-002 | Verified Closed — payment controller parse blocker fixed; backend CI passed at SHA 97c60ad1 |
 
 ## 6. Cross-task dependencies and execution order
