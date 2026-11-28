@@ -778,3 +778,14 @@ Phase 28 source review and implementation are recorded in [CYCLE-01-IMPLEMENTATI
 - New helper, unit/regression tests and frontend workspace selector are committed.
 - **Verification limit:** exact-head CI and authenticated password-reset E2E have not been verified. Keep HRMS-D-003 In Progress and GAP-0065 Fixed — Awaiting Verification; do not claim auth module completion.
 - Continue D-004 operational ownership/query matrix, composite same-company FK feasibility and non-production Central role/catalog evidence. No live database access or migration was performed.
+
+
+## 2026-11-28 audit addendum — Phase 30 operational ownership inventory and OTP namespace
+
+- Evidence: `cycles/CYCLE-01-POSTGRES-OWNERSHIP-INVENTORY-PHASE-30.md` and `cycles/CYCLE-01-IMPLEMENTATION-PHASE-30.md`.
+- Static schema inventory covers 82 operational models and 17 Central models. Operational models are grouped by direct company_id (33), employee_id (29), parent/user ownership (13), and root/auth/reference/unresolved (7).
+- Central migration and fresh-install bootstrap show 17/17 explicit RLS policies. Existing static parity test covers model/policy presence; this does not prove every runtime query, deployed DB role or live catalog state.
+- New P1 finding GAP-0067: OTP storage was keyed by raw email + purpose in shared public operational storage. Phase 30 now namespaces OTP identifiers by immutable Central tenant UUID + normalized email in both create and verify; six source/unit regression tests were added.
+- GAP-0067 remains Fixed — Awaiting Verification until tests and exact-head CI pass. No authenticated OTP E2E was run.
+- Query-by-query ownership audit, composite same-company FK feasibility, disposable PostgreSQL cross-company tests and Central app-role owner/superuser/BYPASSRLS proof remain open under HRMS-D-004.
+- No production DB/catalog was queried, no migration/DDL was executed, and no deployment or customer-data operation occurred.
