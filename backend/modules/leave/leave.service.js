@@ -263,7 +263,8 @@ const leaveService = {
       employee: { company_id: companyId },
     };
 
-    if (!isHR && managerId) {
+    if (!isHR) {
+      if (!managerId) return [];
       where.employee = { company_id: companyId, reporting_to: managerId };
     }
 
@@ -283,10 +284,14 @@ const leaveService = {
     });
   },
 
-  approveLeave: async (db, applicationId, companyId, approverId) => {
+  approveLeave: async (db, applicationId, companyId, approverId, approverEmployeeId = null, isHR = false) => {
     logger.info(`${THEME.ICONS.SUCCESS} Approving leave: ${applicationId} by ${approverId}`);
     const app = await db.leave_applications.findFirst({
-      where: { id: applicationId, status: 'pending', employee: { company_id: companyId } },
+      where: {
+        id: applicationId,
+        status: 'pending',
+        employee: { company_id: companyId, ...(!isHR ? { reporting_to: approverEmployeeId || '__no_employee__' } : {}) },
+      },
     });
     if (!app) throw new Error('NOT_FOUND');
 
@@ -309,12 +314,16 @@ const leaveService = {
     ]);
   },
 
-  rejectLeave: async (db, applicationId, companyId, approverId, reason) => {
+  rejectLeave: async (db, applicationId, companyId, approverId, reason, approverEmployeeId = null, isHR = false) => {
     if (!reason?.trim()) throw new Error('REASON_REQUIRED');
     logger.warn(`${THEME.ICONS.ERROR} Rejecting leave: ${applicationId}`);
 
     const app = await db.leave_applications.findFirst({
-      where: { id: applicationId, status: 'pending', employee: { company_id: companyId } },
+      where: {
+        id: applicationId,
+        status: 'pending',
+        employee: { company_id: companyId, ...(!isHR ? { reporting_to: approverEmployeeId || '__no_employee__' } : {}) },
+      },
     });
     if (!app) throw new Error('NOT_FOUND');
 
