@@ -139,3 +139,10 @@ Phase 22 revalidated GAP-0020 and GAP-0021 as open P0 source findings and correc
 ## 2026-11-28 — Cycle 01 plan verification
 
 Cycle 01 plan `HRMS_Blueprint/cycles/CYCLE-01-PLAN.md` is **Verified** by independent review Round 2 in `HRMS_Blueprint/cycles/CYCLE-01-PLAN-VERIFICATION.md`. This authorizes task-mapped implementation on the working branch only; no task is implemented or tested by the plan. Production and customer-data safety gates remain unchanged.
+
+
+## 2026-11-28 implementation evidence — Phase 23
+
+- HRMS-D-001 WebSocket company isolation: source changes and focused unit tests implemented; backend suite passed at SHA `97c60ad1ed3549d4c780c8506f871ada8e7cd1bb`. Status remains Fixed — Awaiting real WebSocket integration test.
+- HRMS-C-002 payment router: handler export and router-load test verified. CI found/fixed the disabled PhonePe handler's unterminated function; new GAP-0066 is Verified Closed at the tested SHA.
+- Backend CI: 171 tests, 166 pass, 0 fail, 5 skipped. Latest branch HEAD is newer and its CI was still pending; do not mark the whole branch verified.
