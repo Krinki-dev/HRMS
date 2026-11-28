@@ -71,7 +71,7 @@ test('dashboard non-HR team queries are restricted to direct reports in the same
     },
   });
   await leaveService.dashboard(db, EMPLOYEE_A, COMPANY_A, false);
-  const teamScopes = calls.filter(where => where.employee);
+  const teamScopes = calls.filter(where => where.employee?.reporting_to);
   assert.equal(teamScopes.length, 2);
   for (const where of teamScopes) {
     assert.equal(where.employee.company_id, COMPANY_A);
