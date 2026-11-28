@@ -847,3 +847,12 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Phase 30 plan and independent plan verification: `cycles/CYCLE-01-PLAN-PHASE-30.md` and `cycles/CYCLE-01-PLAN-VERIFICATION-PHASE-30.md`.
 - Code commits: `e884c37ad792c9f7c6c96797f5ba26761d83251e`, `9c73d007630c3447c7b7b7cb56ecad421233ba50`, `5d51ff1ff06c4616f64974f57d5c88565b9b0c5a`, `9e0432b1520622a5661874b492076f7186ec16c5`.
 - No production DB connection, SQL, migration, deployment, payment, deletion, credential rotation or customer-data mutation. `main` untouched.
+
+
+## 2026-11-28 — Cycle 01 Phase 31 tenant-indexed operational identity
+
+- Re-analysis found GAP-0068: same email can exist under multiple operational companies, while Central user index maps only one user_id per email/Central tenant.
+- Final source now resolves operational user by selected tenant's Central `central_user_index.user_id`, then binds the operational companyId. Password login, OTP and forgot-password no longer choose an arbitrary shared-public user by email.
+- OTP identifier now includes Central tenant UUID + operational company UUID + normalized email.
+- Added company identity and OTP regression tests. Full repo test execution, exact-head CI and authenticated E2E remain pending. Isolated helper smoke test passed 4/4; this is not full-suite evidence.
+- Full multi-company membership selection remains blocked on a Central mapping schema and legacy backfill under HRMS-D-005. No migration was made.
