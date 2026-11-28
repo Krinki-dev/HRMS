@@ -789,3 +789,13 @@ Phase 28 source review and implementation are recorded in [CYCLE-01-IMPLEMENTATI
 - GAP-0067 remains Fixed — Awaiting Verification until tests and exact-head CI pass. No authenticated OTP E2E was run.
 - Query-by-query ownership audit, composite same-company FK feasibility, disposable PostgreSQL cross-company tests and Central app-role owner/superuser/BYPASSRLS proof remain open under HRMS-D-004.
 - No production DB/catalog was queried, no migration/DDL was executed, and no deployment or customer-data operation occurred.
+
+
+## 2026-11-28 audit addendum — Phase 31 tenant-indexed company identity
+
+- Evidence: `cycles/CYCLE-01-IMPLEMENTATION-PHASE-31.md`.
+- Full re-analysis confirmed `users` permits same email in multiple operational companies, but `central_user_index` can store only one user_id per email/Central tenant. It cannot represent all same-tenant company memberships.
+- An initial email-only enumeration approach was rejected because shared public operational storage contains users from multiple SaaS tenants and has no Central tenantId column. Final code does not use this unsafe lookup.
+- Final source binds password login, OTP and forgot-password to the exact Central-indexed user_id and validates the corresponding operational companyId. OTP identity now includes tenant + company + normalized email.
+- GAP-0068 remains Open / Blocked on a new Central tenant-user-company mapping and legacy backfill under HRMS-D-005. D-003 remains In Progress; no full multi-company selection or auth E2E is claimed.
+- No schema change, migration, production DB or customer-data operation occurred.
