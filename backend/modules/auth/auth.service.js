@@ -348,135 +348,89 @@ const authService = {
    * @returns {Promise<{found: boolean, subdomain?: string, ...}>}
    */
   async lookupPhone(phone) {
-    if (!phone || phone.trim().length === 0) {
-      return { found: false, error: 'Phone required' };
-    }
-
+    if (!phone || phone.trim().length === 0) return { found: false, choices: [], error: 'Phone required' };
     try {
-      // Normalize to E.164 format (remove non-digits, add +91 if needed)
       let normalizedPhone = phone.replace(/\D/g, '');
-      if (!normalizedPhone.startsWith('91') && normalizedPhone.length === 10) {
-        normalizedPhone = '91' + normalizedPhone; // India default
-      }
-
-      // Search in central index first (if indexed by phone)
+      if (!normalizedPhone.startsWith('91') && normalizedPhone.length === 10) normalizedPhone = '91' + normalizedPhone;
       const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
-        SELECT DISTINCT ui.subdomain, ui.is_platform_admin, t.name, t.logo_url, t.is_active, t.plan
+        SELECT DISTINCT ui.company_id AS tenant_id, ui.subdomain, ui.is_platform_admin,
+               t.name AS company_name, t.logo_url, t.is_active, t.plan
         FROM central_user_index ui
-        LEFT JOIN tenants t ON t.id = ui.company_id
-        WHERE ui.phone = ${normalizedPhone} AND ui.is_active = true AND t.is_active = true AND t.storage_status = 'ready' AND t.deleted_at IS NULL
-        LIMIT 1
+        INNER JOIN tenants t ON t.id = ui.company_id
+        WHERE ui.phone = ${normalizedPhone}
+          AND ui.is_active = true
+          AND t.is_active = true
+          AND t.storage_status = 'ready'
+          AND t.deleted_at IS NULL
+        ORDER BY LOWER(t.name), ui.company_id
       `);
-
-      if (rows && rows.length > 0) {
-        const r = rows[0];
-        return {
-          found: true,
-          subdomain: r.subdomain,
-          is_platform_admin: r.is_platform_admin,
-          companyName: r.name,
-          logoUrl: r.logo_url,
-          is_active: r.is_active,
-          plan: r.plan
-        };
-      }
-
-      return { found: false };
+      const choices = (rows || []).map((row) => ({
+        tenantId: row.tenant_id, subdomain: row.subdomain,
+        is_platform_admin: !!row.is_platform_admin, companyName: row.company_name,
+        logoUrl: row.logo_url || null, is_active: row.is_active, plan: row.plan,
+      }));
+      return { found: choices.length > 0, choices, ...(choices.length === 1 ? choices[0] : {}) };
     } catch (err) {
       logger.error('[AuthService/lookupPhone] Error:', err);
-      return { found: false, error: err.message };
+      return { found: false, choices: [], error: err.message };
     }
   },
 
-  /**
-   * Look up user by employee ID across all tenants
-   * @param {string} employeeId - Employee ID (format: EMP-XXXX or similar)
-   * @returns {Promise<{found: boolean, subdomain?: string, ...}>}
-   */
   async lookupEmployeeId(employeeId) {
-    if (!employeeId || employeeId.trim().length === 0) {
-      return { found: false, error: 'Employee ID required' };
-    }
-
+    if (!employeeId || employeeId.trim().length === 0) return { found: false, choices: [], error: 'Employee ID required' };
     try {
       const normalizedId = employeeId.toUpperCase().trim();
-
-      // Search across all tenants
       const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
-        SELECT DISTINCT ui.subdomain, ui.is_platform_admin, t.name, t.logo_url, 
-                        t.is_active, t.plan, ui.email
+        SELECT ui.company_id AS tenant_id, ui.subdomain, ui.is_platform_admin,
+               t.name AS company_name, t.logo_url, t.is_active, t.plan, MIN(ui.email) AS email
         FROM central_user_index ui
-        LEFT JOIN tenants t ON t.id = ui.company_id
-        WHERE ui.employee_id = ${normalizedId} AND ui.is_active = true AND t.is_active = true AND t.storage_status = 'ready' AND t.deleted_at IS NULL
-        LIMIT 1
+        INNER JOIN tenants t ON t.id = ui.company_id
+        WHERE ui.employee_id = ${normalizedId}
+          AND ui.is_active = true
+          AND t.is_active = true
+          AND t.storage_status = 'ready'
+          AND t.deleted_at IS NULL
+        GROUP BY ui.company_id, ui.subdomain, ui.is_platform_admin, t.name, t.logo_url, t.is_active, t.plan
+        ORDER BY LOWER(t.name), ui.company_id
       `);
-
-      if (rows && rows.length > 0) {
-        const r = rows[0];
-        return {
-          found: true,
-          subdomain: r.subdomain,
-          is_platform_admin: r.is_platform_admin,
-          companyName: r.name,
-          logoUrl: r.logo_url,
-          is_active: r.is_active,
-          plan: r.plan,
-          email: r.email
-        };
-      }
-
-      return { found: false };
+      const choices = (rows || []).map((row) => ({
+        tenantId: row.tenant_id, subdomain: row.subdomain,
+        is_platform_admin: !!row.is_platform_admin, companyName: row.company_name,
+        logoUrl: row.logo_url || null, is_active: row.is_active, plan: row.plan, email: row.email,
+      }));
+      return { found: choices.length > 0, choices, ...(choices.length === 1 ? choices[0] : {}) };
     } catch (err) {
       logger.error('[AuthService/lookupEmployeeId] Error:', err);
-      return { found: false, error: err.message };
+      return { found: false, choices: [], error: err.message };
     }
   },
 
-  /**
-   * Look up user by email + optional phone (multi-identifier lookup)
-   * Used for enhanced security verification
-   * @param {string} email 
-   * @param {string} phone - Optional
-   * @returns {Promise<{found: boolean, ...}>}
-   */
   async lookupEmailAndPhone(email, phone) {
     if (!email) return this.lookupEmail('');
     if (!phone) return this.lookupEmail(email);
-
     try {
       const normalizedEmail = email.toLowerCase().trim();
       let normalizedPhone = phone.replace(/\D/g, '');
-      if (!normalizedPhone.startsWith('91') && normalizedPhone.length === 10) {
-        normalizedPhone = '91' + normalizedPhone;
-      }
-
+      if (!normalizedPhone.startsWith('91') && normalizedPhone.length === 10) normalizedPhone = '91' + normalizedPhone;
       const rows = await withPlatformAdminRLS(centralPrisma, (tx) => tx.$queryRaw`
-        SELECT DISTINCT ui.subdomain, ui.is_platform_admin, t.name, t.logo_url, t.is_active, t.plan
+        SELECT DISTINCT ui.company_id AS tenant_id, ui.subdomain, ui.is_platform_admin,
+               t.name AS company_name, t.logo_url, t.is_active, t.plan
         FROM central_user_index ui
-        LEFT JOIN tenants t ON t.id = ui.company_id
-        WHERE ui.email = ${normalizedEmail}
+        INNER JOIN tenants t ON t.id = ui.company_id
+        WHERE LOWER(ui.email) = ${normalizedEmail}
           AND ui.phone = ${normalizedPhone}
           AND ui.is_active = true
           AND t.is_active = true
           AND t.storage_status = 'ready'
           AND t.deleted_at IS NULL
-        LIMIT 1
+        ORDER BY LOWER(t.name), ui.company_id
       `);
-
-      if (rows && rows.length > 0) {
-        const r = rows[0];
-        return {
-          found: true,
-          subdomain: r.subdomain,
-          is_platform_admin: r.is_platform_admin,
-          companyName: r.name,
-          logoUrl: r.logo_url,
-          is_active: r.is_active,
-          plan: r.plan
-        };
-      }
-
-      // Fallback to email only
+      const choices = (rows || []).map((row) => ({
+        tenantId: row.tenant_id, subdomain: row.subdomain,
+        is_platform_admin: !!row.is_platform_admin, companyName: row.company_name,
+        logoUrl: row.logo_url || null, is_active: row.is_active, plan: row.plan,
+      }));
+      if (choices.length) return { found: true, choices, ...(choices.length === 1 ? choices[0] : {}) };
       return this.lookupEmail(email);
     } catch (err) {
       logger.error('[AuthService/lookupEmailAndPhone] Error:', err);
