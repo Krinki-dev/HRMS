@@ -154,3 +154,8 @@ Cycle 01 plan `HRMS_Blueprint/cycles/CYCLE-01-PLAN.md` is **Verified** by indepe
 - Backend CI run 46103861483 passed (177 tests; 172 pass, 0 fail, 5 skipped) at SHA `3f495f016e8e56ecb6fc63770c836fc6e292ac7c`.
 - Frontend Build run 46103852916 passed at SHA `2b27b3c8a319f02d0cff380b`.
 - Keep D-003 at Fixed — Awaiting E2E Verification; no live auth/OTP/refresh flow was exercised.
+
+
+## 2026-11-28 audit/implementation evidence — Phase 25
+
+Central RLS policy source coverage and bootstrap parity are implemented for all 17 Central Prisma models; static backend test passed at SHA `865d5f5d567f49b70967dbd82923047e7a870311`. HRMS-D-004 remains **Implemented in source / Live DB verification pending** until catalog policies, application role ownership/BYPASSRLS, legacy Settings DB-config access and a clean-install path are independently verified. No SQL migration was executed.
