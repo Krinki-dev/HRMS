@@ -184,3 +184,10 @@ HRMS-D-005 remains **Blocked / Not Implemented**: the existing migration history
 - Training: detail employee joins are now company-filtered; broader module audit remains open (GAP-0026).
 - CI evidence: Backend Tests 46105770148 passed 258/258, zero skipped; Tenant Migration PostgreSQL Integration 46105770068 passed 1/1, zero skipped.
 - No module is marked fully complete by this increment. HRMS-A-010 and HRMS-D-004 remain In Progress.
+
+
+## 2026-11-28 — Phase 29 authentication evidence (do not inflate completion)
+
+- Password-reset workspace selection now has source changes and focused regression tests committed under `HRMS-D-003` / `GAP-0065`.
+- The auth module remains **Not Assessed** at full module/dimension level: login/OTP/refresh/password reset E2E, route-wide authorization, DB integration and recovery evidence are not complete.
+- Exact-head CI and authenticated password-reset E2E remain pending. No authentication module completion status is promoted by this source increment.
