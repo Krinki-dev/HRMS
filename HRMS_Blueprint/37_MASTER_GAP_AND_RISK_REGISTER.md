@@ -230,3 +230,14 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - **GAP-0048:** `central_schema.sql` now contains the same policy set as the incremental migration. Clean-install execution remains untested.
 - Rollout blockers: deployed Central application role ownership/BYPASSRLS is unknown; legacy Settings DB-config endpoints still use a direct Prisma client without transaction-scoped tenant RLS. Migrate or disable those paths before rollout.
 - No production DB, customer DB, migration, role/grant, deployment or customer-data operation performed; main untouched.
+
+
+## Cycle 01 Phase 25 — Central RLS parity and PostgreSQL CI (2026-11-28)
+
+- Evidence: [CYCLE-01-IMPLEMENTATION-PHASE-25.md](cycles/CYCLE-01-IMPLEMENTATION-PHASE-25.md).
+- **GAP-0031:** backend CI now provisions disposable PostgreSQL 16 Central/tenant databases and executes the five formerly skipped DB suites. Backend run [46104242869](https://github.com/Krinki-dev/HRMS/actions/runs/46104242869) passed 210/210 with zero skips at SHA `c3790b43c30b5895fd2eb9b156ef939a54db2055`. Frontend E2E remains GAP-0019.
+- **GAP-0047:** source migration and bootstrap now contain explicit policies for all 17 Central models; static parity and real non-owner `hrms_app` RLS pooling tests pass. Live deployed role/catalog verification remains pending.
+- **GAP-0048:** migration/bootstrap source parity is tested across all 17 Central tables. Clean-install/upgrade catalog comparison remains pending.
+- Central RLS migration `20261128_central_rls_policy_completion.sql` was applied only to the disposable CI database. No production DB was accessed.
+- **Important rollout blocker:** legacy Settings DB-config endpoints still create a direct Prisma client and query `tenant_db_config` without RLS context. Resolve/disable that path and verify app role is not owner/superuser/BYPASSRLS before applying Central RLS to production.
+- No production migration, deployment, customer-data operation or payment; main untouched.
