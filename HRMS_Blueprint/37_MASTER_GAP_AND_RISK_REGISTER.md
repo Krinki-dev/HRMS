@@ -148,3 +148,13 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - **GAP-0054 (P2, revalidates GAP-0034):** frontend calls `/settings/notifications`, while inspected backend mounts notification handlers under different prefixes; no matching mounted route was found.
 - Backend CI, frontend build CI, and tenant migration integration workflow definitions were inspected. Current-HEAD workflow success was not verified.
 - Wider all-module API route/payload/permission mapping remains incomplete. No app code, tests, server, DB, migration, backup, restore, deployment or payment operation was performed; main untouched.
+
+
+## Cycle 01 Phase 18 — frontend/backend API contract mapping (2026-11-28)
+
+- Evidence: [CYCLE-01-SOURCE-AUDIT-PHASE-18.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-18.md).
+- **GAP-0055 (P2):** frontend requests `GET /employees/:id/addresses`; backend only declares `GET /:id/addresses/:type`.
+- **GAP-0056 (P1):** expense receipt frontend calls `/expenses/claims/upload-receipt` with multipart field `receipt`; backend declares `POST /expenses/upload` and accepts field `file`.
+- **GAP-0057 (P1):** employee photo frontend uses POST; backend declares PUT for `/:id/photo`.
+- Core route prefixes and reviewed endpoint paths for auth, attendance, leave, payroll, compliance, dashboard, recruitment, performance, training, assets, settings and reports were compared. This is static path matching only; payload/response, permissions, object ownership and browser behavior remain unverified.
+- GAP-0034/GAP-0054 notification settings mismatch revalidated. No app code, tests, browser, DB or deployment action performed; main untouched.
