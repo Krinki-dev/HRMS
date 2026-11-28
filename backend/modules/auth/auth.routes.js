@@ -305,7 +305,7 @@ router.post('/verify-otp', otpLimiter, async (req, res) => {
     if (!activeDb) {
       return sendError(res, ERROR_CODES.SERVER, 'Unable to verify OTP at this time.', 500);
     }
-    const verify = await authService.verifyOtp(activeDb, normalizedEmail, otp, purpose);
+    const verify = await authService.verifyOtp(activeDb, tenantId, normalizedEmail, otp, purpose);
     if (!verify.valid) {
       if (isTemporary) setTimeout(() => activeDb.$disconnect(), 5000);
       return sendError(res, ERROR_CODES.UNAUTHORIZED, verify.message, 401);
