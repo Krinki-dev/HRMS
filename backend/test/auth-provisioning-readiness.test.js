@@ -28,6 +28,34 @@ test('multi-workspace email lookup returns explicit choices instead of a false s
   assert.match(authSource, /choices,\s*\.\.\.\(choices\.length === 1 \? choices\[0\] : \{\}\)/);
 });
 
+
+test('phone, employee ID and email-plus-phone lookups return all eligible tenant choices', () => {
+  const phoneStart = authSource.indexOf('async lookupPhone(phone)');
+  const emailPhoneStart = authSource.indexOf('async lookupEmailAndPhone(email, phone)', phoneStart);
+  const lookupEnd = authSource.indexOf('\n};\n\nmodule.exports', emailPhoneStart);
+  const lookupBlock = authSource.slice(phoneStart, lookupEnd);
+  assert.ok(phoneStart >= 0 && emailPhoneStart > phoneStart && lookupEnd > emailPhoneStart);
+  assert.match(lookupBlock, /choices/);
+  assert.doesNotMatch(lookupBlock, /LIMIT 1/);
+  const routesStart = authRoutesSource.indexOf("router.post('/lookup-phone'");
+  const routesEnd = authRoutesSource.indexOf('const otpLimiter', routesStart);
+  const routesBlock = authRoutesSource.slice(routesStart, routesEnd);
+  assert.match(routesBlock, /choices: result\.choices \|\| \[\]/);
+});
+
+test('refresh tokens and refresh resolution remain bound to the selected workspace', () => {
+  assert.match(authSource, /signRefreshToken\(userId, centralTenantId = null, companyId = null\)/);
+  assert.match(authSource, /centralTenantId: centralTenantId \|\| null, companyId: companyId \|\| null/);
+  const refreshStart = authRoutesSource.indexOf("router.post('/refresh'");
+  const refreshEnd = authRoutesSource.indexOf("router.post('/logout'", refreshStart);
+  const refreshBlock = authRoutesSource.slice(refreshStart, refreshEnd);
+  assert.match(refreshBlock, /decoded\.centralTenantId !== req\.tenant\.id/);
+  assert.match(refreshBlock, /central_user_index\.findMany/);
+  assert.match(refreshBlock, /memberships\.length !== 1/);
+  assert.match(refreshBlock, /decoded\.companyId/);
+  assert.match(refreshBlock, /setRefreshCookie\(res, rotatedRefreshToken\)/);
+});
+
 test('admin-email fallback excludes inactive, provisioning and deleted tenants', () => {
   const start = authSource.indexOf('const tenantRows = await withPlatformAdminRLS');
   const end = authSource.indexOf('const choices =', start);
