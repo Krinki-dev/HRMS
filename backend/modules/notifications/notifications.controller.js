@@ -45,7 +45,7 @@ const ctrl = {
     try {
       const { userIds, type = 'manual', title, body, link, priority } = req.body;
       if (!title || !body) return sendError(res, ERROR_CODES.VALIDATION, 'Title and body are required.');
-      sendSuccess(res, await svc.create(req.db, req.user.companyId, { userIds, type, title, body, link, priority }), 'Notification sent.', 201);
+      sendSuccess(res, await svc.create(req.db, req.user.companyId, { userIds, type, title, body, link, priority }, req.user.centralTenantId), 'Notification sent.', 201);
     } catch (e) {
       console.error('[Notifications/send]', e.message);
       sendError(res, ERROR_CODES.SERVER, 'Failed to send notification.', 500);
