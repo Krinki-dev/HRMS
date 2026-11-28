@@ -167,6 +167,7 @@
   },
 
   submitFeedback: async (db, companyId, trainingId, employeeId, data) => {
+    if (!employeeId) throw new Error('NOT_FOUND');
     const training = await db.trainings.findFirst({ where: { id: trainingId, company_id: companyId, deleted_at: null } });
     if (!training) throw new Error('NOT_FOUND');
     const employee = await db.employees.findFirst({ where: { id: employeeId, company_id: companyId }, select: { id: true } });
@@ -188,6 +189,7 @@
   },
 
   myTrainings: async (db, companyId, employeeId) => {
+    if (!employeeId) throw new Error('NOT_FOUND');
     const employee = await db.employees.findFirst({ where: { id: employeeId, company_id: companyId }, select: { id: true } });
     if (!employee) throw new Error('NOT_FOUND');
     const nominations = await db.training_nominations.findMany({
