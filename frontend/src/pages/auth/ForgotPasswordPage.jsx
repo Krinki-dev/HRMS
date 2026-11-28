@@ -7,16 +7,36 @@ export default function ForgotPasswordPage() {
   const [email,     setEmail]     = useState(searchParams.get('email') || '');
   const [loading,   setLoading]   = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [tenantChoices, setTenantChoices] = useState([]);
+  const [selectedTenantId, setSelectedTenantId] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email) { toast.error('Please enter your email'); return; }
+    if (!email.trim()) { toast.error('Please enter your email'); return; }
     setLoading(true);
     try {
-      await api.post('/auth/forgot-password', { email });
+      let tenantId = selectedTenantId || null;
+      if (!tenantId) {
+        const lookupResponse = await api.post('/auth/lookup', { email: email.toLowerCase().trim() });
+        const lookup = lookupResponse.data?.data ?? lookupResponse.data;
+        const choices = Array.isArray(lookup?.choices) && lookup.choices.length
+          ? lookup.choices
+          : (lookup?.tenantId ? [lookup] : []);
+
+        if (choices.length > 1) {
+          setTenantChoices(choices);
+          toast('This email belongs to multiple workspaces. Select the correct workspace to continue.');
+          return;
+        }
+        if (choices.length === 1) tenantId = choices[0].tenantId;
+      }
+
+      await api.post('/auth/forgot-password', { email: email.toLowerCase().trim(), tenantId });
       setSubmitted(true);
     } catch {
-      setSubmitted(true); 
+      // Keep the same confirmation state to avoid disclosing whether an
+      // account or workspace exists.
+      setSubmitted(true);
     } finally {
       setLoading(false);
     }
@@ -59,6 +79,25 @@ export default function ForgotPasswordPage() {
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm" // The disabled attribute is already handled above
               />
             </div>
+            {tenantChoices.length > 1 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company Workspace</label>
+                <select
+                  value={selectedTenantId}
+                  onChange={(e) => setSelectedTenantId(e.target.value)}
+                  disabled={loading}
+                  required
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-white"
+                >
+                  <option value="">Select your workspace</option>
+                  {tenantChoices.map((choice) => (
+                    <option key={choice.tenantId} value={choice.tenantId}>
+                      {choice.companyName || choice.subdomain || 'Company workspace'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <button
               type="submit"
               disabled={loading}
