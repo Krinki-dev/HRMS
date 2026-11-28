@@ -166,3 +166,8 @@ Product domain:     PRODUCT_DOMAIN env var
 ## Latest Cycle 01 source audit
 
 - Phase 20 — KYC queue durability, MinIO credentials, ClamAV and runtime environment/readiness configuration: [CYCLE-01-SOURCE-AUDIT-PHASE-20.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-20.md)
+
+
+## Latest Cycle 01 source audit
+
+- Phase 21 — authentication tenant selection, encryption key fallback and access-token persistence revalidation: [CYCLE-01-SOURCE-AUDIT-PHASE-21.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-21.md)
