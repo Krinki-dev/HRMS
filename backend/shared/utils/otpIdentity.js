@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * Namespaces OTP records by immutable Central tenant identity. The operational
- * public schema is shared by Free/Trial tenants, so email + purpose alone is
- * not a sufficient OTP key.
+ * Namespaces OTP records by immutable Central tenant and operational company
+ * identity. The public operational schema is shared, so email + purpose alone
+ * is not a sufficient OTP key.
  */
 function buildOtpIdentifier(tenantId, companyId, email) {
   if (typeof tenantId !== 'string' || !tenantId.trim()) {
