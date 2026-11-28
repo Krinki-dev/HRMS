@@ -26,17 +26,17 @@ module.exports = {
   activateCycle:         h(async (req, res) => sendSuccess(res, await svc.activateCycle(req.db, req.user.companyId, req.params.id), 'Cycle activated.')),
   closeCycle:            h(async (req, res) => sendSuccess(res, await svc.closeCycle(req.db, req.user.companyId, req.params.id), 'Cycle closed.')),
 
-  listMyGoals:           h(async (req, res) => sendSuccess(res, await svc.listMyGoals(empId(req), req.query.cycleId))),
+  listMyGoals:           h(async (req, res) => sendSuccess(res, await svc.listMyGoals(req.db, req.user.companyId, empId(req), req.query.cycleId))),
   listTeamGoals:         h(async (req, res) => sendSuccess(res, await svc.listTeamGoals(req.db, req.user.companyId, req.query.cycleId))),
-  createGoal:            h(async (req, res) => sendSuccess(res, await svc.createGoal(empId(req), req.body), 'Goal created.', 201)),
-  updateGoal:            h(async (req, res) => sendSuccess(res, await svc.updateGoal(empId(req), req.params.id, req.body))),
-  approveGoal:           h(async (req, res) => sendSuccess(res, await svc.approveGoal(req.user.id, req.params.id), 'Goal approved.')),
-  deleteGoal:            h(async (req, res) => sendSuccess(res, await svc.deleteGoal(empId(req), req.params.id), 'Goal deleted.')),
+  createGoal:            h(async (req, res) => sendSuccess(res, await svc.createGoal(req.db, req.user.companyId, empId(req), req.body), 'Goal created.', 201)),
+  updateGoal:            h(async (req, res) => sendSuccess(res, await svc.updateGoal(req.db, req.user.companyId, empId(req), req.params.id, req.body))),
+  approveGoal:           h(async (req, res) => sendSuccess(res, await svc.approveGoal(req.db, req.user.companyId, req.user.id, req.params.id), 'Goal approved.')),
+  deleteGoal:            h(async (req, res) => sendSuccess(res, await svc.deleteGoal(req.db, req.user.companyId, empId(req), req.params.id), 'Goal deleted.')),
 
-  getMyAppraisal:        h(async (req, res) => sendSuccess(res, await svc.getMyAppraisal(empId(req), req.query.cycleId))),
+  getMyAppraisal:        h(async (req, res) => sendSuccess(res, await svc.getMyAppraisal(req.db, req.user.companyId, empId(req), req.query.cycleId))),
   getTeamAppraisals:     h(async (req, res) => sendSuccess(res, await svc.getTeamAppraisals(req.db, req.user.companyId, req.query.cycleId))),
-  submitSelfAppraisal:   h(async (req, res) => sendSuccess(res, await svc.submitSelfAppraisal(empId(req), req.body), 'Self appraisal submitted.')),
-  submitManagerAppraisal:h(async (req, res) => sendSuccess(res, await svc.submitManagerAppraisal(req.user.id, req.body), 'Manager appraisal submitted.')),
+  submitSelfAppraisal:   h(async (req, res) => sendSuccess(res, await svc.submitSelfAppraisal(req.db, req.user.companyId, empId(req), req.body), 'Self appraisal submitted.')),
+  submitManagerAppraisal:h(async (req, res) => sendSuccess(res, await svc.submitManagerAppraisal(req.db, req.user.companyId, req.user.id, req.body), 'Manager appraisal submitted.')),
   finalizeAppraisal:     h(async (req, res) => sendSuccess(res, await svc.finalizeAppraisal(req.db, req.user.companyId, req.params.id, req.body), 'Appraisal finalized.')),
 };
 
