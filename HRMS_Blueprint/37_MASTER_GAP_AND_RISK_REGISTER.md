@@ -170,3 +170,13 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - **GAP-0033 correction:** tenant company-document upload/list/download and platform review routes exist in mounted `brand.routes.js`, and the frontend upload field matches. Mark prior “no matching backend endpoints” description as superseded at source level; runtime storage/review verification remains pending.
 - Registration, plan list/calculate/promo, subscription trial/order/verify and platform admin settings paths were also checked at route-presence level.
 - No app code, test, browser, payment, DB, migration or deployment operation was performed; main untouched.
+
+
+## Cycle 01 Phase 20 — background jobs and runtime configuration (2026-11-28)
+
+- Evidence: [CYCLE-01-SOURCE-AUDIT-PHASE-20.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-20.md).
+- **GAP-0061 (P1):** KYC automation uses a module-local in-memory task queue; persisted task rows are not recovered on worker startup. Installed BullMQ/Redis packages are not used by the inspected queue.
+- **GAP-0062 (P1):** `.env.example` omits active runtime variables including ClamAV, customer DB gating, cloud tenant DB URL and Central direct URL; Razorpay keys remain commented under an outdated note. Actual deployment values unknown.
+- **GAP-0063 (P1):** MinIO silently falls back to `minioadmin/minioadmin`; production startup does not reject missing/default MinIO credentials. Deployment reachability/exploitability not tested.
+- `/health` is process liveness only; it does not establish DB/object-store/scanner/worker readiness. ClamAV intentionally fails uploads closed when unavailable.
+- No service, queue, DB, browser, test, backup, restore, migration or deployment was executed; main untouched.
