@@ -32,6 +32,7 @@ module.exports = {
     const created = await svc.create(req.db, tenantId, req.body);
     eventNotifier.notifyRoleChanged({
       db: req.db,
+      tenantId: req.user.centralTenantId,
       companyId: tenantId,
       roleName: created.name,
       actorLabel: req.user?.email,
@@ -45,6 +46,7 @@ module.exports = {
     const updated = await svc.update(req.db, tenantId, req.params.id, req.body);
     eventNotifier.notifyRoleChanged({
       db: req.db,
+      tenantId: req.user.centralTenantId,
       companyId: tenantId,
       roleName: updated.name,
       actorLabel: req.user?.email,
@@ -65,6 +67,7 @@ module.exports = {
     const assigned = await svc.assignRole(req.db, tenantId, req.params.userId, req.body.roleId);
     eventNotifier.notifyRoleAssigned({
       db: req.db,
+      tenantId: req.user.centralTenantId,
       companyId: tenantId,
       userId: req.params.userId,
       roleId: req.body.roleId,
