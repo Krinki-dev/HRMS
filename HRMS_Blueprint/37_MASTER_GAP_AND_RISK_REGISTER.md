@@ -136,3 +136,15 @@ These are inherited from prior source-audit notes and must be rechecked against 
 - Operational Prisma schema: 82 models, 33 with direct company_id, 55 declared relations. Central schema: 17 models.
 - Frozen decisions explicitly state tenant operational tables have no RLS and rely on company_id filtering; central RLS owner/superuser bypass remains a release validation requirement. Production connection role not verified.
 - No database, tests, server, browser or production operation performed; no application code changed; main untouched.
+
+
+## Cycle 01 Phase 17 — backup/restore, API mapping and deployment (2026-11-28)
+
+- Evidence: [CYCLE-01-SOURCE-AUDIT-PHASE-17.md](cycles/CYCLE-01-SOURCE-AUDIT-PHASE-17.md).
+- **GAP-0050 (P1):** backup scheduler is not started by the inspected server bootstrap; when invoked, it compares `backup_time` although Prisma/SQL define `schedule_time`. The `schedule` frequency field is also not evaluated. Automatic backups are not demonstrated to run.
+- **GAP-0051 (P1):** Railway start command runs a Central SQL migration on each deploy; the script catches migration errors and does not exit non-zero, so server startup can continue after a failed migration.
+- **GAP-0052 (P1):** tenant backup only supports ready dedicated storage. It does not cover Central DB or MinIO files; `include_files` is unused; no restore implementation/drill exists. Permanent deletion correctly remains blocked pending verified restore and approval.
+- **GAP-0053 (P1, revalidates GAP-0035):** PostgreSQL dump is gzip-compressed but not application-layer encrypted before Google Drive/OneDrive upload. Encryption primitive is used for provider credentials, not the dump artifact.
+- **GAP-0054 (P2, revalidates GAP-0034):** frontend calls `/settings/notifications`, while inspected backend mounts notification handlers under different prefixes; no matching mounted route was found.
+- Backend CI, frontend build CI, and tenant migration integration workflow definitions were inspected. Current-HEAD workflow success was not verified.
+- Wider all-module API route/payload/permission mapping remains incomplete. No app code, tests, server, DB, migration, backup, restore, deployment or payment operation was performed; main untouched.
