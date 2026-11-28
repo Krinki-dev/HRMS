@@ -224,7 +224,7 @@ const leaveService = {
     if (overlap) throw new Error('OVERLAPPING_LEAVE');
 
     const leaveType = await db.leave_types.findFirst({
-      where: { id: leaveTypeId, company_id: companyId },
+      where: { id: leaveTypeId, company_id: companyId, deleted_at: null, is_active: true },
     });
     if (!leaveType) throw new Error('INVALID_LEAVE_TYPE');
 
@@ -370,6 +370,18 @@ const leaveService = {
     return balances.map(leaveService._fmtBalance);
   },
 
+  getAllBalances: async (db, companyId, year) => {
+    const y = parseInt(year) || new Date().getFullYear();
+    return db.leave_balances.findMany({
+      where: { year: y, employee: { company_id: companyId, deleted_at: null } },
+      include: {
+        employee: { select: { id: true, first_name: true, last_name: true, employee_code: true } },
+        leave_type: { select: { id: true, name: true, code: true, is_paid: true } },
+      },
+      orderBy: [{ employee_id: 'asc' }, { leave_type_id: 'asc' }],
+    });
+  },
+
   getLeaveTypes: async (db, companyId) => {
     return db.leave_types.findMany({
       where: { company_id: companyId, deleted_at: null, is_active: true },
@@ -453,7 +465,7 @@ const leaveService = {
     });
   },
 
-  manualAccrue: async (db, companyId) => {
+  manualAccrue: async (db, companyId, userId = null) => {
     const leaveTypes = await db.leave_types.findMany({
       where: { company_id: companyId, deleted_at: null, is_active: true },
     });
@@ -482,7 +494,37 @@ const leaveService = {
       }
     }
 
+    try {
+      await db.audit_logs.create({
+        data: {
+          company_id: companyId,
+          user_id: userId,
+          module: 'leave',
+          action: 'manual_accrue',
+          record_type: 'leave_balances',
+          meta: JSON.stringify({ year, processed: employees.length, accrued }),
+        },
+      });
+    } catch (err) {
+      logger.error('[Leave/manualAccrue] Audit log write failed', { error: err.message, companyId });
+    }
+
     return { processed: employees.length, accrued };
+  },
+
+  accrualLog: async (db, companyId, query = {}) => {
+    const limit = Math.min(Math.max(parseInt(query.limit) || 50, 1), 100);
+    return db.audit_logs.findMany({
+      where: { company_id: companyId, module: 'leave', action: 'manual_accrue' },
+      orderBy: { created_at: 'desc' },
+      take: limit,
+    });
+  },
+
+  encashLeave: async () => {
+    // The database has no approved company leave-encashment valuation policy.
+    // Do not accept a client-supplied per-day rate or invent a payroll formula.
+    throw new Error('ENCASHMENT_POLICY_REQUIRED');
   },
 
   report: async (db, companyId, query) => {
