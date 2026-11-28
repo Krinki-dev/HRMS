@@ -796,3 +796,13 @@ The CI failures were corrected: the KYC validation test now supplies a placehold
 - Tenant Migration PostgreSQL Integration also passed at the same SHA.
 - GAP-0047/0048 are fixed in source with live role/catalog and clean-install comparison pending. GAP-0031 backend CI skip issue fixed; frontend E2E remains.
 - Production Central RLS migration was not run. Legacy Settings direct Prisma access and actual deployed DB role ownership/BYPASSRLS remain rollout blockers.
+
+
+## 2026-11-28 — Cycle 01 Phase 26 PostgreSQL migration baseline audit
+
+- Added `HRMS_Blueprint/cycles/CYCLE-01-IMPLEMENTATION-PHASE-26.md`.
+- Confirmed no canonical PostgreSQL Prisma migration history at `backend/prisma/migrations`.
+- Legacy directory is misnamed `migrations     11223`; migration lock says MSSQL and initial migration is SQL Server DDL.
+- Central and tenant schemas require separate migration histories because they target separate PostgreSQL databases.
+- Railway invokes a Central SQL migration at app start; the script catches errors and continues, so a failed migration does not block startup.
+- No DB connection, baseline generation, migration, deploy or customer-data operation performed.
