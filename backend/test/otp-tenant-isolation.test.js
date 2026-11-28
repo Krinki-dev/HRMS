@@ -12,20 +12,24 @@ const routes = fs.readFileSync(path.join(root, 'modules/auth/auth.routes.js'), '
 
 test('OTP identifier is normalized and namespaced by immutable tenant UUID', () => {
   assert.equal(
-    buildOtpIdentifier('TENANT-A', ' Person@Example.COM '),
-    'tenant:tenant-a:email:person@example.com'
+    buildOtpIdentifier('TENANT-A', 'COMPANY-A', ' Person@Example.COM '),
+    'tenant:tenant-a:company:company-a:email:person@example.com'
   );
 });
 
 test('the same email and purpose are isolated across tenants in shared public storage', () => {
-  const tenantA = buildOtpIdentifier('tenant-a', 'person@example.com');
-  const tenantB = buildOtpIdentifier('tenant-b', 'person@example.com');
+  const tenantA = buildOtpIdentifier('tenant-a', 'company-a', 'person@example.com');
+  const tenantB = buildOtpIdentifier('tenant-b', 'company-a', 'person@example.com');
   assert.notEqual(tenantA, tenantB);
+  assert.notEqual(
+    buildOtpIdentifier('tenant-a', 'company-a', 'person@example.com'),
+    buildOtpIdentifier('tenant-a', 'company-b', 'person@example.com')
+  );
 });
 
 test('OTP identity fails closed when tenant or email context is missing', () => {
-  assert.throws(() => buildOtpIdentifier(null, 'person@example.com'), /tenant context is required/);
-  assert.throws(() => buildOtpIdentifier('tenant-a', ' '), /email is required/);
+  assert.throws(() => buildOtpIdentifier(null, 'company-a', 'person@example.com'), /tenant context is required/);
+  assert.throws(() => buildOtpIdentifier('tenant-a', 'company-a', ' '), /email is required/);
 });
 
 test('OTP creation and verification both use the tenant-scoped identifier helper', () => {
