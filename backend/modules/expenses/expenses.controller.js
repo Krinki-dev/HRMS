@@ -27,6 +27,7 @@ module.exports = {
     const claim = await svc.approveClaim(req.db, req.user.companyId, req.params.id, req.user.id, req.body);
     eventNotifier.notifyExpenseDecision({
       db: req.db,
+      tenantId: req.user.centralTenantId,
       companyId: req.user.companyId,
       claim,
       decision: 'approved',
@@ -37,6 +38,7 @@ module.exports = {
     const claim = await svc.rejectClaim(req.db, req.user.companyId, req.params.id, req.user.id, req.body);
     eventNotifier.notifyExpenseDecision({
       db: req.db,
+      tenantId: req.user.centralTenantId,
       companyId: req.user.companyId,
       claim,
       decision: 'rejected',
