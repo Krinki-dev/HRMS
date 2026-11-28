@@ -1,5 +1,22 @@
 ﻿const parseArr = (v) => { try { return JSON.parse(v || '[]'); } catch { return []; } };
 
+async function requireCompanyEmployee(db, companyId, employeeId) {
+  if (!employeeId) throw new Error('NOT_FOUND');
+  const employee = await db.employees.findFirst({
+    where: { id: employeeId, company_id: companyId, deleted_at: null },
+    select: { id: true, reporting_to: true },
+  });
+  if (!employee) throw new Error('NOT_FOUND');
+  return employee;
+}
+
+async function requireCompanyCycle(db, companyId, cycleId) {
+  if (!cycleId) throw new Error('CYCLE_NOT_FOUND');
+  const cycle = await db.appraisal_cycles.findFirst({ where: { id: cycleId, company_id: companyId } });
+  if (!cycle) throw new Error('CYCLE_NOT_FOUND');
+  return cycle;
+}
+
 const performanceService = {
 
   dashboard: async (db, companyId) => {
@@ -73,20 +90,22 @@ const performanceService = {
   },
 
   activateCycle: async (db, companyId, id) => {
-    
+    const cycle = await requireCompanyCycle(db, companyId, id);
     await db.appraisal_cycles.updateMany({
       where: { company_id: companyId, status: 'active' },
       data: { status: 'upcoming' },
     });
-    return db.appraisal_cycles.update({ where: { id }, data: { status: 'active' } });
+    return db.appraisal_cycles.update({ where: { id: cycle.id }, data: { status: 'active' } });
   },
 
   closeCycle: async (db, companyId, id) => {
-    return db.appraisal_cycles.update({ where: { id }, data: { status: 'closed' } });
+    const cycle = await requireCompanyCycle(db, companyId, id);
+    return db.appraisal_cycles.update({ where: { id: cycle.id }, data: { status: 'closed' } });
   },
 
-  listMyGoals: async (db, employeeId, cycleId) => {
-    const where = { employee_id: employeeId };
+  listMyGoals: async (db, companyId, employeeId, cycleId) => {
+    await requireCompanyEmployee(db, companyId, employeeId);
+    const where = { employee_id: employeeId, cycle: { company_id: companyId } };
     if (cycleId) where.cycle_id = cycleId;
     return db.performance_goals.findMany({
       where,
@@ -119,10 +138,9 @@ const performanceService = {
     }));
   },
 
-  createGoal: async (db, employeeId, data) => {
-    
-    const cycle = await db.appraisal_cycles.findUnique({ where: { id: data.cycleId } });
-    if (!cycle) throw new Error('CYCLE_NOT_FOUND');
+  createGoal: async (db, companyId, employeeId, data) => {
+    await requireCompanyEmployee(db, companyId, employeeId);
+    const cycle = await requireCompanyCycle(db, companyId, data.cycleId);
 
     const existing = await db.performance_goals.findMany({
       where: { employee_id: employeeId, cycle_id: data.cycleId },
@@ -146,8 +164,11 @@ const performanceService = {
     });
   },
 
-  updateGoal: async (db, employeeId, id, data) => {
-    const goal = await db.performance_goals.findFirst({ where: { id, employee_id: employeeId } });
+  updateGoal: async (db, companyId, employeeId, id, data) => {
+    await requireCompanyEmployee(db, companyId, employeeId);
+    const goal = await db.performance_goals.findFirst({
+      where: { id, employee_id: employeeId, cycle: { company_id: companyId } },
+    });
     if (!goal) throw new Error('NOT_FOUND');
     if (goal.status === 'approved') throw new Error('CANNOT_EDIT_APPROVED');
     return db.performance_goals.update({
@@ -164,24 +185,30 @@ const performanceService = {
     });
   },
 
-  approveGoal: async (db, approverId, id) => {
+  approveGoal: async (db, companyId, approverId, id) => {
+    const goal = await db.performance_goals.findFirst({ where: { id, cycle: { company_id: companyId } } });
+    if (!goal) throw new Error('NOT_FOUND');
     return db.performance_goals.update({
-      where: { id },
+      where: { id: goal.id },
       data: { status: 'approved', approved_by: approverId },
     });
   },
 
-  deleteGoal: async (db, employeeId, id) => {
-    const goal = await db.performance_goals.findFirst({ where: { id, employee_id: employeeId } });
+  deleteGoal: async (db, companyId, employeeId, id) => {
+    await requireCompanyEmployee(db, companyId, employeeId);
+    const goal = await db.performance_goals.findFirst({
+      where: { id, employee_id: employeeId, cycle: { company_id: companyId } },
+    });
     if (!goal) throw new Error('NOT_FOUND');
     if (goal.status === 'approved') throw new Error('CANNOT_DELETE_APPROVED');
     return db.performance_goals.delete({ where: { id } });
   },
 
-  getMyAppraisal: async (db, employeeId, cycleId) => {
+  getMyAppraisal: async (db, companyId, employeeId, cycleId) => {
+    await requireCompanyEmployee(db, companyId, employeeId);
     const cycle = cycleId
-      ? await db.appraisal_cycles.findUnique({ where: { id: cycleId } })
-      : await db.appraisal_cycles.findFirst({ where: { status: 'active' }, orderBy: { created_at: 'desc' } });
+      ? await db.appraisal_cycles.findFirst({ where: { id: cycleId, company_id: companyId } })
+      : await db.appraisal_cycles.findFirst({ where: { company_id: companyId, status: 'active' }, orderBy: { created_at: 'desc' } });
 
     if (!cycle) return { cycle: null, goals: [], selfAppraisal: null, managerAppraisal: null };
 
@@ -224,9 +251,10 @@ const performanceService = {
     return appraisals.map(a => ({ ...a, employee: empMap[a.employee_id] || null }));
   },
 
-  submitSelfAppraisal: async (db, employeeId, data) => {
+  submitSelfAppraisal: async (db, companyId, employeeId, data) => {
+    await requireCompanyEmployee(db, companyId, employeeId);
     const cycle = await db.appraisal_cycles.findFirst({
-      where: { status: 'active' },
+      where: { company_id: companyId, status: 'active' },
       orderBy: { created_at: 'desc' },
     });
     if (!cycle) throw new Error('NO_ACTIVE_CYCLE');
@@ -251,9 +279,12 @@ const performanceService = {
     return db.appraisals.create({ data: payload });
   },
 
-  submitManagerAppraisal: async (db, managerId, data) => {
+  submitManagerAppraisal: async (db, companyId, managerId, data) => {
+    const manager = await db.users.findFirst({ where: { id: managerId, company_id: companyId, is_active: true }, select: { id: true } });
+    if (!manager) throw new Error('NOT_FOUND');
+    const employee = await requireCompanyEmployee(db, companyId, data.employeeId);
     const cycle = await db.appraisal_cycles.findFirst({
-      where: { status: 'active' },
+      where: { company_id: companyId, status: 'active' },
       orderBy: { created_at: 'desc' },
     });
     if (!cycle) throw new Error('NO_ACTIVE_CYCLE');
@@ -281,8 +312,10 @@ const performanceService = {
   },
 
   finalizeAppraisal: async (db, companyId, id, data) => {
+    const appraisal = await db.appraisals.findFirst({ where: { id, cycle: { company_id: companyId } } });
+    if (!appraisal) throw new Error('NOT_FOUND');
     return db.appraisals.update({
-      where: { id },
+      where: { id: appraisal.id },
       data: {
         overall_rating: parseFloat(data.overallRating) || undefined,
         status:         'submitted',
