@@ -1394,3 +1394,29 @@ This supersedes the Phase 31 next-task line.
 - Proposed defaults are recorded (not approved/frozen) in `HRMS_Blueprint/34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md`.
 - Pending confirmation: one operational user ID belongs to one company; one operational company maps to one Central tenant; membership activation/revocation lifecycle; manual verified reconciliation for null/ambiguous legacy user_id.
 - Until owner confirmation, continue design and tests only. Do not create the membership table or migration.
+
+
+---
+
+## CURRENT AUTHORITATIVE HANDOFF — Cycle 01 Phase 33 (2026-11-28)
+
+This block supersedes the Phase 32 next-task line above.
+
+### Current checkpoint
+- Working branch: `architecture/postgres-tenant-isolation`; protected `main` remains untouched.
+- Phase 32 membership mapping design is complete as a proposal only. Owner defaults in `34_OWNER_DECISIONS_AND_RECOMMENDATIONS.md` remain **not approved / not frozen**. Do not create DDL or migration until the owner decides.
+- Phase 33 found and corrected a positional-argument defect in forgot-password: the helper requires `(activeDb, tenantId, email, requestedCompanyId)`; the handler now passes `(activeDb, tenantId, normalizedEmail, requestedCompanyId)`.
+- Added an exact ordered-argument regression assertion to `backend/test/auth-company-selection.test.js`.
+- Phase 33 artifacts:
+  - Plan: `cycles/CYCLE-01-PLAN-PHASE-33.md`
+  - Plan verification: `cycles/CYCLE-01-PLAN-VERIFICATION-PHASE-33.md`
+  - Implementation report: `cycles/CYCLE-01-IMPLEMENTATION-PHASE-33.md`
+- Relevant commits: route fix `3ea6243b82d7233cace326d55e4525263af720aa`; regression test `5fcb3f7d36bcc392cb5f14837ac6aee2dbb82d45`; report `07d5973b6fcd4d989c6a890671d6e07684ef77df`; gap register `5e9cf995f50bdbacf03b6b4e5da2b2e4415d705d`; progress `d438fed8491c89edea199b8667969ca94a2a6c66`; architecture audit `0dff49308538ffb30db485fa287e871740599318`; index `a6cb6416d876b8ae8f581a14f472397e700efa70`; master continuity plan `b27f4cdddab46e1b088c257b22bc908de94e9376`.
+- **GAP-0069 (P1): Fixed — Awaiting Verification.** Post-commit source re-fetch confirmed the corrected call, old call absent, and regression assertion present. Node test runner/full backend suite/frontend build/exact-head CI/authenticated password-reset E2E have not been run or verified. Do not claim tests passed.
+- **GAP-0068 remains Open / Blocked** on Central tenant-user-company membership mapping and trusted legacy backfill. Phase 33 does not implement multi-company membership.
+- HRMS-D-003 remains In Progress. HRMS-D-004 remains In Progress; the 82-model inventory exists but query-by-query service/worker/report/export audit remains incomplete. HRMS-D-005 remains Blocked on the canonical PostgreSQL migration baseline and owner decisions.
+- Next safe task: verify current live branch head and exact-head CI; then run focused auth test and backend suite from an executable checkout. After that, continue D-004 query-by-query ownership audit. Do not proceed with DDL without owner approval and verified migration baseline.
+- No DB connection, SQL, DDL, migration, production deployment, payment transaction, credential change, destructive operation or customer-data mutation occurred. `main` untouched.
+
+### Resume instruction
+Read the master continuity plan, this handoff, index, frozen decisions, owner decisions, current audit/progress/tracker/gap register and Phase 33 report. Verify the actual branch head and CI again before further claims. Continue from Phase 33 verification; do not restart completed work.
